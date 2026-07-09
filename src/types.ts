@@ -59,8 +59,36 @@ export interface NhanSu {
   chucDanh: string;
   hocVi: string;
   donVi: string;
+  donViId: string | null;
+  email: string;
+  soDienThoai: string;
+  trangThaiLamViec: string;
   chungChi: string;
   hanChungChi: string;
+}
+
+export type LoaiDonVi =
+  | 'lanh-dao'
+  | 'phong-chuc-nang'
+  | 'vien-chuyen-nganh'
+  | 'phan-vien'
+  | 'trung-tam'
+  | 'cong-ty';
+
+export interface DonVi {
+  id: string;
+  maDinhDanh: string | null;
+  ten: string;
+  tenVietTat: string | null;
+  loai: LoaiDonVi;
+  chucNangNhiemVu: string | null;
+  dienThoai: string | null;
+  email: string | null;
+  truongDonVi: string | null;
+  soNhanSu: number;
+  soDeTai: number;
+  soHopDong: number;
+  thuTu: number;
 }
 
 export interface LopDaoTao {

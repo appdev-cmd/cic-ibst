@@ -3,7 +3,6 @@ import type {
   DeTai,
   HopDong,
   MauThiNghiem,
-  NhanSu,
   LopDaoTao,
 } from '../types';
 
@@ -53,13 +52,7 @@ export const mauThiNghiemList: MauThiNghiem[] = [
   { id: 'm6', maPhieu: 'LAS-2607-0921', tenMau: 'Vữa chống thấm gốc xi măng', phepThu: 'Độ thấm nước TCVN 9065', khachHang: 'Sika Việt Nam', phongThiNghiem: 'LAS-XD 02', ngayNhan: '2026-07-08', hanTra: '2026-07-15', trangThai: 'moi' },
 ];
 
-export const nhanSuList: NhanSu[] = [
-  { id: 'ns1', hoTen: 'GS.TS Hoàng Văn E', chucDanh: 'Viện trưởng viện chuyên ngành', hocVi: 'Giáo sư, Tiến sĩ', donVi: 'Viện chuyên ngành Kết cấu', chungChi: 'CC Kiểm định hạng I', hanChungChi: '2028-04-12' },
-  { id: 'ns2', hoTen: 'PGS.TS Nguyễn Văn A', chucDanh: 'Phó Viện trưởng', hocVi: 'Phó Giáo sư, Tiến sĩ', donVi: 'Viện chuyên ngành Bê tông', chungChi: 'CC Thiết kế hạng I', hanChungChi: '2026-09-20' },
-  { id: 'ns3', hoTen: 'TS Trần Thị B', chucDanh: 'Trưởng phòng nghiên cứu', hocVi: 'Tiến sĩ', donVi: 'Viện chuyên ngành Kết cấu', chungChi: 'CC Thẩm tra hạng I', hanChungChi: '2027-01-15' },
-  { id: 'ns4', hoTen: 'ThS Phạm Thị D', chucDanh: 'Nghiên cứu viên chính', hocVi: 'Thạc sĩ', donVi: 'TT Phát triển CN & VLXD', chungChi: 'CC Giám sát hạng II', hanChungChi: '2026-08-01' },
-  { id: 'ns5', hoTen: 'KS Đỗ Văn G', chucDanh: 'Thí nghiệm viên', hocVi: 'Kỹ sư', donVi: 'Viện Vật liệu xây dựng', chungChi: 'CC Thí nghiệm viên LAS-XD', hanChungChi: '2026-07-25' },
-];
+// nhanSuList mock đã gỡ — module Nhân sự dùng dữ liệu thật từ Supabase (services/org.ts)
 
 export const lopDaoTaoList: LopDaoTao[] = [
   { id: 'ld1', ten: 'NCS khóa 2024 — Kỹ thuật xây dựng', loai: 'NCS', soHocVien: 8, batDau: '2024-11-01', ketThuc: '2028-11-01', trangThai: 'dang-thuc-hien' },

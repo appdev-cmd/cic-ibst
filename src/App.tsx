@@ -9,6 +9,7 @@ import { DeTaiPage } from './pages/DeTaiPage';
 import { HopDongPage } from './pages/HopDongPage';
 import { ThiNghiemPage } from './pages/ThiNghiemPage';
 import { TaiChinhPage } from './pages/TaiChinhPage';
+import { DonViPage } from './pages/DonViPage';
 import { NhanSuPage } from './pages/NhanSuPage';
 import { DaoTaoPage } from './pages/DaoTaoPage';
 import { BaoCaoPage } from './pages/BaoCaoPage';
@@ -44,6 +45,7 @@ export default function App() {
         <Route path="/hop-dong" element={<HopDongPage />} />
         <Route path="/thi-nghiem" element={<ThiNghiemPage />} />
         <Route path="/tai-chinh" element={<TaiChinhPage />} />
+        <Route path="/don-vi" element={<DonViPage />} />
         <Route path="/nhan-su" element={<NhanSuPage />} />
         <Route path="/dao-tao" element={<DaoTaoPage />} />
         <Route path="/bao-cao" element={<BaoCaoPage />} />

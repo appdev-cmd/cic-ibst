@@ -4,7 +4,6 @@ import type {
   DeTai,
   HopDong,
   MauThiNghiem,
-  NhanSu,
   LopDaoTao,
   TrangThai,
 } from '../types';
@@ -20,12 +19,6 @@ const LOAI_DAO_TAO: Record<string, LopDaoTao['loai']> = {
   'tap-huan': 'Tập huấn',
   'hoi-thao': 'Hội thảo',
 };
-const HANG_CHUNG_CHI: Record<string, string> = {
-  'hang-1': 'Hạng I',
-  'hang-2': 'Hạng II',
-  'hang-3': 'Hạng III',
-};
-
 function throwIf(error: { message: string } | null) {
   if (error) throw new Error(error.message);
 }
@@ -115,34 +108,7 @@ export async function fetchMauThiNghiem(): Promise<MauThiNghiem[]> {
   }));
 }
 
-export async function fetchNhanSu(): Promise<NhanSu[]> {
-  const { data, error } = await supabase
-    .from('nhan_su')
-    .select(
-      'id, ho_va_ten, hoc_vi, chuc_danh, don_vi(ten_don_vi), chung_chi_hanh_nghe(ten_linh_vuc_hanh_nghe, hang_chung_chi, ngay_het_han)',
-    )
-    .order('id');
-  throwIf(error);
-  return (data ?? []).map((r) => {
-    const ccList = (r.chung_chi_hanh_nghe ?? []) as unknown as {
-      ten_linh_vuc_hanh_nghe: string;
-      hang_chung_chi: string | null;
-      ngay_het_han: string | null;
-    }[];
-    const cc = ccList[0];
-    return {
-      id: String(r.id),
-      hoTen: r.ho_va_ten,
-      chucDanh: r.chuc_danh ?? '',
-      hocVi: r.hoc_vi ?? '',
-      donVi: (r.don_vi as unknown as { ten_don_vi: string } | null)?.ten_don_vi ?? '',
-      chungChi: cc
-        ? `${cc.ten_linh_vuc_hanh_nghe}${cc.hang_chung_chi ? ` (${HANG_CHUNG_CHI[cc.hang_chung_chi] ?? cc.hang_chung_chi})` : ''}`
-        : '—',
-      hanChungChi: cc?.ngay_het_han ?? '',
-    };
-  });
-}
+// fetchNhanSu đã chuyển sang services/org.ts (fetchNhanSuFull) cùng CRUD module nhân sự
 
 export async function fetchLopDaoTao(): Promise<LopDaoTao[]> {
   const { data, error } = await supabase
