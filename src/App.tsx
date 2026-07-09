@@ -1,5 +1,8 @@
-import { Routes, Route } from 'react-router-dom';
+import { Navigate, Routes, Route, useLocation } from 'react-router-dom';
+import type { ReactNode } from 'react';
 import { AppLayout } from './layouts/AppLayout';
+import { useAuth } from './context/AuthContext';
+import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { VanBanPage } from './pages/VanBanPage';
 import { DeTaiPage } from './pages/DeTaiPage';
@@ -10,10 +13,31 @@ import { NhanSuPage } from './pages/NhanSuPage';
 import { DaoTaoPage } from './pages/DaoTaoPage';
 import { BaoCaoPage } from './pages/BaoCaoPage';
 
+function RequireAuth({ children }: { children: ReactNode }) {
+  const { session, loading } = useAuth();
+  const location = useLocation();
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-page">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary-500 border-t-transparent" />
+      </div>
+    );
+  }
+  if (!session) return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+  return children;
+}
+
 export default function App() {
   return (
     <Routes>
-      <Route element={<AppLayout />}>
+      <Route path="/login" element={<LoginPage />} />
+      <Route
+        element={
+          <RequireAuth>
+            <AppLayout />
+          </RequireAuth>
+        }
+      >
         <Route path="/" element={<DashboardPage />} />
         <Route path="/van-ban" element={<VanBanPage />} />
         <Route path="/de-tai" element={<DeTaiPage />} />

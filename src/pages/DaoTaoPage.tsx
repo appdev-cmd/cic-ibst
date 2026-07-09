@@ -2,7 +2,9 @@ import { Plus, GraduationCap, Users2, CalendarDays } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { StatusBadge } from '../components/StatusBadge';
 import { KpiCard } from '../components/KpiCard';
-import { lopDaoTaoList } from '../data/mock';
+import { DataState } from '../components/DataState';
+import { useAsyncData } from '../hooks/useAsyncData';
+import { fetchLopDaoTao } from '../services/queries';
 import { formatNgay, cn } from '../lib/utils';
 
 const LOAI_CLS: Record<string, string> = {
@@ -12,6 +14,7 @@ const LOAI_CLS: Record<string, string> = {
 };
 
 export function DaoTaoPage() {
+  const { data: lopDaoTaoList, loading, error } = useAsyncData(fetchLopDaoTao, []);
   return (
     <div>
       <PageHeader
@@ -30,6 +33,7 @@ export function DaoTaoPage() {
         <KpiCard icon={CalendarDays} label="Sự kiện sắp diễn ra" value="2" tone="warning" />
       </div>
 
+      <DataState loading={loading} error={error} empty={lopDaoTaoList.length === 0} />
       <div className="card overflow-x-auto">
         <table className="w-full min-w-[720px]">
           <thead>

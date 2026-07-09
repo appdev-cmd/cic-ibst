@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useTheme, type Theme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 
 const THEME_OPTIONS: { value: Theme; icon: typeof Sun; title: string; activeCls: string }[] = [
   { value: 'light', icon: Sun, title: 'Sáng', activeCls: 'text-primary-600 dark:text-primary-300' },
@@ -47,7 +48,18 @@ const NAV = [
 export function AppLayout() {
   const { pathname } = useLocation();
   const { theme, setTheme } = useTheme();
+  const { session, signOut } = useAuth();
   const current = NAV.find((n) => n.to === pathname) ?? NAV[0];
+  const fullName =
+    (session?.user.user_metadata?.full_name as string | undefined) ??
+    session?.user.email ??
+    'Người dùng';
+  const initials = fullName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(-2)
+    .map((w) => w[0]?.toUpperCase())
+    .join('');
   const [collapsed, setCollapsed] = useState(
     () => localStorage.getItem('sidebar-collapsed') === 'true',
   );
@@ -151,6 +163,7 @@ export function AppLayout() {
               {!collapsed && <span className="flex-1 text-left">Cài đặt hệ thống</span>}
             </button>
             <button
+              onClick={() => signOut()}
               className={cn(
                 'mb-1 flex w-full items-center gap-3 rounded-lg border-l-[3px] border-l-transparent px-4 py-3 text-[13px] font-bold text-ink-muted transition-all hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400',
                 collapsed && 'justify-center px-0',
@@ -209,12 +222,12 @@ export function AppLayout() {
             <div className="mx-1 hidden h-6 w-px bg-border sm:block" />
             <button className="flex cursor-pointer items-center gap-2.5 rounded-xl p-1.5 pr-2 transition-colors hover:bg-muted">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary-400 to-primary-600 text-xs font-bold text-white ring-2 ring-primary-100 dark:ring-primary-900">
-                QA
+                {initials || 'ND'}
               </div>
-              <div className="hidden max-w-[120px] text-left sm:block">
-                <p className="truncate text-xs font-bold leading-tight text-ink">Nguyễn Quốc Anh</p>
+              <div className="hidden max-w-[140px] text-left sm:block">
+                <p className="truncate text-xs font-bold leading-tight text-ink">{fullName}</p>
                 <p className="mt-0.5 truncate text-[10px] font-medium leading-tight text-ink-muted">
-                  Quản trị hệ thống
+                  {session?.user.email}
                 </p>
               </div>
               <ChevronDown size={14} className="hidden text-ink-muted sm:block" />

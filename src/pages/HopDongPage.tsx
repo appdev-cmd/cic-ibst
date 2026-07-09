@@ -2,10 +2,13 @@ import { Plus, Handshake, Banknote, AlertTriangle } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { StatusBadge } from '../components/StatusBadge';
 import { KpiCard } from '../components/KpiCard';
-import { hopDongList } from '../data/mock';
+import { DataState } from '../components/DataState';
+import { useAsyncData } from '../hooks/useAsyncData';
+import { fetchHopDong } from '../services/queries';
 import { formatTrieu, formatNgay, cn } from '../lib/utils';
 
 export function HopDongPage() {
+  const { data: hopDongList, loading, error } = useAsyncData(fetchHopDong, []);
   return (
     <div>
       <PageHeader
@@ -24,6 +27,7 @@ export function HopDongPage() {
         <KpiCard icon={AlertTriangle} label="Quá hạn / sắp đến hạn" value="1 / 3" tone="accent" />
       </div>
 
+      <DataState loading={loading} error={error} empty={hopDongList.length === 0} />
       <div className="card overflow-x-auto">
         <table className="w-full min-w-[960px]">
           <thead>

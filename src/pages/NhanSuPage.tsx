@@ -1,7 +1,9 @@
 import { Plus, Users, GraduationCap, ShieldAlert } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { KpiCard } from '../components/KpiCard';
-import { nhanSuList } from '../data/mock';
+import { DataState } from '../components/DataState';
+import { useAsyncData } from '../hooks/useAsyncData';
+import { fetchNhanSu } from '../services/queries';
 import { formatNgay, cn } from '../lib/utils';
 
 function hanSapHet(iso: string) {
@@ -9,6 +11,7 @@ function hanSapHet(iso: string) {
 }
 
 export function NhanSuPage() {
+  const { data: nhanSuList, loading, error } = useAsyncData(fetchNhanSu, []);
   return (
     <div>
       <PageHeader
@@ -27,6 +30,7 @@ export function NhanSuPage() {
         <KpiCard icon={ShieldAlert} label="Chứng chỉ sắp hết hạn (90 ngày)" value="14" tone="accent" />
       </div>
 
+      <DataState loading={loading} error={error} empty={nhanSuList.length === 0} />
       <div className="card overflow-x-auto">
         <table className="w-full min-w-[860px]">
           <thead>

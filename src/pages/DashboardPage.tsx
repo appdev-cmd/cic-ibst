@@ -17,15 +17,14 @@ import {
 import { PageHeader } from '../components/PageHeader';
 import { KpiCard } from '../components/KpiCard';
 import { StatusBadge } from '../components/StatusBadge';
-import {
-  doanhThuTheoThang,
-  doanhThuTheoLinhVuc,
-  hopDongList,
-  mauThiNghiemList,
-} from '../data/mock';
+import { doanhThuTheoThang, doanhThuTheoLinhVuc } from '../data/mock';
+import { useAsyncData } from '../hooks/useAsyncData';
+import { fetchHopDong, fetchMauThiNghiem } from '../services/queries';
 import { formatTrieu, formatNgay } from '../lib/utils';
 
 export function DashboardPage() {
+  const { data: hopDongList } = useAsyncData(fetchHopDong, []);
+  const { data: mauThiNghiemList } = useAsyncData(fetchMauThiNghiem, []);
   const tongGiaTriHD = hopDongList.reduce((s, h) => s + h.giaTri, 0);
   return (
     <div>

@@ -2,10 +2,13 @@ import { Plus, FileDown, FileUp } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { StatusBadge } from '../components/StatusBadge';
 import { KpiCard } from '../components/KpiCard';
-import { vanBanList } from '../data/mock';
+import { DataState } from '../components/DataState';
+import { useAsyncData } from '../hooks/useAsyncData';
+import { fetchVanBan } from '../services/queries';
 import { formatNgay } from '../lib/utils';
 
 export function VanBanPage() {
+  const { data: vanBanList, loading, error } = useAsyncData(fetchVanBan, []);
   return (
     <div>
       <PageHeader
@@ -24,6 +27,7 @@ export function VanBanPage() {
         <KpiCard icon={FileDown} label="Chờ xử lý / quá hạn" value="12 / 3" tone="accent" />
       </div>
 
+      <DataState loading={loading} error={error} empty={vanBanList.length === 0} />
       <div className="card overflow-x-auto">
         <table className="w-full min-w-[760px]">
           <thead>

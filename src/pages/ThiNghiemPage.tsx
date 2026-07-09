@@ -2,10 +2,13 @@ import { Plus, Microscope, Timer, BadgeCheck } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { StatusBadge } from '../components/StatusBadge';
 import { KpiCard } from '../components/KpiCard';
-import { mauThiNghiemList } from '../data/mock';
+import { DataState } from '../components/DataState';
+import { useAsyncData } from '../hooks/useAsyncData';
+import { fetchMauThiNghiem } from '../services/queries';
 import { formatNgay } from '../lib/utils';
 
 export function ThiNghiemPage() {
+  const { data: mauThiNghiemList, loading, error } = useAsyncData(fetchMauThiNghiem, []);
   return (
     <div>
       <PageHeader
@@ -24,6 +27,7 @@ export function ThiNghiemPage() {
         <KpiCard icon={BadgeCheck} label="Phiếu phát hành trong tháng" value="312" tone="success" />
       </div>
 
+      <DataState loading={loading} error={error} empty={mauThiNghiemList.length === 0} />
       <div className="card overflow-x-auto">
         <table className="w-full min-w-[920px]">
           <thead>

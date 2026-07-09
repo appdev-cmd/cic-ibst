@@ -2,7 +2,9 @@ import { Plus, FlaskConical, Landmark, AlertTriangle } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { StatusBadge } from '../components/StatusBadge';
 import { KpiCard } from '../components/KpiCard';
-import { deTaiList } from '../data/mock';
+import { DataState } from '../components/DataState';
+import { useAsyncData } from '../hooks/useAsyncData';
+import { fetchDeTai } from '../services/queries';
 import { formatTrieu, formatNgay, cn } from '../lib/utils';
 
 const CAP_CLS: Record<string, string> = {
@@ -12,6 +14,7 @@ const CAP_CLS: Record<string, string> = {
 };
 
 export function DeTaiPage() {
+  const { data: deTaiList, loading, error } = useAsyncData(fetchDeTai, []);
   return (
     <div>
       <PageHeader
@@ -30,6 +33,7 @@ export function DeTaiPage() {
         <KpiCard icon={AlertTriangle} label="Trễ tiến độ" value="2" tone="accent" />
       </div>
 
+      <DataState loading={loading} error={error} empty={deTaiList.length === 0} />
       <div className="card overflow-x-auto">
         <table className="w-full min-w-[900px]">
           <thead>
