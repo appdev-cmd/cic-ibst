@@ -27,8 +27,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
+    supabase.auth.getSession().then(async ({ data }) => {
+      let s = data.session;
+      // Tự đăng nhập khi chạy local (npm run dev) để tiện test — không áp dụng cho bản build
+      if (
+        !s &&
+        import.meta.env.DEV &&
+        import.meta.env.VITE_AUTO_LOGIN === 'true' &&
+        import.meta.env.VITE_AUTO_LOGIN_EMAIL &&
+        import.meta.env.VITE_AUTO_LOGIN_PASSWORD
+      ) {
+        const { data: signed } = await supabase.auth.signInWithPassword({
+          email: import.meta.env.VITE_AUTO_LOGIN_EMAIL,
+          password: import.meta.env.VITE_AUTO_LOGIN_PASSWORD,
+        });
+        s = signed.session;
+      }
+      setSession(s);
       setLoading(false);
     });
     const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
