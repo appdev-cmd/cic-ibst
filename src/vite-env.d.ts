@@ -6,6 +6,7 @@ interface ImportMetaEnv {
   readonly VITE_AUTO_LOGIN?: string;
   readonly VITE_AUTO_LOGIN_EMAIL?: string;
   readonly VITE_AUTO_LOGIN_PASSWORD?: string;
+  readonly VITE_SKIP_AUTH?: string;
 }
 
 interface ImportMeta {

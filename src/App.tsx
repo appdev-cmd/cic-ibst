@@ -14,9 +14,12 @@ import { NhanSuPage } from './pages/NhanSuPage';
 import { DaoTaoPage } from './pages/DaoTaoPage';
 import { BaoCaoPage } from './pages/BaoCaoPage';
 
+const SKIP_AUTH = import.meta.env.DEV && import.meta.env.VITE_SKIP_AUTH === 'true';
+
 function RequireAuth({ children }: { children: ReactNode }) {
   const { session, loading } = useAuth();
   const location = useLocation();
+  if (SKIP_AUTH) return children;
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-page">
