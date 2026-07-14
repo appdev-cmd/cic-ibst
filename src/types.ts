@@ -11,6 +11,7 @@ export interface VanBan {
   trichYeu: string;
   loai: 'Đến' | 'Đi';
   donVi: string;
+  donViId: string | null;
   ngay: string;
   trangThai: TrangThai;
 }
@@ -20,8 +21,11 @@ export interface DeTai {
   maSo: string;
   ten: string;
   cap: 'Nhà nước' | 'Bộ' | 'Cơ sở';
+  capMa: string;
   chuNhiem: string;
+  chuNhiemId: string | null;
   donVi: string;
+  donViId: string | null;
   kinhPhi: number; // triệu đồng
   tienDo: number; // %
   hanNghiemThu: string;
@@ -33,7 +37,9 @@ export interface HopDong {
   soHD: string;
   ten: string;
   khachHang: string;
+  khachHangId: string | null;
   donViThucHien: string;
+  donViId: string | null;
   giaTri: number; // triệu đồng
   daThanhToan: number; // triệu đồng
   ngayKy: string;
@@ -46,7 +52,9 @@ export interface MauThiNghiem {
   maPhieu: string;
   tenMau: string;
   phepThu: string;
+  tieuChuan: string;
   khachHang: string;
+  khachHangId: string | null;
   phongThiNghiem: string;
   ngayNhan: string;
   hanTra: string;
@@ -95,6 +103,7 @@ export interface LopDaoTao {
   id: string;
   ten: string;
   loai: 'NCS' | 'Tập huấn' | 'Hội thảo';
+  loaiMa: string;
   soHocVien: number;
   batDau: string;
   ketThuc: string;

@@ -24,6 +24,11 @@ const CONFIG: Record<TrangThai, { label: string; cls: string }> = {
   },
 };
 
+/** Danh sách trạng thái cho select lọc/form (thứ tự theo vòng đời). */
+export const TRANG_THAI_OPTIONS: { value: TrangThai; label: string }[] = (
+  ['moi', 'dang-thuc-hien', 'cho-duyet', 'hoan-thanh', 'qua-han'] as TrangThai[]
+).map((v) => ({ value: v, label: CONFIG[v].label }));
+
 export function StatusBadge({ value }: { value: TrangThai }) {
   const c = CONFIG[value];
   return (
