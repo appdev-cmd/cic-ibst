@@ -12,11 +12,14 @@ import {
   Handshake,
   Building2,
   LoaderCircle,
+  GitBranch,
+  List,
 } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { KpiCard } from '../components/KpiCard';
 import { DataState } from '../components/DataState';
 import { Modal, Field, inputCls } from '../components/Modal';
+import { OrgChartTree } from '../components/OrgChartTree';
 import { useAsyncData } from '../hooks/useAsyncData';
 import {
   LOAI_DON_VI,
@@ -52,6 +55,7 @@ export function DonViPage() {
   const { data: donViList, loading, error, refetch } = useAsyncData(fetchDonVi, []);
   const { data: nhanSuList } = useAsyncData(fetchNhanSuFull, []);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [view, setView] = useState<'tree' | 'list'>('tree');
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<DonVi | null>(null);
   const [form, setForm] = useState<DonViInput>(EMPTY_FORM);
@@ -158,10 +162,43 @@ export function DonViPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-        {/* Cây cơ cấu tổ chức */}
-        <div className="card overflow-hidden">
-          <h3 className="border-b border-border px-4 py-3 text-sm font-bold">Sơ đồ cơ cấu tổ chức</h3>
+      <div className="mb-4 card overflow-hidden">
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+          <h3 className="text-sm font-bold">Sơ đồ cơ cấu tổ chức</h3>
+          <div className="flex items-center gap-1 rounded-lg bg-muted p-0.5">
+            <button
+              onClick={() => setView('tree')}
+              className={cn(
+                'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold transition-all',
+                view === 'tree'
+                  ? 'bg-surface text-primary-600 shadow-card dark:text-primary-300'
+                  : 'text-ink-muted hover:text-ink',
+              )}
+            >
+              <GitBranch size={13} /> Sơ đồ cây
+            </button>
+            <button
+              onClick={() => setView('list')}
+              className={cn(
+                'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold transition-all',
+                view === 'list'
+                  ? 'bg-surface text-primary-600 shadow-card dark:text-primary-300'
+                  : 'text-ink-muted hover:text-ink',
+              )}
+            >
+              <List size={13} /> Danh sách
+            </button>
+          </div>
+        </div>
+
+        {view === 'tree' ? (
+          <OrgChartTree
+            donViList={donViList}
+            nhanSuList={nhanSuList}
+            selectedId={selected?.id ?? null}
+            onSelect={setSelectedId}
+          />
+        ) : (
           <div className="max-h-[560px] overflow-y-auto p-3">
             {LOAI_DON_VI.map(({ ma, ten }) => {
               const items = donViList.filter((d) => d.loai === ma);
@@ -194,12 +231,13 @@ export function DonViPage() {
               );
             })}
           </div>
-        </div>
+        )}
+      </div>
 
-        {/* Chi tiết đơn vị */}
-        <div className="xl:col-span-2">
-          {selected ? (
-            <div className="card p-5">
+      {/* Chi tiết đơn vị */}
+      <div>
+        {selected ? (
+          <div className="card p-5">
               <div className="mb-4 flex flex-wrap items-start justify-between gap-3 border-b border-border-subtle pb-4">
                 <div>
                   <div className="mb-1.5 flex flex-wrap items-center gap-2">
@@ -330,7 +368,6 @@ export function DonViPage() {
             )
           )}
         </div>
-      </div>
 
       {/* Modal thêm/sửa */}
       <Modal
