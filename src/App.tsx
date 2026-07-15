@@ -14,7 +14,6 @@ import { DaoTaoPage } from './pages/DaoTaoPage';
 import { SoHuuTriTuePage } from './pages/SoHuuTriTuePage';
 import { KhachHangPage } from './pages/KhachHangPage';
 import { HoSoTaiLieuPage } from './pages/HoSoTaiLieuPage';
-import { BaoCaoPage } from './pages/BaoCaoPage';
 import { CaiDatPage } from './pages/CaiDatPage';
 
 const SKIP_AUTH = import.meta.env.DEV && import.meta.env.VITE_SKIP_AUTH === 'true';
@@ -56,7 +55,6 @@ export default function App() {
         <Route path="/nhan-su" element={<NhanSuPage />} />
         <Route path="/dao-tao" element={<DaoTaoPage />} />
         <Route path="/so-huu-tri-tue" element={<SoHuuTriTuePage />} />
-        <Route path="/bao-cao" element={<BaoCaoPage />} />
         <Route path="/cai-dat" element={<CaiDatPage />} />
       </Route>
     </Routes>

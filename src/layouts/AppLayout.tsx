@@ -50,7 +50,6 @@ const NAV = [
   { to: '/don-vi', label: 'Đơn vị - Tổ chức', icon: Network },
   { to: '/nhan-su', label: 'Nhân sự', icon: Users },
   { to: '/dao-tao', label: 'Đào tạo - Hội nghị', icon: GraduationCap },
-  { to: '/bao-cao', label: 'Báo cáo - BI', icon: BarChart3 },
 ];
 
 export function AppLayout() {
