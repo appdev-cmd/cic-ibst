@@ -2,6 +2,13 @@
 
 *Ngày đánh giá: 14/07/2026 — dựa trên mã nguồn thực tế (`src/`) và CSDL Supabase (3 migration).*
 
+> **CẬP NHẬT 15/07/2026 — ĐÃ HOÀN THÀNH CẢ 3 GIAI ĐOẠN.**
+> - **GĐ1**: 7 module nghiệp vụ đạt mức A− (CRUD thật + KPI thật + tìm kiếm/lọc/phân trang); migration 0004 RLS ghi.
+> - **GĐ2** (migration 0005): đợt thanh toán + công nợ hợp đồng; quy trình phiếu LIMS (kết quả theo chỉ tiêu, chuyển trạng thái, in phiếu); mốc nghiệm thu đề tài; đính kèm văn bản qua Supabase Storage; CRUD chứng chỉ hành nghề; sơ đồ tổ chức theo phân công Phó Viện trưởng (PA-B).
+> - **GĐ3** (migration 0006): phân quyền 4 vai trò + siết RLS (bỏ đọc anon, quản trị-only cho danh mục/vai trò, nhật ký chỉ lãnh đạo); trang Cài đặt (người dùng/danh mục/nhật ký); Dashboard + Tài chính + Báo cáo dùng số liệu thật (đã gỡ `data/mock.ts`) + xuất CSV + cổng tra cứu kết quả; tìm kiếm toàn cục Ctrl+K; chuông thông báo việc sắp/quá hạn.
+>
+> Mỗi hạng mục đã type-check sạch và kiểm thử trực tiếp trên trình duyệt với Supabase thật.
+
 ---
 
 ## PHẦN 1. ĐÁNH GIÁ HIỆN TRẠNG

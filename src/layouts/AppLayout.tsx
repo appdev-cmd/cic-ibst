@@ -11,7 +11,6 @@ import {
   Network,
   GraduationCap,
   BarChart3,
-  Bell,
   Search,
   Building2,
   Settings,
@@ -27,6 +26,8 @@ import {
 import { cn } from '../lib/utils';
 import { useTheme, type Theme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import { GlobalSearch } from '../components/GlobalSearch';
+import { Notifications } from '../components/Notifications';
 
 const THEME_OPTIONS: { value: Theme; icon: typeof Sun; title: string; activeCls: string }[] = [
   { value: 'light', icon: Sun, title: 'Sáng', activeCls: 'text-primary-600 dark:text-primary-300' },
@@ -65,10 +66,23 @@ export function AppLayout() {
   const [collapsed, setCollapsed] = useState(
     () => localStorage.getItem('sidebar-collapsed') === 'true',
   );
+  const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('sidebar-collapsed', String(collapsed));
   }, [collapsed]);
+
+  // Ctrl/Cmd + K mở tìm kiếm toàn cục
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   return (
     <div className="flex h-screen overflow-hidden bg-page">
@@ -154,16 +168,22 @@ export function AppLayout() {
                 </>
               )}
             </button>
-            <button
-              className={cn(
-                'mb-1 flex w-full items-center gap-3 rounded-lg border-l-[3px] border-l-transparent px-4 py-3 text-[13px] font-bold text-ink-muted transition-all hover:bg-muted hover:text-ink',
-                collapsed && 'justify-center px-0',
-              )}
-              title="Cài đặt hệ thống"
+            <NavLink
+              to="/cai-dat"
+              title={collapsed ? 'Cài đặt hệ thống' : undefined}
+              className={({ isActive }) =>
+                cn(
+                  'mb-1 flex w-full items-center gap-3 rounded-lg border-l-[3px] border-l-transparent px-4 py-3 text-[13px] font-bold transition-all',
+                  isActive
+                    ? 'border-l-primary-600 bg-primary-50 text-primary-700 shadow-card dark:border-l-primary-400 dark:bg-primary-900/30 dark:text-primary-300'
+                    : 'text-ink-muted hover:bg-muted hover:text-ink',
+                  collapsed && 'justify-center px-0',
+                )
+              }
             >
               <Settings className="h-[18px] w-[18px]" />
               {!collapsed && <span className="flex-1 text-left">Cài đặt hệ thống</span>}
-            </button>
+            </NavLink>
             <button
               onClick={() => signOut()}
               className={cn(
@@ -188,7 +208,10 @@ export function AppLayout() {
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
               <Search className="h-4 w-4 text-ink-muted" />
             </div>
-            <button className="block w-full cursor-pointer truncate whitespace-nowrap rounded-xl border border-border bg-subtle py-2 pl-10 pr-16 text-left text-sm text-ink-muted shadow-card transition-all hover:bg-muted focus:outline-none">
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="block w-full cursor-pointer truncate whitespace-nowrap rounded-xl border border-border bg-subtle py-2 pl-10 pr-16 text-left text-sm text-ink-muted shadow-card transition-all hover:bg-muted focus:outline-none"
+            >
               Tìm hợp đồng, phiếu thử, đề tài...
               <kbd className="absolute right-2 top-1/2 hidden -translate-y-1/2 items-center gap-1 rounded border border-border bg-surface px-1.5 py-0.5 text-[10px] font-bold text-ink-muted sm:inline-flex">
                 Ctrl+K
@@ -217,10 +240,7 @@ export function AppLayout() {
               ))}
             </div>
             <div className="mx-1 hidden h-6 w-px bg-border sm:block" />
-            <button className="relative cursor-pointer rounded-lg p-2 text-ink-muted transition-colors hover:bg-muted hover:text-ink">
-              <Bell size={18} />
-              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full border-2 border-surface bg-accent" />
-            </button>
+            <Notifications />
             <div className="mx-1 hidden h-6 w-px bg-border sm:block" />
             <button className="flex cursor-pointer items-center gap-2.5 rounded-xl p-1.5 pr-2 transition-colors hover:bg-muted">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary-400 to-primary-600 text-xs font-bold text-white ring-2 ring-primary-100 dark:ring-primary-900">
@@ -254,6 +274,8 @@ export function AppLayout() {
           </div>
         </main>
       </div>
+
+      <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
     </div>
   );
 }

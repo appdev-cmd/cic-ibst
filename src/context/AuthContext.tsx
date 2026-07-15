@@ -8,9 +8,12 @@ import {
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 
+export type VaiTro = 'quan-tri' | 'lanh-dao' | 'truong-don-vi' | 'chuyen-vien';
+
 interface AuthContextValue {
   session: Session | null;
   loading: boolean;
+  vaiTro: VaiTro;
   signIn: (email: string, password: string) => Promise<string | null>;
   signOut: () => Promise<void>;
 }
@@ -18,6 +21,7 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue>({
   session: null,
   loading: true,
+  vaiTro: 'chuyen-vien',
   signIn: async () => null,
   signOut: async () => {},
 });
@@ -25,6 +29,7 @@ const AuthContext = createContext<AuthContextValue>({
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [vaiTro, setVaiTro] = useState<VaiTro>('chuyen-vien');
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
@@ -52,6 +57,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => sub.subscription.unsubscribe();
   }, []);
 
+  // Nạp vai trò khi có phiên đăng nhập
+  useEffect(() => {
+    if (!session) {
+      setVaiTro('chuyen-vien');
+      return;
+    }
+    supabase
+      .rpc('fn_vai_tro')
+      .then(({ data }) => setVaiTro((data as VaiTro) ?? 'chuyen-vien'));
+  }, [session]);
+
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     return error ? error.message : null;
@@ -62,7 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ session, loading, signIn, signOut }}>
+    <AuthContext.Provider value={{ session, loading, vaiTro, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );
