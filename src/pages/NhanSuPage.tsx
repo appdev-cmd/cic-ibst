@@ -4,6 +4,7 @@ import {
   Users,
   GraduationCap,
   ShieldAlert,
+  ShieldCheck,
   Search,
   Pencil,
   Trash2,
@@ -13,6 +14,7 @@ import { PageHeader } from '../components/PageHeader';
 import { KpiCard } from '../components/KpiCard';
 import { DataState } from '../components/DataState';
 import { Modal, Field, inputCls } from '../components/Modal';
+import { ChungChiPanel } from '../components/DetailPanels';
 import { useAsyncData } from '../hooks/useAsyncData';
 import {
   fetchNhanSuFull,
@@ -62,6 +64,7 @@ export function NhanSuPage() {
   const [form, setForm] = useState<NhanSuInput>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [ccNhanSu, setCcNhanSu] = useState<NhanSu | null>(null);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -241,6 +244,13 @@ export function NhanSuPage() {
                 <td className="td-cell">
                   <div className="flex justify-end gap-1">
                     <button
+                      onClick={() => setCcNhanSu(ns)}
+                      title="Chứng chỉ hành nghề"
+                      className="rounded-md p-1.5 text-ink-muted transition-colors hover:bg-muted hover:text-primary-600"
+                    >
+                      <ShieldCheck size={14} />
+                    </button>
+                    <button
                       onClick={() => openEdit(ns)}
                       title="Sửa hồ sơ"
                       className="rounded-md p-1.5 text-ink-muted transition-colors hover:bg-muted hover:text-primary-600"
@@ -379,6 +389,18 @@ export function NhanSuPage() {
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* Modal chứng chỉ hành nghề */}
+      <Modal
+        title={ccNhanSu ? `Chứng chỉ hành nghề: ${ccNhanSu.hoTen}` : ''}
+        open={ccNhanSu !== null}
+        onClose={() => setCcNhanSu(null)}
+        wide
+      >
+        {ccNhanSu && (
+          <ChungChiPanel key={ccNhanSu.id} nhanSuId={ccNhanSu.id} onChanged={refetch} />
+        )}
       </Modal>
     </div>
   );

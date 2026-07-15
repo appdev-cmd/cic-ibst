@@ -49,6 +49,7 @@ const EMPTY_FORM: DonViInput = {
   chucNangNhiemVu: '',
   dienThoai: '',
   email: '',
+  phuTrachId: '',
 };
 
 export function DonViPage() {
@@ -68,6 +69,12 @@ export function DonViPage() {
   const nhanSuCuaDonVi = useMemo(
     () => nhanSuList.filter((ns) => selected && ns.donViId === selected.id),
     [nhanSuList, selected],
+  );
+
+  // Lãnh đạo Viện (Viện trưởng + Phó Viện trưởng) để chọn người phụ trách khối
+  const lanhDaoList = useMemo(
+    () => nhanSuList.filter((ns) => ns.chucDanh === 'Viện trưởng' || ns.chucDanh === 'Phó Viện trưởng'),
+    [nhanSuList],
   );
 
   const tongNhanSu = donViList.reduce((s, d) => s + d.soNhanSu, 0);
@@ -93,6 +100,7 @@ export function DonViPage() {
       chucNangNhiemVu: dv.chucNangNhiemVu ?? '',
       dienThoai: dv.dienThoai ?? '',
       email: dv.email ?? '',
+      phuTrachId: dv.phuTrachId ?? '',
     });
     setActionError(null);
     setModalOpen(true);
@@ -410,6 +418,20 @@ export function DonViPage() {
               </select>
             </Field>
           </div>
+          <Field label="Lãnh đạo Viện phụ trách">
+            <select
+              className={inputCls}
+              value={form.phuTrachId}
+              onChange={(e) => setForm({ ...form, phuTrachId: e.target.value })}
+            >
+              <option value="">— Chưa phân công —</option>
+              {lanhDaoList.map((ns) => (
+                <option key={ns.id} value={ns.id}>
+                  {ns.chucDanh} — {ns.hoTen}
+                </option>
+              ))}
+            </select>
+          </Field>
           <Field label="Chức năng nhiệm vụ">
             <textarea
               className={cn(inputCls, 'min-h-24 resize-y')}

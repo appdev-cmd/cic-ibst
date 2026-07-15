@@ -85,28 +85,6 @@ function LeaderNode({ data }: NodeProps) {
   );
 }
 
-function GroupNode({ data }: NodeProps) {
-  const d = data as NodeData;
-  return (
-    <div className="relative">
-      <Handle type="target" position={Position.Top} className="!bg-slate-400" />
-      <Handle type="source" position={Position.Bottom} className="!bg-slate-400" />
-      <div
-        className="min-w-[140px] max-w-[160px] rounded-xl border border-white/20 px-4 py-3 text-center text-white shadow-lg"
-        style={{ background: `linear-gradient(135deg, ${d.color}dd, ${d.color})` }}
-      >
-        <p className="text-[10px] font-black uppercase leading-tight tracking-tight">{d.label}</p>
-        {d.count !== undefined && (
-          <div className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-white/20 px-2 py-0.5">
-            <Users className="h-2.5 w-2.5" />
-            <span className="text-[9px] font-bold">{d.count}</span>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
 function UnitNode({ data }: NodeProps) {
   const d = data as NodeData;
   return (
@@ -131,17 +109,17 @@ function UnitNode({ data }: NodeProps) {
   );
 }
 
-const nodeTypes = { root: RootNode, leader: LeaderNode, group: GroupNode, unit: UnitNode };
+const nodeTypes = { root: RootNode, leader: LeaderNode, unit: UnitNode };
 
-// ─── Layout ───
+// ─── Layout: sơ đồ báo cáo thật (Viện trưởng → Phó VT → đơn vị phụ trách) ───
 
-const UNIT_W = 170;
-const GROUP_GAP = 40;
+const COL_W = 190; // bề rộng mỗi cột (1 Phó VT + các đơn vị bên dưới)
+const COL_GAP = 24;
+const UNIT_ROW_H = 108; // khoảng cách dọc giữa các đơn vị trong cùng cột
 const Y_ROOT = 0;
-const Y_DIRECTOR = 120;
-const Y_DEPUTY = 250;
-const Y_GROUP = 390;
-const Y_UNIT = 520;
+const Y_DIRECTOR = 130;
+const Y_DEPUTY = 280;
+const Y_UNIT_START = 420;
 
 interface Props {
   donViList: DonVi[];
@@ -155,61 +133,83 @@ export function OrgChartTree({ donViList, nhanSuList, selectedId, onSelect }: Pr
     const nodes: Node[] = [];
     const edges: Edge[] = [];
 
-    const vienTruong = nhanSuList.find((n) => n.chucDanh === 'Viện trưởng');
-    const phoVienTruong = nhanSuList.filter((n) => n.chucDanh === 'Phó Viện trưởng');
+    // Chỉ lấy lãnh đạo thuộc khối "Lãnh đạo Viện" (tránh nhầm với Phó Viện trưởng của viện chuyên ngành)
+    const lanhDao = nhanSuList.filter((n) => n.donVi === 'Lãnh đạo Viện');
+    const vienTruong = lanhDao.find((n) => n.chucDanh === 'Viện trưởng');
+    const phoVienTruong = lanhDao.filter((n) => n.chucDanh === 'Phó Viện trưởng');
 
-    const groups = LOAI_DON_VI.filter((l) => l.ma !== 'lanh-dao')
-      .map(({ ma, ten }) => ({ ma, ten, items: donViList.filter((d) => d.loai === ma) }))
-      .filter((g) => g.items.length > 0);
+    const donViThuoc = donViList.filter((d) => d.loai !== 'lanh-dao');
 
-    // Tính toạ độ X cho từng cụm nhóm + đơn vị con
-    let cursorX = 0;
-    const groupCenters: number[] = [];
-    groups.forEach((g) => {
-      const clusterWidth = Math.max(1, g.items.length) * UNIT_W;
-      const startX = cursorX;
-      const centerX = startX + clusterWidth / 2;
-      groupCenters.push(centerX);
+    // Nhóm đơn vị theo Phó Viện trưởng phụ trách; đơn vị chưa phân công → cột "trực thuộc Viện trưởng"
+    const cols: { key: string; pv: NhanSu | null; units: DonVi[] }[] = phoVienTruong.map((pv) => ({
+      key: `deputy-${pv.id}`,
+      pv,
+      units: donViThuoc.filter((d) => d.phuTrachId === pv.id),
+    }));
+    const chuaPhanCong = donViThuoc.filter(
+      (d) => !d.phuTrachId || !phoVienTruong.some((pv) => pv.id === d.phuTrachId),
+    );
+    if (chuaPhanCong.length > 0) {
+      cols.push({ key: 'truc-thuoc', pv: null, units: chuaPhanCong });
+    }
 
-      nodes.push({
-        id: `group-${g.ma}`,
-        type: 'group',
-        position: { x: centerX - 70, y: Y_GROUP },
-        width: 140,
-        height: 85,
-        data: { label: g.ten, count: g.items.length, color: GROUP_COLOR[g.ma] },
-      });
+    const nColRows = Math.max(1, ...cols.map((c) => c.units.length));
 
-      g.items.forEach((dv, i) => {
-        const ux = startX + i * UNIT_W + UNIT_W / 2;
+    // Trải các cột theo chiều ngang
+    const colCenters: number[] = [];
+    cols.forEach((col, ci) => {
+      const colX = ci * (COL_W + COL_GAP);
+      const centerX = colX + COL_W / 2;
+      colCenters.push(centerX);
+
+      // Node đầu cột: Phó Viện trưởng (hoặc nhãn "Trực thuộc Viện trưởng")
+      if (col.pv) {
+        nodes.push({
+          id: col.key,
+          type: 'leader',
+          position: { x: centerX - 80, y: Y_DEPUTY },
+          width: 160,
+          height: 70,
+          data: { label: 'Phó Viện trưởng', subtitle: col.pv.hoTen, kind: 'deputy' },
+        });
+        edges.push({
+          id: `e-dir-${col.key}`,
+          source: 'director',
+          target: col.key,
+          type: 'smoothstep',
+          style: { stroke: '#3995b8', strokeWidth: 1.5 },
+        });
+      }
+
+      const parentId = col.pv ? col.key : 'director';
+      col.units.forEach((dv, ui) => {
+        const uy = Y_UNIT_START + ui * UNIT_ROW_H;
         nodes.push({
           id: `unit-${dv.id}`,
           type: 'unit',
-          position: { x: ux - 80, y: Y_UNIT },
+          position: { x: centerX - 80, y: uy },
           width: 160,
           height: 95,
           data: {
             label: dv.tenVietTat || dv.ten,
             subtitle: dv.truongDonVi ?? undefined,
             count: dv.soNhanSu,
-            color: GROUP_COLOR[g.ma],
+            color: GROUP_COLOR[dv.loai],
             selected: selectedId === dv.id,
             onSelect: () => onSelect(dv.id),
           },
         });
         edges.push({
-          id: `e-group-${dv.id}`,
-          source: `group-${g.ma}`,
+          id: `e-${parentId}-${dv.id}`,
+          source: parentId,
           target: `unit-${dv.id}`,
-          type: 'step',
-          style: { stroke: GROUP_COLOR[g.ma], strokeWidth: 1.5 },
+          type: 'smoothstep',
+          style: { stroke: GROUP_COLOR[dv.loai], strokeWidth: 1.5 },
         });
       });
-
-      cursorX += clusterWidth + GROUP_GAP;
     });
 
-    const totalWidth = cursorX - GROUP_GAP;
+    const totalWidth = cols.length * COL_W + (cols.length - 1) * COL_GAP;
     const centerX = totalWidth / 2;
 
     // Root
@@ -235,50 +235,12 @@ export function OrgChartTree({ donViList, nhanSuList, selectedId, onSelect }: Pr
       id: 'e-root-director',
       source: 'root',
       target: 'director',
-      type: 'step',
+      type: 'smoothstep',
       style: { stroke: '#00415a', strokeWidth: 2 },
     });
 
-    // Phó viện trưởng — dàn hàng ngang quanh tâm
-    const deputyCount = Math.max(1, phoVienTruong.length);
-    const deputySpread = Math.min(320, totalWidth * 0.5);
-    phoVienTruong.forEach((pv, i) => {
-      const dx =
-        deputyCount === 1
-          ? centerX
-          : centerX - deputySpread / 2 + (deputySpread / (deputyCount - 1)) * i;
-      const id = `deputy-${pv.id}`;
-      nodes.push({
-        id,
-        type: 'leader',
-        position: { x: dx - 80, y: Y_DEPUTY },
-        width: 160,
-        height: 70,
-        data: { label: 'Phó Viện trưởng', subtitle: pv.hoTen, kind: 'deputy' },
-      });
-      edges.push({
-        id: `e-director-${id}`,
-        source: 'director',
-        target: id,
-        type: 'step',
-        style: { stroke: '#3995b8', strokeWidth: 1.5 },
-      });
-    });
-
-    // Nhóm đơn vị nối trực tiếp từ Viện trưởng (chưa có dữ liệu phân công theo từng Phó)
-    groupCenters.forEach((_, i) => {
-      const g = groups[i];
-      edges.push({
-        id: `e-director-group-${g.ma}`,
-        source: 'director',
-        target: `group-${g.ma}`,
-        type: 'step',
-        style: { stroke: GROUP_COLOR[g.ma], strokeWidth: 1.5 },
-      });
-    });
-
     const contentWidth = Math.max(totalWidth, 240);
-    const contentHeight = Y_UNIT + 95;
+    const contentHeight = Y_UNIT_START + nColRows * UNIT_ROW_H;
 
     return { nodes, edges, contentWidth, contentHeight };
   }, [donViList, nhanSuList, selectedId, onSelect]);
@@ -341,7 +303,7 @@ export function OrgChartTree({ donViList, nhanSuList, selectedId, onSelect }: Pr
           </div>
         ))}
         <p className="mt-2 max-w-[180px] text-2xs italic text-ink-muted">
-          * Phân công phụ trách theo Phó Viện trưởng chưa có trong dữ liệu — nhóm nối trực tiếp từ Viện trưởng.
+          * Cột dưới mỗi Phó Viện trưởng là các đơn vị được phân công phụ trách (đặt tại form Sửa đơn vị).
         </p>
       </div>
     </div>

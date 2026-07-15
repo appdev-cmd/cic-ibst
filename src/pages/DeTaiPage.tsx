@@ -6,6 +6,7 @@ import { KpiCard } from '../components/KpiCard';
 import { DataState } from '../components/DataState';
 import { Modal, Field, inputCls } from '../components/Modal';
 import { TableToolbar, FilterSelect, Pagination, RowActions } from '../components/TableToolbar';
+import { MocDeTaiPanel } from '../components/DetailPanels';
 import { useAsyncData } from '../hooks/useAsyncData';
 import { useTableControls } from '../hooks/useTableControls';
 import { useCrudForm } from '../hooks/useCrudForm';
@@ -47,6 +48,7 @@ export function DeTaiPage() {
 
   const [filterCap, setFilterCap] = useState('');
   const [filterTrangThai, setFilterTrangThai] = useState('');
+  const [detail, setDetail] = useState<DeTai | null>(null);
 
   const crud = useCrudForm<DeTai, DeTaiInput>({
     empty: EMPTY_FORM,
@@ -148,7 +150,7 @@ export function DeTaiPage() {
           </thead>
           <tbody>
             {table.pageRows.map((dt) => (
-              <tr key={dt.id} className="tr-hover">
+              <tr key={dt.id} className="tr-hover cursor-pointer" onClick={() => setDetail(dt)}>
                 <td className="td-cell font-mono text-xs font-semibold text-primary">{dt.maSo}</td>
                 <td className="td-cell max-w-sm">
                   <p className="truncate font-medium">{dt.ten}</p>
@@ -312,6 +314,30 @@ export function DeTaiPage() {
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* Modal chi tiết đề tài: mốc thực hiện */}
+      <Modal
+        title={detail ? `Đề tài ${detail.maSo}` : ''}
+        open={detail !== null}
+        onClose={() => setDetail(null)}
+        wide
+      >
+        {detail && (
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-base font-bold text-ink">{detail.ten}</h3>
+              <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-xs text-ink-secondary">
+                <span>Cấp: <b className="text-ink">{detail.cap}</b></span>
+                <span>Chủ nhiệm: <b className="text-ink">{detail.chuNhiem}</b></span>
+                <span>Kinh phí: <b className="font-mono text-ink">{formatTrieu(detail.kinhPhi)}</b></span>
+                <span>Tiến độ: <b className="font-mono text-ink">{detail.tienDo}%</b></span>
+                <StatusBadge value={detail.trangThai} />
+              </div>
+            </div>
+            <MocDeTaiPanel key={detail.id} deTaiId={detail.id} />
+          </div>
+        )}
       </Modal>
     </div>
   );

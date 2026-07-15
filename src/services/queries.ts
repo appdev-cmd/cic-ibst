@@ -77,7 +77,9 @@ export async function fetchKhachHangOptions(): Promise<Option[]> {
 export async function fetchVanBan(): Promise<VanBan[]> {
   const { data, error } = await supabase
     .from('van_ban')
-    .select('id, so_hieu, trich_yeu, loai, don_vi_id, ngay_van_ban, trang_thai, don_vi(ten_don_vi)')
+    .select(
+      'id, so_hieu, trich_yeu, loai, don_vi_id, ngay_van_ban, trang_thai, tep_dinh_kem, ten_tep, don_vi(ten_don_vi)',
+    )
     .order('ngay_van_ban', { ascending: false });
   throwIf(error);
   return (data ?? []).map((r) => ({
@@ -89,6 +91,8 @@ export async function fetchVanBan(): Promise<VanBan[]> {
     donViId: r.don_vi_id != null ? String(r.don_vi_id) : null,
     ngay: r.ngay_van_ban,
     trangThai: r.trang_thai as TrangThai,
+    tepDinhKem: r.tep_dinh_kem ?? null,
+    tenTep: r.ten_tep ?? null,
   }));
 }
 

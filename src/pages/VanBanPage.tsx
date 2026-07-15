@@ -1,11 +1,12 @@
-import { useMemo, useState } from 'react';
-import { Plus, FileDown, FileUp, AlertTriangle, LoaderCircle } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Plus, FileDown, FileUp, AlertTriangle, LoaderCircle, Paperclip } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { StatusBadge, TRANG_THAI_OPTIONS } from '../components/StatusBadge';
 import { KpiCard } from '../components/KpiCard';
 import { DataState } from '../components/DataState';
 import { Modal, Field, inputCls } from '../components/Modal';
 import { TableToolbar, FilterSelect, Pagination, RowActions } from '../components/TableToolbar';
+import { FileAttachment } from '../components/FileAttachment';
 import { useAsyncData } from '../hooks/useAsyncData';
 import { useTableControls } from '../hooks/useTableControls';
 import { useCrudForm } from '../hooks/useCrudForm';
@@ -35,6 +36,7 @@ export function VanBanPage() {
 
   const [filterLoai, setFilterLoai] = useState('');
   const [filterTrangThai, setFilterTrangThai] = useState('');
+  const [detail, setDetail] = useState<VanBan | null>(null);
 
   const crud = useCrudForm<VanBan, VanBanInput>({
     empty: EMPTY_FORM,
@@ -65,6 +67,15 @@ export function VanBanPage() {
   );
 
   const table = useTableControls(filtered, (vb) => `${vb.soHieu} ${vb.trichYeu} ${vb.donVi}`);
+
+  // Đồng bộ detail đang mở với dữ liệu mới sau khi upload/xóa tệp
+  useEffect(() => {
+    if (detail) {
+      const fresh = vanBanList.find((v) => v.id === detail.id);
+      if (fresh && fresh !== detail) setDetail(fresh);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vanBanList]);
 
   // ─── KPI từ dữ liệu thật ───
   const thang = new Date().toISOString().slice(0, 7);
@@ -136,8 +147,13 @@ export function VanBanPage() {
           </thead>
           <tbody>
             {table.pageRows.map((vb) => (
-              <tr key={vb.id} className="tr-hover">
-                <td className="td-cell font-mono text-xs font-semibold text-primary">{vb.soHieu}</td>
+              <tr key={vb.id} className="tr-hover cursor-pointer" onClick={() => setDetail(vb)}>
+                <td className="td-cell font-mono text-xs font-semibold text-primary">
+                  <span className="inline-flex items-center gap-1.5">
+                    {vb.soHieu}
+                    {vb.tepDinhKem && <Paperclip size={12} className="text-ink-muted" />}
+                  </span>
+                </td>
                 <td className="td-cell max-w-md">{vb.trichYeu}</td>
                 <td className="td-cell">
                   <span className={vb.loai === 'Đến' ? 'font-semibold text-info' : 'font-semibold text-success'}>
@@ -249,6 +265,35 @@ export function VanBanPage() {
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* Modal chi tiết + tệp đính kèm */}
+      <Modal
+        title={detail ? `Văn bản ${detail.soHieu}` : ''}
+        open={detail !== null}
+        onClose={() => setDetail(null)}
+        wide
+      >
+        {detail && (
+          <div className="space-y-4">
+            <div>
+              <p className="whitespace-pre-line text-sm text-ink">{detail.trichYeu}</p>
+              <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-xs text-ink-secondary">
+                <span>Loại: <b className="text-ink">Văn bản {detail.loai}</b></span>
+                <span>Đơn vị: <b className="text-ink">{detail.donVi}</b></span>
+                <span>Ngày: <b className="font-mono text-ink">{formatNgay(detail.ngay)}</b></span>
+                <StatusBadge value={detail.trangThai} />
+              </div>
+            </div>
+            <FileAttachment
+              key={detail.id}
+              vanBanId={detail.id}
+              tepDinhKem={detail.tepDinhKem}
+              tenTep={detail.tenTep}
+              onChanged={refetch}
+            />
+          </div>
+        )}
       </Modal>
     </div>
   );

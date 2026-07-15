@@ -28,8 +28,9 @@ export async function fetchDonVi(): Promise<DonVi[]> {
     .from('don_vi')
     .select(
       `id, ma_dinh_danh, ten_don_vi, ten_viet_tat, loai_don_vi, chuc_nang_nhiem_vu,
-       so_dien_thoai, email, thu_tu,
+       so_dien_thoai, email, thu_tu, phu_trach_id,
        truong:nhan_su!don_vi_truong_don_vi_id_fkey(ho_va_ten, hoc_vi),
+       phu_trach:nhan_su!don_vi_phu_trach_id_fkey(ho_va_ten),
        nhan_su!nhan_su_don_vi_id_fkey(count),
        de_tai(count), hop_dong(count)`,
     )
@@ -37,6 +38,7 @@ export async function fetchDonVi(): Promise<DonVi[]> {
   throwIf(error);
   return (data ?? []).map((r) => {
     const truong = r.truong as unknown as { ho_va_ten: string; hoc_vi: string | null } | null;
+    const phuTrach = r.phu_trach as unknown as { ho_va_ten: string } | null;
     const cnt = (x: unknown) => (x as { count: number }[] | null)?.[0]?.count ?? 0;
     return {
       id: String(r.id),
@@ -48,6 +50,8 @@ export async function fetchDonVi(): Promise<DonVi[]> {
       dienThoai: r.so_dien_thoai,
       email: r.email,
       truongDonVi: truong ? truong.ho_va_ten : null,
+      phuTrachId: r.phu_trach_id != null ? String(r.phu_trach_id) : null,
+      phuTrach: phuTrach ? phuTrach.ho_va_ten : null,
       soNhanSu: cnt(r.nhan_su),
       soDeTai: cnt(r.de_tai),
       soHopDong: cnt(r.hop_dong),
@@ -63,6 +67,7 @@ export interface DonViInput {
   chucNangNhiemVu: string;
   dienThoai: string;
   email: string;
+  phuTrachId: string;
 }
 
 function donViRow(input: DonViInput) {
@@ -73,6 +78,7 @@ function donViRow(input: DonViInput) {
     chuc_nang_nhiem_vu: input.chucNangNhiemVu || null,
     so_dien_thoai: input.dienThoai || null,
     email: input.email || null,
+    phu_trach_id: input.phuTrachId ? Number(input.phuTrachId) : null,
   };
 }
 

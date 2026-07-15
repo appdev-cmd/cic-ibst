@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Plus, Handshake, Banknote, AlertTriangle, LoaderCircle } from 'lucide-react';
+import { DotThanhToanPanel } from '../components/DetailPanels';
 import { PageHeader } from '../components/PageHeader';
 import { StatusBadge, TRANG_THAI_OPTIONS } from '../components/StatusBadge';
 import { KpiCard } from '../components/KpiCard';
@@ -42,6 +43,7 @@ export function HopDongPage() {
 
   const [filterTrangThai, setFilterTrangThai] = useState('');
   const [filterDonVi, setFilterDonVi] = useState('');
+  const [detail, setDetail] = useState<HopDong | null>(null);
 
   const crud = useCrudForm<HopDong, HopDongInput>({
     empty: EMPTY_FORM,
@@ -168,7 +170,7 @@ export function HopDongPage() {
             {table.pageRows.map((hd) => {
               const pct = hd.giaTri > 0 ? Math.round((hd.daThanhToan / hd.giaTri) * 100) : 0;
               return (
-                <tr key={hd.id} className="tr-hover">
+                <tr key={hd.id} className="tr-hover cursor-pointer" onClick={() => setDetail(hd)}>
                   <td className="td-cell font-mono text-xs font-semibold text-primary">{hd.soHD}</td>
                   <td className="td-cell max-w-sm truncate font-medium">{hd.ten}</td>
                   <td className="td-cell text-ink-secondary">{hd.khachHang}</td>
@@ -324,6 +326,34 @@ export function HopDongPage() {
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* Modal chi tiết + đợt thanh toán */}
+      <Modal
+        title={detail ? `Hợp đồng ${detail.soHD}` : ''}
+        open={detail !== null}
+        onClose={() => setDetail(null)}
+        wide
+      >
+        {detail && (
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-base font-bold text-ink">{detail.ten}</h3>
+              <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-xs text-ink-secondary">
+                <span>Khách hàng: <b className="text-ink">{detail.khachHang}</b></span>
+                <span>Đơn vị: <b className="text-ink">{detail.donViThucHien}</b></span>
+                <span>Giá trị: <b className="font-mono text-ink">{formatTrieu(detail.giaTri)}</b></span>
+                <span>Trạng thái: <StatusBadge value={detail.trangThai} /></span>
+              </div>
+            </div>
+            <DotThanhToanPanel
+              key={detail.id}
+              hopDongId={detail.id}
+              giaTri={detail.giaTri}
+              onChanged={refetch}
+            />
+          </div>
+        )}
       </Modal>
     </div>
   );

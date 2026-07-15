@@ -14,6 +14,8 @@ export interface VanBan {
   donViId: string | null;
   ngay: string;
   trangThai: TrangThai;
+  tepDinhKem: string | null;
+  tenTep: string | null;
 }
 
 export interface DeTai {
@@ -93,6 +95,8 @@ export interface DonVi {
   dienThoai: string | null;
   email: string | null;
   truongDonVi: string | null;
+  phuTrachId: string | null;
+  phuTrach: string | null;
   soNhanSu: number;
   soDeTai: number;
   soHopDong: number;

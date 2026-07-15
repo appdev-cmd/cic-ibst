@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
-import { Plus, Microscope, Timer, BadgeCheck, LoaderCircle } from 'lucide-react';
+import { Plus, Microscope, Timer, BadgeCheck, LoaderCircle, Printer, ArrowRight } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { StatusBadge, TRANG_THAI_OPTIONS } from '../components/StatusBadge';
 import { KpiCard } from '../components/KpiCard';
 import { DataState } from '../components/DataState';
 import { Modal, Field, inputCls } from '../components/Modal';
 import { TableToolbar, FilterSelect, Pagination, RowActions } from '../components/TableToolbar';
+import { KetQuaPhepThuPanel } from '../components/DetailPanels';
 import { useAsyncData } from '../hooks/useAsyncData';
 import { useTableControls } from '../hooks/useTableControls';
 import { useCrudForm } from '../hooks/useCrudForm';
@@ -17,8 +18,17 @@ import {
   deleteMauThiNghiem,
   type MauThiNghiemInput,
 } from '../services/queries';
-import type { MauThiNghiem } from '../types';
+import { fetchKetQuaPhepThu, updateTrangThaiMau } from '../services/chitiet';
+import type { MauThiNghiem, TrangThai } from '../types';
 import { formatNgay } from '../lib/utils';
+import { printPhieuKetQua } from '../lib/print';
+
+// Luồng trạng thái phiếu: mới → đang thử → chờ duyệt → hoàn thành
+const NEXT_TRANG_THAI: Partial<Record<TrangThai, { to: TrangThai; label: string }>> = {
+  moi: { to: 'dang-thuc-hien', label: 'Bắt đầu thí nghiệm' },
+  'dang-thuc-hien': { to: 'cho-duyet', label: 'Trình duyệt kết quả' },
+  'cho-duyet': { to: 'hoan-thanh', label: 'Duyệt & phát hành' },
+};
 
 const EMPTY_FORM: MauThiNghiemInput = {
   maPhieu: '',
@@ -41,6 +51,8 @@ export function ThiNghiemPage() {
 
   const [filterTrangThai, setFilterTrangThai] = useState('');
   const [filterPhong, setFilterPhong] = useState('');
+  const [detail, setDetail] = useState<MauThiNghiem | null>(null);
+  const [chuyenTrangThai, setChuyenTrangThai] = useState(false);
 
   const crud = useCrudForm<MauThiNghiem, MauThiNghiemInput>({
     empty: EMPTY_FORM,
@@ -152,7 +164,7 @@ export function ThiNghiemPage() {
           </thead>
           <tbody>
             {table.pageRows.map((m) => (
-              <tr key={m.id} className="tr-hover">
+              <tr key={m.id} className="tr-hover cursor-pointer" onClick={() => setDetail(m)}>
                 <td className="td-cell font-mono text-xs font-semibold text-primary">{m.maPhieu}</td>
                 <td className="td-cell max-w-xs truncate font-medium">{m.tenMau}</td>
                 <td className="td-cell text-ink-secondary">
@@ -302,6 +314,62 @@ export function ThiNghiemPage() {
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* Modal chi tiết phiếu mẫu: kết quả + quy trình + in */}
+      <Modal
+        title={detail ? `Phiếu mẫu ${detail.maPhieu}` : ''}
+        open={detail !== null}
+        onClose={() => setDetail(null)}
+        wide
+      >
+        {detail && (
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h3 className="text-base font-bold text-ink">{detail.tenMau}</h3>
+                <div className="mt-1.5 flex flex-wrap gap-x-5 gap-y-1 text-xs text-ink-secondary">
+                  <span>Phép thử: <b className="text-ink">{[detail.phepThu, detail.tieuChuan].filter(Boolean).join(' ')}</b></span>
+                  <span>KH: <b className="text-ink">{detail.khachHang}</b></span>
+                  <span>Phòng: <b className="text-ink">{detail.phongThiNghiem}</b></span>
+                  <StatusBadge value={detail.trangThai} />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                {NEXT_TRANG_THAI[detail.trangThai] && (
+                  <button
+                    disabled={chuyenTrangThai}
+                    onClick={async () => {
+                      const next = NEXT_TRANG_THAI[detail.trangThai]!;
+                      setChuyenTrangThai(true);
+                      try {
+                        await updateTrangThaiMau(detail.id, next.to);
+                        setDetail({ ...detail, trangThai: next.to });
+                        refetch();
+                      } finally {
+                        setChuyenTrangThai(false);
+                      }
+                    }}
+                    className="flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-primary-600 disabled:opacity-60"
+                  >
+                    {chuyenTrangThai ? <LoaderCircle size={13} className="animate-spin" /> : <ArrowRight size={13} />}
+                    {NEXT_TRANG_THAI[detail.trangThai]!.label}
+                  </button>
+                )}
+                <button
+                  onClick={async () => {
+                    const kq = await fetchKetQuaPhepThu(detail.id);
+                    printPhieuKetQua(detail, kq);
+                  }}
+                  className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-bold text-ink-secondary transition-colors hover:bg-muted"
+                >
+                  <Printer size={13} /> In phiếu
+                </button>
+              </div>
+            </div>
+            <KetQuaPhepThuPanel key={detail.id} mauId={detail.id} />
+          </div>
+        )}
       </Modal>
     </div>
   );
