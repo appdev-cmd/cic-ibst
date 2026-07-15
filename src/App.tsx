@@ -8,10 +8,12 @@ import { VanBanPage } from './pages/VanBanPage';
 import { DeTaiPage } from './pages/DeTaiPage';
 import { HopDongPage } from './pages/HopDongPage';
 import { ThiNghiemPage } from './pages/ThiNghiemPage';
-import { TaiChinhPage } from './pages/TaiChinhPage';
 import { DonViPage } from './pages/DonViPage';
 import { NhanSuPage } from './pages/NhanSuPage';
 import { DaoTaoPage } from './pages/DaoTaoPage';
+import { SoHuuTriTuePage } from './pages/SoHuuTriTuePage';
+import { KhachHangPage } from './pages/KhachHangPage';
+import { HoSoTaiLieuPage } from './pages/HoSoTaiLieuPage';
 import { BaoCaoPage } from './pages/BaoCaoPage';
 import { CaiDatPage } from './pages/CaiDatPage';
 
@@ -47,11 +49,13 @@ export default function App() {
         <Route path="/van-ban" element={<VanBanPage />} />
         <Route path="/de-tai" element={<DeTaiPage />} />
         <Route path="/hop-dong" element={<HopDongPage />} />
+        <Route path="/khach-hang" element={<KhachHangPage />} />
         <Route path="/thi-nghiem" element={<ThiNghiemPage />} />
-        <Route path="/tai-chinh" element={<TaiChinhPage />} />
+        <Route path="/ho-so-tai-lieu" element={<HoSoTaiLieuPage />} />
         <Route path="/don-vi" element={<DonViPage />} />
         <Route path="/nhan-su" element={<NhanSuPage />} />
         <Route path="/dao-tao" element={<DaoTaoPage />} />
+        <Route path="/so-huu-tri-tue" element={<SoHuuTriTuePage />} />
         <Route path="/bao-cao" element={<BaoCaoPage />} />
         <Route path="/cai-dat" element={<CaiDatPage />} />
       </Route>

@@ -1,0 +1,62 @@
+# BẢNG MÔ TẢ TÍNH NĂNG CHI TIẾT HỆ THỐNG ERP TÍCH HỢP IBST
+### Phục vụ công tác Thuyết minh Giải pháp & Thương thảo Hợp đồng Phát triển Phần mềm
+
+---
+
+Hệ thống ERP tích hợp IBST được xây dựng tuân thủ nghiêm ngặt các Khung kiến trúc và Tiêu chuẩn dữ liệu dùng chung của Bộ Xây dựng: **QĐ 942/QĐ-BXD** (Khung kiến trúc), **QĐ 945/QĐ-BXD** (Từ điển dữ liệu), **QĐ 946/QĐ-BXD** (Bảo mật dữ liệu gốc và thông tin định danh cá nhân) và **QĐ 943/QĐ-BXD** (Dữ liệu mở).
+
+Dưới đây là bảng phân tích chi tiết tính năng, độ phức tạp công nghệ và giá trị mang lại của **12 Phân hệ Nghiệp vụ** để phục vụ thương thảo đơn giá phát triển phần mềm:
+
+| STT | Tên Phân hệ | Mô tả Nghiệp vụ chính | Điểm phức tạp công nghệ (Lý do định giá cao) | Giá trị mang lại cho Ban lãnh đạo & Đơn vị |
+| :---: | :--- | :--- | :--- | :--- |
+| **1** | **Quản lý Hợp đồng & Doanh thu** | - Đăng ký hợp đồng dịch vụ kỹ thuật, khảo sát, thiết kế.<br>- Lập kế hoạch doanh thu & tiến độ xuất hóa đơn.<br>- Theo dõi nghiệm thu sản lượng thực tế.<br>- Thống kê nợ đọng khách hàng theo tuổi nợ (30-90-180 ngày).<br>- Tự động hạch toán tỷ lệ trích nộp nghĩa vụ Viện của 16 đơn vị trực thuộc theo QĐ 2815/QĐ-VKH. | - Áp dụng công thức phân bổ tài chính tự động theo mã loại hợp đồng (HĐKT, HĐTV, HĐGS, HĐTN).<br>- Thuật toán quét nợ tự động và đẩy cảnh báo tức thời. | - Viện trưởng kiểm soát 100% dòng doanh thu và tốc độ thu hồi công nợ.<br>- Loại bỏ hoàn toàn sai lệch tính toán nghĩa vụ trích nộp thủ công của các đơn vị. |
+| **2** | **Quản lý Đề tài & Nhiệm vụ KHCN** | - Lưu trữ thuyết minh đề tài cấp Nhà nước, cấp Bộ, cấp cơ sở.<br>- Quản lý tiến độ giải ngân kinh phí sự nghiệp khoa học tạm ứng đợt 1, đợt 2 cho các đơn vị.<br>- Theo dõi các mốc tiến độ chuyên môn (Milestones) và hạn nghiệm thu.<br>- Số hóa tiến độ biên soạn Quy chuẩn Việt Nam (QCVN) và Tiêu chuẩn Việt Nam (TCVN). | - Cơ chế quản lý song song hai chiều: Tiến độ giải ngân kinh phí Nhà nước cấp và Tiến độ sản phẩm KHCN đạt được. | - Ban Giám đốc kiểm soát chặt chẽ việc sử dụng ngân sách KHCN Nhà nước cấp đúng hạn và đúng quy chế tài chính. |
+| **3** | **Kế toán & Quản lý Dòng tiền** | - Ghi nhận dòng tiền về thực tế từ tạm ứng/thanh toán của khách hàng.<br>- Quản lý chi lương cán bộ, nộp thuế nhà nước (GTGT, TNDN, TNCN), trích nộp ngân sách và chi điều hành bộ máy.<br>- Tự động tính số dư khả dụng và cảnh báo dòng tiền âm tại đơn vị trực thuộc. | - Tích hợp API đồng bộ dữ liệu giao dịch ngân hàng thời gian thực hoặc liên thông phần mềm kế toán sẵn có (MISA, Bravo). | - Bảo đảm an toàn thanh khoản toàn Viện.<br>- Lãnh đạo ra quyết định chi đầu tư dựa trên số dư khả dụng thực tế. |
+| **4** | **Quản lý Nhân sự & Tổ chức** | - Quản lý hồ sơ cán bộ công nhân viên (học hàm, học vị, chức danh khoa học).<br>- Quản lý Chứng chỉ hành nghề xây dựng của cá nhân (thiết kế, khảo sát, giám sát...) theo mẫu QĐ 946/QĐ-BXD.<br>- Cảnh báo tự động chứng chỉ hành nghề sắp hết hạn trước 90 ngày. | - Mã hóa dữ liệu nhạy cảm cấp trường thông tin (Số định danh cá nhân, lương).<br>- Phân quyền truy cập đa cấp (RLS) để bảo vệ dữ liệu cá nhân theo QĐ 946. | - Tối ưu hóa việc phân công nhân sự có đủ chứng chỉ hành nghề hợp lệ tham gia gói thầu mới.<br>- Tránh rủi ro pháp lý khi chứng chỉ hết hạn. |
+| **5** | **Quản lý Khách hàng & Đối tác** | - Quản lý cơ sở dữ liệu đối tác chiến lược và khách hàng.<br>- Phân loại: Chủ đầu tư (công/tư), Nhà thầu chính, Đối tác nghiên cứu KHCN & Đào tạo trong và ngoài nước.<br>- Thống kê lịch sử giao dịch và tổng số hợp đồng đã ký kết. | - Thiết lập liên kết dữ liệu chéo (Cross-table reference) tự động tổng hợp số liệu từ phân hệ Hợp đồng sang hồ sơ khách hàng. | - Hỗ trợ phân tích hành vi khách hàng để đưa ra chính sách báo giá dịch vụ kỹ thuật tối ưu.<br>- Quản lý hiệu quả quan hệ đối tác quốc tế. |
+| **6** | **Kho Lưu trữ Hồ sơ Tài liệu Kỹ thuật** | - Lưu trữ số hóa thuyết minh đề tài, bản vẽ kỹ thuật CAD/BIM, báo cáo địa kỹ thuật, biên bản nghiệm thu.<br>- Quản lý trạng thái văn bản (Bản gốc scan, Bản chính thức đã ký số điện tử CA, Bản nháp). | - Phân quyền truy cập tài liệu chi tiết (Granular Access Control) đến từng cấp thư mục, cấp dự án và vai trò của người dùng. | - Bảo vệ tuyệt đối tài sản trí tuệ và bí mật kỹ thuật độc quyền của Viện.<br>- Cán bộ dễ dàng tra cứu hồ sơ dự án cũ để tái sử dụng. |
+| **7** | **Quản lý Thử nghiệm (LIMS)** | - Quy trình tiếp nhận mẫu, phân công phép thử phòng thí nghiệm.<br>- Nhập kết quả thô và tự động tính toán cơ lý theo công thức chuẩn (TCVN, ASTM, Eurocode).<br>- Phê duyệt kết quả đa cấp và xuất **Phiếu kết quả thí nghiệm** chuẩn ISO/IEC 17025 kèm mã QR xác thực. | - Tích hợp bộ công cụ cấu hình biểu mẫu động Excel-like để người dùng tự thiết lập công thức tính toán phép thử mới.<br>- Tích hợp chữ ký số CA điện tử trực tiếp lên tệp PDF. | - Chuẩn hóa và tự động hóa quy trình nghiệp vụ của 11 phòng thí nghiệm LAS-XD toàn quốc.<br>- Rút ngắn 50% thời gian trả kết quả cho khách hàng. |
+| **8** | **Quản lý Đào tạo Sau Đại học (NCS)** | - Quản lý hồ sơ học tập và tiến độ nghiên cứu của Nghiên cứu sinh (Tiến sĩ).<br>- Theo dõi phân công giáo viên hướng dẫn khoa học.<br>- Quản lý các mốc bảo vệ luận án (Chuyên đề, Cấp cơ sở, Cấp Viện) và thủ tục thành lập Hội đồng chấm luận án. | - Xây dựng luồng phê duyệt hồ sơ khoa học đa bước tuân thủ quy chế tuyển sinh và đào tạo Tiến sĩ của Bộ GD&ĐT. | - Số hóa quy trình quản lý đào tạo Tiến sĩ uy tín của Viện.<br>- Đảm bảo NCS hoàn thành luận án đúng thời hạn quy định. |
+| **9** | **Sở hữu Trí tuệ & Chuyển giao Công nghệ** | - Quản lý Bằng độc quyền sáng chế, Giải pháp hữu ích, Bản quyền phần mềm xây dựng của Viện.<br>- Cảnh báo thời hạn đóng phí duy trì bằng độc quyền sáng chế hàng năm.<br>- Quản lý hợp đồng chuyển giao công nghệ, giá trị thương mại và phân bổ hoa hồng khoa học cho tác giả. | - Kết nối trực tiếp dòng tiền thu từ chuyển giao công nghệ về phân hệ Kế toán để tự động tính toán phân bổ lợi ích cho tác giả sáng chế. | - Thương mại hóa hiệu quả kết quả nghiên cứu khoa học.<br>- Khuyến khích cán bộ nghiên cứu sáng tạo thông qua cơ chế phân chia hoa hồng tự động. |
+| **10** | **Quản lý Văn bản & Số hóa DMS** | - Quản lý luồng văn bản đến: Nhận file scan, phân loại, trình Ban Giám đốc phê duyệt chỉ đạo số.<br>- Quản lý luồng văn bản đi: Dự thảo, duyệt nội dung, ký số phát hành điện tử.<br>- Tích hợp chữ ký số CA công cộng và chứng thư số Ban Cơ yếu.<br>- Kết nối gửi/nhận văn bản trực tiếp với Trục liên thông văn bản của Bộ Xây dựng. | - Công cụ thiết lập luồng phê duyệt động (Workflow engine).<br>- Tích hợp cổng API kết nối Trục liên thông văn bản Bộ Xây dựng (nhận/gửi gói tin XML mã hóa ký số CA). | - Triển khai văn phòng không giấy tờ (e-Office).<br>- Tiết kiệm 80% thời gian gửi nhận văn bản với Bộ Xây dựng và các cơ quan trực thuộc khác. |
+| **11** | **Quản lý Thiết bị Lab & Đầu tư Công** | - Danh mục thiết bị thí nghiệm của 11 phòng LAS-XD.<br>- Cảnh báo nhắc lịch hiệu chuẩn/kiểm định máy móc trước 30 ngày để duy trì chứng chỉ phòng thí nghiệm.<br>- Giám sát tiến độ giải ngân vốn đầu tư công các dự án xây dựng của Viện (như tòa nhà 10 tầng). | - Công cụ nhắc nhở thông minh đa kênh (Email/Zalo/Notification) tích hợp lịch biểu hiệu chuẩn thiết bị tự động. | - Đảm bảo tính chính xác pháp lý của thiết bị thí nghiệm phòng Lab.<br>- Kiểm soát chặt chẽ dòng vốn đầu tư công, tránh chậm trễ tiến độ dự án. |
+| **12** | **Trung tâm Cảnh báo & Dự báo BI** | - Hiển thị KPI quản trị thời gian thực của Viện trưởng.<br>- Tính toán chỉ số sức khỏe đơn vị (Unit Health Score) dựa trên doanh thu và nợ quá hạn.<br>- Dự báo dòng tiền về trong 3-6 tháng tới dựa trên tiến độ nghiệm thu. | - Tích hợp các thuật toán BI phân tích xu hướng tài chính và dự báo tự động dòng tiền.<br>- Thiết lập biểu đồ trực quan cao cấp (Composed/Grouped Chart). | - Hỗ trợ Ban Giám đốc Viện đưa ra quyết định điều hành nhanh chóng, chính xác dựa trên số liệu thực tế.<br>- Nhận diện sớm các đơn vị vận hành yếu kém. |
+
+---
+
+## 4. Các Tính năng Độc đáo & Điểm nhấn Nổi bật (Wow Factors)
+
+Đây là các tính năng hiện đại mang tính đột phá của hệ thống, giúp nâng cao năng lực cạnh tranh và thuyết phục đối tác ký kết hợp đồng với mức giá trị cao:
+
+### 1. Bộ công cụ Tính toán Thí nghiệm động (Dynamic TCVN Calculation Engine)
+*   **Mô tả:** Thay vì kỹ thuật viên phòng Lab nhập kết quả tính toán thủ công từ Excel vào phần mềm, hệ thống cung cấp một **trình soạn thảo công thức Excel-like** trực tiếp trên Web. 
+*   **Điểm hay:** Người dùng chỉ cần nhập dữ liệu thô (ví dụ: lực phá hủy bê tông, kích thước mẫu), hệ thống tự động áp dụng công thức tiêu chuẩn (TCVN 3118, TCVN 191...) để tính toán kết quả cường độ nén, tự động đánh giá ĐẠT/KHÔNG ĐẠT và xuất kết quả. Khi tiêu chuẩn nhà nước thay đổi công thức, Trưởng phòng Lab tự cập nhật công thức trực quan mà không cần viết lại mã nguồn phần mềm.
+
+### 2. Xác thực và Bảo mật hóa hồ sơ bằng mã QR động & Chữ ký số (QR-Secure Certificate)
+*   **Mô tả:** Giải quyết triệt để vấn đề làm giả Phiếu kết quả thí nghiệm hoặc Giấy chứng nhận kiểm định chất lượng của Viện ngoài thị trường.
+*   **Điểm hay:** Mỗi Phiếu kết quả thí nghiệm hoặc chứng chỉ được xuất bản từ hệ thống LIMS sẽ tự động được ký số điện tử của Viện. Đồng thời, hệ thống tự động sinh ra một **mã QR động duy nhất** in chìm trên chân trang. Khách hàng hoặc cơ quan thanh tra chỉ cần dùng điện thoại quét mã QR này để truy xuất trực tiếp file gốc được lưu trữ trên máy chủ an toàn của IBST nhằm đối chiếu tính toàn vẹn của dữ liệu, ngăn chặn 100% rủi ro giả mạo tài liệu.
+
+### 3. Trợ lý AI hỗ trợ nghiên cứu & Tra cứu Tiêu chuẩn nhanh (AI-RAG Assistant)
+*   **Mô tả:** Tích hợp mô hình ngôn ngữ lớn (LLM) phục vụ công tác nghiên cứu khoa học và biên soạn tiêu chuẩn của các kỹ sư.
+*   **Điểm hay:** Cán bộ khoa học có thể đặt câu hỏi trực tiếp bằng giọng nói hoặc văn bản (VD: "Quy chuẩn cháy QCVN 06 quy định khoảng cách an toàn phòng cháy đối với nhà công cộng cao trên 50m là bao nhiêu?"). Trợ lý AI tự động truy vấn trong kho tài liệu kỹ thuật số hóa của Viện để trích xuất điều khoản chính xác, trích dẫn văn bản gốc và hiển thị tức thì trên màn hình làm việc, giúp tiết kiệm 90% thời gian tra cứu thủ công.
+
+### 4. Hệ thống Cảnh báo tự động đa kênh (Omnichannel Alert System)
+*   **Mô tả:** Đảm bảo dòng chảy thông tin không bị nghẽn và các mốc thời hạn tài chính/kỹ thuật luôn được tuân thủ nghiêm ngặt.
+*   **Điểm hay:** Các thông tin quan trọng như: thiết bị phòng thí nghiệm đến hạn hiệu chuẩn, công nợ quá hạn, hoặc đề tài sắp đến ngày nghiệm thu sẽ được hệ thống tự động gửi thông báo nhắc nhở qua **Email, SMS, tin nhắn Zalo ZNS** hoặc thông báo đẩy (Push Notification) trực tiếp trên điện thoại của cán bộ phụ trách và lãnh đạo cấp cao.
+
+### 5. Cơ chế đa giao diện thích ứng (Adaptive Eyecare Multi-Theme)
+*   **Mô tả:** Tối ưu hóa trải nghiệm thị giác cho từng đối tượng người dùng cụ thể.
+*   **Điểm hay:** Tích hợp sẵn 3 chế độ giao diện có thể chuyển đổi trong 1 giây:
+    *   *Light Mode:* Giao diện sáng thanh lịch cho hội họp, trình chiếu.
+    *   *Dark Mode:* Giao diện tối chuyên nghiệp, giảm chói mắt cho lập trình viên và kế toán khi phải làm việc liên tục với số liệu phức tạp.
+    *   *Nature Mode:* Giao diện bảo vệ mắt với gam màu xanh lục thảo mộc dịu mát, được thiết kế riêng cho các nhà khoa học thường xuyên phải nghiên cứu văn bản dài vào ban đêm.
+
+---
+
+## 5. Giải pháp Công nghệ nổi bật Bảo vệ Giá trị Hợp đồng
+
+*   **Bảo mật mức hàng (Row-Level Security - RLS):** Đảm bảo tính độc lập dữ liệu tuyệt đối giữa các đơn vị trực thuộc. Đơn vị nào chỉ thấy dữ liệu đơn vị đó, Ban Giám đốc Viện nắm toàn cục. Quyền bảo mật được cấu hình ở tầng cơ sở dữ liệu để chống tin tặc xâm nhập.
+*   **Liên thông Trục văn bản Bộ Xây dựng (MOC Document Axis):** Đảm bảo tích hợp hoàn toàn và đồng bộ hóa công văn với Bộ Xây dựng. Hệ thống hỗ trợ xử lý gói tin định dạng XML mã hóa theo Thông tư 02/2017/TT-VPCP, sử dụng chữ ký số của Ban Cơ yếu Chính phủ để ký số pháp lý gói tin, kết nối qua cổng API Web Service an toàn bảo mật, giúp gửi/nhận công văn đi/đến Bộ Xây dựng và các cơ quan nhà nước liên quan chỉ trong vài giây.
+*   **Khả năng mở rộng (Scalability):** Hệ thống sẵn sàng kết nối mở rộng thêm các phân hệ nâng cao (Mua sắm kho bãi, Điều phối đội xe công tác, Thi đua khen thưởng) mà không phải thay đổi kiến trúc cốt lõi.
+*   **Hạ tầng Cloud Supabase & API Gateway:** Truy cập thời gian thực trên mọi thiết bị di động (Responsive), hỗ trợ đa dạng giao diện (Light/Dark/Nature Mode).
+

@@ -13,18 +13,30 @@ export interface TongQuan {
   mauTrongThang: number;
   tongGiaTriTheoDoi: number;
   congNoPhaiThu: number;
+  hopDongTreHan: number;
+  deTaiTreHan: number;
+  nhanSuSapHetHanChungChi: number;
+  tongLopDaoTaoTrongNam: number;
+  tongHocVienTrongNam: number;
 }
 
 export async function fetchTongQuan(): Promise<TongQuan> {
-  const [dot, hd, dt, mau] = await Promise.all([
+  const [dot, hd, dt, mau, cc, ldt] = await Promise.all([
     supabase.from('dot_thanh_toan').select('so_tien, ngay_thuc_thu'),
-    supabase.from('hop_dong').select('gia_tri, da_thanh_toan, trang_thai'),
-    supabase.from('de_tai').select('trang_thai'),
+    supabase.from('hop_dong').select('gia_tri, da_thanh_toan, trang_thai, han_hoan_thanh'),
+    supabase.from('de_tai').select('trang_thai, han_nghiem_thu'),
     supabase.from('mau_thi_nghiem').select('ngay_nhan'),
+    supabase.from('chung_chi_hanh_nghe').select('ngay_het_han, trang_thai_hieu_luc'),
+    supabase.from('lop_dao_tao').select('so_hoc_vien, ngay_bat_dau'),
   ]);
-  throwIf(dot.error || hd.error || dt.error || mau.error);
+  throwIf(dot.error || hd.error || dt.error || mau.error || cc.error || ldt.error);
 
   const thang = new Date().toISOString().slice(0, 7);
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const in90Days = new Date();
+  in90Days.setDate(in90Days.getDate() + 90);
+  const in90DaysStr = in90Days.toISOString().slice(0, 10);
+
   const doanhThuLuyKe = (dot.data ?? [])
     .filter((r) => r.ngay_thuc_thu && String(r.ngay_thuc_thu).startsWith(String(NAM)))
     .reduce((s, r) => s + Number(r.so_tien), 0);
@@ -40,6 +52,30 @@ export async function fetchTongQuan(): Promise<TongQuan> {
   const deTaiDangTrienKhai = (dt.data ?? []).filter((r) => r.trang_thai === 'dang-thuc-hien').length;
   const mauTrongThang = (mau.data ?? []).filter((r) => String(r.ngay_nhan).startsWith(thang)).length;
 
+  const hopDongTreHan = (hd.data ?? []).filter(
+    (r) => r.trang_thai !== 'hoan-thanh' && r.han_hoan_thanh && String(r.han_hoan_thanh) < todayStr
+  ).length;
+
+  const deTaiTreHan = (dt.data ?? []).filter(
+    (r) => r.trang_thai !== 'hoan-thanh' && r.han_nghiem_thu && String(r.han_nghiem_thu) < todayStr
+  ).length;
+
+  const nhanSuSapHetHanChungChi = (cc.data ?? []).filter(
+    (r) =>
+      r.trang_thai_hieu_luc === 'con-hieu-luc' &&
+      r.ngay_het_han &&
+      String(r.ngay_het_han) >= todayStr &&
+      String(r.ngay_het_han) <= in90DaysStr
+  ).length;
+
+  const tongLopDaoTaoTrongNam = (ldt.data ?? []).filter(
+    (r) => r.ngay_bat_dau && String(r.ngay_bat_dau).startsWith(String(NAM))
+  ).length;
+
+  const tongHocVienTrongNam = (ldt.data ?? [])
+    .filter((r) => r.ngay_bat_dau && String(r.ngay_bat_dau).startsWith(String(NAM)))
+    .reduce((s, r) => s + Number(r.so_hoc_vien), 0);
+
   return {
     doanhThuLuyKe,
     hopDongDangThucHien,
@@ -47,6 +83,11 @@ export async function fetchTongQuan(): Promise<TongQuan> {
     mauTrongThang,
     tongGiaTriTheoDoi,
     congNoPhaiThu,
+    hopDongTreHan,
+    deTaiTreHan,
+    nhanSuSapHetHanChungChi,
+    tongLopDaoTaoTrongNam,
+    tongHocVienTrongNam,
   };
 }
 

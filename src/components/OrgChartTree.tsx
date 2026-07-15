@@ -112,14 +112,17 @@ function UnitNode({ data }: NodeProps) {
 const nodeTypes = { root: RootNode, leader: LeaderNode, unit: UnitNode };
 
 // ─── Layout: sơ đồ báo cáo thật (Viện trưởng → Phó VT → đơn vị phụ trách) ───
+// Các đơn vị dưới cùng một Phó Viện trưởng nằm NGANG HÀNG (cùng cấp), mỗi đơn vị
+// nối thẳng lên Phó VT phụ trách.
 
-const COL_W = 190; // bề rộng mỗi cột (1 Phó VT + các đơn vị bên dưới)
-const COL_GAP = 24;
-const UNIT_ROW_H = 108; // khoảng cách dọc giữa các đơn vị trong cùng cột
+const UNIT_W = 168;
+const UNIT_GAP = 16;
+const UNIT_SLOT = UNIT_W + UNIT_GAP; // footprint ngang của mỗi đơn vị
+const BAND_GAP = 48; // khoảng cách giữa các "band" của từng Phó VT
 const Y_ROOT = 0;
-const Y_DIRECTOR = 130;
-const Y_DEPUTY = 280;
-const Y_UNIT_START = 420;
+const Y_DIRECTOR = 140;
+const Y_DEPUTY = 300;
+const Y_UNIT = 460;
 
 interface Props {
   donViList: DonVi[];
@@ -140,8 +143,8 @@ export function OrgChartTree({ donViList, nhanSuList, selectedId, onSelect }: Pr
 
     const donViThuoc = donViList.filter((d) => d.loai !== 'lanh-dao');
 
-    // Nhóm đơn vị theo Phó Viện trưởng phụ trách; đơn vị chưa phân công → cột "trực thuộc Viện trưởng"
-    const cols: { key: string; pv: NhanSu | null; units: DonVi[] }[] = phoVienTruong.map((pv) => ({
+    // Mỗi Phó VT là một "band" ngang; đơn vị chưa phân công → band "trực thuộc Viện trưởng"
+    const bands: { key: string; pv: NhanSu | null; units: DonVi[] }[] = phoVienTruong.map((pv) => ({
       key: `deputy-${pv.id}`,
       pv,
       units: donViThuoc.filter((d) => d.phuTrachId === pv.id),
@@ -150,44 +153,43 @@ export function OrgChartTree({ donViList, nhanSuList, selectedId, onSelect }: Pr
       (d) => !d.phuTrachId || !phoVienTruong.some((pv) => pv.id === d.phuTrachId),
     );
     if (chuaPhanCong.length > 0) {
-      cols.push({ key: 'truc-thuoc', pv: null, units: chuaPhanCong });
+      bands.push({ key: 'truc-thuoc', pv: null, units: chuaPhanCong });
     }
 
-    const nColRows = Math.max(1, ...cols.map((c) => c.units.length));
+    // Trải các band theo chiều ngang; đơn vị trong band nằm cùng một hàng (Y_UNIT)
+    let cursorX = 0;
+    bands.forEach((band) => {
+      const n = Math.max(1, band.units.length);
+      const bandStart = cursorX;
+      const bandWidth = n * UNIT_SLOT - UNIT_GAP;
+      const bandCenter = bandStart + bandWidth / 2;
 
-    // Trải các cột theo chiều ngang
-    const colCenters: number[] = [];
-    cols.forEach((col, ci) => {
-      const colX = ci * (COL_W + COL_GAP);
-      const centerX = colX + COL_W / 2;
-      colCenters.push(centerX);
-
-      // Node đầu cột: Phó Viện trưởng (hoặc nhãn "Trực thuộc Viện trưởng")
-      if (col.pv) {
+      // Node Phó Viện trưởng ở giữa band
+      if (band.pv) {
         nodes.push({
-          id: col.key,
+          id: band.key,
           type: 'leader',
-          position: { x: centerX - 80, y: Y_DEPUTY },
+          position: { x: bandCenter - 80, y: Y_DEPUTY },
           width: 160,
           height: 70,
-          data: { label: 'Phó Viện trưởng', subtitle: col.pv.hoTen, kind: 'deputy' },
+          data: { label: 'Phó Viện trưởng', subtitle: band.pv.hoTen, kind: 'deputy' },
         });
         edges.push({
-          id: `e-dir-${col.key}`,
+          id: `e-dir-${band.key}`,
           source: 'director',
-          target: col.key,
+          target: band.key,
           type: 'smoothstep',
           style: { stroke: '#3995b8', strokeWidth: 1.5 },
         });
       }
 
-      const parentId = col.pv ? col.key : 'director';
-      col.units.forEach((dv, ui) => {
-        const uy = Y_UNIT_START + ui * UNIT_ROW_H;
+      const parentId = band.pv ? band.key : 'director';
+      band.units.forEach((dv, ui) => {
+        const ux = bandStart + ui * UNIT_SLOT + UNIT_W / 2;
         nodes.push({
           id: `unit-${dv.id}`,
           type: 'unit',
-          position: { x: centerX - 80, y: uy },
+          position: { x: ux - 80, y: Y_UNIT },
           width: 160,
           height: 95,
           data: {
@@ -207,9 +209,11 @@ export function OrgChartTree({ donViList, nhanSuList, selectedId, onSelect }: Pr
           style: { stroke: GROUP_COLOR[dv.loai], strokeWidth: 1.5 },
         });
       });
+
+      cursorX += bandWidth + BAND_GAP;
     });
 
-    const totalWidth = cols.length * COL_W + (cols.length - 1) * COL_GAP;
+    const totalWidth = Math.max(240, cursorX - BAND_GAP);
     const centerX = totalWidth / 2;
 
     // Root
@@ -240,7 +244,7 @@ export function OrgChartTree({ donViList, nhanSuList, selectedId, onSelect }: Pr
     });
 
     const contentWidth = Math.max(totalWidth, 240);
-    const contentHeight = Y_UNIT_START + nColRows * UNIT_ROW_H;
+    const contentHeight = Y_UNIT + 95;
 
     return { nodes, edges, contentWidth, contentHeight };
   }, [donViList, nhanSuList, selectedId, onSelect]);

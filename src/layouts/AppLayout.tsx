@@ -22,6 +22,9 @@ import {
   Sun,
   Moon,
   Leaf,
+  Award,
+  FolderOpen,
+  Users2,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useTheme, type Theme } from '../context/ThemeContext';
@@ -40,8 +43,10 @@ const NAV = [
   { to: '/van-ban', label: 'Văn bản - Điều hành', icon: FileText },
   { to: '/de-tai', label: 'Đề tài KHCN', icon: FlaskConical },
   { to: '/hop-dong', label: 'Hợp đồng dịch vụ', icon: Handshake },
+  { to: '/khach-hang', label: 'Khách hàng - Đối tác', icon: Users2 },
+  { to: '/so-huu-tri-tue', label: 'Sở hữu trí tuệ', icon: Award },
   { to: '/thi-nghiem', label: 'Thí nghiệm (LIMS)', icon: Microscope },
-  { to: '/tai-chinh', label: 'Tài chính - Kế toán', icon: Wallet },
+  { to: '/ho-so-tai-lieu', label: 'Kho hồ sơ tài liệu', icon: FolderOpen },
   { to: '/don-vi', label: 'Đơn vị - Tổ chức', icon: Network },
   { to: '/nhan-su', label: 'Nhân sự', icon: Users },
   { to: '/dao-tao', label: 'Đào tạo - Hội nghị', icon: GraduationCap },
