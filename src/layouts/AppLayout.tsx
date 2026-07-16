@@ -111,7 +111,7 @@ export function AppLayout() {
             >
               <div className="absolute bottom-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
               <div className="flex items-center gap-3 overflow-hidden">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border bg-surface p-1 shadow-card">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-border bg-surface p-1.5 shadow-card">
                   <img src={logo} alt="IBST Logo" className="h-full w-full object-contain" />
                 </div>
                 {!collapsed && (
