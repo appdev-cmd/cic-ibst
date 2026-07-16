@@ -50,9 +50,6 @@ Hệ thống được thiết kế tích hợp các giải pháp kỹ thuật hi
     *   *Dark Mode:* Giao diện tối chuyên sâu giúp giảm điều tiết mắt cho bộ phận kế toán và xử lý số liệu thí nghiệm liên tục.
     *   *Nature Mode:* Giao diện dịu mát bảo vệ mắt (Eyecare) sử dụng tông màu lục chủ đạo, được thiết kế đặc thù cho các chuyên gia khoa học nghiên cứu tài liệu kỹ thuật dài trong môi trường thiếu sáng vào ban đêm.
 
-### * Định hướng Đề xuất Nâng cấp Giai đoạn II (Chưa bao gồm trong gói kinh phí 2.000.000.000 VNĐ):
-*   **Cơ chế Tự động hóa Tính toán Chỉ số Thử nghiệm chuyên ngành (TCVN Computation Engine):** Khả năng lập công thức Excel-like tự động tính toán số liệu thô cho các phép thử thí nghiệm chuyên ngành được định hướng đề xuất như một gói giải pháp nâng cấp mở rộng trong Giai đoạn II để tối ưu hóa ngân sách hiện tại. Trong phạm vi Giai đoạn I, hệ thống LIMS tập trung hoàn thành số hóa quy trình nghiệp vụ tiếp nhận mẫu, phân công phép thử, phê duyệt kết quả đa cấp và kết xuất Phiếu kết quả thử nghiệm chuẩn ISO/IEC 17025.
-
 ---
 
 ## 5. Giải pháp Công nghệ & Kiến trúc Hạ tầng Tiêu chuẩn (Tech Stack)
