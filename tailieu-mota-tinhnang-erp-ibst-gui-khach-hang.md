@@ -5,6 +5,8 @@
 
 Hệ thống ERP tích hợp IBST được thiết kế và xây dựng tuân thủ nghiêm ngặt các Khung kiến trúc và Tiêu chuẩn dữ liệu dùng chung của Bộ Xây dựng: **QĐ 942/QĐ-BXD** (Khung kiến trúc Chính phủ điện tử), **QĐ 945/QĐ-BXD** (Từ điển dữ liệu dùng chung), **QĐ 946/QĐ-BXD** (Quy chế bảo mật dữ liệu gốc và thông tin định danh) và **QĐ 943/QĐ-BXD** (Danh mục dữ liệu mở ngành Xây dựng).
 
+## 1. Danh sách các Phân hệ Nghiệp vụ
+
 Dưới đây là bảng phân tích chi tiết tính năng nghiệp vụ, đặc thù công nghệ và hiệu quả vận hành thực tế của **14 Phân hệ Nghiệp vụ** được thiết lập trong hệ thống:
 
 | STT | Tên Phân hệ | Mô tả Nghiệp vụ chính | Đặc thù phức tạp công nghệ (Yêu cầu phát triển) | Hiệu quả quản lý & Vận hành thực tế |
@@ -26,7 +28,7 @@ Dưới đây là bảng phân tích chi tiết tính năng nghiệp vụ, đặ
 
 ---
 
-## 4. Các Giải pháp Công nghệ Tiên tiến & Tính năng Ưu việt
+## 2. Các Giải pháp Công nghệ Tiên tiến & Tính năng Ưu việt
 
 Hệ thống được thiết kế tích hợp các giải pháp kỹ thuật hiện đại nhằm đáp ứng yêu cầu chuyển đổi số toàn diện của đơn vị sự nghiệp khoa học đầu ngành:
 
@@ -51,7 +53,7 @@ Hệ thống được thiết kế tích hợp các giải pháp kỹ thuật hi
 
 ---
 
-## 5. Giải pháp Công nghệ & Kiến trúc Hạ tầng Tiêu chuẩn (Tech Stack)
+## 3. Giải pháp Công nghệ & Kiến trúc Hạ tầng Tiêu chuẩn (Tech Stack)
 
 Hệ thống được thiết kế dựa trên kiến trúc hiện đại, đảm bảo tính bảo mật tối đa, tuân thủ nghiêm ngặt Luật An ninh mạng Việt Nam và đáp ứng khả năng vận hành liên tục 24/7:
 
