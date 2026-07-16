@@ -5,16 +5,16 @@
 /* ─── Design tokens — Nature theme (nền cát ấm, đồng bộ qlda-ddcn-ht) ─── */
 :root {
   /* Default Primary: Teal */
-  --color-primary-50: #f2f8fc;
-  --color-primary-100: #d4eaf7;
-  --color-primary-200: #b6ccd8;
-  --color-primary-300: #71c4ef;
-  --color-primary-400: #3995b8;
-  --color-primary-500: #00668c;
-  --color-primary-600: #005273;
-  --color-primary-700: #00415a;
-  --color-primary-800: #003047;
-  --color-primary-900: #001f30;
+  --color-primary-50: 242 248 252;
+  --color-primary-100: 212 234 247;
+  --color-primary-200: 182 204 216;
+  --color-primary-300: 113 196 239;
+  --color-primary-400: 57 149 184;
+  --color-primary-500: 0 102 140;
+  --color-primary-600: 0 82 115;
+  --color-primary-700: 0 65 90;
+  --color-primary-800: 0 48 71;
+  --color-primary-900: 0 31 48;
 
   --bg-app: #f0ece1;
   --bg-surface: #fcf9f2;
