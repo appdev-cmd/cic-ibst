@@ -18,11 +18,18 @@ export function LoginPage() {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
-    const err = await signIn(email, password);
+    
+    // Tự động thêm @ibst.vn nếu người dùng chỉ nhập username (không có ký tự @)
+    let loginEmail = email.trim();
+    if (loginEmail && !loginEmail.includes('@')) {
+      loginEmail = `${loginEmail}@ibst.vn`;
+    }
+
+    const err = await signIn(loginEmail, password);
     setSubmitting(false);
     if (err) {
       setError(
-        err === 'Invalid login credentials' ? 'Email hoặc mật khẩu không đúng' : err,
+        err === 'Invalid login credentials' ? 'Tài khoản hoặc mật khẩu không đúng' : err,
       );
       return;
     }
@@ -50,17 +57,17 @@ export function LoginPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="mb-1 block text-2xs font-black uppercase tracking-wider text-ink-muted">
-              Email
+              Tài khoản hoặc Email
             </label>
             <div className="flex items-center gap-2 rounded-xl border border-border bg-subtle px-3 py-2.5 focus-within:border-primary-500">
               <Mail size={16} className="shrink-0 text-ink-muted" />
               <input
-                type="email"
+                type="text"
                 required
                 autoFocus
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="ten@ibst.vn"
+                placeholder="cic hoặc ten@ibst.vn"
                 className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-ink-muted"
               />
             </div>
