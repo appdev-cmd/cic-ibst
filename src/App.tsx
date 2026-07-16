@@ -15,6 +15,7 @@ import { SoHuuTriTuePage } from './pages/SoHuuTriTuePage';
 import { KhachHangPage } from './pages/KhachHangPage';
 import { HoSoTaiLieuPage } from './pages/HoSoTaiLieuPage';
 import { LichCoQuanPage } from './pages/LichCoQuanPage';
+import { CongViecPage } from './pages/CongViecPage';
 import { CaiDatPage } from './pages/CaiDatPage';
 
 const SKIP_AUTH = import.meta.env.DEV && import.meta.env.VITE_SKIP_AUTH === 'true';
@@ -48,6 +49,7 @@ export default function App() {
         <Route path="/" element={<DashboardPage />} />
         <Route path="/van-ban" element={<VanBanPage />} />
         <Route path="/lich-co-quan" element={<LichCoQuanPage />} />
+        <Route path="/cong-viec" element={<CongViecPage />} />
         <Route path="/de-tai" element={<DeTaiPage />} />
         <Route path="/hop-dong" element={<HopDongPage />} />
         <Route path="/khach-hang" element={<KhachHangPage />} />
