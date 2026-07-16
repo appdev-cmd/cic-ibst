@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Building2, Lock, Mail, LoaderCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import logo from '../assets/logo.png';
 
 export function LoginPage() {
   const { session, signIn } = useAuth();
@@ -41,8 +42,8 @@ export function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-page p-4">
       <div className="card w-full max-w-md p-8">
         <div className="mb-6 flex flex-col items-center text-center">
-          <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-xl border border-border bg-surface shadow-card">
-            <Building2 size={30} className="text-primary-500" />
+          <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-xl border border-border bg-surface shadow-card p-1">
+            <img src={logo} alt="IBST Logo" className="h-full w-full object-contain" />
           </div>
           <h1 className="bg-gradient-to-r from-blue-700 via-blue-400 to-blue-800 dark:from-blue-400 dark:via-blue-200 dark:to-blue-400 bg-clip-text text-lg font-black uppercase tracking-wide text-transparent">
             Bộ Xây dựng

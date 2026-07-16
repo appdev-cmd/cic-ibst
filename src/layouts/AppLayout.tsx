@@ -32,6 +32,7 @@ import { useTheme, type Theme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { GlobalSearch } from '../components/GlobalSearch';
 import { Notifications } from '../components/Notifications';
+import logo from '../assets/logo.png';
 
 const THEME_OPTIONS: { value: Theme; icon: typeof Sun; title: string; activeCls: string }[] = [
   { value: 'light', icon: Sun, title: 'Sáng', activeCls: 'text-primary-600 dark:text-primary-300' },
@@ -110,8 +111,8 @@ export function AppLayout() {
             >
               <div className="absolute bottom-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
               <div className="flex items-center gap-3 overflow-hidden">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border bg-surface p-0.5 shadow-card">
-                  <Building2 size={22} className="text-primary-500" />
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border bg-surface p-1 shadow-card">
+                  <img src={logo} alt="IBST Logo" className="h-full w-full object-contain" />
                 </div>
                 {!collapsed && (
                   <div className="flex min-w-0 animate-fade-in flex-col justify-center">
