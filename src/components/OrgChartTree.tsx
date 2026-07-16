@@ -75,16 +75,16 @@ function LeaderNode({ data }: NodeProps) {
         </div>
       ) : (
         <div 
-          className="min-w-[160px] rounded-xl border-2 bg-surface px-5 py-3 text-center shadow-md transition-all hover:shadow-lg"
-          style={{ borderColor: '#AE1E23' }}
+          className="min-w-[190px] rounded-xl border px-5 py-3 text-center shadow-md transition-all hover:shadow-lg text-white"
+          style={{ backgroundColor: '#f97316', borderColor: '#ea580c', borderWidth: '1.5px' }}
         >
           <div className="mb-0.5 flex items-center justify-center gap-1.5">
-            <Award className="h-3.5 w-3.5 text-[#AE1E23]" />
-            <span className="text-[11px] font-black uppercase tracking-tight text-[#AE1E23]">
+            <Award className="h-3.5 w-3.5 text-white/95" />
+            <span className="text-[11px] font-black uppercase tracking-tight text-white whitespace-nowrap">
               {d.label}
             </span>
           </div>
-          {d.subtitle && <p className="text-[11px] font-bold text-ink">{d.subtitle}</p>}
+          {d.subtitle && <p className="text-[11px] font-black text-white">{d.subtitle}</p>}
         </div>
       )}
     </div>
@@ -181,8 +181,8 @@ export function OrgChartTree({ donViList, nhanSuList, selectedId, onSelect }: Pr
         nodes.push({
           id: band.key,
           type: 'leader',
-          position: { x: bandCenter - 80, y: Y_DEPUTY },
-          width: 160,
+          position: { x: bandCenter - 95, y: Y_DEPUTY },
+          width: 190,
           height: 70,
           data: { label: 'Phó Viện trưởng', subtitle: band.pv.hoTen, kind: 'deputy' },
         });
