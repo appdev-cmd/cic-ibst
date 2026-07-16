@@ -25,6 +25,7 @@ import {
   Award,
   FolderOpen,
   Users2,
+  Calendar,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useTheme, type Theme } from '../context/ThemeContext';
@@ -41,6 +42,7 @@ const THEME_OPTIONS: { value: Theme; icon: typeof Sun; title: string; activeCls:
 const NAV = [
   { to: '/', label: 'Tổng quan', icon: LayoutDashboard },
   { to: '/van-ban', label: 'Văn bản - Điều hành', icon: FileText },
+  { to: '/lich-co-quan', label: 'Lịch cơ quan', icon: Calendar },
   { to: '/de-tai', label: 'Đề tài KHCN', icon: FlaskConical },
   { to: '/hop-dong', label: 'Hợp đồng dịch vụ', icon: Handshake },
   { to: '/khach-hang', label: 'Khách hàng - Đối tác', icon: Users2 },
