@@ -56,9 +56,26 @@ Hệ thống được thiết kế tích hợp các giải pháp kỹ thuật hi
 
 ---
 
-## 5. Giải pháp Công nghệ và Kiến trúc Hệ thống tiêu chuẩn
+## 5. Giải pháp Công nghệ & Kiến trúc Hạ tầng Tiêu chuẩn (Tech Stack)
 
-*   **Bảo mật mức hàng (Row-Level Security - RLS):** Đảm bảo tính độc lập dữ liệu tuyệt đối giữa các đơn vị trực thuộc. Đơn vị nào chỉ thấy dữ liệu đơn vị đó, Ban Giám đốc Viện nắm toàn cục. Quyền bảo mật được cấu hình ở tầng cơ sở dữ liệu để chống tin tặc xâm nhập.
-*   **Liên thông Trục văn bản Bộ Xây dựng (MOC Document Exchange Axis):** Đảm bảo tích hợp hoàn toàn và đồng bộ hóa công văn với Bộ Xây dựng. Hệ thống hỗ trợ xử lý gói tin định dạng XML mã hóa theo Thông tư 02/2017/TT-VPCP, sử dụng chữ ký số của Ban Cơ yếu Chính phủ để ký số pháp lý gói tin, kết nối qua cổng API Web Service an toàn bảo mật, giúp gửi/nhận công văn đi/đến Bộ Xây dựng và các cơ quan nhà nước liên quan chỉ trong vài giây.
-*   **Khả năng mở rộng (Scalability):** Hệ thống sẵn sàng kết nối mở rộng thêm các phân hệ nâng cao (Mua sắm kho bãi, Điều phối đội xe công tác, Thi đua khen thưởng) mà không phải thay đổi kiến trúc cốt lõi.
-*   **Hạ tầng Cloud Supabase & API Gateway:** Truy cập thời gian thực trên mọi thiết bị di động (Responsive), hỗ trợ đa dạng giao diện (Light/Dark/Nature Mode).
+Hệ thống được thiết kế dựa trên kiến trúc hiện đại, đảm bảo tính bảo mật tối đa, tuân thủ nghiêm ngặt Luật An ninh mạng Việt Nam và đáp ứng khả năng vận hành liên tục 24/7:
+
+### 1. Hạ tầng Máy chủ & Lưu trữ dữ liệu nội địa (Domestic Cloud Hosting)
+*   **Đối tác hạ tầng:** Hệ thống được cấu hình tối ưu để triển khai trên hạ tầng điện toán đám mây đạt tiêu chuẩn an toàn thông tin cao nhất tại Việt Nam (lựa chọn linh hoạt giữa **Viettel Cloud**, **FPT Smart Cloud**, hoặc **VNPT Cloud**).
+*   **Bảo toàn chủ quyền dữ liệu:** Đảm bảo 100% dữ liệu của Viện IBST được lưu trữ vật lý trên các máy chủ đặt tại Việt Nam, tuân thủ tuyệt đối Nghị định 53/2022/NĐ-CP hướng dẫn Luật An ninh mạng.
+
+### 2. Chi tiết Lớp Công nghệ (Technology Stack)
+*   **Lớp Giao diện (Frontend Client):** 
+    *   Sử dụng thư viện **React** kết hợp ngôn ngữ kiểm soát kiểu chặt chẽ **TypeScript** giúp tối ưu tốc độ tải trang và đảm bảo độ tin cậy của mã nguồn.
+    *   Cấu trúc biên dịch (build) bằng **Vite** tối ưu hóa hiệu năng kết xuất dữ liệu và render biểu đồ thời gian thực.
+    *   Giao diện thiết kế theo triết lý Responsive hiển thị mượt mà trên mọi thiết bị (máy tính để bàn, máy tính bảng, điện thoại di động).
+*   **Lớp Cơ sở dữ liệu & Logic nghiệp vụ (Database & Backend):**
+    *   Hệ quản trị cơ sở dữ liệu **PostgreSQL** kết hợp công nghệ nền tảng **Supabase (phiên bản tự vận hành - Self-hosted)** triển khai trực tiếp trên hạ tầng máy chủ ảo (Cloud VPS/Kubernetes) của nhà cung cấp nội địa.
+    *   Áp dụng cơ chế **Row-Level Security (RLS)** ở lớp cơ sở dữ liệu để phân quyền xem/sửa dữ liệu tự động giữa 16 đơn vị trực thuộc, ngăn chặn rò rỉ chéo thông tin tài chính và đề tài khoa học.
+*   **Lớp Liên thông & Tích hợp (API & Integration):**
+    *   Giao tiếp dữ liệu bảo mật thông qua giao thức **RESTful API** mã hóa SSL/TLS cường độ cao.
+    *   Trục văn bản tích hợp cổng giao tiếp SOAP/REST xử lý gói tin định dạng XML mã hóa theo Thông tư 02/2017/TT-VPCP phục vụ liên thông trực tiếp với Trục văn bản Bộ Xây dựng.
+
+### 3. Tiêu chuẩn An toàn thông tin & Khả năng mở rộng
+*   **Bảo mật đường truyền:** Toàn bộ kết nối được mã hóa HTTPS. Hỗ trợ tích hợp kênh truyền riêng VPN cho các đơn vị cần bảo mật dữ liệu cấp cao.
+*   **Kiến trúc mở rộng (Scalability):** Hệ thống thiết kế dạng Modular Service, cho phép nâng cấp, bổ sung các phân hệ nâng cao (Mua sắm kho bãi, Điều phối đội xe công tác, Thi đua khen thưởng) hoặc liên thông dữ liệu tài chính với Bộ Xây dựng dễ dàng mà không phá vỡ cấu trúc cũ.
