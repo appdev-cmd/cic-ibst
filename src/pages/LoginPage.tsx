@@ -74,7 +74,7 @@ export function LoginPage() {
               khoa học công nghệ.
             </span>
           </h1>
-          <p className="mt-4 text-base xl:text-lg text-ink-secondary font-semibold max-w-sm">
+          <p className="mt-4 text-base xl:text-lg text-ink-secondary font-semibold max-w-xl">
             Tối ưu tiến độ nghiên cứu, kiểm soát hợp đồng dịch vụ khoa học kỹ thuật và thử nghiệm chuyên sâu.
           </p>
 
@@ -138,18 +138,18 @@ export function LoginPage() {
 
       {/* ─── RIGHT COLUMN: LOGIN FORM ─── */}
       <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-6 sm:p-12 relative bg-page transition-colors duration-300">
-        <div className="w-full max-w-[420px] lg:-mt-10">
+        <div className="w-full max-w-[460px] lg:-mt-10">
           
           {/* Logo & Headers */}
           <div className="flex flex-col items-center text-center mb-6 w-full">
-            <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-2xl border border-border bg-surface p-1.5 shadow-card transition-transform hover:scale-105 duration-500">
+            <div className="mb-4 flex h-28 w-28 items-center justify-center rounded-2xl border border-border bg-surface p-2 shadow-card transition-transform hover:scale-105 duration-500">
               <img src={logo} alt="IBST Logo" className="h-full w-full object-contain" />
             </div>
             
             <h2 className="text-[14px] font-bold tracking-[0.15em] uppercase text-ink-muted mb-1 flex justify-center w-full">
               Bộ Xây dựng
             </h2>
-            <h3 className="text-[18px] sm:text-[20px] font-black tracking-wider uppercase leading-snug flex justify-center w-full">
+            <h3 className="text-[17px] sm:text-[19px] font-black tracking-wider uppercase leading-snug flex justify-center w-full">
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-700 via-blue-500 to-blue-800 dark:from-blue-400 dark:via-blue-200 dark:to-blue-400">
                 Viện Khoa học Công nghệ Xây dựng
               </span>
