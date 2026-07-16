@@ -74,6 +74,7 @@ export function AppLayout() {
     () => localStorage.getItem('sidebar-collapsed') === 'true',
   );
   const [searchOpen, setSearchOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('sidebar-collapsed', String(collapsed));
@@ -228,70 +229,125 @@ export function AppLayout() {
 
           {/* Right */}
           <div className="flex shrink-0 items-center justify-end gap-2 sm:gap-3">
-            {/* Theme & Color switcher container */}
-            <div className="flex items-center gap-3">
-              {/* Primary Color Picker */}
-              <div className="flex items-center gap-1.5 rounded-lg bg-muted px-2.5 py-1.5">
-                <button
-                  type="button"
-                  onClick={() => setPrimaryColor('teal')}
-                  className={`w-3.5 h-3.5 rounded-full bg-[#00668c] border transition-all ${
-                    primaryColor === 'teal' ? 'border-ink scale-125 ring-2 ring-primary-200' : 'border-transparent hover:scale-110'
-                  }`}
-                  title="Xanh mặc định"
-                />
-                <button
-                  type="button"
-                  onClick={() => setPrimaryColor('red')}
-                  className={`w-3.5 h-3.5 rounded-full bg-[#ae1e23] border transition-all ${
-                    primaryColor === 'red' ? 'border-ink scale-125 ring-2 ring-primary-200' : 'border-transparent hover:scale-110'
-                  }`}
-                  title="Đỏ IBST"
-                />
-                <button
-                  type="button"
-                  onClick={() => setPrimaryColor('blue')}
-                  className={`w-3.5 h-3.5 rounded-full bg-[#0f52ba] border transition-all ${
-                    primaryColor === 'blue' ? 'border-ink scale-125 ring-2 ring-primary-200' : 'border-transparent hover:scale-110'
-                  }`}
-                  title="Xanh Bộ Xây dựng"
-                />
-              </div>
-
-              {/* Theme switcher — Sáng / Bảo vệ mắt / Tối */}
-              <div className="flex items-center gap-1 rounded-lg bg-muted p-0.5">
-                {THEME_OPTIONS.map(({ value, icon: Icon, title, activeCls }) => (
-                  <button
-                    key={value}
-                    onClick={() => setTheme(value)}
-                    title={title}
-                    className={cn(
-                      'flex cursor-pointer items-center justify-center rounded-md p-2 transition-all',
-                      theme === value
-                        ? cn('border border-border bg-surface shadow-card', activeCls)
-                        : 'text-ink-muted hover:text-ink',
-                    )}
-                  >
-                    <Icon size={16} />
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="mx-1 hidden h-6 w-px bg-border sm:block" />
             <Notifications />
             <div className="mx-1 hidden h-6 w-px bg-border sm:block" />
-            <button className="flex cursor-pointer items-center gap-2.5 rounded-xl p-1.5 pr-2 transition-colors hover:bg-muted">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary-400 to-primary-600 text-xs font-bold text-white ring-2 ring-primary-100 dark:ring-primary-900">
-                {initials || 'ND'}
-              </div>
-              <div className="hidden max-w-[140px] text-left sm:block">
-                <p className="truncate text-xs font-bold leading-tight text-ink">{fullName}</p>
-                <p className="mt-0.5 truncate text-[10px] font-medium leading-tight text-ink-muted">
-                  {session?.user.email}
-                </p>
-              </div>
-              <ChevronDown size={14} className="hidden text-ink-muted sm:block" />
-            </button>
+            
+            {/* User Profile Menu (Dropdown) */}
+            <div className="relative">
+              <button 
+                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                className="flex cursor-pointer items-center gap-2.5 rounded-xl p-1.5 pr-2 transition-colors hover:bg-muted"
+              >
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary-400 to-primary-600 text-xs font-bold text-white ring-2 ring-primary-100 dark:ring-primary-900">
+                  {initials || 'ND'}
+                </div>
+                <div className="hidden max-w-[140px] text-left sm:block">
+                  <p className="truncate text-xs font-bold leading-tight text-ink">{fullName}</p>
+                  <p className="mt-0.5 truncate text-[10px] font-medium leading-tight text-ink-muted">
+                    {session?.user.email}
+                  </p>
+                </div>
+                <ChevronDown size={14} className="hidden text-ink-muted sm:block" />
+              </button>
+
+              {userMenuOpen && (
+                <>
+                  {/* Backdrop to close dropdown */}
+                  <div className="fixed inset-0 z-40" onClick={() => setUserMenuOpen(false)} />
+                  
+                  {/* Dropdown Menu */}
+                  <div className="absolute right-0 mt-2 w-64 origin-top-right rounded-xl border border-border bg-surface p-4 shadow-dropdown z-50 animate-fade-in text-left">
+                    <div className="pb-3 border-b border-border-subtle">
+                      <p className="text-xs font-bold text-ink">{fullName}</p>
+                      <p className="text-2xs text-ink-muted mt-0.5">{session?.user.email}</p>
+                    </div>
+                    
+                    {/* Cài đặt cá nhân */}
+                    <div className="py-3.5 space-y-4 border-b border-border-subtle">
+                      <div className="text-[11px] font-bold text-ink-muted uppercase tracking-wider">Cài đặt cá nhân</div>
+                      
+                      {/* Theme selection */}
+                      <div className="space-y-1.5">
+                        <div className="text-2xs font-semibold text-ink-secondary">Giao diện nền</div>
+                        <div className="flex items-center gap-1 rounded-lg bg-muted p-0.5">
+                          {THEME_OPTIONS.map(({ value, icon: Icon, title, activeCls }) => (
+                            <button
+                              key={value}
+                              onClick={() => setTheme(value)}
+                              title={title}
+                              className={cn(
+                                'flex-1 flex cursor-pointer items-center justify-center rounded-md py-1.5 transition-all text-xs font-semibold',
+                                theme === value
+                                  ? cn('border border-border bg-surface shadow-card', activeCls)
+                                  : 'text-ink-muted hover:text-ink',
+                              )}
+                            >
+                              <Icon size={13} className="mr-1" />
+                              {value === 'light' ? 'Sáng' : value === 'nature' ? 'Bảo vệ' : 'Tối'}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Primary Color selection */}
+                      <div className="space-y-1.5">
+                        <div className="text-2xs font-semibold text-ink-secondary">Màu sắc chủ đạo</div>
+                        <div className="flex items-center gap-2 rounded-lg bg-muted px-2 py-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setPrimaryColor('teal')}
+                            className={`flex-1 flex items-center justify-center gap-1 py-1 px-1 rounded text-[10px] font-bold border transition-all ${
+                              primaryColor === 'teal'
+                                ? 'bg-surface border-border text-ink shadow-sm'
+                                : 'border-transparent text-ink-muted hover:text-ink'
+                            }`}
+                          >
+                            <span className="w-2.5 h-2.5 rounded-full bg-[#00668c]" />
+                            Teal
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setPrimaryColor('red')}
+                            className={`flex-1 flex items-center justify-center gap-1 py-1 px-1 rounded text-[10px] font-bold border transition-all ${
+                              primaryColor === 'red'
+                                ? 'bg-surface border-border text-ink shadow-sm'
+                                : 'border-transparent text-ink-muted hover:text-ink'
+                            }`}
+                          >
+                            <span className="w-2.5 h-2.5 rounded-full bg-[#ae1e23]" />
+                            Đỏ
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setPrimaryColor('blue')}
+                            className={`flex-1 flex items-center justify-center gap-1 py-1 px-1 rounded text-[10px] font-bold border transition-all ${
+                              primaryColor === 'blue'
+                                ? 'bg-surface border-border text-ink shadow-sm'
+                                : 'border-transparent text-ink-muted hover:text-ink'
+                            }`}
+                          >
+                            <span className="w-2.5 h-2.5 rounded-full bg-[#0f52ba]" />
+                            Xanh
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Logout */}
+                    <button
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        signOut();
+                      }}
+                      className="mt-3 flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-bold text-danger hover:bg-danger/10 transition-colors"
+                    >
+                      <LogOut size={14} />
+                      Đăng xuất
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </header>
 
