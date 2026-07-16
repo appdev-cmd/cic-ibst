@@ -78,7 +78,7 @@ export function BaoCaoPage() {
                 tickLine={false}
               />
               <Tooltip cursor={{ fill: 'var(--bg-subtle)' }} contentStyle={{ borderRadius: 8, border: '1px solid var(--border-default)', background: 'var(--bg-elevated)', color: 'var(--text-primary)', fontSize: 13 }} />
-              <Bar dataKey="doanhThu" name="Đã thu" fill="#00668c" radius={[0, 4, 4, 0]} barSize={18} />
+              <Bar dataKey="doanhThu" name="Đã thu" fill="var(--color-primary, #00668c)" radius={[0, 4, 4, 0]} barSize={18} />
             </BarChart>
           </ResponsiveContainer>
         </div>

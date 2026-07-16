@@ -125,15 +125,15 @@ export function TaiChinhPage() {
             <AreaChart data={doanhThuThang}>
               <defs>
                 <linearGradient id="gradTC" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#00668c" stopOpacity={0.25} />
-                  <stop offset="100%" stopColor="#00668c" stopOpacity={0} />
+                  <stop offset="0%" stopColor="var(--color-primary, #00668c)" stopOpacity={0.25} />
+                  <stop offset="100%" stopColor="var(--color-primary, #00668c)" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border-default)" vertical={false} />
               <XAxis dataKey="thang" tick={{ fontSize: 12, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 12, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} width={32} />
               <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid var(--border-default)', background: 'var(--bg-elevated)', color: 'var(--text-primary)', fontSize: 13 }} />
-              <Area type="monotone" dataKey="thucHien" name="Thực thu" stroke="#00668c" strokeWidth={2} fill="url(#gradTC)" />
+              <Area type="monotone" dataKey="thucHien" name="Thực thu" stroke="var(--color-primary, #00668c)" strokeWidth={2} fill="url(#gradTC)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>

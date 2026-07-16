@@ -76,6 +76,7 @@ const THEME_TOKENS: Record<Theme, Record<string, string>> = {
 
 const PRIMARY_COLOR_TOKENS: Record<PrimaryColor, Record<string, string>> = {
   teal: {
+    '--color-primary': '#00668c',
     '--color-primary-50': '242 248 252',
     '--color-primary-100': '212 234 247',
     '--color-primary-200': '182 204 216',
@@ -88,6 +89,7 @@ const PRIMARY_COLOR_TOKENS: Record<PrimaryColor, Record<string, string>> = {
     '--color-primary-900': '0 31 48',
   },
   red: {
+    '--color-primary': '#ae1e23',
     '--color-primary-50': '254 242 242',
     '--color-primary-100': '254 226 226',
     '--color-primary-200': '252 165 165',
@@ -100,6 +102,7 @@ const PRIMARY_COLOR_TOKENS: Record<PrimaryColor, Record<string, string>> = {
     '--color-primary-900': '69 10 10',
   },
   blue: {
+    '--color-primary': '#0f52ba',
     '--color-primary-50': '239 246 255',
     '--color-primary-100': '219 234 254',
     '--color-primary-200': '191 219 254',
