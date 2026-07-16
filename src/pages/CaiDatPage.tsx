@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Users, ListTree, ScrollText, ShieldX, LoaderCircle, Sun, Moon, Leaf, Palette, Layout, User } from 'lucide-react';
+import { Users, ListTree, ScrollText, ShieldX, LoaderCircle } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { DataState } from '../components/DataState';
 import { Modal, Field, inputCls } from '../components/Modal';
@@ -8,7 +8,6 @@ import { useAsyncData } from '../hooks/useAsyncData';
 import { useTableControls } from '../hooks/useTableControls';
 import { useCrudForm } from '../hooks/useCrudForm';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
 import {
   fetchNguoiDung,
   updateNguoiDung,
@@ -25,7 +24,7 @@ import {
 } from '../services/quantri';
 import { cn } from '../lib/utils';
 
-type Tab = 'ca-nhan' | 'nguoi-dung' | 'danh-muc' | 'nhat-ky';
+type Tab = 'nguoi-dung' | 'danh-muc' | 'nhat-ky';
 
 const HANH_DONG_LABEL: Record<string, { label: string; cls: string }> = {
   INSERT: { label: 'Thêm', cls: 'text-success' },
@@ -35,26 +34,33 @@ const HANH_DONG_LABEL: Record<string, { label: string; cls: string }> = {
 
 export function CaiDatPage() {
   const { vaiTro } = useAuth();
-  const [tab, setTab] = useState<Tab>('ca-nhan');
+  const [tab, setTab] = useState<Tab>('nguoi-dung');
 
-  const tabs = useMemo(() => {
-    const list = [{ id: 'ca-nhan' as Tab, label: 'Cài đặt cá nhân', icon: User }];
-    if (vaiTro === 'quan-tri') {
-      list.push(
-        { id: 'nguoi-dung' as Tab, label: 'Người dùng & vai trò', icon: Users },
-        { id: 'danh-muc' as Tab, label: 'Danh mục dữ liệu', icon: ListTree },
-        { id: 'nhat-ky' as Tab, label: 'Nhật ký dữ liệu', icon: ScrollText }
-      );
-    }
-    return list;
-  }, [vaiTro]);
+  if (vaiTro !== 'quan-tri') {
+    return (
+      <div>
+        <PageHeader title="Cài đặt hệ thống" subtitle="Quản trị người dùng, danh mục và nhật ký dữ liệu" />
+        <div className="card flex flex-col items-center gap-2 p-10 text-center">
+          <ShieldX size={32} className="text-ink-muted" />
+          <p className="text-sm font-semibold text-ink">Bạn không có quyền truy cập</p>
+          <p className="text-xs text-ink-muted">Trang này chỉ dành cho vai trò Quản trị hệ thống.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const TABS: { id: Tab; label: string; icon: typeof Users }[] = [
+    { id: 'nguoi-dung', label: 'Người dùng & vai trò', icon: Users },
+    { id: 'danh-muc', label: 'Danh mục dữ liệu', icon: ListTree },
+    { id: 'nhat-ky', label: 'Nhật ký dữ liệu', icon: ScrollText },
+  ];
 
   return (
     <div>
-      <PageHeader title="Cài đặt" subtitle="Tùy chỉnh giao diện cá nhân và quản lý cấu hình hệ thống" />
+      <PageHeader title="Cài đặt hệ thống" subtitle="Quản trị người dùng, danh mục và nhật ký dữ liệu" />
 
       <div className="mb-4 flex gap-1 rounded-xl bg-muted p-1 w-fit">
-        {tabs.map(({ id, label, icon: Icon }) => (
+        {TABS.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             onClick={() => setTab(id)}
@@ -70,153 +76,9 @@ export function CaiDatPage() {
         ))}
       </div>
 
-      {tab === 'ca-nhan' && <CaNhanTab />}
-      {tab === 'nguoi-dung' && vaiTro === 'quan-tri' && <NguoiDungTab />}
-      {tab === 'danh-muc' && vaiTro === 'quan-tri' && <DanhMucTab />}
-      {tab === 'nhat-ky' && vaiTro === 'quan-tri' && <NhatKyTab />}
-    </div>
-  );
-}
-
-function CaNhanTab() {
-  const { theme, setTheme, primaryColor, setPrimaryColor } = useTheme();
-
-  return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Background Theme */}
-      <div className="card p-6">
-        <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-ink">
-          <Layout size={18} className="text-primary-500" />
-          Môi trường nền (Theme Background)
-        </h3>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <button
-            type="button"
-            onClick={() => setTheme('light')}
-            className={cn(
-              'flex flex-col items-center gap-3 rounded-xl border p-5 transition-all hover:bg-muted text-center w-full',
-              theme === 'light'
-                ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-900/10'
-                : 'border-border bg-subtle'
-            )}
-          >
-            <div className={cn(
-              'flex h-10 w-10 items-center justify-center rounded-full',
-              theme === 'light' ? 'bg-primary-500 text-white' : 'bg-muted text-ink-muted'
-            )}>
-              <Sun size={20} />
-            </div>
-            <div>
-              <p className="text-sm font-bold text-ink">Giao diện Sáng</p>
-              <p className="mt-1 text-2xs text-ink-muted">Tối ưu độ sáng khi làm việc ban ngày</p>
-            </div>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setTheme('nature')}
-            className={cn(
-              'flex flex-col items-center gap-3 rounded-xl border p-5 transition-all hover:bg-muted text-center w-full',
-              theme === 'nature'
-                ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-900/10'
-                : 'border-border bg-subtle'
-            )}
-          >
-            <div className={cn(
-              'flex h-10 w-10 items-center justify-center rounded-full',
-              theme === 'nature' ? 'bg-primary-500 text-white' : 'bg-muted text-ink-muted'
-            )}>
-              <Leaf size={20} />
-            </div>
-            <div>
-              <p className="text-sm font-bold text-ink">Bảo vệ mắt</p>
-              <p className="mt-1 text-2xs text-ink-muted">Tông màu cát ấm dịu nhẹ, hạn chế mỏi mắt</p>
-            </div>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setTheme('dark')}
-            className={cn(
-              'flex flex-col items-center gap-3 rounded-xl border p-5 transition-all hover:bg-muted text-center w-full',
-              theme === 'dark'
-                ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-900/10'
-                : 'border-border bg-subtle'
-            )}
-          >
-            <div className={cn(
-              'flex h-10 w-10 items-center justify-center rounded-full',
-              theme === 'dark' ? 'bg-primary-500 text-white' : 'bg-muted text-ink-muted'
-            )}>
-              <Moon size={20} />
-            </div>
-            <div>
-              <p className="text-sm font-bold text-ink">Giao diện Tối</p>
-              <p className="mt-1 text-2xs text-ink-muted">Tiết kiệm pin, thân thiện trong bóng tối</p>
-            </div>
-          </button>
-        </div>
-      </div>
-
-      {/* Primary Color Theme */}
-      <div className="card p-6">
-        <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-ink">
-          <Palette size={18} className="text-primary-500" />
-          Màu sắc chủ đạo (Primary Theme Color)
-        </h3>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <button
-            type="button"
-            onClick={() => setPrimaryColor('teal')}
-            className={cn(
-              'flex items-center gap-4 rounded-xl border p-4 transition-all hover:bg-muted text-left w-full',
-              primaryColor === 'teal'
-                ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-900/10'
-                : 'border-border bg-subtle'
-            )}
-          >
-            <div className="h-10 w-10 rounded-full bg-[#00668c] border border-black/10 shrink-0" />
-            <div>
-              <p className="text-sm font-bold text-ink">Xanh mặc định (Teal)</p>
-              <p className="text-2xs text-ink-muted">Màu mặc định của hệ thống</p>
-            </div>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setPrimaryColor('red')}
-            className={cn(
-              'flex items-center gap-4 rounded-xl border p-4 transition-all hover:bg-muted text-left w-full',
-              primaryColor === 'red'
-                ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-900/10'
-                : 'border-border bg-subtle'
-            )}
-          >
-            <div className="h-10 w-10 rounded-full bg-[#ae1e23] border border-black/10 shrink-0" />
-            <div>
-              <p className="text-sm font-bold text-ink">Đỏ thương hiệu IBST</p>
-              <p className="text-2xs text-ink-muted">Sắc đỏ đặc trưng từ Logo</p>
-            </div>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setPrimaryColor('blue')}
-            className={cn(
-              'flex items-center gap-4 rounded-xl border p-4 transition-all hover:bg-muted text-left w-full',
-              primaryColor === 'blue'
-                ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-900/10'
-                : 'border-border bg-subtle'
-            )}
-          >
-            <div className="h-10 w-10 rounded-full bg-[#0f52ba] border border-black/10 shrink-0" />
-            <div>
-              <p className="text-sm font-bold text-ink">Xanh Bộ Xây dựng</p>
-              <p className="text-2xs text-ink-muted">Xanh dương đậm hoàng gia</p>
-            </div>
-          </button>
-        </div>
-      </div>
+      {tab === 'nguoi-dung' && <NguoiDungTab />}
+      {tab === 'danh-muc' && <DanhMucTab />}
+      {tab === 'nhat-ky' && <NhatKyTab />}
     </div>
   );
 }

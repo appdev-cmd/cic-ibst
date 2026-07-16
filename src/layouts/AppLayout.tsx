@@ -57,7 +57,7 @@ const NAV = [
 
 export function AppLayout() {
   const { pathname } = useLocation();
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, primaryColor, setPrimaryColor } = useTheme();
   const { session, signOut } = useAuth();
   const current = NAV.find((n) => n.to === pathname) ?? NAV[0];
   const fullName =
@@ -177,7 +177,7 @@ export function AppLayout() {
             </button>
             <NavLink
               to="/cai-dat"
-              title={collapsed ? 'Cài đặt' : undefined}
+              title={collapsed ? 'Cài đặt hệ thống' : undefined}
               className={({ isActive }) =>
                 cn(
                   'mb-1 flex w-full items-center gap-3 rounded-lg border-l-[3px] border-l-transparent px-4 py-3 text-[13px] font-bold transition-all',
@@ -189,7 +189,7 @@ export function AppLayout() {
               }
             >
               <Settings className="h-[18px] w-[18px]" />
-              {!collapsed && <span className="flex-1 text-left">Cài đặt</span>}
+              {!collapsed && <span className="flex-1 text-left">Cài đặt hệ thống</span>}
             </NavLink>
             <button
               onClick={() => signOut()}
@@ -228,23 +228,54 @@ export function AppLayout() {
 
           {/* Right */}
           <div className="flex shrink-0 items-center justify-end gap-2 sm:gap-3">
-            {/* Theme switcher — Sáng / Bảo vệ mắt / Tối */}
-            <div className="flex items-center gap-1 rounded-lg bg-muted p-0.5">
-              {THEME_OPTIONS.map(({ value, icon: Icon, title, activeCls }) => (
+            {/* Theme & Color switcher container */}
+            <div className="flex items-center gap-3">
+              {/* Primary Color Picker */}
+              <div className="flex items-center gap-1.5 rounded-lg bg-muted px-2.5 py-1.5">
                 <button
-                  key={value}
-                  onClick={() => setTheme(value)}
-                  title={title}
-                  className={cn(
-                    'flex cursor-pointer items-center justify-center rounded-md p-2 transition-all',
-                    theme === value
-                      ? cn('border border-border bg-surface shadow-card', activeCls)
-                      : 'text-ink-muted hover:text-ink',
-                  )}
-                >
-                  <Icon size={16} />
-                </button>
-              ))}
+                  type="button"
+                  onClick={() => setPrimaryColor('teal')}
+                  className={`w-3.5 h-3.5 rounded-full bg-[#00668c] border transition-all ${
+                    primaryColor === 'teal' ? 'border-ink scale-125 ring-2 ring-primary-200' : 'border-transparent hover:scale-110'
+                  }`}
+                  title="Xanh mặc định"
+                />
+                <button
+                  type="button"
+                  onClick={() => setPrimaryColor('red')}
+                  className={`w-3.5 h-3.5 rounded-full bg-[#ae1e23] border transition-all ${
+                    primaryColor === 'red' ? 'border-ink scale-125 ring-2 ring-primary-200' : 'border-transparent hover:scale-110'
+                  }`}
+                  title="Đỏ IBST"
+                />
+                <button
+                  type="button"
+                  onClick={() => setPrimaryColor('blue')}
+                  className={`w-3.5 h-3.5 rounded-full bg-[#0f52ba] border transition-all ${
+                    primaryColor === 'blue' ? 'border-ink scale-125 ring-2 ring-primary-200' : 'border-transparent hover:scale-110'
+                  }`}
+                  title="Xanh Bộ Xây dựng"
+                />
+              </div>
+
+              {/* Theme switcher — Sáng / Bảo vệ mắt / Tối */}
+              <div className="flex items-center gap-1 rounded-lg bg-muted p-0.5">
+                {THEME_OPTIONS.map(({ value, icon: Icon, title, activeCls }) => (
+                  <button
+                    key={value}
+                    onClick={() => setTheme(value)}
+                    title={title}
+                    className={cn(
+                      'flex cursor-pointer items-center justify-center rounded-md p-2 transition-all',
+                      theme === value
+                        ? cn('border border-border bg-surface shadow-card', activeCls)
+                        : 'text-ink-muted hover:text-ink',
+                    )}
+                  >
+                    <Icon size={16} />
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="mx-1 hidden h-6 w-px bg-border sm:block" />
             <Notifications />
