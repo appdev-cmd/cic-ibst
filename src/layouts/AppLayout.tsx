@@ -115,7 +115,7 @@ export function AppLayout() {
                 </div>
                 {!collapsed && (
                   <div className="flex min-w-0 animate-fade-in flex-col justify-center">
-                    <h1 className="w-full bg-gradient-to-r from-gold-400 via-gold-200 to-gold-400 bg-clip-text text-[14px] font-black uppercase leading-tight tracking-wide text-transparent drop-shadow-sm">
+                    <h1 className="w-full text-[14px] font-black uppercase leading-tight tracking-wide text-primary-800 dark:text-primary-400 drop-shadow-sm">
                       Bộ Xây dựng
                     </h1>
                     <p className="mt-0.5 text-[8px] font-bold uppercase leading-tight tracking-tight text-ink">
