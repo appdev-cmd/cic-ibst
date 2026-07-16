@@ -31,28 +31,27 @@ Dưới đây là bảng phân tích chi tiết tính năng nghiệp vụ, đặ
 
 Hệ thống được thiết kế tích hợp các giải pháp kỹ thuật hiện đại nhằm đáp ứng yêu cầu chuyển đổi số toàn diện của đơn vị sự nghiệp khoa học đầu ngành:
 
-### 1. Cơ chế Tự động hóa Tính toán Chỉ số Thử nghiệm chuyên ngành (TCVN Computation Engine)
-*   **Mô tả giải pháp:** Hệ thống tích hợp công cụ soạn thảo công thức tính toán động tương thích định dạng bảng tính thông dụng trực tiếp trên giao diện web.
-*   **Hiệu quả ứng dụng:** Kỹ thuật viên chỉ cần nhập số liệu đo đạc thực nghiệm thô tại hiện trường hoặc phòng Lab (như lực phá hủy mẫu, kích thước mẫu thử). Hệ thống tự động áp dụng công thức tiêu chuẩn (TCVN 3118 đối với mẫu bê tông, TCVN 191 đối với mẫu kim loại...) để tính toán kết quả cường độ, tự động kiểm tra ngưỡng đạt tiêu chuẩn và kết xuất phiếu kết quả. Trưởng phòng thí nghiệm có quyền điều chỉnh công thức trực quan khi các Tiêu chuẩn Việt Nam được sửa đổi mà không cần can thiệp vào mã nguồn phần mềm.
-
-### 2. Công nghệ Xác thực văn bản số thông qua Mã QR động & Chữ ký số pháp lý (QR-Secure Certificate)
+### 1. Công nghệ Xác thực văn bản số thông qua Mã QR động & Chữ ký số pháp lý (QR-Secure Certificate)
 *   **Mô tả giải pháp:** Số hóa toàn diện quy trình kiểm soát tính toàn vẹn và pháp lý của các tài liệu kỹ thuật, Phiếu kết quả thử nghiệm và Chứng chỉ kiểm định do Viện cấp.
 *   **Hiệu quả ứng dụng:** Toàn bộ các văn bản điện tử và phiếu kết quả kết xuất từ hệ thống LIMS được tự động ký số bằng chữ ký số cơ quan. Đồng thời, hệ thống tự động thiết lập một mã QR động duy nhất in chìm tại chân trang. Cơ quan quản lý, chủ đầu tư hoặc đơn vị thanh tra xây dựng có thể quét mã QR này để truy xuất tức thì tệp gốc lưu trữ tại máy chủ an toàn của Viện nhằm đối chiếu dữ liệu, loại bỏ hoàn toàn rủi ro giả mạo tài liệu kiểm định trên thị trường.
 
-### 3. Giải pháp Trí tuệ nhân tạo hỗ trợ tra cứu văn bản quy phạm kỹ thuật xây dựng (AI-RAG)
+### 2. Giải pháp Trí tuệ nhân tạo hỗ trợ tra cứu văn bản quy phạm kỹ thuật xây dựng (AI-RAG)
 *   **Mô tả giải pháp:** Ứng dụng mô hình ngôn ngữ lớn kết hợp cơ chế truy xuất dữ liệu tăng cường (RAG) trên kho tư liệu khoa học kỹ thuật và quy chuẩn chuyên ngành của Viện.
 *   **Hiệu quả ứng dụng:** Hỗ trợ cán bộ nghiên cứu và kỹ sư thiết kế tra cứu nhanh các quy định kỹ thuật bằng ngôn ngữ tự nhiên (Ví dụ: *"Yêu cầu về giới hạn chịu lửa của cấu kiện chịu lực đối với nhà cao tầng theo QCVN 06:2022 là gì?"*). Trợ lý AI sẽ tự động phân tích kho văn bản số hóa, trích xuất chính xác điều khoản, chương mục liên quan và hiển thị văn bản gốc để phục vụ công tác đối chiếu thiết kế và lập thuyết minh đề tài, rút ngắn 90% thời gian tra cứu.
 
-### 4. Hệ thống Tự động hóa Cảnh báo Đa phương thức (Omnichannel Alerts)
+### 3. Hệ thống Tự động hóa Cảnh báo Đa phương thức (Omnichannel Alerts)
 *   **Mô tả giải pháp:** Cơ chế tự động quét dữ liệu định kỳ để phát hiện các thời hạn hành chính, tài chính và kỹ thuật quan trọng.
 *   **Hiệu quả ứng dụng:** Tự động gửi thông tin nhắc nhở đa kênh (hệ thống thông báo nội bộ, Email công vụ, tin nhắn bảo mật Zalo ZNS) tới cán bộ phụ trách và Lãnh đạo Viện khi có dữ liệu phát sinh: Thiết bị thí nghiệm đến hạn kiểm định/hiệu chuẩn định kỳ, công nợ quá hạn của khách hàng, hoặc thời hạn nghiệm thu đề tài KHCN sự nghiệp.
 
-### 5. Chế độ hiển thị tối ưu hóa thị giác theo môi trường làm việc (Multi-theme Adaptability)
+### 4. Chế độ hiển thị tối ưu hóa thị giác theo môi trường làm việc (Multi-theme Adaptability)
 *   **Mô tả giải pháp:** Thiết kế giao diện đa chế độ màu sắc thích ứng linh hoạt theo thời gian thực.
 *   **Hiệu quả ứng dụng:** Người dùng có thể chuyển đổi linh hoạt giữa 3 giao diện:
     *   *Light Mode:* Giao diện sáng tiêu chuẩn phục vụ báo cáo, hội thảo chuyên đề.
     *   *Dark Mode:* Giao diện tối chuyên sâu giúp giảm điều tiết mắt cho bộ phận kế toán và xử lý số liệu thí nghiệm liên tục.
     *   *Nature Mode:* Giao diện dịu mát bảo vệ mắt (Eyecare) sử dụng tông màu lục chủ đạo, được thiết kế đặc thù cho các chuyên gia khoa học nghiên cứu tài liệu kỹ thuật dài trong môi trường thiếu sáng vào ban đêm.
+
+### * Định hướng Đề xuất Nâng cấp Giai đoạn II (Chưa bao gồm trong gói kinh phí 2.000.000.000 VNĐ):
+*   **Cơ chế Tự động hóa Tính toán Chỉ số Thử nghiệm chuyên ngành (TCVN Computation Engine):** Khả năng lập công thức Excel-like tự động tính toán số liệu thô cho các phép thử thí nghiệm chuyên ngành được định hướng đề xuất như một gói giải pháp nâng cấp mở rộng trong Giai đoạn II để tối ưu hóa ngân sách hiện tại. Trong phạm vi Giai đoạn I, hệ thống LIMS tập trung hoàn thành số hóa quy trình nghiệp vụ tiếp nhận mẫu, phân công phép thử, phê duyệt kết quả đa cấp và kết xuất Phiếu kết quả thử nghiệm chuẩn ISO/IEC 17025.
 
 ---
 
