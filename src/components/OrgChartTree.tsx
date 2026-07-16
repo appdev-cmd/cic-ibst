@@ -60,10 +60,13 @@ function LeaderNode({ data }: NodeProps) {
   const isDirector = d.kind === 'director';
   return (
     <div className="relative">
-      <Handle type="target" position={Position.Top} className="!bg-primary-400" />
-      <Handle type="source" position={Position.Bottom} className="!bg-primary-400" />
+      <Handle type="target" position={Position.Top} className="!bg-[#AE1E23]" />
+      <Handle type="source" position={Position.Bottom} className="!bg-[#AE1E23]" />
       {isDirector ? (
-        <div className="relative min-w-[220px] overflow-hidden rounded-2xl border-2 border-primary-400/40 bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700 px-8 py-4 text-center text-white shadow-xl ring-4 ring-primary-500/20">
+        <div 
+          className="relative min-w-[220px] overflow-hidden rounded-2xl border-2 border-[#AE1E23]/40 px-8 py-4 text-center text-white shadow-xl ring-4 ring-[#AE1E23]/20"
+          style={{ background: 'linear-gradient(135deg, #AE1E23 0%, #881519 100%)', borderColor: '#AE1E23' }}
+        >
           <div className="mb-1 flex items-center justify-center gap-2">
             <Crown className="h-4 w-4 opacity-90" />
             <span className="text-sm font-black uppercase tracking-tight">{d.label}</span>
@@ -71,14 +74,17 @@ function LeaderNode({ data }: NodeProps) {
           {d.subtitle && <p className="text-[11px] font-medium opacity-90">{d.subtitle}</p>}
         </div>
       ) : (
-        <div className="min-w-[160px] rounded-xl border-2 border-primary-200 bg-surface px-5 py-3 text-center shadow-md transition-all hover:shadow-lg dark:border-primary-700">
+        <div 
+          className="min-w-[160px] rounded-xl border-2 bg-surface px-5 py-3 text-center shadow-md transition-all hover:shadow-lg"
+          style={{ borderColor: '#AE1E23' }}
+        >
           <div className="mb-0.5 flex items-center justify-center gap-1.5">
-            <Award className="h-3.5 w-3.5 text-primary-500" />
-            <span className="text-[11px] font-black uppercase tracking-tight text-primary-600 dark:text-primary-400">
+            <Award className="h-3.5 w-3.5 text-[#AE1E23]" />
+            <span className="text-[11px] font-black uppercase tracking-tight text-[#AE1E23]">
               {d.label}
             </span>
           </div>
-          {d.subtitle && <p className="text-[10px] font-medium text-ink-muted">{d.subtitle}</p>}
+          {d.subtitle && <p className="text-[11px] font-bold text-ink">{d.subtitle}</p>}
         </div>
       )}
     </div>
@@ -94,15 +100,21 @@ function UnitNode({ data }: NodeProps) {
         onClick={d.onSelect}
         title={d.label}
         className={cn(
-          'w-40 cursor-pointer rounded-lg border-2 bg-surface px-3 py-2.5 text-center shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover',
-          d.selected ? 'ring-2 ring-primary-500 ring-offset-2 ring-offset-page' : '',
+          'w-40 cursor-pointer rounded-lg border-2 px-3 py-2.5 text-center shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover text-white',
+          d.selected ? 'ring-2 ring-primary-500 ring-offset-2 ring-offset-page border-white scale-102 shadow-lg' : 'border-transparent',
         )}
-        style={{ borderColor: d.selected ? undefined : `${d.color}55` }}
+        style={{ 
+          backgroundColor: d.color || '#64748b',
+        }}
       >
-        <p className="line-clamp-2 text-[11px] font-bold leading-tight text-ink">{d.label}</p>
-        {d.subtitle && <p className="mt-0.5 line-clamp-1 text-2xs text-ink-muted">{d.subtitle}</p>}
-        <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-subtle px-2 py-0.5 text-2xs font-bold text-ink-secondary">
-          <Users size={10} /> {d.count}
+        <p className="line-clamp-2 text-[11px] font-black leading-tight text-white">{d.label}</p>
+        {d.subtitle ? (
+          <p className="mt-1 line-clamp-1 text-2xs font-semibold text-white/90">{d.subtitle}</p>
+        ) : (
+          <p className="mt-1 line-clamp-1 text-2xs italic text-white/60">Chưa cập nhật</p>
+        )}
+        <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-white/20 px-2.5 py-0.5 text-2xs font-black text-white backdrop-blur-sm">
+          <Users size={10} className="text-white/95" /> {d.count}
         </span>
       </button>
     </div>
@@ -179,7 +191,7 @@ export function OrgChartTree({ donViList, nhanSuList, selectedId, onSelect }: Pr
           source: 'director',
           target: band.key,
           type: 'smoothstep',
-          style: { stroke: '#3995b8', strokeWidth: 1.5 },
+          style: { stroke: '#AE1E23', strokeWidth: 1.5 },
         });
       }
 
@@ -240,7 +252,7 @@ export function OrgChartTree({ donViList, nhanSuList, selectedId, onSelect }: Pr
       source: 'root',
       target: 'director',
       type: 'smoothstep',
-      style: { stroke: '#00415a', strokeWidth: 2 },
+      style: { stroke: '#AE1E23', strokeWidth: 2 },
     });
 
     const contentWidth = Math.max(totalWidth, 240);

@@ -76,3 +76,17 @@
 ::-webkit-scrollbar-thumb:hover {
   background: var(--scrollbar-thumb-hover, #b8b0a3);
 }
+
+/* ─── React Flow Controls Custom Styles ─── */
+.react-flow__controls-button {
+  background-color: var(--bg-surface) !important;
+  color: var(--text-primary) !important;
+  fill: var(--text-primary) !important;
+  border-bottom: 1px solid var(--border-subtle) !important;
+}
+.react-flow__controls-button:hover {
+  background-color: var(--bg-hover-row) !important;
+}
+.react-flow__controls-button svg {
+  fill: var(--text-primary) !important;
+}
