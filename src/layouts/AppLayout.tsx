@@ -177,7 +177,7 @@ export function AppLayout() {
             </button>
             <NavLink
               to="/cai-dat"
-              title={collapsed ? 'Cài đặt hệ thống' : undefined}
+              title={collapsed ? 'Cài đặt' : undefined}
               className={({ isActive }) =>
                 cn(
                   'mb-1 flex w-full items-center gap-3 rounded-lg border-l-[3px] border-l-transparent px-4 py-3 text-[13px] font-bold transition-all',
@@ -189,7 +189,7 @@ export function AppLayout() {
               }
             >
               <Settings className="h-[18px] w-[18px]" />
-              {!collapsed && <span className="flex-1 text-left">Cài đặt hệ thống</span>}
+              {!collapsed && <span className="flex-1 text-left">Cài đặt</span>}
             </NavLink>
             <button
               onClick={() => signOut()}
