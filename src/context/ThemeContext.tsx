@@ -8,6 +8,7 @@ import {
 } from 'react';
 
 export type Theme = 'nature' | 'light' | 'dark';
+export type PrimaryColor = 'teal' | 'red' | 'blue';
 
 // Token 3 theme — đồng bộ THEME_TOKENS của qlda-ddcn-ht (context/ThemeContext.tsx)
 const THEME_TOKENS: Record<Theme, Record<string, string>> = {
@@ -73,6 +74,45 @@ const THEME_TOKENS: Record<Theme, Record<string, string>> = {
   },
 };
 
+const PRIMARY_COLOR_TOKENS: Record<PrimaryColor, Record<string, string>> = {
+  teal: {
+    '--color-primary-50': '#f2f8fc',
+    '--color-primary-100': '#d4eaf7',
+    '--color-primary-200': '#b6ccd8',
+    '--color-primary-300': '#71c4ef',
+    '--color-primary-400': '#3995b8',
+    '--color-primary-500': '#00668c',
+    '--color-primary-600': '#005273',
+    '--color-primary-700': '#00415a',
+    '--color-primary-800': '#003047',
+    '--color-primary-900': '#001f30',
+  },
+  red: {
+    '--color-primary-50': '#fef2f2',
+    '--color-primary-100': '#fee2e2',
+    '--color-primary-200': '#fca5a5',
+    '--color-primary-300': '#f87171',
+    '--color-primary-400': '#ef4444',
+    '--color-primary-500': '#ae1e23',
+    '--color-primary-600': '#991b1b',
+    '--color-primary-700': '#8b181c',
+    '--color-primary-800': '#7f1d1d',
+    '--color-primary-900': '#450a0a',
+  },
+  blue: {
+    '--color-primary-50': '#eff6ff',
+    '--color-primary-100': '#dbeafe',
+    '--color-primary-200': '#bfdbfe',
+    '--color-primary-300': '#93c5fd',
+    '--color-primary-400': '#60a5fa',
+    '--color-primary-500': '#0f52ba',
+    '--color-primary-600': '#1d4ed8',
+    '--color-primary-700': '#1e40af',
+    '--color-primary-800': '#1e3a8a',
+    '--color-primary-900': '#172554',
+  },
+};
+
 function applyTheme(theme: Theme) {
   const root = document.documentElement;
   root.classList.toggle('dark', theme === 'dark');
@@ -81,14 +121,25 @@ function applyTheme(theme: Theme) {
   });
 }
 
+function applyPrimaryColor(color: PrimaryColor) {
+  const root = document.documentElement;
+  Object.entries(PRIMARY_COLOR_TOKENS[color]).forEach(([key, value]) => {
+    root.style.setProperty(key, value);
+  });
+}
+
 interface ThemeContextValue {
   theme: Theme;
   setTheme: (t: Theme) => void;
+  primaryColor: PrimaryColor;
+  setPrimaryColor: (c: PrimaryColor) => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
   theme: 'nature',
   setTheme: () => {},
+  primaryColor: 'teal',
+  setPrimaryColor: () => {},
 });
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
@@ -97,16 +148,34 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     return saved === 'dark' || saved === 'light' || saved === 'nature' ? saved : 'nature';
   });
 
+  const [primaryColor, setPrimaryColorState] = useState<PrimaryColor>(() => {
+    const saved = localStorage.getItem('primaryColor');
+    return saved === 'teal' || saved === 'red' || saved === 'blue' ? saved : 'teal';
+  });
+
   useEffect(() => {
     applyTheme(theme);
   }, [theme]);
+
+  useEffect(() => {
+    applyPrimaryColor(primaryColor);
+  }, [primaryColor]);
 
   const setTheme = useCallback((t: Theme) => {
     setThemeState(t);
     localStorage.setItem('theme', t);
   }, []);
 
-  return <ThemeContext.Provider value={{ theme, setTheme }}>{children}</ThemeContext.Provider>;
+  const setPrimaryColor = useCallback((c: PrimaryColor) => {
+    setPrimaryColorState(c);
+    localStorage.setItem('primaryColor', c);
+  }, []);
+
+  return (
+    <ThemeContext.Provider value={{ theme, setTheme, primaryColor, setPrimaryColor }}>
+      {children}
+    </ThemeContext.Provider>
+  );
 }
 
 // eslint-disable-next-line react-refresh/only-export-components

@@ -4,6 +4,18 @@
 
 /* ─── Design tokens — Nature theme (nền cát ấm, đồng bộ qlda-ddcn-ht) ─── */
 :root {
+  /* Default Primary: Teal */
+  --color-primary-50: #f2f8fc;
+  --color-primary-100: #d4eaf7;
+  --color-primary-200: #b6ccd8;
+  --color-primary-300: #71c4ef;
+  --color-primary-400: #3995b8;
+  --color-primary-500: #00668c;
+  --color-primary-600: #005273;
+  --color-primary-700: #00415a;
+  --color-primary-800: #003047;
+  --color-primary-900: #001f30;
+
   --bg-app: #f0ece1;
   --bg-surface: #fcf9f2;
   --bg-subtle: #f5efe6;

@@ -1,11 +1,13 @@
 import { useState, type FormEvent } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { Lock, User, Eye, EyeOff, LoaderCircle, LayoutDashboard, FlaskConical, Users, FileText } from 'lucide-react';
+import { Lock, User, Eye, EyeOff, LoaderCircle, LayoutDashboard, FlaskConical, Users, FileText, Sun, Moon, Leaf } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import logo from '../assets/logo.png';
 
 export function LoginPage() {
   const { session, signIn } = useAuth();
+  const { theme, setTheme, primaryColor, setPrimaryColor } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const [email, setEmail] = useState('');
@@ -42,6 +44,79 @@ export function LoginPage() {
   return (
     <div className="flex min-h-screen w-full bg-page font-sans text-ink selection:bg-primary-500/30 transition-colors duration-300 relative">
       
+      {/* ─── THEME & COLOR SELECTOR (Top Right) ─── */}
+      <div className="absolute top-6 right-6 z-50 flex items-center gap-4 bg-surface/85 backdrop-blur-md px-4 py-2.5 rounded-full border border-border shadow-dropdown transition-all">
+        
+        {/* Primary Color Picker */}
+        <div className="flex items-center gap-2 border-r border-border pr-3">
+          <button
+            type="button"
+            onClick={() => setPrimaryColor('teal')}
+            className={`w-5 h-5 rounded-full bg-[#00668c] border-2 transition-all ${
+              primaryColor === 'teal' ? 'border-ink scale-110 shadow-sm' : 'border-transparent hover:scale-105'
+            }`}
+            title="Xanh mặc định"
+          />
+          <button
+            type="button"
+            onClick={() => setPrimaryColor('red')}
+            className={`w-5 h-5 rounded-full bg-[#ae1e23] border-2 transition-all ${
+              primaryColor === 'red' ? 'border-ink scale-110 shadow-sm' : 'border-transparent hover:scale-105'
+            }`}
+            title="Đỏ IBST"
+          />
+          <button
+            type="button"
+            onClick={() => setPrimaryColor('blue')}
+            className={`w-5 h-5 rounded-full bg-[#0f52ba] border-2 transition-all ${
+              primaryColor === 'blue' ? 'border-ink scale-110 shadow-sm' : 'border-transparent hover:scale-105'
+            }`}
+            title="Xanh Bộ Xây dựng"
+          />
+        </div>
+
+        {/* Background Theme Selector */}
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => setTheme('light')}
+            className={`p-1.5 rounded-lg transition-all ${
+              theme === 'light'
+                ? 'bg-primary-500 text-white shadow-sm'
+                : 'text-ink-muted hover:text-ink hover:bg-subtle'
+            }`}
+            title="Giao diện Sáng"
+          >
+            <Sun size={15} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setTheme('nature')}
+            className={`p-1.5 rounded-lg transition-all ${
+              theme === 'nature'
+                ? 'bg-primary-500 text-white shadow-sm'
+                : 'text-ink-muted hover:text-ink hover:bg-subtle'
+            }`}
+            title="Giao diện Bảo vệ mắt"
+          >
+            <Leaf size={15} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setTheme('dark')}
+            className={`p-1.5 rounded-lg transition-all ${
+              theme === 'dark'
+                ? 'bg-primary-500 text-white shadow-sm'
+                : 'text-ink-muted hover:text-ink hover:bg-subtle'
+            }`}
+            title="Giao diện Tối"
+          >
+            <Moon size={15} />
+          </button>
+        </div>
+
+      </div>
+
       {/* ─── LEFT COLUMN: BRANDING & FEATURES (Hidden on Mobile) ─── */}
       <div className="hidden lg:flex w-1/2 flex-col justify-between relative overflow-hidden bg-[#ede8df] dark:bg-[#0c1424] border-r border-[#e5dfd4] dark:border-white/5 p-12 xl:p-20 transition-colors duration-300">
         {/* Background ambient accents - CIC style */}
