@@ -42,7 +42,7 @@ export function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen w-full bg-page font-sans text-ink selection:bg-primary-500/30 transition-colors duration-300 relative">
+    <div className="flex min-h-full w-full bg-page font-sans text-ink selection:bg-primary-500/30 transition-colors duration-300 relative">
       
       {/* ─── THEME & COLOR SELECTOR (Top Right) ─── */}
       <div className="absolute top-6 right-6 z-50 flex items-center gap-4 bg-surface/85 backdrop-blur-md px-4 py-2.5 rounded-full border border-border shadow-dropdown transition-all">

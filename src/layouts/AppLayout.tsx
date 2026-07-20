@@ -27,9 +27,10 @@ import {
   Users2,
   Calendar,
   CheckSquare,
+  Check,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { useTheme, type Theme } from '../context/ThemeContext';
+import { useTheme, PRIMARY_COLORS, type Theme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { GlobalSearch } from '../components/GlobalSearch';
 import { Notifications } from '../components/Notifications';
@@ -95,9 +96,9 @@ export function AppLayout() {
   }, []);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-page">
+    <div className="flex h-full overflow-hidden bg-page">
       {/* ── Sidebar ── */}
-      <aside className="sticky top-0 z-40 h-screen shrink-0 shadow-xl transition-all duration-300 ease-out">
+      <aside className="sticky top-0 z-40 h-full shrink-0 shadow-xl transition-all duration-300 ease-out">
         <div
           className={cn(
             'flex h-full flex-col justify-between border-r border-border bg-surface transition-all duration-300 ease-out',
@@ -294,44 +295,37 @@ export function AppLayout() {
                       {/* Primary Color selection */}
                       <div className="space-y-1.5">
                         <div className="text-2xs font-semibold text-ink-secondary">Màu sắc chủ đạo</div>
-                        <div className="flex items-center gap-2 rounded-lg bg-muted px-2 py-1.5">
-                          <button
-                            type="button"
-                            onClick={() => setPrimaryColor('teal')}
-                            className={`flex-1 flex items-center justify-center gap-1 py-1 px-1 rounded text-[10px] font-bold border transition-all ${
-                              primaryColor === 'teal'
-                                ? 'bg-surface border-border text-ink shadow-sm'
-                                : 'border-transparent text-ink-muted hover:text-ink'
-                            }`}
-                          >
-                            <span className="w-2.5 h-2.5 rounded-full bg-[#00668c]" />
-                            Teal
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setPrimaryColor('red')}
-                            className={`flex-1 flex items-center justify-center gap-1 py-1 px-1 rounded text-[10px] font-bold border transition-all ${
-                              primaryColor === 'red'
-                                ? 'bg-surface border-border text-ink shadow-sm'
-                                : 'border-transparent text-ink-muted hover:text-ink'
-                            }`}
-                          >
-                            <span className="w-2.5 h-2.5 rounded-full bg-[#ae1e23]" />
-                            Đỏ
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setPrimaryColor('blue')}
-                            className={`flex-1 flex items-center justify-center gap-1 py-1 px-1 rounded text-[10px] font-bold border transition-all ${
-                              primaryColor === 'blue'
-                                ? 'bg-surface border-border text-ink shadow-sm'
-                                : 'border-transparent text-ink-muted hover:text-ink'
-                            }`}
-                          >
-                            <span className="w-2.5 h-2.5 rounded-full bg-[#0f52ba]" />
-                            Xanh
-                          </button>
+                        <div className="grid grid-cols-9 gap-1.5 justify-items-center rounded-lg bg-muted p-2">
+                          {PRIMARY_COLORS.map(({ id, name, hex }) => {
+                            const active = primaryColor === id;
+                            return (
+                              <button
+                                key={id}
+                                type="button"
+                                onClick={() => setPrimaryColor(id)}
+                                title={name}
+                                className={cn(
+                                  'grid h-5 w-5 place-items-center rounded-full transition-transform hover:scale-110',
+                                  active && 'scale-110 ring-2 ring-offset-2 ring-offset-surface',
+                                )}
+                                style={{
+                                  background: hex,
+                                  ...(active
+                                    ? { boxShadow: `0 0 0 2px var(--bg-surface), 0 0 0 3.5px ${hex}` }
+                                    : {}),
+                                }}
+                              >
+                                {active && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
+                              </button>
+                            );
+                          })}
                         </div>
+                        <p className="text-2xs text-ink-muted">
+                          Đang chọn:{' '}
+                          <span className="font-bold text-ink-secondary">
+                            {PRIMARY_COLORS.find((c) => c.id === primaryColor)?.name}
+                          </span>
+                        </p>
                       </div>
                     </div>
 
@@ -356,7 +350,7 @@ export function AppLayout() {
         {/* Content */}
         <main className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
           {/* Breadcrumb */}
-          <div className="px-4 pb-2 pt-6 lg:px-6">
+          <div className="px-4 pb-1 pt-3 lg:px-6">
             <div className="flex items-center gap-1.5 text-xs font-medium text-ink-muted">
               <span>IBST ERP</span>
               <Crumb size={12} />

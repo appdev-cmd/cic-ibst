@@ -37,9 +37,23 @@
 }
 
 @layer base {
+  html,
   body {
-    @apply bg-page font-sans text-ink antialiased;
+    height: 100%;
+    background: var(--bg-app);
+    overflow: hidden;
+  }
+  body {
+    @apply font-sans text-ink antialiased;
     transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  /* Thu nhỏ toàn bộ giao diện tương đương zoom trình duyệt 75% để hiển thị nhiều nội dung hơn.
+     Dùng transform thay vì CSS zoom vì zoom tính lại 100vh/100vw sai lệch khi đổi kích thước cửa sổ. */
+  #root {
+    width: 133.3333%;
+    height: 133.3333%;
+    transform: scale(0.75);
+    transform-origin: top left;
   }
 }
 

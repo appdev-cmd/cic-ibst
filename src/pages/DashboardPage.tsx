@@ -332,30 +332,30 @@ export function DashboardPage() {
   // --- CÁC COMPONENT GIAO DIỆN ---
 
   const renderFilterBar = () => (
-    <div className="flex flex-col sm:flex-row gap-4 items-center bg-surface p-3 rounded-xl border border-border shadow-sm mb-6">
-      <div className="flex items-center border-r border-border pr-4">
-        <Filter className="w-5 h-5 text-primary-500" />
+    <div className="flex flex-col sm:flex-row gap-2 items-center bg-surface p-1 rounded-xl border border-border shadow-sm w-fit">
+      <div className="flex items-center border-r border-border pl-1.5 pr-2.5">
+        <Filter className="w-4 h-4 text-primary-500" />
       </div>
-      
-      <div className="flex flex-wrap items-center gap-3 w-full">
+
+      <div className="flex flex-wrap items-center gap-1.5">
         <div className="relative group">
-          <select 
+          <select
             value={filterYear}
             onChange={(e) => setFilterYear(e.target.value)}
-            className="appearance-none bg-subtle text-ink font-medium text-[13px] rounded-lg pl-4 pr-10 py-2 outline-none border border-border focus:border-primary-500 transition-colors cursor-pointer"
+            className="appearance-none bg-subtle text-ink font-medium text-[12.5px] rounded-lg pl-3 pr-8 py-1.5 outline-none border border-border focus:border-primary-500 transition-colors cursor-pointer"
           >
             <option value="2026">Năm 2026</option>
             <option value="2025">Năm 2025</option>
             <option value="2024">Năm 2024</option>
           </select>
-          <ChevronDown className="w-4 h-4 text-ink-muted absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-primary-500 transition-colors" />
+          <ChevronDown className="w-3.5 h-3.5 text-ink-muted absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-primary-500 transition-colors" />
         </div>
 
         <div className="relative group">
-          <select 
+          <select
             value={filterPeriod}
             onChange={(e) => setFilterPeriod(e.target.value)}
-            className="appearance-none bg-subtle text-ink font-medium text-[13px] rounded-lg pl-4 pr-10 py-2 outline-none border border-border focus:border-primary-500 transition-colors cursor-pointer"
+            className="appearance-none bg-subtle text-ink font-medium text-[12.5px] rounded-lg pl-3 pr-8 py-1.5 outline-none border border-border focus:border-primary-500 transition-colors cursor-pointer"
           >
             <option value="all">Cả năm</option>
             <option value="q1">Quý I</option>
@@ -366,29 +366,22 @@ export function DashboardPage() {
             <option value="9-thang">9 Tháng</option>
             <option value="custom">Tùy chọn khoảng thời gian...</option>
           </select>
-          <ChevronDown className="w-4 h-4 text-ink-muted absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-primary-500 transition-colors" />
+          <ChevronDown className="w-3.5 h-3.5 text-ink-muted absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-primary-500 transition-colors" />
         </div>
-        
+
         {filterPeriod === 'custom' && (
           <div className="flex items-center gap-2">
             <div className="relative">
               <Calendar className="w-4 h-4 text-ink-muted absolute left-3 top-1/2 -translate-y-1/2" />
-              <input type="date" className="bg-subtle text-ink font-medium text-[13px] rounded-lg pl-9 pr-4 py-2 outline-none border border-border focus:border-primary-500" />
+              <input type="date" className="bg-subtle text-ink font-medium text-[12.5px] rounded-lg pl-9 pr-4 py-1.5 outline-none border border-border focus:border-primary-500" />
             </div>
             <span className="text-ink-muted">-</span>
             <div className="relative">
               <Calendar className="w-4 h-4 text-ink-muted absolute left-3 top-1/2 -translate-y-1/2" />
-              <input type="date" className="bg-subtle text-ink font-medium text-[13px] rounded-lg pl-9 pr-4 py-2 outline-none border border-border focus:border-primary-500" />
+              <input type="date" className="bg-subtle text-ink font-medium text-[12.5px] rounded-lg pl-9 pr-4 py-1.5 outline-none border border-border focus:border-primary-500" />
             </div>
           </div>
         )}
-      </div>
-      
-      <div className="ml-auto flex shrink-0">
-        <button className="bg-primary-500 hover:bg-primary-600 text-white text-[13px] font-bold px-5 py-2 rounded-lg transition-colors shadow-sm flex items-center gap-2">
-          <Activity className="w-4 h-4" />
-          Áp dụng
-        </button>
       </div>
     </div>
   );
@@ -403,7 +396,7 @@ export function DashboardPage() {
     ];
 
     return (
-      <div className="flex space-x-1 bg-surface p-1.5 rounded-xl shadow-sm border border-border mb-6 overflow-x-auto w-full md:w-auto">
+      <div className="flex flex-wrap gap-1 bg-surface p-1 rounded-xl shadow-sm border border-border w-fit">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -411,13 +404,13 @@ export function DashboardPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center space-x-2 px-5 py-2.5 rounded-lg text-[14px] font-bold transition-all whitespace-nowrap cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-bold transition-all whitespace-nowrap cursor-pointer ${
                 isActive
                   ? 'bg-primary-500 text-white shadow-sm'
                   : 'text-ink-secondary hover:bg-subtle hover:text-ink'
               }`}
             >
-              <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-ink-muted'}`} />
+              <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-ink-muted'}`} />
               <span>{tab.label}</span>
             </button>
           );
@@ -468,31 +461,22 @@ export function DashboardPage() {
   };
 
   return (
-    <div className="p-6 w-full mx-auto space-y-6 pb-20">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
-        <div>
-          <div className="flex items-center gap-4">
-            <h1 className="text-3xl font-black text-ink">Dashboard Quản trị IBST</h1>
-            <button 
-              onClick={() => alert('Đang trích xuất Báo cáo Quản trị định kỳ (PDF/Excel) cho Lãnh đạo Viện...')}
-              className="bg-subtle border border-border hover:bg-hover-row text-ink-secondary text-[12.5px] font-bold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95"
-            >
-              <FileText className="w-4 h-4 text-primary-500" />
-              Xuất Báo cáo Quản trị
-            </button>
-          </div>
-          <div className="flex items-center gap-2 mt-1.5">
-            <span className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-success"></span>
-            </span>
-            <p className="text-ink-muted text-[15px] font-medium">Dữ liệu tổng hợp Real-time</p>
-          </div>
+    <div className="px-6 pt-2 pb-20 w-full mx-auto space-y-4">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+        <h1 className="text-3xl font-black text-ink">Dashboard Quản trị IBST</h1>
+        <div className="flex items-center gap-2">
+          <span className="relative flex h-3 w-3">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-success"></span>
+          </span>
+          <p className="text-ink-muted text-[15px] font-medium">Dữ liệu tổng hợp Real-time</p>
         </div>
-        {renderTabs()}
       </div>
 
-      {renderFilterBar()}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        {renderTabs()}
+        {renderFilterBar()}
+      </div>
 
       {/* TAB 1: TỔNG QUAN */}
       {activeTab === 'tong-quan' && (
