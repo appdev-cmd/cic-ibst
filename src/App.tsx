@@ -17,6 +17,7 @@ import { HoSoTaiLieuPage } from './pages/HoSoTaiLieuPage';
 import { LichCoQuanPage } from './pages/LichCoQuanPage';
 import { CongViecPage } from './pages/CongViecPage';
 import { CaiDatPage } from './pages/CaiDatPage';
+import { IbstPortalPage } from './pages/IbstPortalPage';
 
 const SKIP_AUTH = import.meta.env.DEV && import.meta.env.VITE_SKIP_AUTH === 'true';
 
@@ -60,6 +61,7 @@ export default function App() {
         <Route path="/dao-tao" element={<DaoTaoPage />} />
         <Route path="/so-huu-tri-tue" element={<SoHuuTriTuePage />} />
         <Route path="/cai-dat" element={<CaiDatPage />} />
+        <Route path="/ibst-portal" element={<IbstPortalPage />} />
       </Route>
     </Routes>
   );

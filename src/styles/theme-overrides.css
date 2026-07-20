@@ -1,0 +1,665 @@
+/* Theme light/dark overrides */
+
+/* THEME-LIGHT OVERRIDES
+   Chuyển màu nền cát → trắng thuần
+   ======================================== */
+
+/* Card / Section containers */
+.theme-light .card,
+.theme-light .card-glass,
+.theme-light .stat-card,
+.theme-light .stat-card-premium,
+.theme-light .section-card,
+.theme-light .toolbar {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Section headers / Table headers */
+.theme-light .section-card-header,
+.theme-light .table-header-row,
+.theme-light .table-header-row th,
+.theme-light .table-footer {
+  background-color: #e2e8f0 !important;
+  border-color: #cbd5e1 !important;
+}
+
+.theme-light thead,
+.theme-light thead tr,
+.theme-light thead th {
+  background-color: #e2e8f0 !important;
+  color: #334155 !important;
+}
+
+/* Header and Sidebar - Corporate Identity (Light Theme only) */
+.theme-light .layout-header,
+.theme-light .layout-sidebar {
+  background-color: var(--color-primary-500) !important;
+  border-color: var(--color-primary-600) !important;
+  color: #ffffff !important;
+}
+
+/* Fix text and icons in Sidebar and Header for perfect contrast (WCAG Compliant) */
+.theme-light .layout-sidebar .text-slate-800,
+.theme-light .layout-sidebar .text-slate-900,
+.theme-light .layout-sidebar .text-slate-700,
+.theme-light .layout-sidebar .text-txt-primary,
+.theme-light .layout-header .text-slate-800,
+.theme-light .layout-header .text-slate-900,
+.theme-light .layout-header .text-slate-700,
+.theme-light .layout-header .text-txt-primary {
+  color: rgba(255, 255, 255, 0.96) !important;
+}
+
+.theme-light .layout-sidebar .text-slate-50,
+.theme-light .layout-sidebar .text-slate-100,
+.theme-light .layout-sidebar .text-slate-200,
+.theme-light .layout-sidebar .text-slate-300,
+.theme-light .layout-header .text-slate-50,
+.theme-light .layout-header .text-slate-100,
+.theme-light .layout-header .text-slate-200,
+.theme-light .layout-header .text-slate-300 {
+  color: #ffffff !important;
+}
+
+.theme-light .layout-sidebar .text-slate-500,
+.theme-light .layout-sidebar .text-slate-400,
+.theme-light .layout-sidebar .text-txt-secondary,
+.theme-light .layout-sidebar .text-txt-tertiary,
+.theme-light .layout-sidebar .text-txt-muted,
+.theme-light .layout-header .text-slate-500,
+.theme-light .layout-header .text-slate-400,
+.theme-light .layout-header .text-txt-secondary,
+.theme-light .layout-header .text-txt-tertiary,
+.theme-light .layout-header .text-txt-muted {
+  color: rgba(255, 255, 255, 0.75) !important;
+}
+
+.theme-light .layout-sidebar .text-txt-placeholder,
+.theme-light .layout-header .text-txt-placeholder {
+  color: rgba(255, 255, 255, 0.55) !important;
+}
+
+/* Ensure all icons inside sidebar & header adapt to high-contrast colors */
+.theme-light .layout-sidebar svg,
+.theme-light .layout-header svg {
+  color: currentColor !important;
+}
+
+/* Active links in Sidebar */
+.theme-light .layout-sidebar .bg-primary-50 {
+  background-color: var(--color-primary-600) !important;
+  color: #ffffff !important;
+  border-left-color: #ffffff !important;
+  box-shadow: none !important;
+}
+
+/* Hover effects for buttons/links in Header and Sidebar */
+.theme-light .layout-sidebar a:not(.bg-primary-50):hover,
+.theme-light .layout-sidebar button:not(.bg-primary-50):hover,
+.theme-light .layout-header button.hover\:bg-slate-100:hover,
+.theme-light .layout-header button.hover\:bg-bg-surface:hover,
+.theme-light .layout-header button.hover\:bg-slate-50:hover,
+.theme-light .layout-header button.hover\:bg-bg-muted:hover,
+.theme-light .layout-header button:hover {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+}
+
+/* Header Search box */
+.theme-light .layout-header .bg-slate-50,
+.theme-light .layout-header button.bg-bg-subtle {
+  background-color: rgba(0, 0, 0, 0.15) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+.theme-light .layout-header .bg-slate-50:hover,
+.theme-light .layout-header button.bg-bg-subtle:hover {
+  background-color: rgba(0, 0, 0, 0.25) !important;
+  color: #ffffff !important;
+}
+.theme-light .layout-header kbd {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+}
+
+/* Remove gradient bottom line in sidebar without affecting gradient text */
+.theme-light .layout-sidebar .h-\[1px\].bg-gradient-to-r {
+  background: var(--color-primary-600) !important;
+}
+
+/* Dropdown override: Reset ALL colors, hover effects, SVGs and text variables inside dropdowns/popovers rendering in Header & Sidebar */
+.theme-light .layout-header .bg-bg-elevated,
+.theme-light .layout-header .shadow-dropdown,
+.theme-light .layout-header .user-dropdown,
+.theme-light .layout-sidebar .bg-bg-elevated,
+.theme-light .layout-sidebar .shadow-dropdown {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #1d1c1c !important;
+}
+
+/* Reset text colors inside dropdowns/popups to light theme defaults */
+.theme-light .layout-header .bg-bg-elevated .text-txt-primary,
+.theme-light .layout-header .shadow-dropdown .text-txt-primary,
+.theme-light .layout-header .user-dropdown .text-txt-primary,
+.theme-light .layout-header .bg-bg-elevated .text-slate-900,
+.theme-light .layout-header .user-dropdown .text-slate-900,
+.theme-light .layout-sidebar .bg-bg-elevated .text-txt-primary,
+.theme-light .layout-sidebar .shadow-dropdown .text-txt-primary {
+  color: #1d1c1c !important;
+}
+
+.theme-light .layout-header .bg-bg-elevated .text-txt-secondary,
+.theme-light .layout-header .shadow-dropdown .text-txt-secondary,
+.theme-light .layout-header .user-dropdown .text-txt-secondary,
+.theme-light .layout-header .bg-bg-elevated .text-slate-700,
+.theme-light .layout-header .user-dropdown .text-slate-700,
+.theme-light .layout-sidebar .bg-bg-elevated .text-txt-secondary,
+.theme-light .layout-sidebar .shadow-dropdown .text-txt-secondary {
+  color: #313d44 !important;
+}
+
+.theme-light .layout-header .bg-bg-elevated .text-txt-tertiary,
+.theme-light .layout-header .shadow-dropdown .text-txt-tertiary,
+.theme-light .layout-header .user-dropdown .text-txt-tertiary,
+.theme-light .layout-header .bg-bg-elevated .text-slate-600,
+.theme-light .layout-header .user-dropdown .text-slate-600,
+.theme-light .layout-sidebar .bg-bg-elevated .text-txt-tertiary,
+.theme-light .layout-sidebar .shadow-dropdown .text-txt-tertiary {
+  color: #64748b !important;
+}
+
+.theme-light .layout-header .bg-bg-elevated .text-txt-muted,
+.theme-light .layout-header .shadow-dropdown .text-txt-muted,
+.theme-light .layout-header .user-dropdown .text-txt-muted,
+.theme-light .layout-header .bg-bg-elevated .text-slate-500,
+.theme-light .layout-header .user-dropdown .text-slate-500,
+.theme-light .layout-header .bg-bg-elevated .text-slate-400,
+.theme-light .layout-header .user-dropdown .text-slate-400,
+.theme-light .layout-sidebar .bg-bg-elevated .text-txt-muted,
+.theme-light .layout-sidebar .shadow-dropdown .text-txt-muted {
+  color: #94a3b8 !important;
+}
+
+.theme-light .layout-header .bg-bg-elevated .text-txt-placeholder,
+.theme-light .layout-header .shadow-dropdown .text-txt-placeholder,
+.theme-light .layout-header .user-dropdown .text-txt-placeholder {
+  color: #cbd5e1 !important;
+}
+
+/* Reset SVGs inside dropdowns to normal non-white color */
+.theme-light .layout-header .bg-bg-elevated svg,
+.theme-light .layout-header .shadow-dropdown svg,
+.theme-light .layout-header .user-dropdown svg,
+.theme-light .layout-sidebar .bg-bg-elevated svg,
+.theme-light .layout-sidebar .shadow-dropdown svg {
+  color: inherit !important;
+}
+
+/* Reset hover states and background variables inside dropdowns */
+.theme-light .layout-header .bg-bg-elevated a:hover,
+.theme-light .layout-header .shadow-dropdown a:hover,
+.theme-light .layout-header .user-dropdown a:hover,
+.theme-light .layout-header .bg-bg-elevated button:hover,
+.theme-light .layout-header .shadow-dropdown button:hover,
+.theme-light .layout-header .user-dropdown button:hover,
+.theme-light .layout-sidebar .bg-bg-elevated a:hover,
+.theme-light .layout-sidebar .shadow-dropdown a:hover,
+.theme-light .layout-sidebar .bg-bg-elevated button:hover,
+.theme-light .layout-sidebar .shadow-dropdown button:hover {
+  background-color: #f1f5f9 !important;
+  color: #1d1c1c !important;
+}
+
+.theme-light .layout-header .bg-bg-elevated a:hover svg,
+.theme-light .layout-header .shadow-dropdown a:hover svg,
+.theme-light .layout-header .user-dropdown a:hover svg,
+.theme-light .layout-header .bg-bg-elevated button:hover svg,
+.theme-light .layout-header .shadow-dropdown button:hover svg,
+.theme-light .layout-header .user-dropdown button:hover svg {
+  color: #1d1c1c !important;
+}
+
+/* Specific red button (Logout) hover */
+.theme-light .layout-header .bg-bg-elevated .hover\:bg-red-50:hover,
+.theme-light .layout-header .user-dropdown .hover\:bg-red-50:hover {
+  background-color: #fef2f2 !important;
+  color: #dc2626 !important;
+}
+.theme-light .layout-header .bg-bg-elevated .hover\:bg-red-50:hover svg,
+.theme-light .layout-header .user-dropdown .hover\:bg-red-50:hover svg {
+  color: #dc2626 !important;
+}
+.theme-light .layout-header .bg-bg-elevated .text-red-600,
+.theme-light .layout-header .user-dropdown .text-red-600 {
+  color: #dc2626 !important;
+}
+
+/* Reset inline elements with slate-100 bgs inside dropdown */
+.theme-light .layout-header .bg-bg-elevated .bg-slate-100,
+.theme-light .layout-header .user-dropdown .bg-slate-100 {
+  background-color: #f1f5f9 !important;
+}
+.theme-light .layout-header .bg-bg-elevated .bg-bg-surface,
+.theme-light .layout-header .user-dropdown .bg-bg-surface {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+.theme-light .layout-header .bg-bg-elevated .text-primary-600,
+.theme-light .layout-header .user-dropdown .text-primary-600 {
+  color: var(--color-primary-500) !important;
+}
+
+/* Inline bg-[#FCF9F2] overrides — attribute selector matches literal class name */
+.theme-light [class*="bg-[#FCF9F2]"] { background-color: #ffffff !important; }
+.theme-light [class*="bg-[#F5EFE6]"] { background-color: #f1f5f9 !important; }
+.theme-light [class*="bg-[#FBF8EF]"] { background-color: #f8fafc !important; }
+.theme-light [class*="bg-[#F0ECE1]"] { background-color: #f8fafc !important; }
+
+/* Utility class targets — CSS selector escapes special chars with single backslash */
+.theme-light .bg-\[\#FCF9F2\] { background-color: #ffffff !important; }
+.theme-light .bg-\[\#F5EFE6\] { background-color: #f1f5f9 !important; }
+.theme-light .bg-\[\#FBF8EF\] { background-color: #f8fafc !important; }
+.theme-light .bg-\[\#F0ECE1\] { background-color: #f8fafc !important; }
+.theme-light .border-\[\#ece7de\] { border-color: #e2e8f0 !important; }
+
+/* thead background */
+.theme-light thead {
+  background-color: #f1f5f9 !important;
+  box-shadow: 0 1px 0 #cbd5e1 !important;
+}
+
+/* Legal table rows */
+.theme-light .legal-table-wrapper tbody tr:nth-child(even) {
+  background-color: #f8fafc !important;
+}
+.theme-light .legal-table-wrapper th.section-header {
+  background-color: #f1f5f9 !important;
+}
+
+
+/* GLOBAL DARK MODE CATCH-ALL
+   Fixes uncovered light-only elements
+   ======================================== */
+
+/* ── Background catch-alls (solid colors only — NO opacity for neutral bg) ── */
+.dark .bg-white {
+  background-color: #1f2332; /* Navy Slate solid */
+}
+
+.dark .bg-gray-50 {
+  background-color: #1a1e2e; /* bg-subtle solid */
+}
+
+.dark .bg-gray-100 {
+  background-color: #252a3b; /* bg-muted solid */
+}
+
+/* ── Slate backgrounds — KHÔNG dùng /opacity cho neutral bg ── */
+.dark .bg-slate-50 {
+  background-color: #1a1e2e; /* bg-subtle solid */
+}
+
+.dark .bg-slate-100 {
+  background-color: #252a3b; /* bg-muted solid */
+}
+
+/* ── Semantic light backgrounds → dark equivalents ── */
+/* Sử dụng màu phù hợp: opacity thấp (15%) OK cho semantic colors, NOT neutral */
+.dark .bg-blue-50,
+.dark .bg-blue-50\/50 {
+  background-color: rgb(30 58 138 / 0.15);
+}
+
+.dark .bg-emerald-50,
+.dark .bg-emerald-50\/50 {
+  background-color: rgb(6 78 59 / 0.15);
+}
+
+.dark .bg-green-50,
+.dark .bg-green-50\/50 {
+  background-color: rgb(6 78 59 / 0.15);
+}
+
+.dark .bg-amber-50 {
+  background-color: rgb(120 53 15 / 0.15);
+}
+
+.dark .bg-yellow-50 {
+  background-color: rgb(120 53 15 / 0.12);
+}
+
+.dark .bg-orange-50 {
+  background-color: rgb(124 45 18 / 0.15);
+}
+
+.dark .bg-red-50 {
+  background-color: rgb(127 29 29 / 0.15);
+}
+
+.dark .bg-rose-50 {
+  background-color: rgb(136 19 55 / 0.15);
+}
+
+.dark .bg-violet-50 {
+  background-color: rgb(76 29 149 / 0.15);
+}
+
+.dark .bg-purple-50 {
+  background-color: rgb(88 28 135 / 0.15);
+}
+
+.dark .bg-indigo-50 {
+  background-color: rgb(49 46 129 / 0.15);
+}
+
+.dark .bg-sky-50 {
+  background-color: rgb(12 74 110 / 0.15);
+}
+
+.dark .bg-teal-50 {
+  background-color: rgb(19 78 74 / 0.15);
+}
+
+.dark .bg-cyan-50 {
+  background-color: rgb(8 70 92 / 0.15);
+}
+
+.dark .bg-pink-50 {
+  background-color: rgb(131 24 67 / 0.15);
+}
+
+.dark .bg-fuchsia-50 {
+  background-color: rgb(112 26 117 / 0.15);
+}
+
+/* primary-50 fallback for dark mode (không có trong Tailwind standard) */
+.dark .bg-primary-50 {
+  background-color: rgb(0 102 140 / 0.15);
+}
+
+.dark .bg-primary-100 {
+  background-color: rgb(0 102 140 / 0.25);
+}
+
+/* bg-white/90 — not caught by .dark .bg-white since the class name differs */
+.dark .bg-white\/90 {
+  background-color: rgb(21 29 46); /* slate-800 dark */
+}
+
+/* ── Gradient light backgrounds ── */
+.dark [class*="from-blue-50"] {
+  --tw-gradient-from: rgb(30 58 138 / 0.15);
+}
+
+.dark [class*="to-blue-50"] {
+  --tw-gradient-to: rgb(30 58 138 / 0.15);
+}
+
+.dark [class*="from-emerald-50"] {
+  --tw-gradient-from: rgb(6 78 59 / 0.15);
+}
+
+.dark [class*="to-emerald-50"] {
+  --tw-gradient-to: rgb(6 78 59 / 0.15);
+}
+
+.dark [class*="from-indigo-50"] {
+  --tw-gradient-from: rgb(49 46 129 / 0.15);
+}
+
+.dark [class*="to-indigo-50"] {
+  --tw-gradient-to: rgb(49 46 129 / 0.15);
+}
+
+/* ── Border catch-alls ── */
+.dark .border-gray-100 {
+  border-color: #222533;
+}
+
+.dark .border-gray-200 {
+  border-color: #262a39;
+}
+
+.dark .border-blue-100 {
+  border-color: rgb(30 58 138 / 0.4);
+}
+
+.dark .border-blue-200 {
+  border-color: rgb(30 58 138 / 0.4);
+}
+
+.dark .border-emerald-100 {
+  border-color: rgb(6 78 59 / 0.4);
+}
+
+.dark .border-emerald-200 {
+  border-color: rgb(6 78 59 / 0.4);
+}
+
+.dark .border-amber-100 {
+  border-color: rgb(120 53 15 / 0.4);
+}
+
+.dark .border-amber-200 {
+  border-color: rgb(120 53 15 / 0.4);
+}
+
+.dark .border-red-100,
+.dark .border-red-200 {
+  border-color: rgb(127 29 29 / 0.4);
+}
+
+.dark .border-violet-100,
+.dark .border-violet-200,
+.dark .border-purple-100,
+.dark .border-purple-200 {
+  border-color: rgb(76 29 149 / 0.4);
+}
+
+.dark .border-green-200 {
+  border-color: rgb(6 78 59 / 0.4);
+}
+
+.dark .border-orange-200 {
+  border-color: rgb(124 45 18 / 0.4);
+}
+
+.dark .border-teal-200 {
+  border-color: rgb(19 78 74 / 0.4);
+}
+
+/* ── Text catch-alls ── */
+/* CRITICAL: text-slate-400/500/600 used 500+ times — brighten for dark backgrounds */
+.dark .text-slate-400 {
+  color: rgb(203 213 225);
+}
+
+.dark .text-slate-500 {
+  color: rgb(148 163 184);
+}
+
+.dark .text-slate-600 {
+  color: rgb(203 213 225);
+}
+
+/* Gray → brighter for readability */
+.dark .text-gray-800 {
+  color: rgb(241 245 249);
+}
+
+.dark .text-gray-700 {
+  color: rgb(226 232 240);
+}
+
+.dark .text-gray-600 {
+  color: rgb(203 213 225);
+}
+
+.dark .text-gray-500 {
+  color: rgb(203 213 225);
+}
+
+.dark .text-gray-400 {
+  color: rgb(148 163 184);
+}
+
+/* Semantic text */
+.dark .text-blue-800 {
+  color: rgb(147 197 253);
+}
+
+.dark .text-blue-700 {
+  color: rgb(96 165 250);
+}
+
+.dark .text-emerald-700,
+.dark .text-emerald-800 {
+  color: rgb(52 211 153);
+}
+
+.dark .text-amber-800 {
+  color: rgb(251 191 36);
+}
+
+.dark .text-primary-700 {
+  color: rgb(113 196 239); /* primary-300 light */
+}
+
+.dark .text-red-700,
+.dark .text-red-800 {
+  color: rgb(248 113 113);
+}
+
+.dark .text-violet-700 {
+  color: rgb(167 139 250);
+}
+
+.dark .text-indigo-700 {
+  color: rgb(129 140 248);
+}
+
+.dark .text-green-700,
+.dark .text-green-800 {
+  color: rgb(74 222 128);
+}
+
+.dark .text-purple-700 {
+  color: rgb(192 132 252);
+}
+
+.dark .text-orange-700 {
+  color: rgb(251 146 60);
+}
+
+/* ── Form Controls — moved to base.css (theme-aware via CSS variables) ── */
+
+/* ── Ring overrides ── */
+.dark .ring-slate-100 {
+  --tw-ring-color: rgb(51 65 85);
+}
+
+.dark .ring-black\/5 {
+  --tw-ring-color: rgb(148 163 184 / 0.1);
+}
+
+/* Map container — moved to third-party.css (theme-aware via CSS variables) */
+
+/* THEME-NATURE OVERRIDES
+   Tăng độ tương phản cho các header và border trong theme cát
+   ======================================== */
+.theme-nature .section-card-header,
+.theme-nature .table-header-row,
+.theme-nature .table-header-row th,
+.theme-nature .table-footer {
+  background-color: #E6E0D4 !important;
+  border-color: #DBD4C4 !important;
+  color: #4a3426 !important;
+}
+
+.theme-nature thead,
+.theme-nature thead tr,
+.theme-nature thead th {
+  background-color: #E6E0D4 !important;
+  color: #4a3426 !important;
+}
+
+/* ============================================================
+   INLINE THEME CONTEXT OVERRIDES
+   Chuyển từ CSS inline của ThemeContext.tsx sang file CSS tĩnh
+   ============================================================ */
+
+/* Nature Theme (Cát ấm) */
+/* ────────────────────────────────────────────────────────────────────────
+   Legacy Tailwind hardcoded class overrides (still needed for unmigrated files).
+   When a component still uses bg-white / bg-slate-50 / etc directly, these
+   rules ensure the theme-leak is mapped to the active theme.
+   Form, table, scrollbar rules MOVED to base.css (use CSS variables instead).
+   ──────────────────────────────────────────────────────────────────────── */
+.theme-nature .bg-white, .theme-nature [class~="bg-white"] { background-color: #FCF9F2 !important; }
+.theme-nature .bg-gray-50, .theme-nature [class~="bg-gray-50"] { background-color: #F5EFE6 !important; }
+.theme-nature .bg-gray-100, .theme-nature [class~="bg-gray-100"] { background-color: #EDE8DF !important; }
+.theme-nature .bg-slate-50, .theme-nature [class~="bg-slate-50"] { background-color: #F5EFE6 !important; }
+.theme-nature .bg-slate-100, .theme-nature [class~="bg-slate-100"] { background-color: #EDE8DF !important; }
+.theme-nature .border-gray-100, .theme-nature .border-gray-200,
+.theme-nature .border-slate-100, .theme-nature .border-slate-200 { border-color: #ece7de !important; }
+.theme-nature [role="menu"], .theme-nature [role="listbox"], .theme-nature [role="dialog"] { background-color: #FCF9F2 !important; }
+.theme-nature .text-slate-900, .theme-nature .text-gray-900 { color: #1d1c1c !important; }
+.theme-nature .text-slate-800, .theme-nature .text-gray-800 { color: #1d1c1c !important; }
+.theme-nature .text-slate-700, .theme-nature .text-gray-700 { color: #4a3426 !important; }
+.theme-nature .text-slate-600, .theme-nature .text-slate-500, .theme-nature .text-gray-500 { color: #78716c !important; }
+.theme-nature .text-slate-400, .theme-nature .text-gray-400 { color: #a8a29e !important; }
+
+/* Dark Theme (Navy slate) — structural chrome (sidebar/header) */
+.dark aside, .dark aside > div, .dark aside > div > * { background-color: #0f172a !important; border-color: #1e293b !important; }
+.dark header { background-color: rgba(15,23,42,0.97) !important; border-bottom-color: #1e293b !important; }
+.dark .bg-white, .dark [class~="bg-white"] { background-color: #1f2332 !important; }
+.dark .bg-gray-50, .dark [class~="bg-gray-50"] { background-color: #1a1e2e !important; }
+.dark .bg-gray-100, .dark [class~="bg-gray-100"] { background-color: #252a3b !important; }
+.dark .bg-slate-50, .dark [class~="bg-slate-50"] { background-color: #1a1e2e !important; }
+.dark .bg-slate-100, .dark [class~="bg-slate-100"] { background-color: #252a3b !important; }
+.dark [role="menu"], .dark [role="listbox"], .dark [role="dialog"] { background-color: #1f2332 !important; border-color: #2e3348 !important; }
+.dark .text-gray-900, .dark .text-slate-900 { color: #f1f5f9 !important; }
+.dark .text-gray-700, .dark .text-slate-700 { color: #cbd5e1 !important; }
+.dark .text-gray-600, .dark .text-slate-600 { color: #94a3b8 !important; }
+.dark .border-gray-100, .dark .border-gray-200, .dark .border-slate-100, .dark .border-slate-200 { border-color: #2e3348 !important; }
+
+/* Dark Mode Link & Text overrides to prevent blue-link-pollution in Sidebar & Breadcrumbs */
+.dark a[class~="text-txt-primary"] { color: var(--color-text-primary) !important; }
+.dark a[class~="text-txt-secondary"] { color: var(--color-text-secondary) !important; }
+.dark a[class~="text-txt-tertiary"] { color: var(--color-text-tertiary) !important; }
+.dark a[class~="text-txt-muted"] { color: var(--color-text-muted) !important; }
+
+.dark a[class~="text-txt-muted"]:hover,
+.dark a[class~="text-txt-secondary"]:hover,
+.dark a[class~="text-txt-tertiary"]:hover {
+  color: #ffffff !important;
+}
+
+/* Sidebar links in Dark Mode */
+.dark .layout-sidebar a:not(.bg-primary-50) {
+  color: var(--color-slate-400) !important;
+}
+.dark .layout-sidebar a:not(.bg-primary-50):hover {
+  color: #ffffff !important;
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Sidebar active link in Dark Mode */
+.dark .layout-sidebar a.bg-primary-50 {
+  background-color: rgba(0, 102, 140, 0.22) !important;
+  color: #71c4ef !important;
+  border-left-color: #71c4ef !important;
+}
+
+/* Breadcrumb Links in Dark Mode */
+.dark nav[aria-label="Breadcrumb"] a {
+  color: var(--color-slate-400) !important;
+}
+.dark nav[aria-label="Breadcrumb"] a:hover {
+  color: #ffffff !important;
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+/* Scrollbar — moved to base.css */

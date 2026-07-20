@@ -47,12 +47,12 @@
     @apply font-sans text-ink antialiased;
     transition: background-color 0.3s ease, color 0.3s ease;
   }
-  /* Thu nhỏ toàn bộ giao diện tương đương zoom trình duyệt 75% để hiển thị nhiều nội dung hơn.
-     Dùng transform thay vì CSS zoom vì zoom tính lại 100vh/100vw sai lệch khi đổi kích thước cửa sổ. */
+  /* Thu nhỏ toàn bộ giao diện tương đương zoom trình duyệt 75% để hiển thị nhiều nội dung hơn (với zoom = 100%).
+     Dùng transform và tính toán kích thước theo biến --zoom-scale để thu phóng linh hoạt từ 100% đến 200%. */
   #root {
-    width: 133.3333%;
-    height: 133.3333%;
-    transform: scale(0.75);
+    width: calc(100% / var(--zoom-scale, 0.75));
+    height: calc(100% / var(--zoom-scale, 0.75));
+    transform: scale(var(--zoom-scale, 0.75));
     transform-origin: top left;
   }
 }

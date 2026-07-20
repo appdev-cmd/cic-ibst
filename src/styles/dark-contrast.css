@@ -1,0 +1,166 @@
+/* ⚠️ DEPRECATION NOTICE — Technical Debt
+   =========================================================================
+   File này là LEGACY dark mode override. Nó tồn tại vì nhiều component
+   vẫn dùng hardcoded Tailwind classes (bg-white, text-gray-900, v.v.)
+   thay vì CSS variable tokens (bg-bg-surface, text-txt-primary, v.v.).
+
+   KẾ HOẠCH MIGRATE:
+   - Mỗi khi sửa một feature component, chuyển hardcoded colors → CSS variable tokens
+   - Khi component đã dùng CSS variables, các override tương ứng ở đây sẽ không còn cần thiết
+   - Mục tiêu: giảm dần file này xuống chỉ còn third-party overrides (Recharts, RBC, v.v.)
+
+   KHÔNG SỬA NỘI DUNG CSS TRONG FILE NÀY trừ khi đã xác nhận component tương ứng
+   đã migrate xong sang CSS variables.
+   ========================================================================= */
+
+/* Dark mode — Third-party & legacy overrides
+   Components using CSS variables (var(--bg-surface), etc.) do NOT need overrides here.
+   This file handles: Recharts, feature components with hardcoded Tailwind classes,
+   and WCAG AA contrast boosts.
+   ============================================================================= */
+
+/* ── 1. COLOR-SCHEME ─────────────────────────────────────────────────────── */
+.dark { color-scheme: dark; }
+
+/* ── 2. LEGACY TEXT — components not yet using CSS variables ────────────── */
+/* Applied only where no dark: prefix exists. Components using var(--text-*) skip this. */
+.dark .text-gray-900:not([class*="text-[var"]) { color: #f1f5f9 !important; }
+.dark .text-gray-800:not([class*="text-[var"]) { color: #e2e8f0 !important; }
+.dark .text-gray-700:not([class*="text-[var"]) { color: #cbd5e1 !important; }
+.dark .text-gray-600:not([class*="text-[var"]) { color: #94a3b8 !important; }
+.dark .text-gray-500:not([class*="text-[var"]) { color: #7e8ea0 !important; }
+.dark .text-slate-900:not([class*="text-[var"]) { color: #f1f5f9 !important; }
+.dark .text-slate-800:not([class*="text-[var"]) { color: #e2e8f0 !important; }
+.dark .text-slate-700:not([class*="text-[var"]) { color: #cbd5e1 !important; }
+.dark .text-slate-600:not([class*="text-[var"]) { color: #94a3b8 !important; }
+.dark .text-slate-500:not([class*="text-[var"]) { color: #7e8ea0 !important; }
+.dark .text-black                               { color: #f8fafc !important; }
+
+/* ── 3. LEGACY BACKGROUNDS — feature components with hardcoded Tailwind ─── */
+.dark .bg-white:not([class*="bg-[var"]):not([class*="dark:bg-"]) { background-color: #1e293b !important; }
+.dark .bg-gray-50:not([class*="bg-[var"]):not([class*="dark:bg-"]) { background-color: #151d2e !important; }
+.dark .bg-gray-100:not([class*="bg-[var"]):not([class*="dark:bg-"]) { background-color: #1e293b !important; }
+.dark .bg-slate-50:not([class*="bg-[var"]):not([class*="dark:bg-"]) { background-color: #151d2e !important; }
+.dark .bg-slate-100:not([class*="bg-[var"]):not([class*="dark:bg-"]) { background-color: #1e293b !important; }
+
+/* Sand/nature theme colors that leak into dark mode */
+.dark [class~="bg-[#FCF9F2]"] { background-color: #151d2e !important; }
+.dark [class~="bg-[#F5EFE6]"] { background-color: #1e293b !important; }
+.dark [class~="bg-[#EDE8DF]"] { background-color: #0b1120 !important; }
+.dark [class~="bg-[#FBF8EF]"] { background-color: #151d2e !important; }
+.dark [class~="bg-[#F0ECE1]"] { background-color: #1e293b !important; }
+.dark [class~="bg-[#ece7de]"] { background-color: #151d2e !important; }
+
+/* ── 4. LEGACY BORDERS ───────────────────────────────────────────────────── */
+.dark .border-gray-100:not([class*="border-[var"]),
+.dark .border-gray-200:not([class*="border-[var"]),
+.dark .border-gray-300:not([class*="border-[var"]),
+.dark .border-slate-100:not([class*="border-[var"]),
+.dark .border-slate-200:not([class*="border-[var"]) {
+    border-color: #1e293b !important;
+}
+.dark [class~="border-[#ece7de]"],
+.dark [class~="border-[#e5dfd4]"] { border-color: #1e293b !important; }
+
+/* ── 5. TABLE — moved to base.css (theme-aware via CSS variables).
+   Only weight-emphasis text remain here. ─────────────────────────────────── */
+.dark tbody td strong,
+.dark tbody td b,
+.dark tbody td.font-medium,
+.dark tbody td.font-semibold { color: #e2e8f0 !important; }
+.dark tbody td.font-bold { color: #f1f5f9 !important; }
+.dark tbody tr:nth-child(even):not([class*="bg-"]) { background-color: rgba(30,41,59,0.5) !important; }
+.dark tr.bg-gray-50, .dark tr.bg-slate-50,
+.dark tr[class~="bg-[#F5EFE6]"],
+.dark tr[class*="bg-slate-100"] { background-color: #151d2e !important; color: #94a3b8 !important; }
+
+/* ── 6. STRUCTURAL ────────────────────────────────────────────────────────── */
+.dark .section-card { background-color: #151d2e !important; border-color: #293548 !important; }
+.dark .section-card-header { background-color: #1e293b !important; border-color: #293548 !important; color: #e2e8f0 !important; }
+.dark .toolbar { background-color: #151d2e !important; border-color: #293548 !important; }
+.dark .table-footer { background-color: #151d2e !important; border-color: #293548 !important; }
+.dark .table-header-row, .dark .table-header-row th { background-color: #151d2e !important; color: #94a3b8 !important; }
+.dark aside, .dark aside > div { background-color: #0f172a !important; border-color: #1e293b !important; }
+.dark header { background-color: rgba(15,23,42,0.97) !important; border-bottom-color: #1e293b !important; }
+.dark hr { border-color: #293548 !important; }
+
+/* ── 7. FORM — moved to base.css (theme-aware via CSS variables).
+   Only label color override remains. ─────────────────────────────────────── */
+.dark label:not([class*="text-"]) { color: #94a3b8 !important; }
+
+/* ── 8. DROPDOWN & LISTBOX ───────────────────────────────────────────────── */
+/* Note: DropdownMenu/Popover wrappers use CSS variables — this covers legacy raw usage */
+.dark [role="listbox"]:not([class*="bg-[var"]),
+.dark [role="menu"]:not([class*="bg-[var"]) {
+    background-color: #151d2e !important;
+    border-color: #293548 !important;
+}
+.dark [role="option"], .dark [role="menuitem"] { color: #cbd5e1 !important; }
+.dark [role="option"]:hover, .dark [role="menuitem"]:hover { background-color: #293548 !important; }
+.dark [role="option"][aria-selected="true"] {
+    background-color: rgba(0,102,140,0.25) !important;
+    color: #71c4ef !important;
+}
+.dark [role="dialog"]:not([class*="bg-[var"]) {
+    background-color: #151d2e !important;
+    border-color: #293548 !important;
+}
+
+/* ── 9. STATUS BADGES — light bg → dark semi-transparent ────────────────── */
+/* Applies to legacy badges not using StatusBadge/Badge components */
+.dark .bg-green-100:not([class*="dark:bg-"])  { background-color: rgba(5,150,105,0.15) !important; }
+.dark .text-green-800, .dark .text-green-700  { color: #34d399 !important; }
+.dark .bg-yellow-100:not([class*="dark:bg-"]) { background-color: rgba(245,158,11,0.15) !important; }
+.dark .text-yellow-800, .dark .text-yellow-700 { color: #fbbf24 !important; }
+.dark .bg-red-100:not([class*="dark:bg-"])    { background-color: rgba(239,68,68,0.15) !important; }
+.dark .text-red-800, .dark .text-red-700      { color: #f87171 !important; }
+.dark .bg-blue-100:not([class*="dark:bg-"])   { background-color: rgba(59,130,246,0.15) !important; }
+.dark .text-blue-800, .dark .text-blue-700    { color: #60a5fa !important; }
+.dark .bg-purple-100:not([class*="dark:bg-"]) { background-color: rgba(139,92,246,0.15) !important; }
+.dark .text-purple-800, .dark .text-purple-700 { color: #a78bfa !important; }
+.dark .bg-indigo-100:not([class*="dark:bg-"]) { background-color: rgba(99,102,241,0.15) !important; }
+.dark .text-indigo-800, .dark .text-indigo-700 { color: #818cf8 !important; }
+.dark .bg-orange-100:not([class*="dark:bg-"]) { background-color: rgba(249,115,22,0.15) !important; }
+.dark .text-orange-800, .dark .text-orange-700 { color: #fb923c !important; }
+.dark .bg-teal-100:not([class*="dark:bg-"])   { background-color: rgba(20,184,166,0.15) !important; }
+.dark .text-teal-800, .dark .text-teal-700    { color: #2dd4bf !important; }
+
+/* ── 10. HEADINGS — unclassed headings in feature components ────────────── */
+.dark h1:not([class*="text-"]) { color: #f8fafc !important; }
+.dark h2:not([class*="text-"]) { color: #f1f5f9 !important; }
+.dark h3:not([class*="text-"]) { color: #e2e8f0 !important; }
+.dark h4:not([class*="text-"]) { color: #e2e8f0 !important; }
+.dark h5:not([class*="text-"]) { color: #cbd5e1 !important; }
+
+/* ── 11. RECHARTS — moved to third-party.css (theme-aware via CSS variables) ── */
+
+/* ── 12. TABS ────────────────────────────────────────────────────────────── */
+.dark button[role="tab"]:not([class*="text-white"]):not([class*="dark:text-"]) { color: #64748b; }
+.dark button[role="tab"][aria-selected="true"] { color: #60a5fa !important; }
+
+/* ── 13. SCROLLBAR ────────────────────────────────────────────────────────── */
+.dark ::-webkit-scrollbar { width: 6px; height: 6px; }
+.dark ::-webkit-scrollbar-track { background: #0f172a; }
+.dark ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+.dark ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+/* ── 14. WCAG AA CONTRAST BOOST ──────────────────────────────────────────── */
+/* slate-400 (#94a3b8) on slate-800/900 = ~3.8:1 → boost to ~4.8:1 */
+.dark .text-slate-400:not([class*="placeholder"]):not(.recharts-text) {
+    color: #a8b5c5 !important;
+}
+/* Very small text needs extra boost */
+.dark .text-\[10px\].text-slate-400,
+.dark .text-\[11px\].text-slate-400 { color: #b4bfcc !important; }
+
+/* Primary/emerald on dark need brightening for 4.5:1 */
+.dark .text-primary-600 { color: #7bb3f0 !important; }
+.dark .text-emerald-600 { color: #34d399 !important; }
+
+/* ── 15. WORK-PLAN MODULE ─────────────────────────────────────────────────── */
+.dark [class*="group-row"],
+.dark [class*="category-row"] { background-color: #151d2e !important; color: #94a3b8 !important; }
+.dark [class*="frequency-badge"],
+.dark [class*="tan-suat"] { background-color: rgba(0,102,140,0.2) !important; color: #71c4ef !important; }
+.dark [class*="dept-chip"],
+.dark [class*="phong-ban"] { background-color: rgba(99,102,241,0.1) !important; color: #818cf8 !important; }

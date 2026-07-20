@@ -236,6 +236,8 @@ interface ThemeContextValue {
   setTheme: (t: Theme) => void;
   primaryColor: PrimaryColor;
   setPrimaryColor: (c: PrimaryColor) => void;
+  zoom: number;
+  setZoom: (z: number) => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
@@ -243,6 +245,8 @@ const ThemeContext = createContext<ThemeContextValue>({
   setTheme: () => {},
   primaryColor: 'teal',
   setPrimaryColor: () => {},
+  zoom: 100,
+  setZoom: () => {},
 });
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
@@ -256,6 +260,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     return PRIMARY_COLORS.some((c) => c.id === saved) ? (saved as PrimaryColor) : 'teal';
   });
 
+  const [zoom, setZoomState] = useState<number>(() => {
+    const saved = localStorage.getItem('appZoom');
+    const val = Number(saved);
+    return val >= 100 && val <= 200 ? val : 100;
+  });
+
   useEffect(() => {
     applyTheme(theme);
   }, [theme]);
@@ -263,6 +273,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     applyPrimaryColor(primaryColor);
   }, [primaryColor]);
+
+  useEffect(() => {
+    // Calculate scale factor relative to the base 0.75 scale of the application
+    const scale = (zoom / 100) * 0.75;
+    document.documentElement.style.setProperty('--zoom-scale', String(scale));
+  }, [zoom]);
 
   const setTheme = useCallback((t: Theme) => {
     setThemeState(t);
@@ -274,8 +290,23 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('primaryColor', c);
   }, []);
 
+  const setZoom = useCallback((z: number) => {
+    const clamped = Math.max(100, Math.min(200, z));
+    setZoomState(clamped);
+    localStorage.setItem('appZoom', String(clamped));
+  }, []);
+
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, primaryColor, setPrimaryColor }}>
+    <ThemeContext.Provider
+      value={{
+        theme,
+        setTheme,
+        primaryColor,
+        setPrimaryColor,
+        zoom,
+        setZoom,
+      }}
+    >
       {children}
     </ThemeContext.Provider>
   );

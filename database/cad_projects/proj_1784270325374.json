@@ -1,0 +1,321 @@
+{
+  "id": "proj_1784270325374",
+  "name": "abc",
+  "linkedProjectId": null,
+  "linkedProjectName": null,
+  "files": [
+    {
+      "name": "A.01-DANH MỤC BẢN VẼ - GHI CHÚ CHUNG.dwg",
+      "size": 477186,
+      "isMain": true
+    },
+    {
+      "name": "A.02-VỊ TRÍ KHU ĐẤT XÂY DỰNG TRONG TỔNG THỂ DỰ ÁN.dwg",
+      "size": 229281,
+      "isMain": false
+    },
+    {
+      "name": "A.03-MẶT BẰNG RANH ĐẤT-RANH QUY HOẠCH.dwg",
+      "size": 474432,
+      "isMain": false
+    },
+    {
+      "name": "A.04-MẶT BẰNG TỔNG THỂ MÁI.dwg",
+      "size": 1305186,
+      "isMain": false
+    },
+    {
+      "name": "A.05-MẶT BẰNG TỔNG THỂ TẦNG 1.dwg",
+      "size": 3074946,
+      "isMain": false
+    },
+    {
+      "name": "A.06-MẶT BẰNG ĐỊNH VỊ MỐC TỌA ĐỘ CÔNG TRÌNH.dwg",
+      "size": 1928706,
+      "isMain": false
+    },
+    {
+      "name": "A.07-MẶT BẰNG ĐỊNH VỊ COTE CAO ĐỘ THIẾT KẾ.dwg",
+      "size": 1996257,
+      "isMain": false
+    },
+    {
+      "name": "A.08-MẶT BẰNG TỔNG THỂ SÂN ĐƯỜNG.dwg",
+      "size": 4064706,
+      "isMain": false
+    },
+    {
+      "name": "A.09-MẶT BẰNG CẢNH QUAN.dwg",
+      "size": 3348672,
+      "isMain": false
+    },
+    {
+      "name": "A.10-MẶT BẰNG ĐỊNH VỊ CỔNG-HÀNG RÀO.dwg",
+      "size": 2649474,
+      "isMain": false
+    },
+    {
+      "name": "A.11-MẶT BẰNG TẦNG HẦM.dwg",
+      "size": 912354,
+      "isMain": false
+    },
+    {
+      "name": "A.12-MẶT BẰNG TẦNG 1.dwg",
+      "size": 1708098,
+      "isMain": false
+    },
+    {
+      "name": "A.13-MẶT BẰNG TẦNG 2.dwg",
+      "size": 1610913,
+      "isMain": false
+    },
+    {
+      "name": "A.14-MẶT BẰNG TẦNG 3-4.dwg",
+      "size": 1546530,
+      "isMain": false
+    },
+    {
+      "name": "A.15-MẶT BẰNG TẦNG 5.dwg",
+      "size": 1305921,
+      "isMain": false
+    },
+    {
+      "name": "A.16-MẶT BẰNG TẦNG 6-8.dwg",
+      "size": 1450401,
+      "isMain": false
+    },
+    {
+      "name": "A.17-MẶT BẰNG TUM MÁI.dwg",
+      "size": 584544,
+      "isMain": false
+    },
+    {
+      "name": "A.18-MẶT BẰNG MÁI CHE THANG.dwg",
+      "size": 464802,
+      "isMain": false
+    },
+    {
+      "name": "A.19-MẶT ĐỨNG TRỤC 1-16 VÀ TRỤC 16-1.dwg",
+      "size": 2345088,
+      "isMain": false
+    },
+    {
+      "name": "A.20-MẶT ĐỨNG TRỤC A-N VÀ TRỤC N-A.dwg",
+      "size": 1998561,
+      "isMain": false
+    },
+    {
+      "name": "A.21-MẶT ĐỨNG NỘI KHU TRỤC A-N VÀ TRỤC N-A.dwg",
+      "size": 2301378,
+      "isMain": false
+    },
+    {
+      "name": "A.22-MẶT CẮT TRỤC 1-16 VÀ TRỤC 16-1.dwg",
+      "size": 2118624,
+      "isMain": false
+    },
+    {
+      "name": "A.23-MẶT CẮT TRỤC 1-16.dwg",
+      "size": 2348001,
+      "isMain": false
+    },
+    {
+      "name": "A.24-MẶT CẮT TRỤC 16-1.dwg",
+      "size": 12382113,
+      "isMain": false
+    },
+    {
+      "name": "A.25-MẶT CẮT TRỤC N-A VÀ TRỤC A-N.dwg",
+      "size": 7375650,
+      "isMain": false
+    },
+    {
+      "name": "A.26-MẶT CẮT TRỤC A-N VÀ TRỤC N-A.dwg",
+      "size": 2612640,
+      "isMain": false
+    },
+    {
+      "name": "A.27-MẶT CẮT TRỤC N-A.dwg",
+      "size": 1143873,
+      "isMain": false
+    },
+    {
+      "name": "A.28-CHI TIẾT THANG BỘ TB1.dwg",
+      "size": 828162,
+      "isMain": false
+    },
+    {
+      "name": "A.29-CHI TIẾT THANG BỘ TB2.dwg",
+      "size": 723201,
+      "isMain": false
+    },
+    {
+      "name": "A.30-CHI TIẾT THANG BỘ TB3.dwg",
+      "size": 826944,
+      "isMain": false
+    },
+    {
+      "name": "A.31-CHI TIẾT THANG BỘ TB4.dwg",
+      "size": 800928,
+      "isMain": false
+    },
+    {
+      "name": "A.32-CHI TIẾT THANG BỘ TB5.dwg",
+      "size": 820257,
+      "isMain": false
+    },
+    {
+      "name": "A.33-CHI TIẾT THANG BỘ TB6, TB7.dwg",
+      "size": 355329,
+      "isMain": false
+    },
+    {
+      "name": "A.34-CHI TIẾT CỤM THANG MÁY TM1.dwg",
+      "size": 392898,
+      "isMain": false
+    },
+    {
+      "name": "A.35-CHI TIẾT CỤM THANG MÁY TM1.dwg",
+      "size": 573474,
+      "isMain": false
+    },
+    {
+      "name": "A.36-CHI TIẾT CỤM THANG MÁY TM2.dwg",
+      "size": 512064,
+      "isMain": false
+    },
+    {
+      "name": "A.37-CHI TIẾT CỤM THANG MÁY TM2.dwg",
+      "size": 496704,
+      "isMain": false
+    },
+    {
+      "name": "A.38-CHI TIẾT CỤM THANG MÁY TM3.dwg",
+      "size": 386946,
+      "isMain": false
+    },
+    {
+      "name": "A.39-CHI TIẾT CỤM THANG MÁY TM3.dwg",
+      "size": 575040,
+      "isMain": false
+    },
+    {
+      "name": "A.40-BỂ NƯỚC NGẦM - MẶT BẰNG.dwg",
+      "size": 519969,
+      "isMain": false
+    },
+    {
+      "name": "A.41-BỂ NƯỚC NGẦM - MẶT CẮT.dwg",
+      "size": 463296,
+      "isMain": false
+    },
+    {
+      "name": "A.42-RAMP DỐC 1.dwg",
+      "size": 675840,
+      "isMain": false
+    },
+    {
+      "name": "A.43-RAMP DỐC 2.dwg",
+      "size": 704064,
+      "isMain": false
+    },
+    {
+      "name": "A.44-NHÀ BẢO VỆ.dwg",
+      "size": 409152,
+      "isMain": false
+    },
+    {
+      "name": "A.45-NHÀ MÁY PHÁT ĐIỆN.dwg",
+      "size": 852354,
+      "isMain": false
+    },
+    {
+      "name": "A.46-BỂ XỬ LÝ NƯỚC THẢI.dwg",
+      "size": 405954,
+      "isMain": false
+    },
+    {
+      "name": "A.47-NHÀ ĐỂ XE MÁI CHE.dwg",
+      "size": 1392897,
+      "isMain": false
+    },
+    {
+      "name": "A.48-NHÀ ĐỂ XE MÁI CHE.dwg",
+      "size": 603297,
+      "isMain": false
+    },
+    {
+      "name": "A.49-SẢNH - BẬC CẤP 1-3.dwg",
+      "size": 777696,
+      "isMain": false
+    },
+    {
+      "name": "A.50-SẢNH - BẬC CẤP 2-4-5.dwg",
+      "size": 606465,
+      "isMain": false
+    },
+    {
+      "name": "A.51-RAMP DỐC NGƯỜI KHUYẾT TẬT.dwg",
+      "size": 468129,
+      "isMain": false
+    },
+    {
+      "name": "A.52-CHI TIẾT CẤU TẠO CỔNG XẾP - SÂN ĐƯỜNG - BỒN HOA.dwg",
+      "size": 323394,
+      "isMain": false
+    },
+    {
+      "name": "A.53-CHI TIẾT CĂN HỘ LOẠI 1.dwg",
+      "size": 1201440,
+      "isMain": false
+    },
+    {
+      "name": "A.54-CHI TIẾT CĂN HỘ LOẠI 1A.dwg",
+      "size": 1264386,
+      "isMain": false
+    },
+    {
+      "name": "A.55-CHI TIẾT CĂN HỘ LOẠI 1B.dwg",
+      "size": 1274145,
+      "isMain": false
+    },
+    {
+      "name": "A.56-CHI TIẾT CĂN HỘ LOẠI 2.dwg",
+      "size": 1235073,
+      "isMain": false
+    },
+    {
+      "name": "A.57-CHI TIẾT CĂN HỘ LOẠI 2A.dwg",
+      "size": 1230048,
+      "isMain": false
+    },
+    {
+      "name": "A.58-CHI TIẾT CĂN HỘ LOẠI 3.dwg",
+      "size": 1257120,
+      "isMain": false
+    },
+    {
+      "name": "A.59-CHI TIẾT CĂN HỘ LOẠI 3A.dwg",
+      "size": 1236321,
+      "isMain": false
+    },
+    {
+      "name": "A.60-CHI TIẾT CĂN HỘ LOẠI 4.dwg",
+      "size": 1281570,
+      "isMain": false
+    },
+    {
+      "name": "A.61-CHI TIẾT CĂN HỘ LOẠI 5.dwg",
+      "size": 1212576,
+      "isMain": false
+    },
+    {
+      "name": "A.62-CHI TIẾT CĂN HỘ LOẠI 6.dwg",
+      "size": 1297824,
+      "isMain": false
+    }
+  ],
+  "mainFileName": "A.01-DANH MỤC BẢN VẼ - GHI CHÚ CHUNG.dwg",
+  "dxfContent": "",
+  "createdAt": "2026-07-17T06:38:45.374Z"
+}

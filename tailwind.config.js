@@ -61,10 +61,25 @@ export default {
           secondary: 'var(--text-secondary)',
           muted: 'var(--text-muted)',
         },
+        // Support classes from qlda-ddcn-ht theme system
+        bg: {
+          app: 'var(--bg-app)',
+          surface: 'var(--bg-surface)',
+          subtle: 'var(--bg-subtle)',
+          muted: 'var(--bg-muted)',
+          elevated: 'var(--bg-elevated)',
+        },
+        txt: {
+          primary: 'var(--text-primary)',
+          secondary: 'var(--text-secondary)',
+          muted: 'var(--text-muted)',
+          placeholder: 'var(--text-placeholder)',
+        },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+        sans:    ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        heading: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        mono:    ['JetBrains Mono', 'Fira Code', 'monospace'],
       },
       fontSize: {
         '2xs': ['0.625rem', { lineHeight: '0.875rem' }],

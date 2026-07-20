@@ -28,12 +28,16 @@ import {
   Calendar,
   CheckSquare,
   Check,
+  ZoomIn,
+  ZoomOut,
+  Globe,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useTheme, PRIMARY_COLORS, type Theme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { GlobalSearch } from '../components/GlobalSearch';
 import { Notifications } from '../components/Notifications';
+import { AiChatbot } from '../components/AiChatbot';
 import logo from '../assets/logo.png';
 
 const THEME_OPTIONS: { value: Theme; icon: typeof Sun; title: string; activeCls: string }[] = [
@@ -56,11 +60,12 @@ const NAV = [
   { to: '/don-vi', label: 'Đơn vị - Tổ chức', icon: Network },
   { to: '/nhan-su', label: 'Nhân sự', icon: Users },
   { to: '/dao-tao', label: 'Đào tạo - Hội nghị', icon: GraduationCap },
+  { to: '/ibst-portal', label: 'Cổng thông tin IBST', icon: Globe },
 ];
 
 export function AppLayout() {
   const { pathname } = useLocation();
-  const { theme, setTheme, primaryColor, setPrimaryColor } = useTheme();
+  const { theme, setTheme, primaryColor, setPrimaryColor, zoom, setZoom } = useTheme();
   const { session, signOut } = useAuth();
   const current = NAV.find((n) => n.to === pathname) ?? NAV[0];
   const fullName =
@@ -327,6 +332,46 @@ export function AppLayout() {
                           </span>
                         </p>
                       </div>
+
+                      {/* Tỷ lệ thu phóng */}
+                      <div className="space-y-1.5 pt-1.5 border-t border-border-subtle">
+                        <div className="flex justify-between items-center text-2xs font-semibold text-ink-secondary">
+                          <span>Tỷ lệ hiển thị</span>
+                          <span className="font-bold text-primary-500">{zoom}%</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setZoom(Math.max(100, zoom - 10))}
+                            disabled={zoom <= 100}
+                            title="Thu nhỏ (Giảm 10%)"
+                            className="w-7 h-7 flex items-center justify-center rounded-lg border border-border bg-subtle hover:bg-muted text-ink-secondary transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                          >
+                            <ZoomOut size={12} />
+                          </button>
+                          <input
+                            type="range"
+                            min="100"
+                            max="200"
+                            step="10"
+                            value={zoom}
+                            onChange={(e) => setZoom(Number(e.target.value))}
+                            className="flex-1 h-1.5 rounded-lg bg-muted appearance-none cursor-pointer accent-[var(--color-primary)] focus:outline-none"
+                            style={{
+                              background: `linear-gradient(to right, var(--color-primary) 0%, var(--color-primary) ${zoom - 100}%, var(--bg-muted) ${zoom - 100}%, var(--bg-muted) 100%)`
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setZoom(Math.min(200, zoom + 10))}
+                            disabled={zoom >= 200}
+                            title="Phóng to (Tăng 10%)"
+                            className="w-7 h-7 flex items-center justify-center rounded-lg border border-border bg-subtle hover:bg-muted text-ink-secondary transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                          >
+                            <ZoomIn size={12} />
+                          </button>
+                        </div>
+                      </div>
                     </div>
 
                     {/* Logout */}
@@ -366,6 +411,7 @@ export function AppLayout() {
       </div>
 
       <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
+      <AiChatbot />
     </div>
   );
 }
