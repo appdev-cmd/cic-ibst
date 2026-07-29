@@ -47,19 +47,14 @@ const THEME_OPTIONS: { value: Theme; icon: typeof Sun; title: string; activeCls:
 ];
 
 const NAV = [
-  { to: '/', label: 'Tổng quan', icon: LayoutDashboard },
-  { to: '/van-ban', label: 'Văn bản - Điều hành', icon: FileText },
-  { to: '/lich-co-quan', label: 'Lịch cơ quan', icon: Calendar },
-  { to: '/cong-viec', label: 'Quản lý công việc', icon: CheckSquare },
-  { to: '/de-tai', label: 'Đề tài KHCN', icon: FlaskConical },
-  { to: '/hop-dong', label: 'Hợp đồng dịch vụ', icon: Handshake },
-  { to: '/khach-hang', label: 'Khách hàng - Đối tác', icon: Users2 },
-  { to: '/so-huu-tri-tue', label: 'Sở hữu trí tuệ', icon: Award },
-  { to: '/thi-nghiem', label: 'Thí nghiệm (LIMS)', icon: Microscope },
-  { to: '/ho-so-tai-lieu', label: 'Kho hồ sơ tài liệu', icon: FolderOpen },
-  { to: '/don-vi', label: 'Đơn vị - Tổ chức', icon: Network },
-  { to: '/nhan-su', label: 'Nhân sự', icon: Users },
-  { to: '/dao-tao', label: 'Đào tạo - Hội nghị', icon: GraduationCap },
+  { to: '/', label: '1. Dashboard Lãnh đạo', icon: LayoutDashboard },
+  { to: '/hop-dong', label: '2. Hợp đồng & CRM', icon: Handshake },
+  { to: '/tai-chinh', label: '3. Tài chính & Thu chi', icon: Wallet },
+  { to: '/khoa-hoc', label: '4. Quản lý Khoa học & SHTT', icon: FlaskConical },
+  { to: '/nhan-su', label: '5. Nhân sự & Đảng - Đoàn', icon: Users },
+  { to: '/thi-nghiem', label: '6. Thử nghiệm LIMS & Lab', icon: Microscope },
+  { to: '/e-office', label: '7. Văn phòng số e-Office', icon: FileText },
+  { to: '/kho-luu-tru', label: '8. Kho Lưu trữ & AI-RAG', icon: FolderOpen },
   { to: '/ibst-portal', label: 'Cổng thông tin IBST', icon: Globe },
 ];
 

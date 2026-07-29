@@ -74,6 +74,127 @@ export async function deleteDotThanhToan(hopDongId: string, id: string) {
   await syncDaThanhToan(hopDongId);
 }
 
+// ─── PHIẾU GIAO VIỆC (Điều 7 Quy chế 2815) ───
+// Chủ trì hợp đồng lấy từ hop_dong.chu_tri_id — phiếu chỉ lưu thêm chủ trì kỹ thuật + kinh phí/nội dung giao.
+
+export interface PhieuGiaoViec {
+  id: string;
+  hopDongId: string;
+  chuTriKyThuatId: string | null;
+  chuTriKyThuat: string;
+  kinhPhiGiao: number; // triệu đồng
+  noiDung: string;
+  ngayGiao: string;
+  ngayDuyet: string;
+  trangThai: 'du-thao' | 'da-duyet';
+}
+
+export async function fetchPhieuGiaoViec(hopDongId: string): Promise<PhieuGiaoViec | null> {
+  const { data, error } = await supabase
+    .from('phieu_giao_viec')
+    .select(
+      'id, hop_dong_id, chu_tri_ky_thuat_id, kinh_phi_giao, noi_dung, ngay_giao, ngay_duyet, trang_thai, chu_tri_ky_thuat:nhan_su!phieu_giao_viec_chu_tri_ky_thuat_id_fkey(ho_va_ten)',
+    )
+    .eq('hop_dong_id', Number(hopDongId))
+    .maybeSingle();
+  throwIf(error);
+  if (!data) return null;
+  return {
+    id: String(data.id),
+    hopDongId: String(data.hop_dong_id),
+    chuTriKyThuatId: data.chu_tri_ky_thuat_id != null ? String(data.chu_tri_ky_thuat_id) : null,
+    chuTriKyThuat: (data.chu_tri_ky_thuat as unknown as { ho_va_ten: string } | null)?.ho_va_ten ?? '',
+    kinhPhiGiao: Number(data.kinh_phi_giao) || 0,
+    noiDung: data.noi_dung ?? '',
+    ngayGiao: data.ngay_giao ?? '',
+    ngayDuyet: data.ngay_duyet ?? '',
+    trangThai: data.trang_thai as PhieuGiaoViec['trangThai'],
+  };
+}
+
+export interface PhieuGiaoViecInput {
+  chuTriKyThuatId: string;
+  kinhPhiGiao: string;
+  noiDung: string;
+  ngayGiao: string;
+}
+
+/** Lưu (tạo mới hoặc cập nhật) phiếu giao việc chính thức và đánh dấu đã duyệt. */
+export async function upsertPhieuGiaoViec(hopDongId: string, i: PhieuGiaoViecInput) {
+  throwIf(
+    (
+      await supabase.from('phieu_giao_viec').upsert(
+        {
+          hop_dong_id: Number(hopDongId),
+          chu_tri_ky_thuat_id: i.chuTriKyThuatId ? Number(i.chuTriKyThuatId) : null,
+          kinh_phi_giao: Number(i.kinhPhiGiao) || 0,
+          noi_dung: i.noiDung || null,
+          ngay_giao: i.ngayGiao || null,
+          ngay_duyet: new Date().toISOString().slice(0, 10),
+          trang_thai: 'da-duyet',
+        },
+        { onConflict: 'hop_dong_id' },
+      )
+    ).error,
+  );
+}
+
+// ─── CỘNG TÁC VIÊN TRONG PHIẾU GIAO VIỆC ───
+
+export interface CtvGiaoViec {
+  id: string;
+  nhanSuId: string | null;
+  hoTen: string;
+  tyLePhanChia: number; // %
+  ghiChu: string;
+}
+
+export async function fetchCtvGiaoViec(phieuGiaoViecId: string): Promise<CtvGiaoViec[]> {
+  const { data, error } = await supabase
+    .from('phieu_giao_viec_ctv')
+    .select('id, nhan_su_id, ty_le_phan_chia, ghi_chu, nhan_su(ho_va_ten)')
+    .eq('phieu_giao_viec_id', Number(phieuGiaoViecId))
+    .order('id');
+  throwIf(error);
+  return (data ?? []).map((r) => ({
+    id: String(r.id),
+    nhanSuId: r.nhan_su_id != null ? String(r.nhan_su_id) : null,
+    hoTen: (r.nhan_su as unknown as { ho_va_ten: string } | null)?.ho_va_ten ?? '',
+    tyLePhanChia: Number(r.ty_le_phan_chia) || 0,
+    ghiChu: r.ghi_chu ?? '',
+  }));
+}
+
+export interface CtvGiaoViecInput {
+  nhanSuId: string;
+  tyLePhanChia: string;
+  ghiChu: string;
+}
+
+function ctvRow(i: CtvGiaoViecInput) {
+  return {
+    nhan_su_id: i.nhanSuId ? Number(i.nhanSuId) : null,
+    ty_le_phan_chia: Number(i.tyLePhanChia) || 0,
+    ghi_chu: i.ghiChu || null,
+  };
+}
+
+export async function createCtvGiaoViec(phieuGiaoViecId: string, i: CtvGiaoViecInput) {
+  throwIf(
+    (
+      await supabase
+        .from('phieu_giao_viec_ctv')
+        .insert({ ...ctvRow(i), phieu_giao_viec_id: Number(phieuGiaoViecId) })
+    ).error,
+  );
+}
+export async function updateCtvGiaoViec(id: string, i: CtvGiaoViecInput) {
+  throwIf((await supabase.from('phieu_giao_viec_ctv').update(ctvRow(i)).eq('id', Number(id))).error);
+}
+export async function deleteCtvGiaoViec(id: string) {
+  throwIf((await supabase.from('phieu_giao_viec_ctv').delete().eq('id', Number(id))).error);
+}
+
 // ─── KẾT QUẢ PHÉP THỬ ───
 
 export interface KetQuaPhepThu {
@@ -285,4 +406,273 @@ export async function deleteTepVanBan(vanBanId: string, path: string) {
         .eq('id', Number(vanBanId))
     ).error,
   );
+}
+
+// ─── THƯỞNG/PHẠT HỢP ĐỒNG (Điều 13-14 Quy chế 2815) ───
+// Sổ ghi quyết định thủ công — không tự động sinh bản ghi, chỉ cảnh báo (xem qc2815.ts).
+
+export interface ThuongPhat {
+  id: string;
+  loai: 'thuong' | 'phat';
+  lyDo: string;
+  soTien: number | null; // triệu đồng
+  tyLePhanTram: number | null;
+  ngayQuyetDinh: string;
+  nguoiQuyetDinh: string;
+}
+
+export async function fetchThuongPhat(hopDongId: string): Promise<ThuongPhat[]> {
+  const { data, error } = await supabase
+    .from('hop_dong_thuong_phat')
+    .select('id, loai, ly_do, so_tien, ty_le_phan_tram, ngay_quyet_dinh, nhan_su(ho_va_ten)')
+    .eq('hop_dong_id', Number(hopDongId))
+    .order('ngay_quyet_dinh', { ascending: false });
+  throwIf(error);
+  return (data ?? []).map((r) => ({
+    id: String(r.id),
+    loai: r.loai as ThuongPhat['loai'],
+    lyDo: r.ly_do,
+    soTien: r.so_tien != null ? Number(r.so_tien) : null,
+    tyLePhanTram: r.ty_le_phan_tram != null ? Number(r.ty_le_phan_tram) : null,
+    ngayQuyetDinh: r.ngay_quyet_dinh ?? '',
+    nguoiQuyetDinh: (r.nhan_su as unknown as { ho_va_ten: string } | null)?.ho_va_ten ?? '',
+  }));
+}
+
+export interface ThuongPhatInput {
+  loai: 'thuong' | 'phat';
+  lyDo: string;
+  soTien: string;
+  tyLePhanTram: string;
+  ngayQuyetDinh: string;
+  nguoiQuyetDinhId: string;
+}
+
+export async function createThuongPhat(hopDongId: string, i: ThuongPhatInput) {
+  throwIf(
+    (
+      await supabase.from('hop_dong_thuong_phat').insert({
+        hop_dong_id: Number(hopDongId),
+        loai: i.loai,
+        ly_do: i.lyDo,
+        so_tien: i.soTien ? Number(i.soTien) : null,
+        ty_le_phan_tram: i.tyLePhanTram ? Number(i.tyLePhanTram) : null,
+        ngay_quyet_dinh: i.ngayQuyetDinh || null,
+        nguoi_quyet_dinh_id: i.nguoiQuyetDinhId ? Number(i.nguoiQuyetDinhId) : null,
+      })
+    ).error,
+  );
+}
+
+export async function deleteThuongPhat(id: string) {
+  throwIf((await supabase.from('hop_dong_thuong_phat').delete().eq('id', Number(id))).error);
+}
+
+// ─── KIỂM TRA NỘI BỘ (Điều 10 Quy chế 2815) ───
+
+export interface KiemTraNoiBo {
+  id: string;
+  ngayKiemTra: string;
+  nguoiKiemTra: string;
+  noiDung: string;
+  ketLuan: string;
+  kienNghi: string;
+}
+
+export async function fetchKiemTraNoiBo(hopDongId: string): Promise<KiemTraNoiBo[]> {
+  const { data, error } = await supabase
+    .from('kiem_tra_noi_bo')
+    .select('id, ngay_kiem_tra, noi_dung, ket_luan, kien_nghi, nhan_su(ho_va_ten)')
+    .eq('hop_dong_id', Number(hopDongId))
+    .order('ngay_kiem_tra', { ascending: false });
+  throwIf(error);
+  return (data ?? []).map((r) => ({
+    id: String(r.id),
+    ngayKiemTra: r.ngay_kiem_tra ?? '',
+    nguoiKiemTra: (r.nhan_su as unknown as { ho_va_ten: string } | null)?.ho_va_ten ?? '',
+    noiDung: r.noi_dung ?? '',
+    ketLuan: r.ket_luan ?? '',
+    kienNghi: r.kien_nghi ?? '',
+  }));
+}
+
+export interface KiemTraNoiBoInput {
+  ngayKiemTra: string;
+  nguoiKiemTraId: string;
+  noiDung: string;
+  ketLuan: string;
+  kienNghi: string;
+}
+
+export async function createKiemTraNoiBo(hopDongId: string, i: KiemTraNoiBoInput) {
+  throwIf(
+    (
+      await supabase.from('kiem_tra_noi_bo').insert({
+        hop_dong_id: Number(hopDongId),
+        ngay_kiem_tra: i.ngayKiemTra || null,
+        nguoi_kiem_tra_id: i.nguoiKiemTraId ? Number(i.nguoiKiemTraId) : null,
+        noi_dung: i.noiDung || null,
+        ket_luan: i.ketLuan || null,
+        kien_nghi: i.kienNghi || null,
+      })
+    ).error,
+  );
+}
+
+export async function deleteKiemTraNoiBo(id: string) {
+  throwIf((await supabase.from('kiem_tra_noi_bo').delete().eq('id', Number(id))).error);
+}
+
+// ─── QUYẾT TOÁN TỪNG PHẦN (Điều 12.1) ───
+// "Chứng từ hoàn chỉnh tới đâu thì được thanh toán giai đoạn tới đó."
+
+export interface QuyetToanGiaiDoan {
+  id: string;
+  tenGiaiDoan: string;
+  tyLeHoanThanh: number; // %
+  ngayXacNhan: string;
+  ghiChu: string;
+}
+
+export async function fetchQuyetToanGiaiDoan(hopDongId: string): Promise<QuyetToanGiaiDoan[]> {
+  const { data, error } = await supabase
+    .from('quyet_toan_giai_doan')
+    .select('id, ten_giai_doan, ty_le_hoan_thanh, ngay_xac_nhan, ghi_chu')
+    .eq('hop_dong_id', Number(hopDongId))
+    .order('ngay_xac_nhan');
+  throwIf(error);
+  return (data ?? []).map((r) => ({
+    id: String(r.id),
+    tenGiaiDoan: r.ten_giai_doan,
+    tyLeHoanThanh: Number(r.ty_le_hoan_thanh) || 0,
+    ngayXacNhan: r.ngay_xac_nhan ?? '',
+    ghiChu: r.ghi_chu ?? '',
+  }));
+}
+
+export interface QuyetToanGiaiDoanInput {
+  tenGiaiDoan: string;
+  tyLeHoanThanh: string;
+  ngayXacNhan: string;
+  ghiChu: string;
+}
+
+function quyetToanGiaiDoanRow(i: QuyetToanGiaiDoanInput) {
+  return {
+    ten_giai_doan: i.tenGiaiDoan,
+    ty_le_hoan_thanh: Number(i.tyLeHoanThanh) || 0,
+    ngay_xac_nhan: i.ngayXacNhan || null,
+    ghi_chu: i.ghiChu || null,
+  };
+}
+
+/** Đồng bộ hop_dong.trang_thai_quyet_toan theo tổng % các giai đoạn đã xác nhận. */
+async function syncTrangThaiQuyetToan(hopDongId: string) {
+  const list = await fetchQuyetToanGiaiDoan(hopDongId);
+  const tongTyLe = list.reduce((s, g) => s + g.tyLeHoanThanh, 0);
+  const daXongHet = tongTyLe >= 100;
+  const ngayGanNhat = list
+    .filter((g) => g.ngayXacNhan)
+    .map((g) => g.ngayXacNhan)
+    .sort()
+    .at(-1);
+  const homNay = new Date().toISOString().slice(0, 10);
+  throwIf(
+    (
+      await supabase
+        .from('hop_dong')
+        .update({
+          trang_thai_quyet_toan: daXongHet ? 'da-quyet-toan' : 'chua-quyet-toan',
+          ngay_quyet_toan: daXongHet ? (ngayGanNhat ?? homNay) : null,
+        })
+        .eq('id', Number(hopDongId))
+    ).error,
+  );
+}
+
+export async function createQuyetToanGiaiDoan(hopDongId: string, i: QuyetToanGiaiDoanInput) {
+  throwIf(
+    (
+      await supabase
+        .from('quyet_toan_giai_doan')
+        .insert({ ...quyetToanGiaiDoanRow(i), hop_dong_id: Number(hopDongId) })
+    ).error,
+  );
+  await syncTrangThaiQuyetToan(hopDongId);
+}
+export async function updateQuyetToanGiaiDoan(hopDongId: string, id: string, i: QuyetToanGiaiDoanInput) {
+  throwIf(
+    (await supabase.from('quyet_toan_giai_doan').update(quyetToanGiaiDoanRow(i)).eq('id', Number(id))).error,
+  );
+  await syncTrangThaiQuyetToan(hopDongId);
+}
+export async function deleteQuyetToanGiaiDoan(hopDongId: string, id: string) {
+  throwIf((await supabase.from('quyet_toan_giai_doan').delete().eq('id', Number(id))).error);
+  await syncTrangThaiQuyetToan(hopDongId);
+}
+
+// ─── HỒ SƠ ĐÍNH KÈM HỢP ĐỒNG (Điều 8.4, Supabase Storage bucket hop-dong) ───
+
+export interface TepHopDong {
+  id: string;
+  loaiHoSo: string;
+  duongDan: string;
+  tenTep: string;
+  nguoiTaiLen: string;
+  createdAt: string;
+}
+
+export const LOAI_HO_SO_OPTIONS = [
+  { value: 'ho-so-du-thau', label: 'Hồ sơ dự thầu' },
+  { value: 'hop-dong', label: 'Hợp đồng' },
+  { value: 'phieu-giao-viec', label: 'Phiếu giao việc' },
+  { value: 'bien-ban-nghiem-thu', label: 'Biên bản nghiệm thu' },
+  { value: 'bien-ban-thanh-ly', label: 'Biên bản thanh lý' },
+  { value: 'quyet-toan', label: 'Hồ sơ quyết toán' },
+  { value: 'khac', label: 'Khác' },
+];
+
+export async function fetchTepHopDong(hopDongId: string): Promise<TepHopDong[]> {
+  const { data, error } = await supabase
+    .from('hop_dong_tep_dinh_kem')
+    .select('id, loai_ho_so, duong_dan, ten_tep, created_at, nhan_su(ho_va_ten)')
+    .eq('hop_dong_id', Number(hopDongId))
+    .order('created_at', { ascending: false });
+  throwIf(error);
+  return (data ?? []).map((r) => ({
+    id: String(r.id),
+    loaiHoSo: r.loai_ho_so,
+    duongDan: r.duong_dan,
+    tenTep: r.ten_tep,
+    nguoiTaiLen: (r.nhan_su as unknown as { ho_va_ten: string } | null)?.ho_va_ten ?? '',
+    createdAt: r.created_at,
+  }));
+}
+
+export async function uploadTepHopDong(hopDongId: string, loaiHoSo: string, file: File) {
+  const path = `${hopDongId}/${Date.now()}_${file.name}`;
+  const { error } = await supabase.storage.from('hop-dong').upload(path, file);
+  throwIf(error);
+  throwIf(
+    (
+      await supabase.from('hop_dong_tep_dinh_kem').insert({
+        hop_dong_id: Number(hopDongId),
+        loai_ho_so: loaiHoSo,
+        duong_dan: path,
+        ten_tep: file.name,
+      })
+    ).error,
+  );
+  return path;
+}
+
+export async function getTepHopDongUrl(path: string): Promise<string> {
+  const { data, error } = await supabase.storage.from('hop-dong').createSignedUrl(path, 3600);
+  throwIf(error);
+  return data!.signedUrl;
+}
+
+export async function deleteTepHopDong(id: string, path: string) {
+  throwIf((await supabase.storage.from('hop-dong').remove([path])).error);
+  throwIf((await supabase.from('hop_dong_tep_dinh_kem').delete().eq('id', Number(id))).error);
 }

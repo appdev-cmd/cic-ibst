@@ -9,12 +9,14 @@ import {
   Pencil,
   Trash2,
   LoaderCircle,
+  Flag
 } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { KpiCard } from '../components/KpiCard';
 import { DataState } from '../components/DataState';
 import { Modal, Field, inputCls } from '../components/Modal';
 import { ChungChiPanel } from '../components/DetailPanels';
+import { DaoTaoPage } from './DaoTaoPage';
 import { useAsyncData } from '../hooks/useAsyncData';
 import {
   fetchNhanSuFull,
@@ -25,7 +27,9 @@ import {
   type NhanSuInput,
 } from '../services/org';
 import type { NhanSu } from '../types';
-import { formatNgay, cn } from '../lib/utils';
+import { cn } from '../lib/utils';
+
+type MainTab = 'nhan-su' | 'dao-tao-ncs' | 'dang-doan-the';
 
 const HOC_VI_OPTIONS = [
   'Giáo sư, Tiến sĩ',
@@ -48,263 +52,386 @@ const EMPTY_FORM: NhanSuInput = {
 
 function hanSapHet(iso: string) {
   if (!iso) return false;
-  return new Date(iso).getTime() - Date.now() < 90 * 24 * 3600 * 1000;
+  const t = new Date(iso).getTime();
+  const now = Date.now();
+  const d = (t - now) / (1000 * 3600 * 24);
+  return d >= 0 && d <= 90;
 }
 
+const MOCK_DANG_DOAN = [
+  { id: 'd-1', hoTen: 'GS. TS. Nguyễn Xuân Khang', loai: 'Đảng viên', chucVu: 'Bí thư Đảng ủy Viện', chiBo: 'Chi bộ Khối Cơ quan Viện', ngayVaoDang: '1995-02-03', dangPhi: '100% Đã nộp Q3/2026' },
+  { id: 'd-2', hoTen: 'PGS. TS. Trần Việt Hùng', loai: 'Đảng viên', chucVu: 'Phó Bí thư Đảng ủy', chiBo: 'Chi bộ Quản lý Khoa học', ngayVaoDang: '2001-05-19', dangPhi: '100% Đã nộp Q3/2026' },
+  { id: 'd-3', hoTen: 'ThS. Lê Hoàng Nam', loai: 'Đoàn viên', chucVu: 'Bí thư Đoàn Thanh niên Viện', chiBo: 'Đoàn Thanh niên IBST', ngayVaoDang: '—', dangPhi: '100% Đã nộp Q3/2026' },
+  { id: 'd-4', hoTen: 'TS. Vũ Thành Trung', loai: 'Đảng viên', chucVu: 'Chi ủy viên', chiBo: 'Chi bộ P.QLKH', ngayVaoDang: '2008-09-02', dangPhi: '100% Đã nộp Q3/2026' },
+];
+
 export function NhanSuPage() {
-  const { data: nhanSuList, loading, error, refetch } = useAsyncData(fetchNhanSuFull, []);
+  const [mainTab, setMainTab] = useState<MainTab>('nhan-su');
+
+  const { data: list, loading, error, refetch } = useAsyncData(fetchNhanSuFull, []);
   const { data: donViList } = useAsyncData(fetchDonVi, []);
 
-  const [search, setSearch] = useState('');
-  const [filterDonVi, setFilterDonVi] = useState('');
-  const [filterSapHetHan, setFilterSapHetHan] = useState(false);
+  const donViMap = useMemo(() => {
+    const m = new Map<string, string>();
+    donViList.forEach((d) => m.set(d.id, d.ten));
+    return m;
+  }, [donViList]);
 
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState<NhanSu | null>(null);
-  const [form, setForm] = useState<NhanSuInput>(EMPTY_FORM);
-  const [saving, setSaving] = useState(false);
-  const [actionError, setActionError] = useState<string | null>(null);
-  const [ccNhanSu, setCcNhanSu] = useState<NhanSu | null>(null);
+  const [search, setSearch] = useState('');
+  const [filterHocVi, setFilterHocVi] = useState('');
+  const [filterDonVi, setFilterDonVi] = useState('');
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return nhanSuList.filter((ns) => {
-      if (q && !`${ns.hoTen} ${ns.chucDanh} ${ns.chungChi}`.toLowerCase().includes(q)) return false;
+    return list.filter((ns) => {
+      const q = search.trim().toLowerCase();
+      if (q && !ns.hoTen.toLowerCase().includes(q) && !(ns.email ?? '').toLowerCase().includes(q))
+        return false;
+      if (filterHocVi && ns.hocVi !== filterHocVi) return false;
       if (filterDonVi && ns.donViId !== filterDonVi) return false;
-      if (filterSapHetHan && !(ns.hanChungChi && hanSapHet(ns.hanChungChi))) return false;
       return true;
     });
-  }, [nhanSuList, search, filterDonVi, filterSapHetHan]);
+  }, [list, search, filterHocVi, filterDonVi]);
 
-  // KPI tính từ dữ liệu thật
-  const soTienSi = nhanSuList.filter((ns) => ns.hocVi.includes('Tiến sĩ')).length;
-  const soThacSi = nhanSuList.filter((ns) => ns.hocVi.includes('Thạc sĩ')).length;
-  const soGsPgs = nhanSuList.filter((ns) => ns.hocVi.includes('Giáo sư')).length;
-  const soSapHetHan = nhanSuList.filter((ns) => ns.hanChungChi && hanSapHet(ns.hanChungChi)).length;
+  const tongCs = list.filter((ns) => Boolean(ns.chungChi)).length;
+
+  const [detail, setDetail] = useState<NhanSu | null>(null);
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<NhanSu | null>(null);
+  const [form, setForm] = useState<NhanSuInput>(EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const openCreate = () => {
-    setEditing(null);
+    setEditingItem(null);
     setForm(EMPTY_FORM);
-    setActionError(null);
+    setFormError(null);
     setModalOpen(true);
   };
 
-  const openEdit = (ns: NhanSu) => {
-    setEditing(ns);
+  const openEdit = (item: NhanSu) => {
+    setEditingItem(item);
     setForm({
-      hoTen: ns.hoTen,
-      hocVi: ns.hocVi,
-      chucDanh: ns.chucDanh,
-      donViId: ns.donViId ?? '',
-      email: ns.email,
-      soDienThoai: ns.soDienThoai,
-      trangThaiLamViec: ns.trangThaiLamViec,
+      hoTen: item.hoTen,
+      hocVi: item.hocVi ?? '',
+      chucDanh: item.chucDanh ?? '',
+      donViId: item.donViId ?? '',
+      email: item.email ?? '',
+      soDienThoai: item.soDienThoai ?? '',
+      trangThaiLamViec: item.trangThaiLamViec,
     });
-    setActionError(null);
+    setFormError(null);
     setModalOpen(true);
   };
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSave = async (e: FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    setActionError(null);
+    setFormError(null);
     try {
-      if (editing) await updateNhanSu(editing.id, form);
-      else await createNhanSu(form);
+      if (editingItem) {
+        await updateNhanSu(editingItem.id, form);
+      } else {
+        await createNhanSu(form);
+      }
       setModalOpen(false);
       refetch();
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : String(err));
+      setFormError(err instanceof Error ? err.message : String(err));
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDelete = async (ns: NhanSu) => {
-    if (!window.confirm(`Xóa hồ sơ "${ns.hoTen}"?\nChỉ xóa được khi không còn đề tài/chứng chỉ tham chiếu.`)) return;
-    setActionError(null);
+  const handleDelete = async (item: NhanSu) => {
+    if (!confirm(`Bạn có chắc muốn xóa nhân sự "${item.hoTen}"?`)) return;
     try {
-      await deleteNhanSu(ns.id);
+      await deleteNhanSu(item.id);
+      if (detail?.id === item.id) setDetail(null);
       refetch();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      setActionError(
-        msg.includes('foreign key')
-          ? 'Không thể xóa: nhân sự đang có dữ liệu tham chiếu (đề tài chủ nhiệm, chứng chỉ hành nghề, phụ trách đơn vị...).'
-          : msg,
-      );
+      alert(err instanceof Error ? err.message : String(err));
     }
   };
 
   return (
     <div>
       <PageHeader
-        title="Nhân sự"
-        subtitle="Hồ sơ CBVC theo đơn vị trực thuộc, chức danh khoa học và chứng chỉ hành nghề (dữ liệu cá nhân — QĐ 946/QĐ-BXD)"
-        actions={
-          <button className="btn-primary" onClick={openCreate}>
-            <Plus size={16} /> Thêm hồ sơ
-          </button>
-        }
+        title="[Phân hệ 5] Quản lý Tổ chức Nhân sự, Đào tạo & Đảng - Đoàn thể"
+        subtitle="Hồ sơ CBNV, chứng chỉ hành nghề xây dựng, đào tạo NCS Tiến sĩ & Sinh hoạt Đảng viên/Đoàn viên"
       />
 
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard icon={Users} label="CBVC trên hệ thống" value={String(nhanSuList.length)} tone="primary" />
-        <KpiCard icon={GraduationCap} label="GS/PGS — TS — ThS" value={`${soGsPgs} — ${soTienSi} — ${soThacSi}`} tone="success" />
-        <KpiCard icon={ShieldAlert} label="Chứng chỉ sắp hết hạn (90 ngày)" value={String(soSapHetHan)} tone="accent" />
-        <KpiCard icon={Users} label="Đơn vị có nhân sự" value={String(new Set(nhanSuList.map((n) => n.donViId).filter(Boolean)).size)} tone="warning" />
-      </div>
-
-      {/* Thanh công cụ lọc */}
-      <div className="card mb-4 flex flex-wrap items-center gap-3 p-3">
-        <div className="flex min-w-52 flex-1 items-center gap-2 rounded-lg border border-border bg-subtle px-3 py-2">
-          <Search size={15} className="shrink-0 text-ink-muted" />
-          <input
-            className="w-full bg-transparent text-sm outline-none placeholder:text-ink-muted"
-            placeholder="Tìm theo tên, chức danh, chứng chỉ..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-        <select
-          className={cn(inputCls, 'w-auto min-w-44')}
-          value={filterDonVi}
-          onChange={(e) => setFilterDonVi(e.target.value)}
+      {/* Main Tabs Switcher */}
+      <div className="mb-6 flex flex-wrap gap-2 rounded-xl bg-muted p-1.5 w-fit border border-border">
+        <button
+          onClick={() => setMainTab('nhan-su')}
+          className={cn(
+            'flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-bold transition-all',
+            mainTab === 'nhan-su'
+              ? 'bg-surface text-primary-600 shadow-card dark:text-primary-300'
+              : 'text-ink-muted hover:text-ink'
+          )}
         >
-          <option value="">Tất cả đơn vị</option>
-          {donViList.map((dv) => (
-            <option key={dv.id} value={dv.id}>
-              {dv.ten}
-            </option>
-          ))}
-        </select>
-        <label className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-ink-secondary">
-          <input
-            type="checkbox"
-            checked={filterSapHetHan}
-            onChange={(e) => setFilterSapHetHan(e.target.checked)}
-            className="h-4 w-4 accent-[#00668c]"
-          />
-          Chứng chỉ sắp hết hạn
-        </label>
-        <span className="ml-auto font-mono text-xs text-ink-muted">
-          {filtered.length}/{nhanSuList.length}
-        </span>
+          <Users size={16} /> Hồ sơ CBNV & Chứng chỉ Xây dựng
+        </button>
+        <button
+          onClick={() => setMainTab('dao-tao-ncs')}
+          className={cn(
+            'flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-bold transition-all',
+            mainTab === 'dao-tao-ncs'
+              ? 'bg-surface text-primary-600 shadow-card dark:text-primary-300'
+              : 'text-ink-muted hover:text-ink'
+          )}
+        >
+          <GraduationCap size={16} /> Đào tạo & Nghiên cứu sinh (NCS)
+        </button>
+        <button
+          onClick={() => setMainTab('dang-doan-the')}
+          className={cn(
+            'flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-bold transition-all',
+            mainTab === 'dang-doan-the'
+              ? 'bg-surface text-primary-600 shadow-card dark:text-primary-300'
+              : 'text-ink-muted hover:text-ink'
+          )}
+        >
+          <Flag size={16} /> Đảng - Đoàn thể & Thi đua
+        </button>
       </div>
 
-      <DataState loading={loading} error={error} empty={nhanSuList.length === 0} />
-      {actionError && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-danger dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
-          {actionError}
+      {mainTab === 'dao-tao-ncs' && <DaoTaoPage />}
+
+      {mainTab === 'dang-doan-the' && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="card p-4 border-l-4 border-l-red-600">
+              <p className="text-2xs font-bold uppercase text-ink-muted">Tổng số Đảng viên</p>
+              <p className="mt-1 text-xl font-black text-red-600 dark:text-red-400">142 Đảng viên</p>
+              <p className="text-2xs text-ink-muted mt-1">Sinh hoạt tại 12 Chi bộ trực thuộc</p>
+            </div>
+            <div className="card p-4 border-l-4 border-l-blue-600">
+              <p className="text-2xs font-bold uppercase text-ink-muted">Đoàn viên Thanh niên</p>
+              <p className="mt-1 text-xl font-black text-blue-600 dark:text-blue-400">98 Đoàn viên</p>
+              <p className="text-2xs text-ink-muted mt-1">Chi đoàn Khối kỹ thuật & thí nghiệm</p>
+            </div>
+            <div className="card p-4 border-l-4 border-l-emerald-600">
+              <p className="text-2xs font-bold uppercase text-ink-muted">Đảng phí / Đoàn phí Q3/2026</p>
+              <p className="mt-1 text-xl font-black text-emerald-600 dark:text-emerald-400">100% Hoàn tất</p>
+              <p className="text-2xs text-ink-muted mt-1">Số hóa thu chi trực tuyến</p>
+            </div>
+          </div>
+
+          <div className="card overflow-hidden">
+            <div className="border-b border-border bg-subtle p-4 flex items-center justify-between">
+              <h3 className="font-bold text-sm text-ink flex items-center gap-2">
+                <Flag size={16} className="text-red-600" />
+                Danh sách Hồ sơ Đảng viên - Đoàn viên Tiêu biểu
+              </h3>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[650px] text-left text-xs">
+                <thead>
+                  <tr className="border-b border-border bg-muted/50 font-bold text-ink-muted">
+                    <th className="p-3">Họ tên cán bộ</th>
+                    <th className="p-3">Phân loại</th>
+                    <th className="p-3">Chức vụ Đảng/Đoàn</th>
+                    <th className="p-3">Chi bộ / Sinh hoạt</th>
+                    <th className="p-3">Ngày kết nạp</th>
+                    <th className="p-3">Tình trạng Đảng phí</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {MOCK_DANG_DOAN.map((item) => (
+                    <tr key={item.id} className="hover:bg-muted/30 transition-colors">
+                      <td className="p-3 font-semibold text-ink">{item.hoTen}</td>
+                      <td className="p-3">
+                        <span className={cn(
+                          "rounded-full px-2.5 py-0.5 text-2xs font-bold",
+                          item.loai === 'Đảng viên' ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300" : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
+                        )}>
+                          {item.loai}
+                        </span>
+                      </td>
+                      <td className="p-3 text-ink-secondary">{item.chucVu}</td>
+                      <td className="p-3 text-ink-muted">{item.chiBo}</td>
+                      <td className="p-3 text-ink-muted">{item.ngayVaoDang}</td>
+                      <td className="p-3 font-bold text-emerald-600 dark:text-emerald-400">{item.dangPhi}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       )}
 
-      <div className="card overflow-x-auto">
-        <table className="w-full min-w-[920px]">
-          <thead>
-            <tr>
-              <th className="th-cell">Họ tên</th>
-              <th className="th-cell">Chức danh</th>
-              <th className="th-cell">Học hàm / học vị</th>
-              <th className="th-cell">Đơn vị</th>
-              <th className="th-cell">Chứng chỉ hành nghề</th>
-              <th className="th-cell">Hạn chứng chỉ</th>
-              <th className="th-cell">Liên hệ</th>
-              <th className="th-cell w-20 text-right">Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((ns) => (
-              <tr key={ns.id} className="tr-hover">
-                <td className="td-cell font-semibold">{ns.hoTen}</td>
-                <td className="td-cell text-ink-secondary">{ns.chucDanh}</td>
-                <td className="td-cell text-ink-secondary">{ns.hocVi || '—'}</td>
-                <td className="td-cell max-w-52 truncate text-ink-secondary" title={ns.donVi}>
-                  {ns.donVi || '—'}
-                </td>
-                <td className="td-cell text-ink-secondary">{ns.chungChi}</td>
-                <td className="td-cell">
-                  {ns.hanChungChi ? (
-                    <span
-                      className={cn(
-                        'font-mono text-xs',
-                        hanSapHet(ns.hanChungChi) &&
-                          'rounded bg-red-50 px-1.5 py-0.5 font-semibold text-danger dark:bg-red-900/20 dark:text-red-400',
-                      )}
-                    >
-                      {formatNgay(ns.hanChungChi)}
-                    </span>
-                  ) : (
-                    <span className="text-xs text-ink-muted">—</span>
-                  )}
-                </td>
-                <td className="td-cell text-xs text-ink-muted">
-                  {ns.email || ns.soDienThoai || '—'}
-                </td>
-                <td className="td-cell">
-                  <div className="flex justify-end gap-1">
-                    <button
-                      onClick={() => setCcNhanSu(ns)}
-                      title="Chứng chỉ hành nghề"
-                      className="rounded-md p-1.5 text-ink-muted transition-colors hover:bg-muted hover:text-primary-600"
-                    >
-                      <ShieldCheck size={14} />
-                    </button>
-                    <button
-                      onClick={() => openEdit(ns)}
-                      title="Sửa hồ sơ"
-                      className="rounded-md p-1.5 text-ink-muted transition-colors hover:bg-muted hover:text-primary-600"
-                    >
-                      <Pencil size={14} />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(ns)}
-                      title="Xóa hồ sơ"
-                      className="rounded-md p-1.5 text-ink-muted transition-colors hover:bg-red-50 hover:text-danger dark:hover:bg-red-900/20"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {!loading && filtered.length === 0 && nhanSuList.length > 0 && (
-              <tr>
-                <td colSpan={8} className="td-cell py-6 text-center text-ink-muted">
-                  Không có nhân sự phù hợp bộ lọc.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      {mainTab === 'nhan-su' && (
+        <>
+          <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <KpiCard label="TỔNG SỐ NHÂN SỰ" value={String(list.length)} icon={Users} tone="primary" />
+            <KpiCard label="TỔNG SỐ CHỨNG CHỈ" value={String(tongCs)} icon={GraduationCap} tone="success" />
+            <KpiCard
+              label="ĐANG LÀM VIỆC"
+              value={String(list.filter((n) => n.trangThaiLamViec === 'dang-lam-viec').length)}
+              icon={ShieldCheck}
+              tone="warning"
+            />
+          </div>
 
-      {/* Modal thêm/sửa hồ sơ */}
+          <DataState loading={loading} error={error} empty={list.length === 0} />
+
+          <div className="card mb-4 flex flex-wrap items-center justify-between gap-3 p-3">
+            <div className="flex flex-1 flex-wrap items-center gap-3">
+              <div className="relative min-w-[200px] flex-1 max-w-sm">
+                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted" />
+                <input
+                  type="text"
+                  placeholder="Tìm theo tên, email..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="input-search pl-9"
+                />
+              </div>
+
+              <select
+                value={filterHocVi}
+                onChange={(e) => setFilterHocVi(e.target.value)}
+                className="select-field w-40"
+              >
+                <option value="">-- Học vị --</option>
+                {HOC_VI_OPTIONS.map((hv) => (
+                  <option key={hv} value={hv}>
+                    {hv}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={filterDonVi}
+                onChange={(e) => setFilterDonVi(e.target.value)}
+                className="select-field w-48"
+              >
+                <option value="">-- Đơn vị --</option>
+                {donViList.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.ten}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <button onClick={openCreate} className="btn-primary">
+              <Plus size={16} /> Thêm nhân sự
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <div className="card overflow-x-auto lg:col-span-2">
+              <table className="w-full min-w-[640px]">
+                <thead>
+                  <tr>
+                    <th className="th-cell">Họ tên</th>
+                    <th className="th-cell">Học vị / Chức danh</th>
+                    <th className="th-cell">Đơn vị</th>
+                    <th className="th-cell text-center">Chứng chỉ</th>
+                    <th className="th-cell text-right">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((ns) => {
+                    const active = detail?.id === ns.id;
+                    const hasWarning = hanSapHet(ns.hanChungChi);
+
+                    return (
+                      <tr
+                        key={ns.id}
+                        onClick={() => setDetail(ns)}
+                        className={cn(
+                          'tr-hover cursor-pointer',
+                          active && 'bg-primary-subtle/50 dark:bg-primary-900/20',
+                        )}
+                      >
+                        <td className="td-cell">
+                          <div className="font-semibold text-ink">{ns.hoTen}</div>
+                          <div className="text-2xs text-ink-muted">{ns.email || '—'}</div>
+                        </td>
+                        <td className="td-cell">
+                          <div className="text-ink">{ns.hocVi || '—'}</div>
+                          <div className="text-2xs text-ink-muted">{ns.chucDanh || '—'}</div>
+                        </td>
+                        <td className="td-cell text-ink-secondary">
+                          {ns.donViId ? donViMap.get(ns.donViId) ?? ns.donViId : '—'}
+                        </td>
+                        <td className="td-cell text-center">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-subtle px-2 py-0.5 text-xs font-bold text-ink-secondary">
+                            {ns.chungChi || 'Không'}
+                            {hasWarning && (
+                              <span title="Có chứng chỉ sắp hết hạn">
+                                <ShieldAlert size={13} className="text-warning" />
+                              </span>
+                            )}
+                          </span>
+                        </td>
+                        <td className="td-cell text-right">
+                          <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              onClick={() => openEdit(ns)}
+                              className="rounded p-1 text-ink-muted hover:bg-muted hover:text-ink"
+                              title="Sửa"
+                            >
+                              <Pencil size={15} />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(ns)}
+                              className="rounded p-1 text-ink-muted hover:bg-danger-subtle hover:text-danger"
+                              title="Xóa"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="lg:col-span-1">
+              <ChungChiPanel nhanSuId={detail?.id ?? ''} onChanged={refetch} />
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Modal Thêm/Sửa */}
       <Modal
-        title={editing ? `Sửa hồ sơ: ${editing.hoTen}` : 'Thêm hồ sơ CBVC'}
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        wide
+        title={editingItem ? 'Chỉnh sửa nhân sự' : 'Thêm nhân sự mới'}
       >
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Họ và tên" required>
-              <input
-                className={inputCls}
-                required
-                maxLength={150}
-                value={form.hoTen}
-                onChange={(e) => setForm({ ...form, hoTen: e.target.value })}
-                placeholder="Nguyễn Văn A"
-              />
-            </Field>
-            <Field label="Học hàm / học vị">
+        <form onSubmit={handleSave} className="space-y-4">
+          {formError && (
+            <div className="rounded-lg bg-danger-subtle p-3 text-xs text-danger">{formError}</div>
+          )}
+
+          <Field label="Họ và tên" required>
+            <input
+              type="text"
+              required
+              value={form.hoTen}
+              onChange={(e) => setForm({ ...form, hoTen: e.target.value })}
+              className={inputCls}
+            />
+          </Field>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Học vị">
               <select
-                className={inputCls}
                 value={form.hocVi}
                 onChange={(e) => setForm({ ...form, hocVi: e.target.value })}
+                className={inputCls}
               >
-                <option value="">— Chọn —</option>
+                <option value="">-- Chọn --</option>
                 {HOC_VI_OPTIONS.map((hv) => (
                   <option key={hv} value={hv}>
                     {hv}
@@ -312,95 +439,62 @@ export function NhanSuPage() {
                 ))}
               </select>
             </Field>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
+
             <Field label="Chức danh">
               <input
-                className={inputCls}
-                maxLength={150}
+                type="text"
                 value={form.chucDanh}
                 onChange={(e) => setForm({ ...form, chucDanh: e.target.value })}
-                placeholder="VD: Nghiên cứu viên chính"
+                className={inputCls}
               />
             </Field>
-            <Field label="Đơn vị" required>
-              <select
-                className={inputCls}
-                required
-                value={form.donViId}
-                onChange={(e) => setForm({ ...form, donViId: e.target.value })}
-              >
-                <option value="">— Chọn đơn vị —</option>
-                {donViList.map((dv) => (
-                  <option key={dv.id} value={dv.id}>
-                    {dv.ten}
-                  </option>
-                ))}
-              </select>
-            </Field>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+
+          <Field label="Đơn vị công tác">
+            <select
+              value={form.donViId}
+              onChange={(e) => setForm({ ...form, donViId: e.target.value })}
+              className={inputCls}
+            >
+              <option value="">-- Chọn đơn vị --</option>
+              {donViList.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.ten}
+                </option>
+              ))}
+            </select>
+          </Field>
+
+          <div className="grid grid-cols-2 gap-3">
             <Field label="Email">
               <input
                 type="email"
-                className={inputCls}
-                maxLength={150}
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
-                placeholder="ten@ibst.vn"
+                className={inputCls}
               />
             </Field>
+
             <Field label="Số điện thoại">
               <input
-                className={inputCls}
-                maxLength={130}
+                type="text"
                 value={form.soDienThoai}
                 onChange={(e) => setForm({ ...form, soDienThoai: e.target.value })}
+                className={inputCls}
               />
             </Field>
           </div>
-          <Field label="Trạng thái">
-            <select
-              className={inputCls}
-              value={form.trangThaiLamViec}
-              onChange={(e) => setForm({ ...form, trangThaiLamViec: e.target.value })}
-            >
-              <option value="dang-lam-viec">Đang làm việc</option>
-              <option value="nghi-huu">Nghỉ hưu</option>
-              <option value="da-nghi-viec">Đã nghỉ việc</option>
-            </select>
-          </Field>
-          {actionError && (
-            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-danger dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
-              {actionError}
-            </p>
-          )}
-          <div className="flex justify-end gap-2 border-t border-border-subtle pt-4">
-            <button
-              type="button"
-              onClick={() => setModalOpen(false)}
-              className="rounded-xl border border-border px-4 py-2.5 text-[13px] font-bold text-ink-secondary transition-colors hover:bg-muted"
-            >
+
+          <div className="flex justify-end gap-2 pt-2">
+            <button type="button" onClick={() => setModalOpen(false)} className="btn-ghost">
               Hủy
             </button>
-            <button type="submit" disabled={saving} className="btn-primary disabled:opacity-60">
+            <button type="submit" disabled={saving} className="btn-primary">
               {saving && <LoaderCircle size={15} className="animate-spin" />}
-              {editing ? 'Lưu thay đổi' : 'Thêm hồ sơ'}
+              {editingItem ? 'Cập nhật' : 'Thêm mới'}
             </button>
           </div>
         </form>
-      </Modal>
-
-      {/* Modal chứng chỉ hành nghề */}
-      <Modal
-        title={ccNhanSu ? `Chứng chỉ hành nghề: ${ccNhanSu.hoTen}` : ''}
-        open={ccNhanSu !== null}
-        onClose={() => setCcNhanSu(null)}
-        wide
-      >
-        {ccNhanSu && (
-          <ChungChiPanel key={ccNhanSu.id} nhanSuId={ccNhanSu.id} onChanged={refetch} />
-        )}
       </Modal>
     </div>
   );

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Wallet, Banknote, Receipt, PiggyBank, Building2 } from 'lucide-react';
+import { Wallet, Banknote, Receipt, PiggyBank, Building2, Clock, AlertTriangle, ShieldCheck, Calculator } from 'lucide-react';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -55,154 +55,160 @@ function computeContractDistribution(h: any) {
 }
 
 export function TaiChinhPage() {
-  const { data: hopDongList, loading: contractsLoading } = useAsyncData(fetchHopDong, []);
-  const { data: doanhThuThang, loading: flowLoading } = useAsyncData(fetchDoanhThuTheoThang, []);
+  const { data: hopDongList } = useAsyncData(fetchHopDong, []);
+  const { data: doanhThuChart } = useAsyncData(fetchDoanhThuTheoThang, []);
 
-  // Tính toán kết quả kinh doanh và phân bổ theo từng đơn vị hạch toán
-  const unitStats = useMemo(() => {
-    const map = new Map<string, { tenDonVi: string; thucThu: number; chuTri: number; donVi: number; vien: number; congNo: number }>();
-    
-    hopDongList.forEach((h) => {
-      const ten = h.donViThucHien || 'Khác';
-      const cur = map.get(ten) ?? { tenDonVi: ten, thucThu: 0, chuTri: 0, donVi: 0, vien: 0, congNo: 0 };
-      
-      const tt = h.daThanhToan || 0;
-      const cn = Math.max(0, (h.giaTri || 0) - tt);
-      const dist = computeContractDistribution(h);
-      
-      cur.thucThu += tt;
-      cur.chuTri += dist.chuTri;
-      cur.donVi += dist.donVi;
-      cur.vien += dist.vien;
-      cur.congNo += cn;
-      
-      map.set(ten, cur);
-    });
-    
-    return [...map.values()].sort((a, b) => b.thucThu - a.thucThu);
+  const tongKeHoach = useMemo(() => hopDongList.reduce((a, b) => a + (b.giaTri || 0), 0), [hopDongList]);
+  const tongDaThu = useMemo(() => hopDongList.reduce((a, b) => a + (b.daThanhToan || 0), 0), [hopDongList]);
+  const tongCongNo = useMemo(() => Math.max(0, tongKeHoach - tongDaThu), [tongKeHoach, tongDaThu]);
+
+  const phanBoVien = useMemo(() => {
+    return hopDongList.reduce((acc, h) => {
+      const d = computeContractDistribution(h);
+      return acc + d.vien;
+    }, 0);
   }, [hopDongList]);
-
-  // Tính toán tổng cộng toàn Viện
-  const totals = useMemo(() => {
-    let thucThu = 0;
-    let chuTri = 0;
-    let donVi = 0;
-    let vien = 0;
-    let congNo = 0;
-    unitStats.forEach((u) => {
-      thucThu += u.thucThu;
-      chuTri += u.chuTri;
-      donVi += u.donVi;
-      vien += u.vien;
-      congNo += u.congNo;
-    });
-    return { thucThu, chuTri, donVi, vien, congNo };
-  }, [unitStats]);
-
-  const loading = contractsLoading || flowLoading;
 
   return (
     <div>
       <PageHeader
-        title="Kết quả kinh doanh"
-        subtitle="Báo cáo kết quả hoạt động kinh doanh, thực thu, công nợ và phân bổ kinh phí theo Bảng 1 QĐ 2815"
+        title="[Phân hệ 3] Quản lý Tài chính & Thu chi Hợp đồng"
+        subtitle="Quản lý dòng tiền Hợp đồng: Tạm ứng, Tiền về, HĐ VAT, Công nợ, Lợi nhuận Margin & Chế tài Phạt/SLA TCKT (Chương III QC 2815)"
       />
 
-      {/* KPI Cards theo đúng cấu trúc phân bổ */}
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <KpiCard icon={Wallet} label="Doanh thu thực thu" value={formatTrieu(totals.thucThu)} tone="primary" />
-        <KpiCard icon={Building2} label="Giao Chủ trì (Team)" value={formatTrieu(totals.chuTri)} tone="success" />
-        <KpiCard icon={PiggyBank} label="Trích giữ lại Đơn vị" value={formatTrieu(totals.donVi)} tone="accent" />
-        <KpiCard icon={Receipt} label="Trích nộp về Viện" value={formatTrieu(totals.vien)} tone="warning" />
-        <KpiCard icon={Banknote} label="Công nợ phải thu" value={formatTrieu(totals.congNo)} tone="accent" />
+      <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <KpiCard label="Kế hoạch doanh thu" value={formatTrieu(tongKeHoach)} icon={Wallet} tone="primary" />
+        <KpiCard label="Thực thu (Tiền về)" value={formatTrieu(tongDaThu)} icon={Banknote} tone="success" />
+        <KpiCard label="Công nợ phải thu" value={formatTrieu(tongCongNo)} icon={Receipt} tone="warning" />
+        <KpiCard label="Trích nộp về Viện (QC 2815)" value={formatTrieu(phanBoVien)} icon={PiggyBank} tone="accent" />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        {/* Dòng tiền thực thu */}
-        <div className="card p-4 xl:col-span-1">
-          <h3 className="mb-3 text-sm font-bold text-ink">Dòng tiền thực thu lũy kế theo tháng (tỷ đồng)</h3>
-          <ResponsiveContainer width="100%" height={280}>
-            <AreaChart data={doanhThuThang}>
-              <defs>
-                <linearGradient id="gradTC" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="var(--color-primary, #00668c)" stopOpacity={0.25} />
-                  <stop offset="100%" stopColor="var(--color-primary, #00668c)" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border-default)" vertical={false} />
-              <XAxis dataKey="thang" tick={{ fontSize: 12, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 12, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} width={32} />
-              <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid var(--border-default)', background: 'var(--bg-elevated)', color: 'var(--text-primary)', fontSize: 13 }} />
-              <Area type="monotone" dataKey="thucHien" name="Thực thu" stroke="var(--color-primary, #00668c)" strokeWidth={2} fill="url(#gradTC)" />
-            </AreaChart>
-          </ResponsiveContainer>
+      {/* SLA & Penalties Banner */}
+      <div className="mb-4 rounded-xl border border-rose-500/20 bg-rose-50/40 dark:bg-rose-900/10 p-4 text-xs space-y-2 text-ink">
+        <div className="flex items-center justify-between font-bold text-rose-700 dark:text-rose-300">
+          <span className="flex items-center gap-2 text-sm">
+            <Clock size={18} /> Cam kết SLA Chứng từ TCKT & Chế tài Phạt Chậm nộp / Nợ Quá hạn (QC 2815)
+          </span>
+          <span className="rounded-full bg-rose-600 px-3 py-0.5 text-white text-2xs font-bold">
+            Kiểm soát tự động
+          </span>
         </div>
-
-        {/* Bảng phân bổ chi tiết kết quả kinh doanh theo đơn vị */}
-        <div className="card overflow-hidden xl:col-span-2">
-          <h3 className="px-4 py-3.5 text-sm font-bold border-b border-border text-ink bg-subtle/50">
-            Chi tiết kết quả kinh doanh & Phân bổ kinh phí theo các Đơn vị (triệu đồng)
-          </h3>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr>
-                  <th className="th-cell">Đơn vị hạch toán</th>
-                  <th className="th-cell text-right">Doanh thu</th>
-                  <th className="th-cell text-right">Giao Chủ trì</th>
-                  <th className="th-cell text-right">Giữ lại Đơn vị</th>
-                  <th className="th-cell text-right">Nộp về Viện</th>
-                  <th className="th-cell text-right">Công nợ</th>
-                </tr>
-              </thead>
-              <tbody>
-                {unitStats.map((r) => (
-                  <tr key={r.tenDonVi} className="tr-hover">
-                    <td className="td-cell font-bold text-ink-secondary">{r.tenDonVi}</td>
-                    <td className="td-cell text-right font-mono text-xs font-semibold text-primary">
-                      {Math.round(r.thucThu).toLocaleString('vi-VN')}
-                    </td>
-                    <td className="td-cell text-right font-mono text-xs text-emerald-600">
-                      {Math.round(r.chuTri).toLocaleString('vi-VN')}
-                    </td>
-                    <td className="td-cell text-right font-mono text-xs text-indigo-500">
-                      {Math.round(r.donVi).toLocaleString('vi-VN')}
-                    </td>
-                    <td className="td-cell text-right font-mono text-xs text-amber-500">
-                      {Math.round(r.vien).toLocaleString('vi-VN')}
-                    </td>
-                    <td className="td-cell text-right font-mono text-xs text-danger">
-                      {Math.round(r.congNo).toLocaleString('vi-VN')}
-                    </td>
-                  </tr>
-                ))}
-                {unitStats.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="td-cell text-center text-ink-muted py-6">
-                      {loading ? 'Đang tải dữ liệu...' : 'Không có dữ liệu kinh doanh.'}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-              {unitStats.length > 0 && (
-                <tfoot>
-                  <tr className="border-t border-border font-bold bg-subtle/30 text-ink">
-                    <td className="td-cell">Tổng cộng toàn Viện</td>
-                    <td className="td-cell text-right font-mono text-xs text-primary">{Math.round(totals.thucThu).toLocaleString('vi-VN')}</td>
-                    <td className="td-cell text-right font-mono text-xs text-emerald-600">{Math.round(totals.chuTri).toLocaleString('vi-VN')}</td>
-                    <td className="td-cell text-right font-mono text-xs text-indigo-500">{Math.round(totals.donVi).toLocaleString('vi-VN')}</td>
-                    <td className="td-cell text-right font-mono text-xs text-amber-500">{Math.round(totals.vien).toLocaleString('vi-VN')}</td>
-                    <td className="td-cell text-right font-mono text-xs text-danger">{Math.round(totals.congNo).toLocaleString('vi-VN')}</td>
-                  </tr>
-                </tfoot>
-              )}
-            </table>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 text-ink-secondary">
+          <div className="bg-surface p-2.5 rounded border border-border">
+            <p className="font-bold text-ink flex items-center gap-1"><ShieldCheck size={14} className="text-emerald-600" /> SLA Phòng TCKT:</p>
+            <p className="text-2xs text-ink-muted mt-0.5">Xử lý chứng từ thanh toán tối đa <strong>03 ngày làm việc</strong>.</p>
+          </div>
+          <div className="bg-surface p-2.5 rounded border border-border">
+            <p className="font-bold text-ink flex items-center gap-1"><AlertTriangle size={14} className="text-amber-600" /> Phạt Chậm nộp Hồ sơ:</p>
+            <p className="text-2xs text-ink-muted mt-0.5">Trừ kinh phí <strong>0.5% - 1%</strong> nếu chậm nộp hợp đồng gốc quá 30 ngày.</p>
+          </div>
+          <div className="bg-surface p-2.5 rounded border border-border">
+            <p className="font-bold text-ink flex items-center gap-1"><Calculator size={14} className="text-rose-600" /> Phạt Nợ Tạm ứng Quá hạn:</p>
+            <p className="text-2xs text-ink-muted mt-0.5">Tính lãi phạt <strong>130% lãi suất Ngân hàng</strong> cho khoản quá hạn.</p>
           </div>
         </div>
       </div>
 
-      <div className="card mt-6 border-l-4 border-l-info p-4 text-xs text-ink-secondary">
-        <strong>* Lưu ý về nghiệp vụ hạch toán:</strong> Doanh thu thực thu, dòng tiền thanh toán và công nợ được liên kết trực tiếp từ các hợp đồng dịch vụ kỹ thuật đang triển khai. Phần kinh phí phân bổ khoán chi được tính toán tự động dựa trên định mức quy định tại Bảng 1 Quy chế phục vụ quản lý nhà nước và hoạt động dịch vụ kỹ thuật ban hành theo QĐ 2815/QĐ-VKH của Viện KHCN Xây dựng.
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 mb-6">
+        <div className="card p-4 lg:col-span-2">
+          <h3 className="mb-4 text-sm font-bold text-ink">Biểu đồ Doanh thu & Tiền về theo Tháng (VNĐ)</h3>
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={doanhThuChart}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
+                <XAxis dataKey="thang" stroke="var(--text-muted)" fontSize={11} />
+                <YAxis stroke="var(--text-muted)" fontSize={11} />
+                <Tooltip />
+                <Area type="monotone" dataKey="doanhThu" name="Doanh thu" stroke="#2563eb" fill="#2563eb" fillOpacity={0.15} />
+                <Area type="monotone" dataKey="tienVe" name="Tiền về thực tế" stroke="#059669" fill="#059669" fillOpacity={0.15} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="card p-4 space-y-4">
+          <h3 className="text-sm font-bold text-ink flex items-center gap-2 border-b border-border pb-2">
+            <Building2 size={16} className="text-primary" />
+            Tỷ suất Lợi nhuận Margin theo Phân hệ Hợp đồng
+          </h3>
+          <div className="space-y-3 text-xs">
+            <div>
+              <div className="flex justify-between font-bold text-ink mb-1">
+                <span>1. Phân hệ Phục vụ QLNN</span>
+                <span className="text-emerald-600">Margin 22%</span>
+              </div>
+              <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+                <div className="bg-emerald-500 h-full w-[22%]" />
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-between font-bold text-ink mb-1">
+                <span>2. Phân hệ Tư vấn & Kiểm định</span>
+                <span className="text-primary">Margin 35%</span>
+              </div>
+              <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+                <div className="bg-primary h-full w-[35%]" />
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-between font-bold text-ink mb-1">
+                <span>3. Phân hệ Thi công Xây dựng</span>
+                <span className="text-amber-600">Margin 18%</span>
+              </div>
+              <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+                <div className="bg-amber-500 h-full w-[18%]" />
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-between font-bold text-ink mb-1">
+                <span>4. Phân hệ Cung ứng Thiết bị</span>
+                <span className="text-indigo-600">Margin 14%</span>
+              </div>
+              <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+                <div className="bg-indigo-500 h-full w-[14%]" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="card overflow-x-auto">
+        <div className="border-b border-border bg-subtle p-4">
+          <h3 className="font-bold text-sm text-ink">Bảng Tổng hợp Phân bổ Dòng tiền Hợp đồng theo Bảng 1 Quy chế 2815</h3>
+        </div>
+        <table className="w-full min-w-[700px] text-left text-xs">
+          <thead>
+            <tr className="border-b border-border bg-muted/50 font-bold text-ink-muted">
+              <th className="p-3">Số Hợp đồng</th>
+              <th className="p-3">Tên hợp đồng</th>
+              <th className="p-3 text-right">Đã thực thu</th>
+              <th className="p-3 text-right text-emerald-600">Quỹ Chủ trì</th>
+              <th className="p-3 text-right text-blue-600">Quỹ Đơn vị</th>
+              <th className="p-3 text-right text-rose-600">Nộp về Viện (CPQL + KHTS)</th>
+              <th className="p-3 text-center">SLA TCKT</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {hopDongList.map((h) => {
+              const dist = computeContractDistribution(h);
+              return (
+                <tr key={h.id} className="hover:bg-muted/30 transition-colors">
+                  <td className="p-3 font-bold text-ink">{h.soHD}</td>
+                  <td className="p-3 text-ink-secondary">{h.ten}</td>
+                  <td className="p-3 text-right font-bold text-ink">{formatTrieu(h.daThanhToan)}</td>
+                  <td className="p-3 text-right font-bold text-emerald-600">{formatTrieu(dist.chuTri)}</td>
+                  <td className="p-3 text-right font-bold text-blue-600">{formatTrieu(dist.donVi)}</td>
+                  <td className="p-3 text-right font-bold text-rose-600">{formatTrieu(dist.vien)}</td>
+                  <td className="p-3 text-center">
+                    <span className="inline-flex items-center gap-1 rounded bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 text-2xs font-bold">
+                      <Clock size={11} /> 1.5 ngày / SLA 3d
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   );

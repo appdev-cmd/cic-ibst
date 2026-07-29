@@ -1,3 +1,5 @@
+import type { NhomHD, LoaiDacThu } from './lib/qc2815';
+
 export type TrangThai =
   | 'hoan-thanh'
   | 'dang-thuc-hien'
@@ -47,7 +49,23 @@ export interface HopDong {
   ngayKy: string;
   hanHoanThanh: string;
   trangThai: TrangThai;
+  nhomHD: NhomHD | null;
+  chuTriId: string | null;
+  chuTri: string; // tên chủ trì hợp đồng (hiển thị)
+  giaDuThau: number | null; // triệu đồng; null = lấy giaTri
+  ngayNopHoSo: string; // ngày nộp hồ sơ gốc về Viện; '' = chưa nộp
+  trangThaiPheDuyet: TrangThaiPheDuyet;
+  ngayTrinhDuyet: string;
+  ngayDuyet: string;
+  trangThaiQuyetToan: 'chua-quyet-toan' | 'da-quyet-toan';
+  ngayQuyetToan: string;
+  hanChungTuQuyetToan: string; // hạn TCKT yêu cầu nộp chứng từ quyết toán; '' = chưa đặt hạn
+  loaiDacThu: LoaiDacThu | null;
+  phanVienXa: boolean;
+  giamTheoYeuCauDonVi: boolean;
 }
+
+export type TrangThaiPheDuyet = 'khong-ap-dung' | 'chua-trinh' | 'da-trinh' | 'da-duyet';
 
 export interface MauThiNghiem {
   id: string;

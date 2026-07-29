@@ -12,3 +12,10 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+declare module 'dxf-parser' {
+  export class DxfParser {
+    parseSync(source: string): any;
+  }
+  export default DxfParser;
+}

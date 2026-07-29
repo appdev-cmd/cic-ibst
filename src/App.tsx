@@ -4,18 +4,14 @@ import { AppLayout } from './layouts/AppLayout';
 import { useAuth } from './context/AuthContext';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
-import { VanBanPage } from './pages/VanBanPage';
-import { DeTaiPage } from './pages/DeTaiPage';
 import { HopDongPage } from './pages/HopDongPage';
-import { ThiNghiemPage } from './pages/ThiNghiemPage';
-import { DonViPage } from './pages/DonViPage';
+import { TaiChinhPage } from './pages/TaiChinhPage';
+import { KhoaHocPage } from './pages/KhoaHocPage';
 import { NhanSuPage } from './pages/NhanSuPage';
-import { DaoTaoPage } from './pages/DaoTaoPage';
-import { SoHuuTriTuePage } from './pages/SoHuuTriTuePage';
-import { KhachHangPage } from './pages/KhachHangPage';
-import { HoSoTaiLieuPage } from './pages/HoSoTaiLieuPage';
-import { LichCoQuanPage } from './pages/LichCoQuanPage';
-import { CongViecPage } from './pages/CongViecPage';
+import { ThiNghiemPage } from './pages/ThiNghiemPage';
+import { EOfficePage } from './pages/EOfficePage';
+import { KhoLuuTruPage } from './pages/KhoLuuTruPage';
+import { DonViPage } from './pages/DonViPage';
 import { CaiDatPage } from './pages/CaiDatPage';
 import { IbstPortalPage } from './pages/IbstPortalPage';
 
@@ -47,21 +43,30 @@ export default function App() {
           </RequireAuth>
         }
       >
+        {/* 08 Nhóm Phân hệ ERP chuẩn theo bao_gia_pm_erp_ibst.md */}
         <Route path="/" element={<DashboardPage />} />
-        <Route path="/van-ban" element={<VanBanPage />} />
-        <Route path="/lich-co-quan" element={<LichCoQuanPage />} />
-        <Route path="/cong-viec" element={<CongViecPage />} />
-        <Route path="/de-tai" element={<DeTaiPage />} />
         <Route path="/hop-dong" element={<HopDongPage />} />
-        <Route path="/khach-hang" element={<KhachHangPage />} />
-        <Route path="/thi-nghiem" element={<ThiNghiemPage />} />
-        <Route path="/ho-so-tai-lieu" element={<HoSoTaiLieuPage />} />
-        <Route path="/don-vi" element={<DonViPage />} />
+        <Route path="/tai-chinh" element={<TaiChinhPage />} />
+        <Route path="/khoa-hoc" element={<KhoaHocPage />} />
         <Route path="/nhan-su" element={<NhanSuPage />} />
-        <Route path="/dao-tao" element={<DaoTaoPage />} />
-        <Route path="/so-huu-tri-tue" element={<SoHuuTriTuePage />} />
+        <Route path="/thi-nghiem" element={<ThiNghiemPage />} />
+        <Route path="/e-office" element={<EOfficePage />} />
+        <Route path="/kho-luu-tru" element={<KhoLuuTruPage />} />
+
+        {/* Các trang hỗ trợ & Cổng thông tin */}
+        <Route path="/don-vi" element={<DonViPage />} />
         <Route path="/cai-dat" element={<CaiDatPage />} />
         <Route path="/ibst-portal" element={<IbstPortalPage />} />
+
+        {/* Redirects cho các đường dẫn cũ */}
+        <Route path="/van-ban" element={<Navigate to="/e-office" replace />} />
+        <Route path="/lich-co-quan" element={<Navigate to="/e-office" replace />} />
+        <Route path="/cong-viec" element={<Navigate to="/e-office" replace />} />
+        <Route path="/de-tai" element={<Navigate to="/khoa-hoc" replace />} />
+        <Route path="/so-huu-tri-tue" element={<Navigate to="/khoa-hoc" replace />} />
+        <Route path="/ho-so-tai-lieu" element={<Navigate to="/kho-luu-tru" replace />} />
+        <Route path="/dao-tao" element={<Navigate to="/nhan-su" replace />} />
+        <Route path="/khach-hang" element={<Navigate to="/hop-dong" replace />} />
       </Route>
     </Routes>
   );

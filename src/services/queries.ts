@@ -7,6 +7,7 @@ import type {
   LopDaoTao,
   TrangThai,
 } from '../types';
+import type { NhomHD } from '../lib/qc2815';
 
 // Nhãn hiển thị cho mã danh mục (dm_danh_muc)
 const CAP_DE_TAI: Record<string, DeTai['cap']> = {
@@ -198,7 +199,7 @@ export async function fetchHopDong(): Promise<HopDong[]> {
   const { data, error } = await supabase
     .from('hop_dong')
     .select(
-      'id, so_hop_dong, ten_hop_dong, khach_hang_id, don_vi_id, gia_tri, da_thanh_toan, ngay_ky, han_hoan_thanh, trang_thai, khach_hang(ten_to_chuc), don_vi(ten_don_vi)',
+      'id, so_hop_dong, ten_hop_dong, khach_hang_id, don_vi_id, gia_tri, da_thanh_toan, ngay_ky, han_hoan_thanh, trang_thai, nhom_hd, chu_tri_id, gia_du_thau, ngay_nop_ho_so, trang_thai_phe_duyet, ngay_trinh_duyet, ngay_duyet, trang_thai_quyet_toan, ngay_quyet_toan, han_chung_tu_quyet_toan, loai_dac_thu, phan_vien_xa, giam_theo_yeu_cau_don_vi, khach_hang(ten_to_chuc), don_vi(ten_don_vi), chu_tri:nhan_su!hop_dong_chu_tri_id_fkey(ho_va_ten)',
     )
     .order('ngay_ky', { ascending: false });
   throwIf(error);
@@ -215,6 +216,20 @@ export async function fetchHopDong(): Promise<HopDong[]> {
     ngayKy: r.ngay_ky ?? '',
     hanHoanThanh: r.han_hoan_thanh ?? '',
     trangThai: r.trang_thai as TrangThai,
+    nhomHD: (r.nhom_hd as NhomHD | null) ?? null,
+    chuTriId: r.chu_tri_id != null ? String(r.chu_tri_id) : null,
+    chuTri: (r.chu_tri as unknown as { ho_va_ten: string } | null)?.ho_va_ten ?? '',
+    giaDuThau: r.gia_du_thau != null ? Number(r.gia_du_thau) : null,
+    ngayNopHoSo: r.ngay_nop_ho_so ?? '',
+    trangThaiPheDuyet: r.trang_thai_phe_duyet as HopDong['trangThaiPheDuyet'],
+    ngayTrinhDuyet: r.ngay_trinh_duyet ?? '',
+    ngayDuyet: r.ngay_duyet ?? '',
+    trangThaiQuyetToan: r.trang_thai_quyet_toan as HopDong['trangThaiQuyetToan'],
+    ngayQuyetToan: r.ngay_quyet_toan ?? '',
+    hanChungTuQuyetToan: r.han_chung_tu_quyet_toan ?? '',
+    loaiDacThu: (r.loai_dac_thu as HopDong['loaiDacThu']) ?? null,
+    phanVienXa: !!r.phan_vien_xa,
+    giamTheoYeuCauDonVi: !!r.giam_theo_yeu_cau_don_vi,
   }));
 }
 
@@ -228,6 +243,17 @@ export interface HopDongInput {
   ngayKy: string;
   hanHoanThanh: string;
   trangThai: string;
+  nhomHD: string;
+  chuTriId: string;
+  giaDuThau: string;
+  ngayNopHoSo: string;
+  trangThaiPheDuyet: string;
+  ngayTrinhDuyet: string;
+  ngayDuyet: string;
+  hanChungTuQuyetToan: string;
+  loaiDacThu: string;
+  phanVienXa: boolean;
+  giamTheoYeuCauDonVi: boolean;
 }
 
 function hopDongRow(i: HopDongInput) {
@@ -241,6 +267,17 @@ function hopDongRow(i: HopDongInput) {
     ngay_ky: str(i.ngayKy),
     han_hoan_thanh: str(i.hanHoanThanh),
     trang_thai: i.trangThai,
+    nhom_hd: str(i.nhomHD),
+    chu_tri_id: num(i.chuTriId),
+    gia_du_thau: num(i.giaDuThau),
+    ngay_nop_ho_so: str(i.ngayNopHoSo),
+    trang_thai_phe_duyet: i.trangThaiPheDuyet || 'khong-ap-dung',
+    ngay_trinh_duyet: str(i.ngayTrinhDuyet),
+    han_chung_tu_quyet_toan: str(i.hanChungTuQuyetToan),
+    loai_dac_thu: str(i.loaiDacThu),
+    phan_vien_xa: i.phanVienXa,
+    giam_theo_yeu_cau_don_vi: i.giamTheoYeuCauDonVi,
+    ngay_duyet: str(i.ngayDuyet),
   };
 }
 
@@ -252,6 +289,31 @@ export async function updateHopDong(id: string, i: HopDongInput) {
 }
 export async function deleteHopDong(id: string) {
   throwIf((await supabase.from('hop_dong').delete().eq('id', Number(id))).error);
+}
+
+/** Cập nhật nhanh trạng thái trình/duyệt Viện trưởng (Điều 6.1) mà không cần mở form đầy đủ. */
+export async function updateHopDongPheDuyet(
+  id: string,
+  patch: { trangThaiPheDuyet: string; ngayTrinhDuyet?: string; ngayDuyet?: string; nguoiDuyetId?: string },
+) {
+  const row: Record<string, unknown> = { trang_thai_phe_duyet: patch.trangThaiPheDuyet };
+  if (patch.ngayTrinhDuyet !== undefined) row.ngay_trinh_duyet = str(patch.ngayTrinhDuyet);
+  if (patch.ngayDuyet !== undefined) row.ngay_duyet = str(patch.ngayDuyet);
+  if (patch.nguoiDuyetId !== undefined) row.nguoi_duyet_id = num(patch.nguoiDuyetId);
+  throwIf((await supabase.from('hop_dong').update(row).eq('id', Number(id))).error);
+}
+
+/** Đánh dấu đã/chưa quyết toán, thanh lý hợp đồng (Điều 11) — độc lập với trạng thái thực hiện. */
+export async function updateQuyetToanHopDong(id: string, daQuyetToan: boolean) {
+  throwIf(
+    (await supabase
+      .from('hop_dong')
+      .update({
+        trang_thai_quyet_toan: daQuyetToan ? 'da-quyet-toan' : 'chua-quyet-toan',
+        ngay_quyet_toan: daQuyetToan ? new Date().toISOString().slice(0, 10) : null,
+      })
+      .eq('id', Number(id))).error,
+  );
 }
 
 // ─── MẪU THÍ NGHIỆM ───
