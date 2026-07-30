@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import type { TrangThaiGiaoViec } from '../lib/kyGiaoViec';
 
 function throwIf(error: { message: string } | null) {
   if (error) throw new Error(error.message);
@@ -86,14 +87,15 @@ export interface PhieuGiaoViec {
   noiDung: string;
   ngayGiao: string;
   ngayDuyet: string;
-  trangThai: 'du-thao' | 'da-duyet';
+  trangThai: TrangThaiGiaoViec;
+  lyDoTraLai: string;
 }
 
 export async function fetchPhieuGiaoViec(hopDongId: string): Promise<PhieuGiaoViec | null> {
   const { data, error } = await supabase
     .from('phieu_giao_viec')
     .select(
-      'id, hop_dong_id, chu_tri_ky_thuat_id, kinh_phi_giao, noi_dung, ngay_giao, ngay_duyet, trang_thai, chu_tri_ky_thuat:nhan_su!phieu_giao_viec_chu_tri_ky_thuat_id_fkey(ho_va_ten)',
+      'id, hop_dong_id, chu_tri_ky_thuat_id, kinh_phi_giao, noi_dung, ngay_giao, ngay_duyet, trang_thai, ly_do_tra_lai, chu_tri_ky_thuat:nhan_su!phieu_giao_viec_chu_tri_ky_thuat_id_fkey(ho_va_ten)',
     )
     .eq('hop_dong_id', Number(hopDongId))
     .maybeSingle();
@@ -108,7 +110,8 @@ export async function fetchPhieuGiaoViec(hopDongId: string): Promise<PhieuGiaoVi
     noiDung: data.noi_dung ?? '',
     ngayGiao: data.ngay_giao ?? '',
     ngayDuyet: data.ngay_duyet ?? '',
-    trangThai: data.trang_thai as PhieuGiaoViec['trangThai'],
+    trangThai: data.trang_thai as TrangThaiGiaoViec,
+    lyDoTraLai: data.ly_do_tra_lai ?? '',
   };
 }
 
@@ -119,24 +122,41 @@ export interface PhieuGiaoViecInput {
   ngayGiao: string;
 }
 
-/** Lưu (tạo mới hoặc cập nhật) phiếu giao việc chính thức và đánh dấu đã duyệt. */
+/**
+ * Lưu nội dung phiếu giao việc. KHÔNG tự đặt trạng thái duyệt — việc phê duyệt phải đi qua
+ * luồng ký Điều 7.1c (xem chuyenBuocGiaoViec). Phiếu tạo mới bắt đầu ở 'du-thao'.
+ */
 export async function upsertPhieuGiaoViec(hopDongId: string, i: PhieuGiaoViecInput) {
+  const dangCo = await fetchPhieuGiaoViec(hopDongId);
+  const noiDungRow = {
+    hop_dong_id: Number(hopDongId),
+    chu_tri_ky_thuat_id: i.chuTriKyThuatId ? Number(i.chuTriKyThuatId) : null,
+    kinh_phi_giao: Number(i.kinhPhiGiao) || 0,
+    noi_dung: i.noiDung || null,
+    ngay_giao: i.ngayGiao || null,
+  };
+  if (dangCo) {
+    throwIf((await supabase.from('phieu_giao_viec').update(noiDungRow).eq('id', Number(dangCo.id))).error);
+    return;
+  }
   throwIf(
-    (
-      await supabase.from('phieu_giao_viec').upsert(
-        {
-          hop_dong_id: Number(hopDongId),
-          chu_tri_ky_thuat_id: i.chuTriKyThuatId ? Number(i.chuTriKyThuatId) : null,
-          kinh_phi_giao: Number(i.kinhPhiGiao) || 0,
-          noi_dung: i.noiDung || null,
-          ngay_giao: i.ngayGiao || null,
-          ngay_duyet: new Date().toISOString().slice(0, 10),
-          trang_thai: 'da-duyet',
-        },
-        { onConflict: 'hop_dong_id' },
-      )
-    ).error,
+    (await supabase.from('phieu_giao_viec').insert({ ...noiDungRow, trang_thai: 'du-thao' })).error,
   );
+}
+
+/** Chuyển phiếu sang bước ký kế tiếp (hoặc trả lại). Thẩm quyền do trigger CSDL chốt chặn. */
+export async function chuyenBuocGiaoViec(
+  phieuId: string,
+  den: TrangThaiGiaoViec,
+  opts?: { lyDoTraLai?: string },
+) {
+  const homNay = new Date().toISOString().slice(0, 10);
+  const row: Record<string, unknown> = { trang_thai: den };
+  if (den === 'cho-khkt-tham-tra') row.ngay_don_vi_xac_nhan = homNay;
+  if (den === 'cho-lanh-dao-duyet') row.ngay_khkt_tham_tra = homNay;
+  if (den === 'da-duyet') row.ngay_duyet = homNay;
+  if (den === 'tra-lai') row.ly_do_tra_lai = opts?.lyDoTraLai || null;
+  throwIf((await supabase.from('phieu_giao_viec').update(row).eq('id', Number(phieuId))).error);
 }
 
 // ─── CỘNG TÁC VIÊN TRONG PHIẾU GIAO VIỆC ───
@@ -611,6 +631,141 @@ export async function deleteQuyetToanGiaiDoan(hopDongId: string, id: string) {
   await syncTrangThaiQuyetToan(hopDongId);
 }
 
+// ─── ĐƠN VỊ PHỐI HỢP TRONG PHIẾU GIAO VIỆC (Điều 7.1) ───
+// "Các hợp đồng do nhiều đơn vị cùng thực hiện thì Trưởng đơn vị chủ trì thống nhất với
+//  Trưởng các đơn vị phối hợp ... phân chia tỷ lệ giá trị HĐ giữa các đơn vị trên Phiếu giao việc."
+
+export interface DonViGiaoViec {
+  id: string;
+  donViId: string | null;
+  tenDonVi: string;
+  tyLeGiaTri: number; // %
+  vaiTro: 'chu-tri' | 'phoi-hop';
+  ghiChu: string;
+}
+
+export async function fetchDonViGiaoViec(phieuGiaoViecId: string): Promise<DonViGiaoViec[]> {
+  const { data, error } = await supabase
+    .from('phieu_giao_viec_don_vi')
+    .select('id, don_vi_id, ty_le_gia_tri, vai_tro, ghi_chu, don_vi(ten_don_vi)')
+    .eq('phieu_giao_viec_id', Number(phieuGiaoViecId))
+    .order('vai_tro')
+    .order('id');
+  throwIf(error);
+  return (data ?? []).map((r: any) => ({
+    id: String(r.id),
+    donViId: r.don_vi_id != null ? String(r.don_vi_id) : null,
+    tenDonVi: (r.don_vi as { ten_don_vi: string } | null)?.ten_don_vi ?? '',
+    tyLeGiaTri: Number(r.ty_le_gia_tri) || 0,
+    vaiTro: r.vai_tro,
+    ghiChu: r.ghi_chu ?? '',
+  }));
+}
+
+export interface DonViGiaoViecInput {
+  donViId: string;
+  tyLeGiaTri: string;
+  vaiTro: 'chu-tri' | 'phoi-hop';
+  ghiChu: string;
+}
+
+function donViGiaoViecRow(i: DonViGiaoViecInput) {
+  return {
+    don_vi_id: Number(i.donViId),
+    ty_le_gia_tri: Number(i.tyLeGiaTri) || 0,
+    vai_tro: i.vaiTro,
+    ghi_chu: i.ghiChu || null,
+  };
+}
+
+export async function createDonViGiaoViec(phieuGiaoViecId: string, i: DonViGiaoViecInput) {
+  throwIf(
+    (
+      await supabase
+        .from('phieu_giao_viec_don_vi')
+        .insert({ ...donViGiaoViecRow(i), phieu_giao_viec_id: Number(phieuGiaoViecId) })
+    ).error,
+  );
+}
+export async function updateDonViGiaoViec(id: string, i: DonViGiaoViecInput) {
+  throwIf(
+    (await supabase.from('phieu_giao_viec_don_vi').update(donViGiaoViecRow(i)).eq('id', Number(id))).error,
+  );
+}
+export async function deleteDonViGiaoViec(id: string) {
+  throwIf((await supabase.from('phieu_giao_viec_don_vi').delete().eq('id', Number(id))).error);
+}
+
+// ─── NHẬT KÝ TRUY VẾT HỢP ĐỒNG (Điều 9, Điều 10) ───
+// Đọc từ nhat_ky_du_lieu — trigger fn_ghi_nhat_ky ghi tự động ở phía CSDL.
+
+export interface NhatKyHopDong {
+  id: string;
+  hanhDong: string;
+  thoiDiem: string;
+  vaiTro: string;
+  /** Các trường nghiệp vụ thực sự thay đổi, đã diễn giải sang tiếng Việt. */
+  thayDoi: { truong: string; tuGiaTri: string; denGiaTri: string }[];
+}
+
+/** Chỉ soi các cột có ý nghĩa nghiệp vụ — bỏ qua updated_at và nhiễu kỹ thuật. */
+const NHAN_COT_HOP_DONG: Record<string, string> = {
+  so_hop_dong: 'Số hợp đồng',
+  ten_hop_dong: 'Tên hợp đồng',
+  gia_tri: 'Giá trị HĐ',
+  da_thanh_toan: 'Đã thanh toán',
+  trang_thai: 'Trạng thái',
+  buoc_hien_tai: 'Bước xử lý',
+  trang_thai_phe_duyet: 'Trạng thái phê duyệt (Đ.6.1)',
+  ngay_trinh_duyet: 'Ngày trình duyệt',
+  ngay_duyet: 'Ngày duyệt',
+  trang_thai_quyet_toan: 'Trạng thái quyết toán (Đ.11)',
+  ngay_quyet_toan: 'Ngày quyết toán',
+  chu_tri_id: 'Chủ trì hợp đồng',
+  nhom_hd: 'Nhóm HĐ (Bảng 1)',
+  ngay_ky: 'Ngày ký',
+  han_hoan_thanh: 'Hạn hoàn thành',
+  ngay_nop_ho_so: 'Ngày nộp hồ sơ về Viện',
+};
+
+export async function fetchNhatKyHopDong(hopDongId: string): Promise<NhatKyHopDong[]> {
+  const truyVan = (cot: string) =>
+    supabase
+      .from('nhat_ky_du_lieu')
+      .select(cot)
+      .eq('ten_bang', 'hop_dong')
+      .eq('ban_ghi_id', Number(hopDongId))
+      .order('thoi_diem', { ascending: false })
+      .limit(50);
+
+  let res = await truyVan('id, hanh_dong, du_lieu_cu, du_lieu_moi, thoi_diem, vai_tro');
+  // Cột vai_tro chỉ có sau migration 0013 — trước đó vẫn đọc được phần nhật ký cũ.
+  if (res.error?.message?.includes('vai_tro')) {
+    res = await truyVan('id, hanh_dong, du_lieu_cu, du_lieu_moi, thoi_diem');
+  }
+  throwIf(res.error);
+  const data = res.data as any[] | null;
+
+  return (data ?? []).map((r: any) => {
+    const cu = (r.du_lieu_cu ?? {}) as Record<string, unknown>;
+    const moi = (r.du_lieu_moi ?? {}) as Record<string, unknown>;
+    const thayDoi = Object.keys(NHAN_COT_HOP_DONG)
+      .filter((cot) => r.hanh_dong === 'UPDATE' && String(cu[cot] ?? '') !== String(moi[cot] ?? ''))
+      .map((cot) => ({
+        truong: NHAN_COT_HOP_DONG[cot],
+        tuGiaTri: String(cu[cot] ?? '—'),
+        denGiaTri: String(moi[cot] ?? '—'),
+      }));
+    return {
+      id: String(r.id),
+      hanhDong: r.hanh_dong,
+      thoiDiem: r.thoi_diem ?? '',
+      vaiTro: r.vai_tro ?? '',
+      thayDoi,
+    };
+  });
+}
+
 // ─── HỒ SƠ ĐÍNH KÈM HỢP ĐỒNG (Điều 8.4, Supabase Storage bucket hop-dong) ───
 
 export interface TepHopDong {
@@ -675,4 +830,94 @@ export async function getTepHopDongUrl(path: string): Promise<string> {
 export async function deleteTepHopDong(id: string, path: string) {
   throwIf((await supabase.storage.from('hop-dong').remove([path])).error);
   throwIf((await supabase.from('hop_dong_tep_dinh_kem').delete().eq('id', Number(id))).error);
+}
+
+// ─── SLA NGHIỆP VỤ (Điều 6.3, 9.6c, 11.1) ───
+// Bản ghi do trigger CSDL sinh tự động — ứng dụng chỉ đọc.
+
+export interface SlaHopDong {
+  id: string;
+  tenSla: string;
+  hanChot: string;
+  trangThai: 'dang-chay' | 'dat' | 'vi-pham' | 'huy';
+  ngayHoanThanh: string;
+}
+
+export async function fetchSlaHopDong(hopDongId: string): Promise<SlaHopDong[]> {
+  const { data, error } = await supabase
+    .from('sla_theo_doi')
+    .select('id, ten_sla, han_chot, trang_thai, ngay_hoan_thanh')
+    .eq('loai_doi_tuong', 'hop-dong')
+    .eq('doi_tuong_id', Number(hopDongId))
+    .order('han_chot');
+  throwIf(error);
+  return (data ?? []).map((r: any) => ({
+    id: String(r.id),
+    tenSla: r.ten_sla,
+    hanChot: r.han_chot ?? '',
+    trangThai: r.trang_thai,
+    ngayHoanThanh: r.ngay_hoan_thanh ?? '',
+  }));
+}
+
+// ─── TIẾN ĐỘ / KHỐI LƯỢNG / CHẤT LƯỢNG / ATLĐ (Điều 8.1) ───
+
+export interface TienDoHopDong {
+  id: string;
+  kyBaoCao: string;
+  phanTramKhoiLuong: number;
+  danhGiaChatLuong: 'dat' | 'can-khac-phuc' | 'khong-dat';
+  suCoAtld: boolean;
+  moTaSuCo: string;
+  ghiChu: string;
+}
+
+export async function fetchTienDoHopDong(hopDongId: string): Promise<TienDoHopDong[]> {
+  const { data, error } = await supabase
+    .from('tien_do_hop_dong')
+    .select('id, ky_bao_cao, phan_tram_khoi_luong, danh_gia_chat_luong, su_co_atld, mo_ta_su_co, ghi_chu')
+    .eq('hop_dong_id', Number(hopDongId))
+    .order('ky_bao_cao', { ascending: false });
+  throwIf(error);
+  return (data ?? []).map((r: any) => ({
+    id: String(r.id),
+    kyBaoCao: r.ky_bao_cao ?? '',
+    phanTramKhoiLuong: Number(r.phan_tram_khoi_luong) || 0,
+    danhGiaChatLuong: r.danh_gia_chat_luong,
+    suCoAtld: !!r.su_co_atld,
+    moTaSuCo: r.mo_ta_su_co ?? '',
+    ghiChu: r.ghi_chu ?? '',
+  }));
+}
+
+export interface TienDoInput {
+  kyBaoCao: string;
+  phanTramKhoiLuong: string;
+  danhGiaChatLuong: 'dat' | 'can-khac-phuc' | 'khong-dat';
+  suCoAtld: boolean;
+  moTaSuCo: string;
+  ghiChu: string;
+}
+
+function tienDoRow(i: TienDoInput) {
+  return {
+    ky_bao_cao: i.kyBaoCao,
+    phan_tram_khoi_luong: Number(i.phanTramKhoiLuong) || 0,
+    danh_gia_chat_luong: i.danhGiaChatLuong,
+    su_co_atld: i.suCoAtld,
+    mo_ta_su_co: i.moTaSuCo || null,
+    ghi_chu: i.ghiChu || null,
+  };
+}
+
+export async function createTienDo(hopDongId: string, i: TienDoInput) {
+  throwIf(
+    (await supabase.from('tien_do_hop_dong').insert({ ...tienDoRow(i), hop_dong_id: Number(hopDongId) })).error,
+  );
+}
+export async function updateTienDo(id: string, i: TienDoInput) {
+  throwIf((await supabase.from('tien_do_hop_dong').update(tienDoRow(i)).eq('id', Number(id))).error);
+}
+export async function deleteTienDo(id: string) {
+  throwIf((await supabase.from('tien_do_hop_dong').delete().eq('id', Number(id))).error);
 }

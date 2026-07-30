@@ -1,6 +1,7 @@
 import { useRef, useState, type ReactNode } from 'react';
 import { Plus, Pencil, Trash2, Check, X, LoaderCircle, Upload, Download } from 'lucide-react';
 import { useAsyncData } from '../hooks/useAsyncData';
+import { NumberInput } from './NumberInput';
 import {
   fetchDotThanhToan,
   createDotThanhToan,
@@ -36,6 +37,12 @@ import {
   uploadTepHopDong,
   getTepHopDongUrl,
   deleteTepHopDong,
+  fetchNhatKyHopDong,
+  fetchDonViGiaoViec,
+  createDonViGiaoViec,
+  updateDonViGiaoViec,
+  deleteDonViGiaoViec,
+  type DonViGiaoViecInput,
   LOAI_HO_SO_OPTIONS,
   type DotThanhToanInput,
   type KetQuaInput,
@@ -49,7 +56,7 @@ import {
 import { HANG_CHUNG_CHI } from '../services/org';
 import type { Option } from '../services/queries';
 import { DANH_MUC_VI_PHAM, timLoaiViPham, type NhomHD } from '../lib/qc2815';
-import { formatNgay, cn } from '../lib/utils';
+import { formatNgay, formatTrieu, cn } from '../lib/utils';
 
 const HANG_OPTIONS = [
   { value: '', label: '—' },
@@ -201,8 +208,8 @@ export function DotThanhToanPanel({
           onChange={(e) => setForm({ ...form, tenDot: e.target.value })} />
       </td>
       <td className="px-3 py-1.5">
-        <input className={miniInput} type="number" min={0} placeholder="Triệu đồng" value={form.soTien}
-          onChange={(e) => setForm({ ...form, soTien: e.target.value })} />
+        <NumberInput className={miniInput} placeholder="Số tiền (triệu đ)" value={form.soTien}
+          onChange={(val) => setForm({ ...form, soTien: val })} />
       </td>
       <td className="px-3 py-1.5">
         <input className={miniInput} type="date" value={form.ngayDuKien}
@@ -685,6 +692,8 @@ export function CtvGiaoViecPanel({
     }
   };
 
+  const tongTyLe = rows.reduce((acc, r) => acc + (Number(r.tyLePhanChia) || 0), 0);
+
   const editor = (key: string) => (
     <tr key={key} className="bg-subtle">
       <td className="px-3 py-1.5">
@@ -698,8 +707,22 @@ export function CtvGiaoViecPanel({
           onChange={(e) => setForm({ ...form, tyLePhanChia: e.target.value })} />
       </td>
       <td className="px-3 py-1.5">
-        <input className={miniInput} placeholder="Ghi chú" value={form.ghiChu}
-          onChange={(e) => setForm({ ...form, ghiChu: e.target.value })} />
+        <input
+          className={miniInput}
+          list="vai-tro-2815-list"
+          placeholder="Vai trò / Ghi chú (QC 2815)"
+          value={form.ghiChu}
+          onChange={(e) => setForm({ ...form, ghiChu: e.target.value })}
+        />
+        <datalist id="vai-tro-2815-list">
+          <option value="Chủ trì Kỹ thuật / Chủ trì bộ môn" />
+          <option value="Chủ nhiệm dự án / Chủ nhiệm thiết kế / Khảo sát" />
+          <option value="Giám sát trưởng / Chỉ huy trưởng" />
+          <option value="Kiểm định viên chính" />
+          <option value="Thí nghiệm viên vật liệu" />
+          <option value="Cán bộ khảo sát địa kỹ thuật / Trắc đạc" />
+          <option value="Xử lý số liệu & Lập báo cáo" />
+        </datalist>
       </td>
       <td className="px-3 py-1.5"><RowBtns onSave={save} onCancel={() => setEditingId(null)} saving={saving} /></td>
     </tr>
@@ -707,9 +730,17 @@ export function CtvGiaoViecPanel({
 
   return (
     <PanelShell
-      title="Cộng tác viên"
+      title="Thành viên / Cán bộ phối hợp thực hiện (Điều 7)"
       adding={editingId !== null}
       onAdd={() => { setForm(EMPTY_CTV); setEditingId('new'); }}
+      footer={
+        <div className="flex items-center justify-between border-t border-border-subtle bg-muted/30 px-3 py-2 text-2xs">
+          <span className="font-semibold text-ink-muted">Tổng tỷ lệ phân chia kinh phí giao việc:</span>
+          <span className={cn('font-mono font-bold', tongTyLe === 100 ? 'text-success' : 'text-primary')}>
+            {tongTyLe}% / 100%
+          </span>
+        </div>
+      }
     >
       {err && <p className="px-3 py-1.5 text-2xs font-semibold text-danger">{err}</p>}
       <table className="w-full min-w-[420px]">
@@ -1234,5 +1265,239 @@ export function HoSoHopDongPanel({
         {rows.length === 0 && <p className="px-3 py-3 text-center text-xs italic text-ink-muted">Chưa có hồ sơ đính kèm</p>}
       </div>
     </div>
+  );
+}
+
+// ═══ NHẬT KÝ TRUY VẾT HỢP ĐỒNG (Điều 9, Điều 10) ═══
+// Chỉ đọc — dữ liệu do trigger fn_ghi_nhat_ky ghi tự động ở CSDL, không sửa/xóa được
+// từ ứng dụng, đúng bản chất một vết kiểm toán.
+
+const NHAN_HANH_DONG: Record<string, string> = {
+  INSERT: 'Tạo mới',
+  UPDATE: 'Cập nhật',
+  DELETE: 'Xóa',
+};
+
+export function NhatKyHopDongPanel({ hopDongId }: { hopDongId: string }) {
+  const { data: rows, loading, error } = useAsyncData(() => fetchNhatKyHopDong(hopDongId), []);
+
+  return (
+    <div className="rounded-lg border border-border">
+      <div className="border-b border-border-subtle px-3 py-2">
+        <h4 className="text-2xs font-black uppercase tracking-wider text-ink-muted">
+          Nhật ký truy vết (Điều 9, Điều 10)
+        </h4>
+      </div>
+
+      {loading && <p className="px-3 py-3 text-center text-xs italic text-ink-muted">Đang tải…</p>}
+      {error && <p className="px-3 py-2 text-2xs font-semibold text-danger">{error}</p>}
+
+      <div className="divide-y divide-border-subtle">
+        {rows.map((r) => (
+          <div key={r.id} className="px-3 py-2 text-xs">
+            <div className="flex flex-wrap items-center gap-2">
+              <span
+                className={cn(
+                  'rounded px-1.5 py-0.5 text-2xs font-bold',
+                  r.hanhDong === 'INSERT'
+                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
+                    : r.hanhDong === 'DELETE'
+                      ? 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'
+                      : 'bg-muted text-ink-secondary',
+                )}
+              >
+                {NHAN_HANH_DONG[r.hanhDong] ?? r.hanhDong}
+              </span>
+              <span className="font-mono text-2xs text-ink-muted">
+                {r.thoiDiem ? new Date(r.thoiDiem).toLocaleString('vi-VN') : '—'}
+              </span>
+              {r.vaiTro && (
+                <span className="rounded bg-subtle px-1.5 py-0.5 text-2xs font-semibold text-ink-secondary">
+                  {r.vaiTro}
+                </span>
+              )}
+            </div>
+            {r.thayDoi.length > 0 && (
+              <ul className="mt-1 space-y-0.5 pl-1">
+                {r.thayDoi.map((t, i) => (
+                  <li key={i} className="text-2xs text-ink-secondary">
+                    <span className="font-semibold text-ink">{t.truong}:</span>{' '}
+                    <span className="text-ink-muted line-through">{t.tuGiaTri}</span> → <strong>{t.denGiaTri}</strong>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        ))}
+        {!loading && !error && rows.length === 0 && (
+          <p className="px-3 py-3 text-center text-xs italic text-ink-muted">
+            Chưa có vết thay đổi. Nhật ký bắt đầu ghi sau khi chạy migration 0013.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ═══ ĐƠN VỊ PHỐI HỢP (Điều 7.1) ═══
+// HĐ nhiều đơn vị cùng thực hiện: chia tỷ lệ giá trị HĐ giữa các đơn vị ngay trên
+// Phiếu giao việc. Tổng tỷ lệ phải đủ 100% mới phân bổ đúng kinh phí (Điều 12.1).
+
+const EMPTY_DVGV: DonViGiaoViecInput = { donViId: '', tyLeGiaTri: '', vaiTro: 'phoi-hop', ghiChu: '' };
+
+export function DonViGiaoViecPanel({
+  phieuGiaoViecId,
+  donViOptions,
+  giaTriHopDong,
+}: {
+  phieuGiaoViecId: string;
+  donViOptions: Option[];
+  giaTriHopDong: number;
+}) {
+  const { data: rows, refetch } = useAsyncData(() => fetchDonViGiaoViec(phieuGiaoViecId), []);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState<DonViGiaoViecInput>(EMPTY_DVGV);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const save = async () => {
+    if (!form.donViId) {
+      setErr('Chưa chọn đơn vị.');
+      return;
+    }
+    setSaving(true);
+    setErr(null);
+    try {
+      if (editingId === 'new') await createDonViGiaoViec(phieuGiaoViecId, form);
+      else if (editingId) await updateDonViGiaoViec(editingId, form);
+      setEditingId(null);
+      refetch();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const remove = async (id: string) => {
+    if (!window.confirm('Xóa đơn vị này khỏi phiếu giao việc?')) return;
+    try {
+      await deleteDonViGiaoViec(id);
+      refetch();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    }
+  };
+
+  const tongTyLe = rows.reduce((s, r) => s + r.tyLeGiaTri, 0);
+  const duTramPhanTram = Math.abs(tongTyLe - 100) < 0.01;
+  const soChuTri = rows.filter((r) => r.vaiTro === 'chu-tri').length;
+
+  const editor = (key: string) => (
+    <tr key={key} className="bg-subtle">
+      <td className="px-3 py-1.5">
+        <select className={miniInput} value={form.donViId} onChange={(e) => setForm({ ...form, donViId: e.target.value })}>
+          <option value="">-- Chọn đơn vị --</option>
+          {donViOptions.map((d) => <option key={d.id} value={d.id}>{d.ten}</option>)}
+        </select>
+      </td>
+      <td className="px-3 py-1.5">
+        <select className={miniInput} value={form.vaiTro}
+          onChange={(e) => setForm({ ...form, vaiTro: e.target.value as DonViGiaoViecInput['vaiTro'] })}>
+          <option value="chu-tri">Chủ trì</option>
+          <option value="phoi-hop">Phối hợp</option>
+        </select>
+      </td>
+      <td className="px-3 py-1.5">
+        <input className={miniInput} type="number" min={0} max={100} step="0.01" placeholder="%"
+          value={form.tyLeGiaTri} onChange={(e) => setForm({ ...form, tyLeGiaTri: e.target.value })} />
+      </td>
+      <td className="px-3 py-1.5">
+        <input className={miniInput} placeholder="Ghi chú" value={form.ghiChu}
+          onChange={(e) => setForm({ ...form, ghiChu: e.target.value })} />
+      </td>
+      <td className="px-3 py-1.5"><RowBtns onSave={save} onCancel={() => setEditingId(null)} saving={saving} /></td>
+    </tr>
+  );
+
+  return (
+    <PanelShell
+      title="Đơn vị thực hiện & tỷ lệ chia giá trị (Điều 7.1)"
+      adding={editingId !== null}
+      onAdd={() => { setForm(EMPTY_DVGV); setEditingId('new'); }}
+      footer={
+        <div className="space-y-1 border-t border-border-subtle px-3 py-2 text-xs">
+          <div className="flex flex-wrap justify-end gap-4">
+            <span>
+              Tổng tỷ lệ:{' '}
+              <b className={cn('font-mono', duTramPhanTram ? 'text-success' : 'text-warning')}>
+                {tongTyLe.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}%
+              </b>
+            </span>
+          </div>
+          {rows.length > 0 && !duTramPhanTram && (
+            <p className="text-2xs font-semibold text-warning">
+              Tổng tỷ lệ chưa đủ 100% — kinh phí giao các đơn vị sẽ không khớp giá trị hợp đồng.
+            </p>
+          )}
+          {soChuTri > 1 && (
+            <p className="text-2xs font-semibold text-danger">
+              Điều 4.3: mỗi hợp đồng chỉ có MỘT đơn vị chủ trì — hiện đang có {soChuTri}.
+            </p>
+          )}
+        </div>
+      }
+    >
+      {err && <p className="px-3 py-1.5 text-2xs font-semibold text-danger">{err}</p>}
+      <table className="w-full min-w-[560px]">
+        <thead>
+          <tr>
+            <th className="th-cell">Đơn vị</th>
+            <th className="th-cell">Vai trò</th>
+            <th className="th-cell">Tỷ lệ (%)</th>
+            <th className="th-cell">Giá trị tương ứng</th>
+            <th className="th-cell text-right">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) =>
+            editingId === r.id ? editor(r.id) : (
+              <tr key={r.id} className="tr-hover">
+                <td className="td-cell text-xs font-medium">{r.tenDonVi || '—'}</td>
+                <td className="td-cell">
+                  <span className={cn(
+                    'rounded px-1.5 py-0.5 text-2xs font-bold',
+                    r.vaiTro === 'chu-tri'
+                      ? 'bg-primary-subtle text-primary'
+                      : 'bg-muted text-ink-secondary',
+                  )}>
+                    {r.vaiTro === 'chu-tri' ? 'Chủ trì' : 'Phối hợp'}
+                  </span>
+                </td>
+                <td className="td-cell font-mono text-xs">{r.tyLeGiaTri}%</td>
+                <td className="td-cell font-mono text-xs text-ink-secondary">
+                  {formatTrieu((giaTriHopDong * r.tyLeGiaTri) / 100)}
+                </td>
+                <td className="td-cell">
+                  <EditDeleteBtns
+                    onEdit={() => {
+                      setForm({ donViId: r.donViId ?? '', tyLeGiaTri: String(r.tyLeGiaTri), vaiTro: r.vaiTro, ghiChu: r.ghiChu });
+                      setEditingId(r.id);
+                    }}
+                    onDelete={() => remove(r.id)}
+                  />
+                </td>
+              </tr>
+            ),
+          )}
+          {editingId === 'new' && editor('new')}
+          {rows.length === 0 && editingId !== 'new' && (
+            <tr><td colSpan={5} className="td-cell py-3 text-center text-xs italic text-ink-muted">
+              Chưa khai báo đơn vị — chỉ cần khai khi hợp đồng do nhiều đơn vị cùng thực hiện.
+            </td></tr>
+          )}
+        </tbody>
+      </table>
+    </PanelShell>
   );
 }

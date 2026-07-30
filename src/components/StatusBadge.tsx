@@ -2,31 +2,51 @@ import type { TrangThai } from '../types';
 import { cn } from '../lib/utils';
 
 const CONFIG: Record<TrangThai, { label: string; cls: string }> = {
-  'hoan-thanh': {
-    label: 'Hoàn thành',
-    cls: 'bg-emerald-50 text-success border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800',
-  },
-  'dang-thuc-hien': {
-    label: 'Đang thực hiện',
-    cls: 'bg-amber-50 text-warning border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800',
+  moi: {
+    label: 'Mới',
+    cls: 'bg-primary-subtle text-primary border-primary-light/40 dark:bg-primary-900/30 dark:text-primary-300 dark:border-primary-700',
   },
   'cho-duyet': {
     label: 'Chờ duyệt',
     cls: 'bg-blue-50 text-info border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800',
   },
+  'dang-thuc-hien': {
+    label: 'Đang thực hiện',
+    cls: 'bg-amber-50 text-warning border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800',
+  },
+  'tam-dung': {
+    label: 'Tạm dừng',
+    cls: 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800',
+  },
+  'nghiem-thu': {
+    label: 'Nghiệm thu',
+    cls: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800',
+  },
+  'quyet-toan': {
+    label: 'Quyết toán',
+    cls: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-900/20 dark:text-indigo-400 dark:border-indigo-800',
+  },
+  'hoan-thanh': {
+    label: 'Hoàn thành',
+    cls: 'bg-emerald-50 text-success border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800',
+  },
+  'thanh-ly': {
+    label: 'Thanh lý',
+    cls: 'bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
+  },
+  huy: {
+    label: 'Hủy',
+    cls: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-900/20 dark:text-rose-400 dark:border-rose-800',
+  },
   'qua-han': {
     label: 'Quá hạn',
     cls: 'bg-red-50 text-danger border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800',
-  },
-  moi: {
-    label: 'Mới',
-    cls: 'bg-primary-subtle text-primary border-primary-light/40 dark:bg-primary-900/30 dark:text-primary-300 dark:border-primary-700',
   },
 };
 
 /** Danh sách trạng thái cho select lọc/form (thứ tự theo vòng đời). */
 export const TRANG_THAI_OPTIONS: { value: TrangThai; label: string }[] = (
-  ['moi', 'dang-thuc-hien', 'cho-duyet', 'hoan-thanh', 'qua-han'] as TrangThai[]
+  ['moi', 'cho-duyet', 'dang-thuc-hien', 'tam-dung', 'nghiem-thu', 'quyet-toan', 'hoan-thanh', 'thanh-ly', 'huy', 'qua-han'] as TrangThai[]
 ).map((v) => ({ value: v, label: CONFIG[v].label }));
 
 export function StatusBadge({ value }: { value: TrangThai }) {

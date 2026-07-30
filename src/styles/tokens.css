@@ -229,8 +229,10 @@
   --color-text-tertiary: var(--color-slate-400);
   --color-text-muted: var(--color-slate-500);
 
-  --color-border-primary: var(--color-slate-700);
-  --color-border-secondary: var(--color-slate-800);
+  --color-border-primary: rgba(255, 255, 255, 0.16);
+  --color-border-secondary: rgba(255, 255, 255, 0.10);
+  --border-default: rgba(255, 255, 255, 0.16);
+  --border-subtle: rgba(255, 255, 255, 0.10);
 
   /* Dark Shadows (Từ CIC ERP) */
   --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.25);

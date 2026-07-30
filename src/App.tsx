@@ -14,6 +14,9 @@ import { KhoLuuTruPage } from './pages/KhoLuuTruPage';
 import { DonViPage } from './pages/DonViPage';
 import { CaiDatPage } from './pages/CaiDatPage';
 import { IbstPortalPage } from './pages/IbstPortalPage';
+import { DauThauPage } from './pages/DauThauPage';
+import { PvqlnnPage } from './pages/PvqlnnPage';
+import { UyQuyenPage } from './pages/UyQuyenPage';
 
 const SKIP_AUTH = import.meta.env.DEV && import.meta.env.VITE_SKIP_AUTH === 'true';
 
@@ -52,6 +55,11 @@ export default function App() {
         <Route path="/thi-nghiem" element={<ThiNghiemPage />} />
         <Route path="/e-office" element={<EOfficePage />} />
         <Route path="/kho-luu-tru" element={<KhoLuuTruPage />} />
+
+        {/* Các phân hệ mở rộng QC 2815 */}
+        <Route path="/dau-thau" element={<DauThauPage />} />
+        <Route path="/pvqlnn" element={<PvqlnnPage />} />
+        <Route path="/uy-quyen" element={<UyQuyenPage />} />
 
         {/* Các trang hỗ trợ & Cổng thông tin */}
         <Route path="/don-vi" element={<DonViPage />} />

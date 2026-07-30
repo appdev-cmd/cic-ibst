@@ -1,0 +1,78 @@
+import dns from 'dns';
+dns.setServers(['8.8.8.8', '1.1.1.1']);
+
+import pkg from 'pg';
+const { Client } = pkg;
+import fs from 'fs';
+
+const password = 'IymTBNztKKohCr0l';
+
+async function main() {
+  const host = 'aws-0-ap-northeast-2.pooler.supabase.com';
+  const user = 'postgres.umvckjqseqawpqamvsbx';
+  
+  console.log(`Connecting to ${host}:5432 (Session Mode)...`);
+  const client = new Client({
+    host,
+    port: 5432,
+    database: 'postgres',
+    user,
+    password,
+    ssl: { rejectUnauthorized: false }
+  });
+
+  try {
+    await client.connect();
+    console.log('🎉 CONNECTED TO SUPABASE POSTGRES (umvckjqseqawpqamvsbx)!');
+
+    // 1. Apply 0012 migration SQL
+    const migrationPath = './supabase/migrations/0012_qc2815_phase1_security_workflow.sql';
+    const migrationSql = fs.readFileSync(migrationPath, 'utf8');
+
+    console.log('Applying 0012_qc2815_phase1_security_workflow.sql...');
+    await client.query(migrationSql);
+    console.log('✅ Migration 0012 applied successfully!');
+
+    // 2. Insert 20 sample contracts
+    const seedSql = `
+      delete from hop_dong where so_hop_dong like 'HD-2026/%';
+
+      insert into hop_dong (
+        so_hop_dong, ten_hop_dong, khach_hang_id, don_vi_id, gia_tri, da_thanh_toan, ngay_ky, han_hoan_thanh,
+        trang_thai, nhom_hd, chu_tri_id, gia_du_thau, ngay_nop_ho_so, trang_thai_phe_duyet, ngay_trinh_duyet,
+        ngay_duyet, trang_thai_quyet_toan, ngay_quyet_toan, han_chung_tu_quyet_toan, loai_dac_thu, phan_vien_xa,
+        giam_theo_yeu_cau_don_vi, buoc_hien_tai
+      ) values
+        ('HD-2026/001-KC', 'Thử nghiệm chịu tải kết cấu cầu đường bộ cao tốc Bắc - Nam', (select id from khach_hang limit 1), (select id from don_vi limit 1), 2500000, 0, '2026-01-10', '2026-06-30', 'moi', 'N1A', (select id from nhan_su limit 1), 2500000, null, 'chua-trinh', null, null, 'chua-quyet-toan', null, null, null, false, false, 'du-thao'),
+        ('HD-2026/002-DKT', 'Khảo sát địa kỹ thuật và quan trắc lún dự án Trung tâm Vũ trụ Việt Nam', (select id from khach_hang limit 1), (select id from don_vi limit 1), 3200000, 0, '2026-01-15', '2026-08-15', 'cho-duyet', 'N1A', (select id from nhan_su limit 1), 3200000, null, 'da-trinh', '2026-01-16', null, 'chua-quyet-toan', null, null, null, false, false, 'cho-duyet'),
+        ('HD-2026/003-BT', 'Nghiên cứu cấp phối bê tông sỏi nhẹ cường độ cao cho công trình ven biển', (select id from khach_hang limit 1), (select id from don_vi limit 1), 1800000, 0, '2026-01-20', '2026-07-20', 'cho-duyet', 'N1A', (select id from nhan_su limit 1), 1800000, null, 'chua-trinh', null, null, 'chua-quyet-toan', null, null, null, false, false, 'cho-duyet'),
+        ('HD-2026/004-BIM', 'Tư vấn quy trình và xây dựng mô hình BIM 5D Cảng hàng không Quốc tế Long Thành', (select id from khach_hang limit 1), (select id from don_vi limit 1), 6500000, 0, '2026-01-25', '2026-12-31', 'cho-duyet', 'N2', (select id from nhan_su limit 1), 6500000, null, 'da-trinh', '2026-01-26', null, 'chua-quyet-toan', null, null, null, false, false, 'cho-duyet'),
+        ('HD-2026/005-KC', 'Kiểm định chất lượng và gia cường kết cấu Tòa nhà Trụ sở Bộ Xây dựng', (select id from khach_hang limit 1), (select id from don_vi limit 1), 4200000, 1500000, '2026-02-01', '2026-09-30', 'dang-thuc-hien', 'N2', (select id from nhan_su limit 1), 4200000, '2026-02-10', 'da-duyet', '2026-02-02', '2026-02-05', 'chua-quyet-toan', null, null, null, false, false, 'dang-thuc-hien'),
+        ('HD-2026/006-MN', 'Khảo sát địa chất và thử nghiệm cọc dự án Tuyến Metro số 2 TP.HCM', (select id from khach_hang limit 1), (select id from don_vi limit 1), 12000000, 4000000, '2026-02-05', '2026-11-30', 'dang-thuc-hien', 'N3', (select id from nhan_su limit 1), 12000000, '2026-02-15', 'da-duyet', '2026-02-06', '2026-02-08', 'chua-quyet-toan', null, null, null, true, false, 'dang-thuc-hien'),
+        ('HD-2026/007-DKT', 'Quan trắc địa kỹ thuật móng sâu dự án Tháp Tài chính 88 tầng', (select id from khach_hang limit 1), (select id from don_vi limit 1), 2100000, 1000000, '2026-02-10', '2026-10-15', 'dang-thuc-hien', 'N1A', (select id from nhan_su limit 1), 2100000, '2026-02-20', 'khong-ap-dung', null, null, 'chua-quyet-toan', null, null, null, false, false, 'dang-thuc-hien'),
+        ('HD-2026/008-BT', 'Thử nghiệm độ bền ăn mòn bê tông cốt thép trong môi trường biển Phú Quốc', (select id from khach_hang limit 1), (select id from don_vi limit 1), 850000, 200000, '2026-02-12', '2026-06-15', 'tam-dung', 'N2', (select id from nhan_su limit 1), 850000, '2026-02-25', 'khong-ap-dung', null, null, 'chua-quyet-toan', null, null, null, false, false, 'tam-dung'),
+        ('HD-2026/009-KC', 'Thẩm tra thiết kế bản vẽ thi công và dự toán Nhà ga T3 Tân Sơn Nhất', (select id from khach_hang limit 1), (select id from don_vi limit 1), 3800000, 2500000, '2026-02-15', '2026-07-31', 'nghiem-thu', 'N2', (select id from nhan_su limit 1), 3800000, '2026-02-28', 'khong-ap-dung', null, null, 'chua-quyet-toan', null, null, null, false, false, 'nghiem-thu'),
+        ('HD-2026/010-MT', 'Thí nghiệm chỉ tiêu cơ lý đất đá phục vụ Cao tốc Cam Lộ - La Sơn', (select id from khach_hang limit 1), (select id from don_vi limit 1), 1200000, 800000, '2026-02-18', '2026-05-30', 'nghiem-thu', 'N1A', (select id from nhan_su limit 1), 1200000, '2026-03-01', 'khong-ap-dung', null, null, 'chua-quyet-toan', null, null, null, true, false, 'nghiem-thu'),
+        ('HD-2026/011-KHKT', 'Biên soạn Tiêu chuẩn Quốc gia TCVN về Bê tông đầm lăn đập thủy điện', (select id from khach_hang limit 1), (select id from don_vi limit 1), 1500000, 1500000, '2026-01-05', '2026-04-30', 'quyet-toan', 'N1B', (select id from nhan_su limit 1), 1500000, '2026-01-15', 'khong-ap-dung', null, null, 'chua-quyet-toan', null, '2026-05-15', null, false, false, 'quyet-toan'),
+        ('HD-2026/012-DKT', 'Khảo sát gia cố mái taluy sạt lở Quốc lộ 6 khu vực Hòa Bình', (select id from khach_hang limit 1), (select id from don_vi limit 1), 950000, 950000, '2026-01-08', '2026-04-15', 'quyet-toan', 'N1A', (select id from nhan_su limit 1), 950000, '2026-01-20', 'khong-ap-dung', null, null, 'chua-quyet-toan', null, null, null, false, false, 'quyet-toan'),
+        ('HD-2026/013-BT', 'Thí nghiệm mỏi và xác định tuổi thọ kết cấu bê tông đúc sẵn', (select id from khach_hang limit 1), (select id from don_vi limit 1), 1400000, 1400000, '2026-01-02', '2026-03-31', 'hoan-thanh', 'N2', (select id from nhan_su limit 1), 1400000, '2026-01-10', 'khong-ap-dung', null, null, 'da-quyet-toan', '2026-04-10', null, null, false, false, 'hoan-thanh'),
+        ('HD-2026/014-KC', 'Tư vấn giám sát lắp dựng kết cấu thép Nhà máy Nhiệt điện Thái Bình 2', (select id from khach_hang limit 1), (select id from don_vi limit 1), 8900000, 8900000, '2025-11-01', '2026-03-15', 'hoan-thanh', 'N3', (select id from nhan_su limit 1), 8900000, '2025-11-10', 'da-duyet', '2025-11-02', '2025-11-05', 'da-quyet-toan', '2026-03-25', null, null, false, false, 'hoan-thanh'),
+        ('HD-2026/015-BIM', 'Đào tạo và chuyển giao công nghệ BIM cho Tập đoàn Dầu khí Việt Nam', (select id from khach_hang limit 1), (select id from don_vi limit 1), 750000, 750000, '2025-10-15', '2026-02-28', 'thanh-ly', 'N2', (select id from nhan_su limit 1), 750000, '2025-10-20', 'khong-ap-dung', null, null, 'da-quyet-toan', '2026-03-05', null, null, false, false, 'thanh-ly'),
+        ('HD-2026/016-MN', 'Kiểm định sự cố nghiêng lệch chung cư cũ Phường 12 Quận 5 TP.HCM', (select id from khach_hang limit 1), (select id from don_vi limit 1), 600000, 600000, '2025-09-01', '2026-01-31', 'thanh-ly', 'N1A', (select id from nhan_su limit 1), 600000, '2025-09-10', 'khong-ap-dung', null, null, 'da-quyet-toan', '2026-02-15', null, null, true, false, 'thanh-ly'),
+        ('HD-2026/017-DKT', 'Thử nghiệm hầm gió mô hình cầu dây văng Rạch Miễu 2', (select id from khach_hang limit 1), (select id from don_vi limit 1), 2900000, 0, '2026-01-12', '2026-06-30', 'huy', 'N2', (select id from nhan_su limit 1), 2900000, null, 'khong-ap-dung', null, null, 'chua-quyet-toan', null, null, null, false, false, 'huy'),
+        ('HD-2026/018-KC', 'Quan trắc biến dạng nhiệt kết cấu Đập thủy điện Sơn La', (select id from khach_hang limit 1), (select id from don_vi limit 1), 2200000, 500000, '2026-02-20', '2026-11-30', 'dang-thuc-hien', 'N1B', (select id from nhan_su limit 1), 2200000, '2026-02-28', 'khong-ap-dung', null, null, 'chua-quyet-toan', null, null, null, false, false, 'dang-thuc-hien'),
+        ('HD-2026/019-BT', 'Kiểm tra đánh giá chất lượng bê tông vỏ hầm đường bộ Đèo Cả', (select id from khach_hang limit 1), (select id from don_vi limit 1), 2700000, 0, '2026-02-22', '2026-09-15', 'cho-duyet', 'N1A', (select id from nhan_su limit 1), 2700000, null, 'da-trinh', '2026-02-23', null, 'chua-quyet-toan', null, null, null, false, false, 'cho-duyet'),
+        ('HD-2026/020-BIM', 'Tư vấn quản lý dự án số hóa di sản và công trình văn hóa quốc gia', (select id from khach_hang limit 1), (select id from don_vi limit 1), 1100000, 0, '2026-02-25', '2026-10-30', 'moi', 'N2', (select id from nhan_su limit 1), 1100000, null, 'chua-trinh', null, null, 'chua-quyet-toan', null, null, null, false, false, 'du-thao');
+    `;
+
+    console.log('Inserting 20 sample contracts...');
+    await client.query(seedSql);
+    console.log('🎉 20 SAMPLE CONTRACTS SEEDED SUCCESSFULLY!');
+
+    await client.end();
+  } catch (err) {
+    console.error('Error:', err);
+  }
+}
+
+main();

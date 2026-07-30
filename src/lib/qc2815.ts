@@ -138,10 +138,46 @@ export function dacThuHopLe(nhom: NhomHD | null | undefined, loaiDacThu: LoaiDac
   return !!DAC_THU_OPTIONS.find((d) => d.id === loaiDacThu)?.apDungNhom.includes(nhom);
 }
 
+/** Cấp ký hợp đồng — Điều 6.1: Viện trưởng/Phó VT ký, hoặc phân cấp cho Trưởng đơn vị ký. */
+export type CapKy = 'vien-ky' | 'don-vi-ky';
+
+export const CAP_KY_OPTIONS: { value: CapKy; label: string }[] = [
+  { value: 'vien-ky', label: 'Viện ký (Viện trưởng / Phó Viện trưởng)' },
+  { value: 'don-vi-ky', label: 'Đơn vị ký (phân cấp, ủy quyền)' },
+];
+
 export interface PhanBoHopDongOpts {
   loaiDacThu?: LoaiDacThu | null;
   phanVienXa?: boolean;
   giamTheoYeuCauDonVi?: boolean;
+  capKy?: CapKy | null;
+}
+
+/**
+ * Kiểm tra cấp ký có đúng thẩm quyền Điều 6.1 không.
+ * Nhóm 1 (giám định, kiểm định theo yêu cầu cơ quan chức năng; nhiệm vụ PVQLNN) bắt buộc
+ * do Viện trưởng ký hoặc Phó Viện trưởng ký theo ủy quyền — không được phân cấp cho đơn vị.
+ */
+export function canhBaoCapKy(nhom: NhomHD | null | undefined, capKy: CapKy | null | undefined): string | null {
+  const dm = timDinhMuc(nhom);
+  if (!dm || !capKy) return null;
+  if (dm.nhom === 1 && capKy === 'don-vi-ky') {
+    return 'Điều 6.1: hợp đồng Nhóm 1 phải do Viện trưởng ký hoặc Phó Viện trưởng ký theo ủy quyền, không phân cấp cho đơn vị.';
+  }
+  return null;
+}
+
+/**
+ * Cấp ký mặc định theo Điều 6.1: "Riêng HĐ thuộc nhóm 1 do Viện trưởng hoặc Phó Viện
+ * trưởng ký theo ủy quyền; các hợp đồng còn lại Viện trưởng phân cấp, ủy quyền cho
+ * Trưởng đơn vị... ký kết." — Nhóm 1 mặc định Viện ký, Nhóm 2/3/4 mặc định Đơn vị ký
+ * (Viện ký ngoài nhóm 1 chỉ là ngoại lệ khi đơn vị/khách hàng yêu cầu — Ghi chú 6 Bảng 1).
+ * Trả về null khi chưa chọn nhóm (không có gì để gợi ý).
+ */
+export function capKyMacDinh(nhom: NhomHD | null | undefined): CapKy | null {
+  const dm = timDinhMuc(nhom);
+  if (!dm) return null;
+  return dm.nhom === 1 ? 'vien-ky' : 'don-vi-ky';
 }
 
 export interface PhanBoHopDong {
@@ -207,7 +243,15 @@ export function phanBoHopDong(
     ghiChuDacThu.push(dacThu.ten + ': ' + dacThu.ghiChu);
   }
 
-  if (opts?.giamTheoYeuCauDonVi && chuTriPct != null && donViPct != null) {
+  // Ghi chú 6 Bảng 1 — chỉ áp dụng cho "HĐ KHÔNG thuộc nhóm 1", và chỉ khi hợp đồng do
+  // VIỆN ký theo đề nghị của đơn vị (đơn vị tự ký thì không có khoản giảm này).
+  const apDungGiamGiaoKhoan =
+    !!opts?.giamTheoYeuCauDonVi &&
+    dm.nhom !== 1 &&
+    opts?.capKy !== 'don-vi-ky' &&
+    chuTriPct != null &&
+    donViPct != null;
+  if (apDungGiamGiaoKhoan && chuTriPct != null && donViPct != null) {
     const [dChuTri, dDonVi] = dm.nhom === 2 ? [0.3, 0.2] : [0.1, 0.1];
     chuTriPct -= dChuTri;
     donViPct -= dDonVi;
@@ -237,10 +281,71 @@ export function phanBoHopDong(
 }
 
 /** true nếu hợp đồng thuộc diện phải trình Viện trưởng phê duyệt (Điều 6.1) */
+/**
+ * Điều 12.4a — Trần giảm kinh phí giao chủ trì.
+ * Đơn vị được giao cho chủ trì THẤP HƠN cột 3 Bảng 1, nhưng phần giảm không vượt quá:
+ * 2% (Nhóm 1), 5% (Nhóm 2), 2% (Nhóm 4) — tính trên giá trị HĐ trước thuế.
+ * Nhóm 3 và HĐ TVGS/QLDA quản lý tập trung do Giám đốc đơn vị quyết định (không áp trần).
+ */
+export function tranGiamGiaoChuTri(nhom: NhomHD | null | undefined): number | null {
+  const dm = timDinhMuc(nhom);
+  if (!dm) return null;
+  if (dm.nhom === 1) return 2;
+  if (dm.nhom === 2) return 5;
+  if (dm.nhom === 4) return 2;
+  return null; // Nhóm 3: quản lý tập trung, Giám đốc đơn vị tự bố trí
+}
+
+export interface KiemTraKinhPhiChuTri {
+  /** Mức theo cột 3 Bảng 1 (triệu đồng) */
+  mucChuan: number;
+  /** Mức thấp nhất được phép giao (triệu đồng) */
+  mucToiThieu: number;
+  tranGiamPhanTram: number;
+  hopLe: boolean;
+  thongBao: string | null;
+}
+
+/**
+ * Đối chiếu kinh phí giao chủ trì trên Phiếu giao việc với trần Điều 12.4a.
+ * Trả về null nếu nhóm HĐ không áp trần hoặc chưa đủ dữ liệu để đối chiếu.
+ */
+export function kiemTraKinhPhiChuTri(
+  nhom: NhomHD | null | undefined,
+  giaTriTruocThue: number,
+  kinhPhiGiaoChuTri: number,
+  opts?: PhanBoHopDongOpts,
+): KiemTraKinhPhiChuTri | null {
+  const tran = tranGiamGiaoChuTri(nhom);
+  const pb = phanBoHopDong(nhom, giaTriTruocThue, opts);
+  if (tran == null || !pb || pb.chuTri == null) return null;
+
+  const mucChuan = pb.chuTri;
+  const mucToiThieu = mucChuan - ((giaTriTruocThue || 0) * tran) / 100;
+  // Cho phép sai số 1 nghìn đồng để không báo lỗi vì làm tròn khi nhập liệu.
+  const hopLe = kinhPhiGiaoChuTri >= mucToiThieu - 0.001;
+
+  return {
+    mucChuan,
+    mucToiThieu: Math.max(0, mucToiThieu),
+    tranGiamPhanTram: tran,
+    hopLe,
+    thongBao: hopLe
+      ? null
+      : `Điều 12.4a: kinh phí giao chủ trì thấp hơn mức cho phép. Chuẩn theo Bảng 1 là ${mucChuan.toLocaleString('vi-VN', { maximumFractionDigits: 1 })} tr.đ, được giảm tối đa ${tran}% giá trị HĐ trước thuế, tức không thấp hơn ${Math.max(0, mucToiThieu).toLocaleString('vi-VN', { maximumFractionDigits: 1 })} tr.đ.`,
+  };
+}
+
 export function canTrinhVienTruong(nhom: NhomHD | null | undefined, giaTriTruocThue: number): boolean {
   const dm = timDinhMuc(nhom);
-  if (!dm || dm.nguongTrinhVienTruong == null) return false;
-  return (giaTriTruocThue || 0) >= dm.nguongTrinhVienTruong;
+  if (!dm) return false;
+  // Điều 6.1: "Các việc nhóm 1" luôn phải trình Viện trưởng, không phụ thuộc giá trị HĐ
+  // (khác với 2 điều kiện còn lại — kỹ thuật phức tạp, và ngưỡng giá trị — vốn chỉ áp cho Nhóm 2/3).
+  if (dm.nhom === 1) return true;
+  if (dm.nguongTrinhVienTruong == null) return false;
+  const gt = giaTriTruocThue || 0;
+  const nguongInVND = dm.nguongTrinhVienTruong * 1_000_000;
+  return gt >= dm.nguongTrinhVienTruong || gt >= nguongInVND;
 }
 
 const MS_MOI_NGAY = 24 * 3600 * 1000;

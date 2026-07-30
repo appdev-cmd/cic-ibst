@@ -1,0 +1,141 @@
+import pkg from 'pg';
+const { Client } = pkg;
+
+const hosts = [
+  'aws-0-ap-southeast-1.pooler.supabase.com',
+  'aws-0-ap-southeast-2.pooler.supabase.com',
+  'aws-0-us-east-1.pooler.supabase.com',
+  'aws-0-eu-central-1.pooler.supabase.com',
+];
+
+const username = 'postgres.umvckjqseqawpqamvsbx';
+const password = 'IymTBNztKKohCr0l';
+
+async function testHost(host) {
+  console.log(`Trying host: ${host}...`);
+  const client = new Client({
+    host,
+    port: 6543,
+    database: 'postgres',
+    user: username,
+    password: password,
+    ssl: { rejectUnauthorized: false },
+    connectionTimeoutMillis: 5000,
+  });
+
+  try {
+    await client.connect();
+    console.log(`SUCCESS! Connected to ${host}!`);
+    
+    // Add buoc_hien_tai column
+    console.log('Adding column buoc_hien_tai...');
+    await client.query("ALTER TABLE hop_dong ADD COLUMN IF NOT EXISTS buoc_hien_tai varchar(30) DEFAULT 'du-thao';");
+    console.log('Column buoc_hien_tai added successfully!');
+
+    // Add other missing columns/tables
+    await client.query(`
+      create table if not exists uy_quyen (
+        id            bigint generated always as identity primary key,
+        nguoi_uy_quyen_id  bigint not null references nhan_su(id),
+        nguoi_duoc_uy_quyen_id  bigint not null references nhan_su(id),
+        loai_uy_quyen text not null check (loai_uy_quyen in ('ky-hop-dong','phe-duyet','quyet-toan','kiem-tra','toan-quyen')),
+        tu_ngay       date not null,
+        den_ngay      date,
+        ly_do         text,
+        so_quyet_dinh text,
+        trang_thai    varchar(20) not null default 'hieu-luc' check (trang_thai in ('hieu-luc','het-han','thu-hoi')),
+        created_at    timestamptz not null default now(),
+        updated_at    timestamptz not null default now()
+      );
+      create table if not exists dau_thau (
+        id                bigint generated always as identity primary key,
+        ten_goi_thau      text not null,
+        chu_dau_tu_id     bigint references khach_hang(id),
+        don_vi_thuc_hien_id bigint references don_vi(id),
+        hinh_thuc         text not null check (hinh_thuc in ('dau-thau-rong-rai','dau-thau-han-che','chi-dinh-thau','chao-gia','mua-sam-truc-tiep','tu-thuc-hien','khac')),
+        gia_du_thau       numeric(15,0),
+        gia_trung_thau    numeric(15,0),
+        ngay_mo_thau      date,
+        ngay_dong_thau    date,
+        trang_thai        varchar(20) not null default 'chuan-bi' check (trang_thai in ('chuan-bi','da-nop','trung-thau','truot','huy')),
+        hop_dong_id       bigint references hop_dong(id),
+        nguoi_phu_trach_id bigint references nhan_su(id),
+        ghi_chu           text,
+        created_at        timestamptz not null default now(),
+        updated_at        timestamptz not null default now()
+      );
+      create table if not exists lien_danh (
+        id                bigint generated always as identity primary key,
+        hop_dong_id       bigint not null references hop_dong(id) on delete cascade,
+        ten_doi_tac       text not null,
+        ma_so_thue        varchar(15),
+        ty_le_phan_tram   numeric(5,2) not null default 0,
+        vai_tro           text check (vai_tro in ('dung-dau','thanh-vien')),
+        gia_tri_phan_viec numeric(15,0),
+        ghi_chu           text,
+        created_at        timestamptz not null default now(),
+        updated_at        timestamptz not null default now()
+      );
+      create table if not exists nhiem_vu_pvqlnn (
+        id                bigint generated always as identity primary key,
+        ten_nhiem_vu      text not null,
+        co_quan_giao      text not null,
+        so_van_ban_giao   text,
+        ngay_giao         date,
+        han_hoan_thanh    date,
+        don_vi_id         bigint references don_vi(id),
+        nguoi_phu_trach_id bigint references nhan_su(id),
+        kinh_phi          numeric(15,0),
+        nguon_kinh_phi    text,
+        trang_thai        varchar(20) not null default 'moi' check (trang_thai in ('moi','dang-thuc-hien','hoan-thanh','qua-han')),
+        ket_qua           text,
+        ghi_chu           text,
+        created_at        timestamptz not null default now(),
+        updated_at        timestamptz not null default now()
+      );
+      create table if not exists luu_tru_ho_so (
+        id                bigint generated always as identity primary key,
+        hop_dong_id       bigint references hop_dong(id) on delete cascade,
+        so_ho_so          text,
+        vi_tri_luu_tru    text,
+        ngay_nhan_luu_tru date,
+        nguoi_ban_giao_id bigint references nhan_su(id),
+        nguoi_nhan_id     bigint references nhan_su(id),
+        trang_thai        varchar(20) not null default 'chua-nhan' check (trang_thai in ('chua-nhan','da-nhan','da-luu-kho','da-huy')),
+        thoi_han_luu_tru  date,
+        ghi_chu           text,
+        created_at        timestamptz not null default now(),
+        updated_at        timestamptz not null default now()
+      );
+      create table if not exists kiem_tra_khac_phuc (
+        id                bigint generated always as identity primary key,
+        kiem_tra_id       bigint not null references kiem_tra_noi_bo(id) on delete cascade,
+        noi_dung_kien_nghi text not null,
+        han_khac_phuc     date,
+        nguoi_phu_trach_id bigint references nhan_su(id),
+        trang_thai        varchar(20) not null default 'chua-xu-ly' check (trang_thai in ('chua-xu-ly','dang-xu-ly','da-hoan-thanh','qua-han')),
+        ket_qua_khac_phuc text,
+        ngay_hoan_thanh   date,
+        created_at        timestamptz not null default now(),
+        updated_at        timestamptz not null default now()
+      );
+    `);
+    console.log('Tables created successfully!');
+
+    await client.end();
+    return true;
+  } catch (err) {
+    console.error(`Failed ${host}:`, err.message);
+    try { await client.end(); } catch {}
+    return false;
+  }
+}
+
+async function main() {
+  for (const h of hosts) {
+    const ok = await testHost(h);
+    if (ok) break;
+  }
+}
+
+main();

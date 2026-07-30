@@ -31,6 +31,9 @@ import {
   ZoomIn,
   ZoomOut,
   Globe,
+  Gavel,
+  Landmark,
+  ShieldCheck,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useTheme, PRIMARY_COLORS, type Theme } from '../context/ThemeContext';
@@ -38,6 +41,8 @@ import { useAuth } from '../context/AuthContext';
 import { GlobalSearch } from '../components/GlobalSearch';
 import { Notifications } from '../components/Notifications';
 import { AiChatbot } from '../components/AiChatbot';
+import { SlidePanelProvider } from '../context/SlidePanelContext';
+import { SlidePanelStack } from '../components/SlidePanelStack';
 import logo from '../assets/logo.png';
 
 const THEME_OPTIONS: { value: Theme; icon: typeof Sun; title: string; activeCls: string }[] = [
@@ -49,6 +54,9 @@ const THEME_OPTIONS: { value: Theme; icon: typeof Sun; title: string; activeCls:
 const NAV = [
   { to: '/', label: '1. Dashboard Lãnh đạo', icon: LayoutDashboard },
   { to: '/hop-dong', label: '2. Hợp đồng & CRM', icon: Handshake },
+  { to: '/dau-thau', label: '• Đấu thầu & Chào giá', icon: Gavel },
+  { to: '/pvqlnn', label: '• Nhiệm vụ PVQLNN', icon: Landmark },
+  { to: '/uy-quyen', label: '• Quản lý Ủy quyền', icon: ShieldCheck },
   { to: '/tai-chinh', label: '3. Tài chính & Thu chi', icon: Wallet },
   { to: '/khoa-hoc', label: '4. Quản lý Khoa học & SHTT', icon: FlaskConical },
   { to: '/nhan-su', label: '5. Nhân sự & Đảng - Đoàn', icon: Users },
@@ -96,6 +104,7 @@ export function AppLayout() {
   }, []);
 
   return (
+    <SlidePanelProvider>
     <div className="flex h-full overflow-hidden bg-page">
       {/* ── Sidebar ── */}
       <aside className="sticky top-0 z-40 h-full shrink-0 shadow-xl transition-all duration-300 ease-out">
@@ -407,6 +416,8 @@ export function AppLayout() {
 
       <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
       <AiChatbot />
+      <SlidePanelStack sidebarWidth={collapsed ? 80 : 256} />
     </div>
+    </SlidePanelProvider>
   );
 }

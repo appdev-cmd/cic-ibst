@@ -36,6 +36,32 @@
   --shadow-dropdown: 0 10px 15px -3px rgb(74 49 16 / 0.1), 0 4px 6px -4px rgb(74 49 16 / 0.06);
 }
 
+.dark {
+  color-scheme: dark;
+}
+
+/* Icon lịch/giờ native (input type=date|datetime-local|time|month|week) mặc định vẽ
+   màu đen — không tự đổi màu theo theme app (chỉ đổi qua các biến --bg và --text,
+   không có tác dụng lên chrome do trình duyệt vẽ). color-scheme: dark ở trên là bước
+   cần thiết đầu tiên; thêm filter để đảm bảo icon luôn sáng, không phụ thuộc việc
+   trình duyệt có tôn trọng color-scheme cho riêng icon lịch hay không. */
+.dark input[type='date']::-webkit-calendar-picker-indicator,
+.dark input[type='datetime-local']::-webkit-calendar-picker-indicator,
+.dark input[type='time']::-webkit-calendar-picker-indicator,
+.dark input[type='month']::-webkit-calendar-picker-indicator,
+.dark input[type='week']::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(1.7);
+  opacity: 0.85;
+  cursor: pointer;
+}
+.dark input[type='date']::-webkit-calendar-picker-indicator:hover,
+.dark input[type='datetime-local']::-webkit-calendar-picker-indicator:hover,
+.dark input[type='time']::-webkit-calendar-picker-indicator:hover,
+.dark input[type='month']::-webkit-calendar-picker-indicator:hover,
+.dark input[type='week']::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
 @layer base {
   html,
   body {

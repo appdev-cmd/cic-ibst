@@ -195,15 +195,31 @@ export async function deleteDeTai(id: string) {
 
 // ─── HỢP ĐỒNG ───
 
+const COT_HOP_DONG_CO_BAN =
+  'id, so_hop_dong, ten_hop_dong, khach_hang_id, don_vi_id, gia_tri, da_thanh_toan, ngay_ky, han_hoan_thanh, trang_thai, nhom_hd, chu_tri_id, gia_du_thau, ngay_nop_ho_so, trang_thai_phe_duyet, ngay_trinh_duyet, ngay_duyet, trang_thai_quyet_toan, ngay_quyet_toan, han_chung_tu_quyet_toan, loai_dac_thu, phan_vien_xa, giam_theo_yeu_cau_don_vi, cap_ky, khach_hang(ten_to_chuc), don_vi(ten_don_vi), chu_tri:nhan_su!hop_dong_chu_tri_id_fkey(ho_va_ten)';
+
 export async function fetchHopDong(): Promise<HopDong[]> {
-  const { data, error } = await supabase
+  let fetchedData: any[] = [];
+
+  const res = await supabase
     .from('hop_dong')
-    .select(
-      'id, so_hop_dong, ten_hop_dong, khach_hang_id, don_vi_id, gia_tri, da_thanh_toan, ngay_ky, han_hoan_thanh, trang_thai, nhom_hd, chu_tri_id, gia_du_thau, ngay_nop_ho_so, trang_thai_phe_duyet, ngay_trinh_duyet, ngay_duyet, trang_thai_quyet_toan, ngay_quyet_toan, han_chung_tu_quyet_toan, loai_dac_thu, phan_vien_xa, giam_theo_yeu_cau_don_vi, khach_hang(ten_to_chuc), don_vi(ten_don_vi), chu_tri:nhan_su!hop_dong_chu_tri_id_fkey(ho_va_ten)',
-    )
+    .select(`${COT_HOP_DONG_CO_BAN}, buoc_hien_tai`)
     .order('ngay_ky', { ascending: false });
-  throwIf(error);
-  return (data ?? []).map((r) => ({
+
+  if (res.error?.message?.includes('buoc_hien_tai')) {
+    // CSDL chưa chạy migration thêm cột buoc_hien_tai — vẫn đọc được các cột còn lại.
+    const fallbackRes = await supabase
+      .from('hop_dong')
+      .select(COT_HOP_DONG_CO_BAN)
+      .order('ngay_ky', { ascending: false });
+    throwIf(fallbackRes.error);
+    fetchedData = fallbackRes.data ?? [];
+  } else {
+    throwIf(res.error);
+    fetchedData = res.data ?? [];
+  }
+
+  const mapped = fetchedData.map((r: any) => ({
     id: String(r.id),
     soHD: r.so_hop_dong,
     ten: r.ten_hop_dong,
@@ -217,6 +233,7 @@ export async function fetchHopDong(): Promise<HopDong[]> {
     hanHoanThanh: r.han_hoan_thanh ?? '',
     trangThai: r.trang_thai as TrangThai,
     nhomHD: (r.nhom_hd as NhomHD | null) ?? null,
+    // Không bịa chủ trì mặc định — HĐ chưa phân công phải hiện đúng là "chưa phân công" (Điều 7.4).
     chuTriId: r.chu_tri_id != null ? String(r.chu_tri_id) : null,
     chuTri: (r.chu_tri as unknown as { ho_va_ten: string } | null)?.ho_va_ten ?? '',
     giaDuThau: r.gia_du_thau != null ? Number(r.gia_du_thau) : null,
@@ -230,8 +247,15 @@ export async function fetchHopDong(): Promise<HopDong[]> {
     loaiDacThu: (r.loai_dac_thu as HopDong['loaiDacThu']) ?? null,
     phanVienXa: !!r.phan_vien_xa,
     giamTheoYeuCauDonVi: !!r.giam_theo_yeu_cau_don_vi,
+    capKy: (r.cap_ky as HopDong['capKy']) ?? null,
+    buocHienTai: r.buoc_hien_tai ?? 'du-thao',
+    fileDuThaoUrl: r.file_du_thao_url ?? r.fileDuThaoUrl ?? '',
+    tenFileDuThao: r.ten_file_du_thao ?? r.tenFileDuThao ?? '',
   }));
+
+  return mapped;
 }
+
 
 export interface HopDongInput {
   soHD: string;
@@ -248,12 +272,15 @@ export interface HopDongInput {
   giaDuThau: string;
   ngayNopHoSo: string;
   trangThaiPheDuyet: string;
-  ngayTrinhDuyet: string;
-  ngayDuyet: string;
-  hanChungTuQuyetToan: string;
+  ngayTrinhDuyet?: string;
+  ngayDuyet?: string;
+  hanChungTuQuyetToan?: string;
   loaiDacThu: string;
   phanVienXa: boolean;
   giamTheoYeuCauDonVi: boolean;
+  capKy: string;
+  fileDuThaoUrl?: string;
+  tenFileDuThao?: string;
 }
 
 function hopDongRow(i: HopDongInput) {
@@ -272,23 +299,54 @@ function hopDongRow(i: HopDongInput) {
     gia_du_thau: num(i.giaDuThau),
     ngay_nop_ho_so: str(i.ngayNopHoSo),
     trang_thai_phe_duyet: i.trangThaiPheDuyet || 'khong-ap-dung',
-    ngay_trinh_duyet: str(i.ngayTrinhDuyet),
-    han_chung_tu_quyet_toan: str(i.hanChungTuQuyetToan),
+    ngay_trinh_duyet: str(i.ngayTrinhDuyet ?? ''),
+    han_chung_tu_quyet_toan: str(i.hanChungTuQuyetToan ?? ''),
     loai_dac_thu: str(i.loaiDacThu),
     phan_vien_xa: i.phanVienXa,
     giam_theo_yeu_cau_don_vi: i.giamTheoYeuCauDonVi,
-    ngay_duyet: str(i.ngayDuyet),
+    cap_ky: i.capKy || null,
+    ngay_duyet: str(i.ngayDuyet ?? ''),
+    buoc_hien_tai: i.trangThai === 'cho-duyet' ? 'cho-duyet' : i.trangThai === 'dang-thuc-hien' ? 'dang-thuc-hien' : 'du-thao',
+    file_du_thao_url: str(i.fileDuThaoUrl ?? ''),
+    ten_file_du_thao: str(i.tenFileDuThao ?? ''),
   };
 }
 
+/** Cột file dự thảo có thể chưa tồn tại nếu CSDL chưa chạy migration tương ứng — chỉ bỏ
+ * riêng 2 cột này rồi thử lại, mọi lỗi khác vẫn phải ném ra cho người dùng biết. */
+function thieuCotFileDuThao(error: { message: string } | null): boolean {
+  return !!error?.message?.includes('file_du_thao_url') || !!error?.message?.includes('ten_file_du_thao');
+}
+
 export async function createHopDong(i: HopDongInput) {
-  throwIf((await supabase.from('hop_dong').insert(hopDongRow(i))).error);
+  const row = hopDongRow(i);
+  const { error } = await supabase.from('hop_dong').insert(row);
+  if (!error) return;
+  if (!thieuCotFileDuThao(error)) throw new Error(error.message);
+
+  delete (row as any).file_du_thao_url;
+  delete (row as any).ten_file_du_thao;
+  throwIf((await supabase.from('hop_dong').insert(row)).error);
 }
+
 export async function updateHopDong(id: string, i: HopDongInput) {
-  throwIf((await supabase.from('hop_dong').update(hopDongRow(i)).eq('id', Number(id))).error);
+  const idNum = Number(id);
+  if (Number.isNaN(idNum)) throw new Error(`Mã hợp đồng không hợp lệ: ${id}`);
+
+  const row = hopDongRow(i);
+  const { error } = await supabase.from('hop_dong').update(row).eq('id', idNum);
+  if (!error) return;
+  if (!thieuCotFileDuThao(error)) throw new Error(error.message);
+
+  delete (row as any).file_du_thao_url;
+  delete (row as any).ten_file_du_thao;
+  throwIf((await supabase.from('hop_dong').update(row).eq('id', idNum)).error);
 }
+
 export async function deleteHopDong(id: string) {
-  throwIf((await supabase.from('hop_dong').delete().eq('id', Number(id))).error);
+  const idNum = Number(id);
+  if (Number.isNaN(idNum)) throw new Error(`Mã hợp đồng không hợp lệ: ${id}`);
+  throwIf((await supabase.from('hop_dong').delete().eq('id', idNum)).error);
 }
 
 /** Cập nhật nhanh trạng thái trình/duyệt Viện trưởng (Điều 6.1) mà không cần mở form đầy đủ. */

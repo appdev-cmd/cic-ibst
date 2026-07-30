@@ -1,5 +1,30 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Handshake, Banknote, AlertTriangle, LoaderCircle, Users2, FileText, CheckCircle2, AlertCircle, Gavel, ClipboardCheck } from 'lucide-react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import {
+  Handshake,
+  Banknote,
+  AlertTriangle,
+  LoaderCircle,
+  Users2,
+  FileText,
+  CheckCircle2,
+  AlertCircle,
+  Gavel,
+  ClipboardCheck,
+  Info,
+  ListChecks,
+  Wallet,
+  ShieldCheck,
+  Paperclip,
+  Pencil,
+  Users,
+  Archive,
+  History,
+  Check,
+  Activity,
+  BarChart3,
+  ExternalLink,
+  Link2,
+} from 'lucide-react';
 import {
   DotThanhToanPanel,
   CtvGiaoViecPanel,
@@ -7,13 +32,38 @@ import {
   KiemTraNoiBoPanel,
   QuyetToanGiaiDoanPanel,
   HoSoHopDongPanel,
+  DonViGiaoViecPanel,
+  NhatKyHopDongPanel,
 } from '../components/DetailPanels';
+import { NumberInput } from '../components/NumberInput';
+import { LienDanhPanel, LuuTruHoSoPanel } from '../components/Phase2Panels';
+import { WorkflowStepper } from '../components/WorkflowStepper';
 import { PageHeader } from '../components/PageHeader';
-import { TRANG_THAI_OPTIONS } from '../components/StatusBadge';
+import { TRANG_THAI_OPTIONS, StatusBadge } from '../components/StatusBadge';
 import { KpiCard } from '../components/KpiCard';
 import { DataState } from '../components/DataState';
-import { Modal, Field, inputCls } from '../components/Modal';
+import { Field, inputCls } from '../components/Modal';
+import { SlideOverTabs, type SlideOverTabDef } from '../components/SlideOver';
 import { TableToolbar, FilterSelect, Pagination, RowActions } from '../components/TableToolbar';
+import { ThucHienHopDongPanel } from '../components/ThucHienHopDongPanel';
+import { BaoCaoKhktPanel } from '../components/BaoCaoKhktPanel';
+import { useSlidePanel } from '../context/SlidePanelContext';
+import { useAuth } from '../context/AuthContext';
+import {
+  CAC_BUOC_KY,
+  NHAN_TRANG_THAI_GIAO_VIEC,
+  buocKeTiep,
+  coTheTraLai,
+  mauTrangThaiGiaoViec,
+  type TrangThaiGiaoViec,
+} from '../lib/kyGiaoViec';
+import {
+  coTheTrinhDuyet,
+  coThePheDuyet,
+  coTheQuyetToan,
+  lyDoKhongDuThamQuyen,
+  NHAN_VAI_TRO,
+} from '../lib/quyenHopDong';
 import { KhachHangPage } from './KhachHangPage';
 import { useAsyncData } from '../hooks/useAsyncData';
 import { useTableControls } from '../hooks/useTableControls';
@@ -34,8 +84,11 @@ import {
 import {
   fetchPhieuGiaoViec,
   upsertPhieuGiaoViec,
+  chuyenBuocGiaoViec,
+  fetchCtvGiaoViec,
   type PhieuGiaoViec,
   type PhieuGiaoViecInput,
+  type CtvGiaoViec,
 } from '../services/chitiet';
 import type { HopDong, TrangThaiPheDuyet } from '../types';
 import {
@@ -48,10 +101,15 @@ import {
   soNgayConLai,
   canhBaoPhatNopChamHoSo,
   canhBaoPhatChungTuTre,
+  canhBaoCapKy,
+  capKyMacDinh,
+  kiemTraKinhPhiChuTri,
+  CAP_KY_OPTIONS,
+  type CapKy,
 } from '../lib/qc2815';
 import { formatTrieu, formatNgay, cn } from '../lib/utils';
 
-type Tab = 'hop-dong-2815' | 'crm-khach-hang';
+type Tab = 'hop-dong-2815' | 'crm-khach-hang' | 'bao-cao-khkt';
 
 const EMPTY_FORM: HopDongInput = {
   soHD: '',
@@ -74,6 +132,9 @@ const EMPTY_FORM: HopDongInput = {
   loaiDacThu: '',
   phanVienXa: false,
   giamTheoYeuCauDonVi: false,
+  capKy: '',
+  fileDuThaoUrl: '',
+  tenFileDuThao: '',
 };
 
 const NGAY_30 = 30 * 24 * 3600 * 1000;
@@ -91,6 +152,21 @@ const PHE_DUYET_TONE: Record<TrangThaiPheDuyet, string> = {
   'da-trinh': 'bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300',
   'da-duyet': 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
 };
+
+type DetailTab = 'thong-tin' | 'giao-viec' | 'thanh-toan' | 'thuong-phat' | 'kiem-tra' | 'ho-so' | 'lien-danh' | 'luu-tru' | 'nhat-ky' | 'thuc-hien';
+
+const DETAIL_TABS: SlideOverTabDef<DetailTab>[] = [
+  { id: 'thong-tin', label: 'Thông tin chung', icon: Info },
+  { id: 'giao-viec', label: 'Giao việc (Đ.7)', icon: ListChecks },
+  { id: 'thanh-toan', label: 'Thanh toán & QT (Đ.11)', icon: Wallet },
+  { id: 'thuong-phat', label: 'Thưởng / Phạt (Đ.13-14)', icon: Gavel },
+  { id: 'kiem-tra', label: 'Kiểm tra nội bộ (Đ.10)', icon: ShieldCheck },
+  { id: 'ho-so', label: 'Hồ sơ (Đ.8.4)', icon: Paperclip },
+  { id: 'lien-danh', label: 'Liên danh (Đ.5.3)', icon: Users },
+  { id: 'luu-tru', label: 'Lưu trữ TCHC (Đ.8)', icon: Archive },
+  { id: 'thuc-hien', label: 'Thực hiện (Đ.8.1)', icon: Activity },
+  { id: 'nhat-ky', label: 'Nhật ký (Đ.9-10)', icon: History },
+];
 
 export function HopDongPage() {
   const [activeTab, setActiveTab] = useState<Tab>('hop-dong-2815');
@@ -129,6 +205,9 @@ export function HopDongPage() {
       loaiDacThu: hd.loaiDacThu ?? '',
       phanVienXa: hd.phanVienXa,
       giamTheoYeuCauDonVi: hd.giamTheoYeuCauDonVi,
+      capKy: hd.capKy ?? '',
+      fileDuThaoUrl: hd.fileDuThaoUrl ?? '',
+      tenFileDuThao: hd.tenFileDuThao ?? '',
     }),
     getId: (hd) => hd.id,
     create: createHopDong,
@@ -176,18 +255,28 @@ export function HopDongPage() {
     [hopDongList],
   );
 
-  // Modal Phiếu giao việc điện tử
-  const [phieuGiaoViecOpen, setPhieuGiaoViecOpen] = useState(false);
-  const [selectedHdGiaoViec, setSelectedHdGiaoViec] = useState<HopDong | null>(null);
+  // Ngăn xếp slide-panel dùng chung toàn app (kiểu "tai thỏ" xếp chồng — xem SlidePanelStack).
+  const { stack, openPanel, updatePanel, closePanel, closeAll } = useSlidePanel();
+  const [detailTab, setDetailTab] = useState<DetailTab>('thong-tin');
+  const panelIdForHopDong = (id: string) => `hopdong-${id}`;
 
-  const openGiaoViec = (hd: HopDong) => {
-    setSelectedHdGiaoViec(hd);
-    setPhieuGiaoViecOpen(true);
-  };
+  // Thẩm quyền thao tác theo Điều 6.1 / Điều 11 — xem lib/quyenHopDong.ts.
+  const { vaiTro } = useAuth();
+  const duocTrinhDuyet = coTheTrinhDuyet(vaiTro);
+  const duocPheDuyet = coThePheDuyet(vaiTro);
+  const [thaoTacError, setThaoTacError] = useState<string | null>(null);
 
   const [pheDuyetBusyId, setPheDuyetBusyId] = useState<string | null>(null);
   const capNhatPheDuyet = async (hd: HopDong, trangThai: TrangThaiPheDuyet) => {
+    const duocPhep = trangThai === 'da-duyet' ? duocPheDuyet : duocTrinhDuyet;
+    if (!duocPhep) {
+      setThaoTacError(
+        lyDoKhongDuThamQuyen(vaiTro, trangThai === 'da-duyet' ? 'phê duyệt hợp đồng (Điều 6.1)' : 'trình duyệt hợp đồng'),
+      );
+      return;
+    }
     setPheDuyetBusyId(hd.id);
+    setThaoTacError(null);
     try {
       const today = new Date().toISOString().slice(0, 10);
       await updateHopDongPheDuyet(hd.id, {
@@ -196,6 +285,8 @@ export function HopDongPage() {
         ...(trangThai === 'da-duyet' ? { ngayDuyet: today } : {}),
       });
       await refetch();
+    } catch (e) {
+      setThaoTacError(e instanceof Error ? e.message : String(e));
     } finally {
       setPheDuyetBusyId(null);
     }
@@ -203,14 +294,532 @@ export function HopDongPage() {
 
   const [quyetToanBusy, setQuyetToanBusy] = useState(false);
   const toggleQuyetToan = async (hd: HopDong) => {
+    if (!coTheQuyetToan(vaiTro, hd.capKy)) {
+      setThaoTacError(lyDoKhongDuThamQuyen(vaiTro, 'quyết toán/thanh lý hợp đồng (Điều 11)'));
+      return;
+    }
     setQuyetToanBusy(true);
+    setThaoTacError(null);
     try {
       await updateQuyetToanHopDong(hd.id, hd.trangThaiQuyetToan !== 'da-quyet-toan');
       await refetch();
+    } catch (e) {
+      setThaoTacError(e instanceof Error ? e.message : String(e));
     } finally {
       setQuyetToanBusy(false);
     }
   };
+
+  const buildDetailHeaderExtra = (hd: HopDong) => (
+    <button
+      onClick={() => crud.openEdit(hd)}
+      className="flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-2xs font-bold text-ink-secondary transition-colors hover:bg-muted"
+    >
+      <Pencil size={13} /> Sửa
+    </button>
+  );
+
+  const buildDetailContent = (hd: HopDong, tab: DetailTab) => (
+    <>
+      <SlideOverTabs tabs={DETAIL_TABS} active={tab} onChange={setDetailTab} />
+      <div className="space-y-4 p-4">
+        {thaoTacError && (
+          <div className="flex items-start gap-2 rounded-lg bg-danger-subtle p-3 text-xs font-semibold text-danger">
+            <AlertCircle size={15} className="mt-px shrink-0" />
+            <span>{thaoTacError}</span>
+          </div>
+        )}
+        {tab === 'thong-tin' && (
+          <HopDongThongTinTab
+            hd={hd}
+            pheDuyetBusyId={pheDuyetBusyId}
+            onPheDuyet={capNhatPheDuyet}
+            onRefetch={refetch}
+            onGoToGiaoViec={() => setDetailTab('giao-viec')}
+          />
+        )}
+        {tab === 'giao-viec' && (
+          <HopDongGiaoViecTab hd={hd} nhanSuOptions={nhanSuOptions} donViOptions={donViOptions} />
+        )}
+        {tab === 'thanh-toan' && (
+          <div className="space-y-4">
+            <div className="rounded-lg border border-border p-3 text-xs space-y-2">
+              <h4 className="text-2xs font-black uppercase tracking-wider text-ink-muted">Quyết toán / Thanh lý (Điều 11)</h4>
+              {hd.trangThaiQuyetToan === 'da-quyet-toan' ? (
+                <p className="flex items-center gap-1.5 text-success font-semibold">
+                  <CheckCircle2 size={14} />
+                  {hd.ngayQuyetToan ? <>Đã quyết toán ngày {formatNgay(hd.ngayQuyetToan)}</> : 'Đã quyết toán'}
+                </p>
+              ) : hd.daThanhToan >= hd.giaTri && hd.giaTri > 0 ? (
+                <p className="text-ink-secondary">Đã thu đủ tiền — có thể quyết toán, thanh lý hợp đồng.</p>
+              ) : (
+                <p className="text-ink-muted">Chưa thu đủ tiền ({formatTrieu(hd.daThanhToan)}/{formatTrieu(hd.giaTri)}).</p>
+              )}
+              {!coTheQuyetToan(vaiTro, hd.capKy) && (
+                <p className="text-2xs italic text-ink-muted">
+                  {NHAN_VAI_TRO[vaiTro]} không có thẩm quyền quyết toán/thanh lý hợp đồng này —{' '}
+                  {hd.capKy === 'don-vi-ky' ? 'thuộc Trưởng đơn vị' : 'thuộc Lãnh đạo Viện (HĐ Viện ký, Điều 11.1)'}.
+                </p>
+              )}
+              <button
+                onClick={() => void toggleQuyetToan(hd)}
+                disabled={quyetToanBusy || !coTheQuyetToan(vaiTro, hd.capKy)}
+                className="btn-secondary w-full justify-center py-1.5 text-2xs font-bold gap-1 disabled:opacity-50"
+              >
+                <ClipboardCheck size={12} />
+                {hd.trangThaiQuyetToan === 'da-quyet-toan' ? 'Bỏ đánh dấu đã quyết toán' : 'Đánh dấu đã quyết toán'}
+              </button>
+            </div>
+            {(() => {
+              const canhBao = canhBaoPhatNopChamHoSo(hd.nhomHD, hd.ngayKy, hd.ngayNopHoSo);
+              if (!canhBao) return null;
+              return (
+                <div className="rounded-lg border border-danger/30 bg-danger-subtle p-3 text-xs space-y-1 text-danger">
+                  <p className="flex items-center gap-1.5 font-bold"><AlertCircle size={14} /> Cảnh báo phạt (Điều 14.2)</p>
+                  <p>
+                    Đã quá hạn <strong>{canhBao.quaHanNgay} ngày</strong> chưa nộp hồ sơ gốc về Viện — mức phạt gợi ý{' '}
+                    <strong>{canhBao.mucPhatPhanTram}%</strong> giá trị HĐ trước thuế. Ghi nhận quyết định thực tế ở tab "Thưởng / Phạt" sau khi có văn bản nhắc nhở.
+                  </p>
+                </div>
+              );
+            })()}
+            {(() => {
+              const canhBao = canhBaoPhatChungTuTre(
+                hd.nhomHD,
+                hd.hanChungTuQuyetToan,
+                hd.trangThaiQuyetToan === 'da-quyet-toan',
+              );
+              if (!canhBao) return null;
+              return (
+                <div className="rounded-lg border border-danger/30 bg-danger-subtle p-3 text-xs space-y-1 text-danger">
+                  <p className="flex items-center gap-1.5 font-bold"><AlertCircle size={14} /> Cảnh báo phạt (Điều 14.2, dòng 2)</p>
+                  <p>
+                    Đã quá hạn <strong>{canhBao.quaHanNgay} ngày</strong> nộp chứng từ thanh quyết toán theo yêu cầu TCKT — mức phạt gợi ý{' '}
+                    <strong>{canhBao.mucPhatPhanTram}%</strong> trên phần giá trị vi phạm.
+                  </p>
+                </div>
+              );
+            })()}
+            <DotThanhToanPanel key={`dtt-${hd.id}`} hopDongId={hd.id} giaTri={hd.giaTri} onChanged={refetch} />
+            <QuyetToanGiaiDoanPanel key={`qtgd-${hd.id}`} hopDongId={hd.id} onChanged={refetch} />
+          </div>
+        )}
+        {tab === 'thuong-phat' && (
+          <ThuongPhatPanel key={`tp-${hd.id}`} hopDongId={hd.id} nhomHD={hd.nhomHD} nhanSuOptions={nhanSuOptions} onChanged={refetch} />
+        )}
+        {tab === 'kiem-tra' && (
+          <KiemTraNoiBoPanel key={`kt-${hd.id}`} hopDongId={hd.id} nhanSuOptions={nhanSuOptions} onChanged={refetch} />
+        )}
+        {tab === 'ho-so' && <HoSoHopDongPanel hopDongId={hd.id} onChanged={refetch} />}
+        {tab === 'lien-danh' && <LienDanhPanel hopDongId={hd.id} />}
+        {tab === 'luu-tru' && <LuuTruHoSoPanel hopDongId={hd.id} nhanSuOptions={nhanSuOptions} />}
+        {tab === 'thuc-hien' && <ThucHienHopDongPanel key={`th-${hd.id}`} hopDongId={hd.id} />}
+        {tab === 'nhat-ky' && <NhatKyHopDongPanel key={`nk-${hd.id}`} hopDongId={hd.id} />}
+      </div>
+    </>
+  );
+
+  const openDetail = (hd: HopDong, tab: DetailTab = 'thong-tin') => {
+    closeAll();
+    setDetail(hd);
+    setDetailTab(tab);
+    openPanel({
+      id: panelIdForHopDong(hd.id),
+      title: hd.soHD,
+      subtitle: hd.ten,
+      // Số lớn cố ý — computeWidths() tự kẹp về đúng mép sidebar, xem ghi chú ở panel form.
+      defaultWidth: 2000,
+      minWidth: 520,
+      storageKey: 'slideover-width-hop-dong-v2',
+      headerExtra: buildDetailHeaderExtra(hd),
+      content: buildDetailContent(hd, tab),
+    });
+  };
+
+  // Đồng bộ lại nội dung panel chi tiết đang mở (nếu có) mỗi khi dữ liệu/tab thay đổi —
+  // dùng updatePanel (không đụng vị trí ngăn xếp) để không vô tình đóng panel khác xếp trên nó.
+  useEffect(() => {
+    if (!liveDetail) return;
+    updatePanel(panelIdForHopDong(liveDetail.id), {
+      title: liveDetail.soHD,
+      subtitle: liveDetail.ten,
+      headerExtra: buildDetailHeaderExtra(liveDetail),
+      content: buildDetailContent(liveDetail, detailTab),
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveDetail, detailTab, pheDuyetBusyId, quyetToanBusy, thaoTacError, vaiTro]);
+
+  const buildFormFields = () => (
+    <form id="hopdong-form" onSubmit={crud.submit} className="space-y-4 p-5">
+      {crud.actionError && (
+        <div className="rounded-lg bg-danger-subtle p-3 text-xs text-danger">
+          {crud.actionError}
+        </div>
+      )}
+
+      <FormSection title="Thông tin hợp đồng">
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Số hợp đồng" required>
+            <input
+              type="text"
+              required
+              value={crud.form.soHD}
+              onChange={(e) => crud.setForm({ ...crud.form, soHD: e.target.value })}
+              className={inputCls}
+            />
+          </Field>
+
+          <Field label="Nhóm hợp đồng (Bảng 1 QC 2815)">
+            <select
+              value={crud.form.nhomHD}
+              onChange={(e) => {
+                const nhomMoi = e.target.value;
+                // Điều 6.1: Nhóm 1 mặc định Viện ký, Nhóm 2/3/4 mặc định Đơn vị ký.
+                // Chỉ tự đổi Cấp ký nếu đang trống hoặc vẫn đúng bằng gợi ý của nhóm CŨ —
+                // nghĩa là người dùng chưa tự tay chọn khác đi; nếu đã chọn khác (vd. cố
+                // tình để Viện ký cho HĐ Nhóm 2 theo yêu cầu đơn vị) thì giữ nguyên lựa chọn.
+                const goiYCu = capKyMacDinh(crud.form.nhomHD as any);
+                const guyDuocTuDoi = !crud.form.capKy || crud.form.capKy === goiYCu;
+                const goiYMoi = capKyMacDinh(nhomMoi as any);
+                crud.setForm({
+                  ...crud.form,
+                  nhomHD: nhomMoi,
+                  capKy: guyDuocTuDoi && goiYMoi ? goiYMoi : crud.form.capKy,
+                });
+              }}
+              className={inputCls}
+            >
+              <option value="">-- Chọn nhóm --</option>
+              {([1, 2, 3, 4] as const).map((nhom) => (
+                <optgroup key={nhom} label={`Nhóm ${nhom}`}>
+                  {BANG_1.filter((d) => d.nhom === nhom).map((d) => (
+                    <option key={d.id} value={d.id}>{d.ten}</option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </Field>
+        </div>
+
+        <Field label="Tên hợp đồng" required>
+          <input
+            type="text"
+            required
+            value={crud.form.ten}
+            onChange={(e) => crud.setForm({ ...crud.form, ten: e.target.value })}
+            className={inputCls}
+          />
+        </Field>
+      </FormSection>
+
+      <FormSection title="Khách hàng & đơn vị thực hiện">
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Khách hàng">
+            <select
+              value={crud.form.khachHangId}
+              onChange={(e) => crud.setForm({ ...crud.form, khachHangId: e.target.value })}
+              className={inputCls}
+            >
+              <option value="">-- Chọn khách hàng --</option>
+              {khachHangOptions.map((k) => (
+                <option key={k.id} value={k.id}>
+                  {k.ten}
+                </option>
+              ))}
+            </select>
+          </Field>
+
+          <Field label="Đơn vị thực hiện">
+            <select
+              value={crud.form.donViId}
+              onChange={(e) => crud.setForm({ ...crud.form, donViId: e.target.value })}
+              className={inputCls}
+            >
+              <option value="">-- Chọn đơn vị --</option>
+              {donViOptions.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.ten}
+                </option>
+              ))}
+            </select>
+          </Field>
+
+          <Field label="Chủ trì hợp đồng">
+            <select
+              value={crud.form.chuTriId}
+              onChange={(e) => crud.setForm({ ...crud.form, chuTriId: e.target.value })}
+              className={inputCls}
+            >
+              <option value="">-- Chưa phân công --</option>
+              {nhanSuOptions.map((n) => (
+                <option key={n.id} value={n.id}>{n.ten}</option>
+              ))}
+            </select>
+          </Field>
+
+          {crud.editing && (
+            <Field label="Giá dự thầu (triệu đồng, nếu khác giá trị HĐ)">
+              <NumberInput
+                value={crud.form.giaDuThau}
+                onChange={(val) => crud.setForm({ ...crud.form, giaDuThau: val })}
+                className={inputCls}
+                placeholder="Mặc định lấy Giá trị HĐ"
+              />
+            </Field>
+          )}
+        </div>
+      </FormSection>
+
+      <FormSection title="Tài chính">
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Giá trị HĐ (triệu đồng)">
+            <NumberInput
+              value={crud.form.giaTri}
+              onChange={(val) => crud.setForm({ ...crud.form, giaTri: val })}
+              className={inputCls}
+            />
+          </Field>
+
+          {crud.editing && (
+            <Field label="Đã thanh toán (triệu đồng)">
+              <NumberInput
+                value={crud.form.daThanhToan}
+                onChange={(val) => crud.setForm({ ...crud.form, daThanhToan: val })}
+                className={inputCls}
+              />
+            </Field>
+          )}
+        </div>
+      </FormSection>
+
+      <FormSection title="Thời hạn (Quy chế 2815)">
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Ngày ký">
+            <input
+              type="date"
+              value={crud.form.ngayKy}
+              onChange={(e) => crud.setForm({ ...crud.form, ngayKy: e.target.value })}
+              className={inputCls}
+            />
+          </Field>
+
+          <Field label="Hạn hoàn thành">
+            <input
+              type="date"
+              value={crud.form.hanHoanThanh}
+              onChange={(e) => crud.setForm({ ...crud.form, hanHoanThanh: e.target.value })}
+              className={inputCls}
+            />
+          </Field>
+
+          <Field label="Ngày nộp hồ sơ gốc về Viện">
+            <input
+              type="date"
+              value={crud.form.ngayNopHoSo}
+              onChange={(e) => crud.setForm({ ...crud.form, ngayNopHoSo: e.target.value })}
+              className={inputCls}
+            />
+            {crud.form.ngayKy && (() => {
+              const han = ngayHanNopHoSo(crud.form.ngayKy);
+              return han ? (
+                <p className="mt-1 text-2xs text-ink-muted">
+                  Hạn nộp (Điều 6.3): <strong className="text-ink">{formatNgay(han.toISOString().slice(0, 10))}</strong>
+                </p>
+              ) : null;
+            })()}
+          </Field>
+
+          <Field label="Hạn nộp chứng từ quyết toán (TCKT yêu cầu, nếu có)">
+            <input
+              type="date"
+              value={crud.form.hanChungTuQuyetToan}
+              onChange={(e) => crud.setForm({ ...crud.form, hanChungTuQuyetToan: e.target.value })}
+              className={inputCls}
+            />
+          </Field>
+        </div>
+      </FormSection>
+
+      <FormSection title="Trường hợp đặc thù & Cấp ký hợp đồng (QC 2815)">
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Trường hợp đặc thù">
+            <select
+              value={crud.form.loaiDacThu}
+              onChange={(e) => crud.setForm({ ...crud.form, loaiDacThu: e.target.value })}
+              className={inputCls}
+            >
+              <option value="">-- Không có --</option>
+              {DAC_THU_OPTIONS.filter((d) => !crud.form.nhomHD || d.apDungNhom.includes(crud.form.nhomHD as any)).map((d) => (
+                <option key={d.id} value={d.id} title={d.ghiChu}>{d.ten}</option>
+              ))}
+            </select>
+          </Field>
+
+          <Field label="Cấp ký hợp đồng (Điều 6.1)">
+            <select
+              value={crud.form.capKy}
+              onChange={(e) => crud.setForm({ ...crud.form, capKy: e.target.value })}
+              className={inputCls}
+            >
+              <option value="">-- Chưa xác định --</option>
+              {CAP_KY_OPTIONS.map((c) => (
+                <option key={c.value} value={c.value}>{c.label}</option>
+              ))}
+            </select>
+            {crud.form.nhomHD && (
+              <p className="mt-1 text-2xs text-ink-muted">
+                Tự chọn theo Nhóm HĐ (Điều 6.1) — đổi tay được nếu thực tế khác.
+              </p>
+            )}
+          </Field>
+        </div>
+
+        {(() => {
+          const canhBao = canhBaoCapKy(crud.form.nhomHD as any, crud.form.capKy as any);
+          if (!canhBao) return null;
+          return (
+            <p className="flex items-start gap-1.5 rounded-lg bg-danger-subtle p-2.5 text-2xs font-semibold text-danger">
+              <AlertCircle size={13} className="mt-px shrink-0" /> {canhBao}
+            </p>
+          );
+        })()}
+
+        <div className="grid grid-cols-2 gap-3 pt-1">
+          <label className="flex items-center gap-2 text-xs font-medium text-ink-secondary">
+            <input
+              type="checkbox"
+              checked={crud.form.phanVienXa}
+              onChange={(e) => crud.setForm({ ...crud.form, phanVienXa: e.target.checked })}
+            />
+            Phân viện/TT ở xa (+ hỗ trợ đi lại)
+          </label>
+          <label
+            className={cn(
+              'flex items-center gap-2 text-xs font-medium text-ink-secondary',
+              crud.form.capKy === 'don-vi-ky' && 'opacity-50',
+            )}
+            title={
+              crud.form.capKy === 'don-vi-ky'
+                ? 'Chỉ áp dụng khi hợp đồng do Viện ký (Ghi chú 6 Bảng 1)'
+                : undefined
+            }
+          >
+            <input
+              type="checkbox"
+              disabled={crud.form.capKy === 'don-vi-ky'}
+              checked={crud.form.giamTheoYeuCauDonVi}
+              onChange={(e) => crud.setForm({ ...crud.form, giamTheoYeuCauDonVi: e.target.checked })}
+            />
+            Đơn vị tự yêu cầu Viện ký (giảm tỷ lệ giao khoán)
+          </label>
+        </div>
+      </FormSection>
+
+      <FormSection title="📁 Tệp dự thảo Hợp đồng & Link Google Docs">
+        <Field label="Link Google Docs / Drive / Cloud (Xem trực tuyến)">
+          <input
+            type="url"
+            placeholder="https://docs.google.com/document/d/... hoặc link OneDrive / Drive"
+            value={crud.form.fileDuThaoUrl || ''}
+            onChange={(e) => crud.setForm({ ...crud.form, fileDuThaoUrl: e.target.value })}
+            className={inputCls}
+          />
+          <p className="mt-1 text-[11px] text-ink-muted">
+            Nhập liên kết Google Docs để ban quản lý & lãnh đạo chỉnh sửa và duyệt dự thảo trực tiếp.
+          </p>
+        </Field>
+
+        <Field label="Hoặc Tải tệp dự thảo từ máy (PDF, DOCX, ZIP)">
+          <div className="flex items-center gap-2">
+            <input
+              type="file"
+              accept=".pdf,.doc,.docx,.zip"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  const blobUrl = URL.createObjectURL(file);
+                  crud.setForm({
+                    ...crud.form,
+                    tenFileDuThao: file.name,
+                    fileDuThaoUrl: crud.form.fileDuThaoUrl || blobUrl,
+                  });
+                }
+              }}
+              className="text-xs file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary-subtle file:text-primary hover:file:bg-primary-100 cursor-pointer"
+            />
+            {crud.form.tenFileDuThao && (
+              <span className="text-xs text-emerald-600 font-semibold truncate max-w-[200px]">
+                📎 {crud.form.tenFileDuThao}
+              </span>
+            )}
+          </div>
+        </Field>
+      </FormSection>
+
+      <Field label="Trạng thái">
+        <select
+          value={crud.form.trangThai}
+          onChange={(e) => crud.setForm({ ...crud.form, trangThai: e.target.value as any })}
+          className={inputCls}
+        >
+          {TRANG_THAI_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+      </Field>
+    </form>
+  );
+
+  const buildFormFooter = () => (
+    <>
+      <button type="button" onClick={crud.closeModal} className="btn-ghost">
+        Hủy
+      </button>
+      <button type="submit" form="hopdong-form" disabled={crud.saving} className="btn-primary">
+        {crud.saving && <LoaderCircle size={15} className="animate-spin" />}
+        {crud.editing ? 'Cập nhật' : 'Thêm mới'}
+      </button>
+    </>
+  );
+
+  const EDIT_PANEL_ID = 'hopdong-form';
+
+  // Mở/cập nhật panel form Thêm/Sửa theo trạng thái của useCrudForm — mở lên trên bất kỳ
+  // panel nào đang có sẵn (vd. panel chi tiết) để tạo hiệu ứng xếp chồng "tai thỏ".
+  // Luôn dùng openPanel (không phải updatePanel): panel form không bao giờ có gì mở
+  // *trên* nó nên openPanel không rủi ro làm mất panel khác, và mỗi lần gõ phím —
+  // `crud.form` luôn là object mới từ toForm()/setForm() — sẽ mở lại đúng vị trí nếu
+  // panel từng bị đóng qua tai thỏ/backdrop/Esc thay vì qua nút Hủy.
+  useEffect(() => {
+    if (crud.modalOpen) {
+      openPanel({
+        id: EDIT_PANEL_ID,
+        title: crud.editing ? 'Chỉnh sửa hợp đồng' : 'Thêm hợp đồng mới',
+        subtitle: crud.editing ? crud.form.soHD : undefined,
+        // Số lớn cố ý — luôn bị computeWidths() kẹp về đúng mép sidebar (ceiling thực tế),
+        // nên form tự động rộng tối đa theo mọi kích thước màn hình thay vì cố định 720px.
+        defaultWidth: 2000,
+        minWidth: 480,
+        storageKey: 'slideover-width-hop-dong-form-v2',
+        content: buildFormFields(),
+        footer: buildFormFooter(),
+      });
+    } else {
+      closePanel(EDIT_PANEL_ID);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [crud.modalOpen, crud.form, crud.editing, crud.saving, crud.actionError]);
+
+  // Đồng bộ ngược: nếu panel form bị đóng bằng tai thỏ/backdrop/Esc (không qua nút Hủy),
+  // `crud.modalOpen` vẫn còn true — cập nhật lại để lần bấm "Sửa" tiếp theo hoạt động đúng.
+  useEffect(() => {
+    if (crud.modalOpen && !stack.some((p) => p.id === EDIT_PANEL_ID)) {
+      crud.closeModal();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stack]);
 
   return (
     <div>
@@ -243,9 +852,21 @@ export function HopDongPage() {
         >
           <Users2 size={16} /> Khách hàng & CRM Tiềm năng
         </button>
+        <button
+          onClick={() => setActiveTab('bao-cao-khkt')}
+          className={cn(
+            'flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-bold transition-all',
+            activeTab === 'bao-cao-khkt'
+              ? 'bg-surface text-primary-600 shadow-card dark:text-primary-300'
+              : 'text-ink-muted hover:text-ink'
+          )}
+        >
+          <BarChart3 size={16} /> Báo cáo KHKT (Đ.6.3)
+        </button>
       </div>
 
       {activeTab === 'crm-khach-hang' && <KhachHangPage />}
+      {activeTab === 'bao-cao-khkt' && <BaoCaoKhktPanel hopDongList={hopDongList} />}
 
       {activeTab === 'hop-dong-2815' && (
         <>
@@ -286,7 +907,8 @@ export function HopDongPage() {
                 Tự động kích hoạt luồng
               </span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 font-semibold text-ink-secondary">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 pt-1 font-semibold text-ink-secondary">
+              <div className="bg-surface p-2 rounded border border-border">🏛️ Mọi hợp đồng Nhóm 1 (N1a, N1b) — <strong>bất kể giá trị</strong></div>
               <div className="bg-surface p-2 rounded border border-border">🔍 Kiểm định, đánh giá hiện trạng (N1a) &ge; <strong>2,0 Tỷ VNĐ</strong></div>
               <div className="bg-surface p-2 rounded border border-border">📐 Tất cả hợp đồng Tư vấn (Nhóm 2) &ge; <strong>5,0 Tỷ VNĐ</strong></div>
               <div className="bg-surface p-2 rounded border border-border">🏗️ Hợp đồng Thi công (Nhóm 3) &ge; <strong>10,0 Tỷ VNĐ</strong></div>
@@ -320,14 +942,13 @@ export function HopDongPage() {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <div className="card overflow-x-auto lg:col-span-2">
+          <div className="card overflow-x-auto">
               <table className="w-full min-w-[640px]">
                 <thead>
                   <tr>
                     <th className="th-cell">Số HĐ / Tên</th>
                     <th className="th-cell">Khách hàng</th>
-                    <th className="th-cell">Giá trị (VNĐ)</th>
+                    <th className="th-cell">Giá trị (triệu đ)</th>
                     <th className="th-cell">Nhóm HĐ / Phê duyệt</th>
                     <th className="th-cell text-right">Thao tác</th>
                   </tr>
@@ -335,7 +956,7 @@ export function HopDongPage() {
                 <tbody>
                   {table.pageRows.map((hdItem) => {
                     const hd = hdItem as HopDong;
-                    const active = detail?.id === hd.id;
+                    const active = stack.some((p) => p.id === panelIdForHopDong(hd.id));
                     const dm = timDinhMuc(hd.nhomHD);
                     const isOverThreshold = canTrinhVienTruong(hd.nhomHD, hd.giaDuThau ?? hd.giaTri);
                     // Hợp đồng vừa vượt ngưỡng nhưng chưa từng được triage phê duyệt (cột DB vẫn ở giá trị mặc định) — hiển thị "Chờ trình" thay vì "Không áp dụng".
@@ -344,7 +965,7 @@ export function HopDongPage() {
                     return (
                       <tr
                         key={hd.id}
-                        onClick={() => setDetail(hd)}
+                        onClick={() => openDetail(hd, 'thong-tin')}
                         className={cn(
                           'tr-hover cursor-pointer',
                           active && 'bg-primary-subtle/50 dark:bg-primary-900/20',
@@ -383,9 +1004,9 @@ export function HopDongPage() {
                               </span>
                             )}
                           </div>
-                          {isOverThreshold && trangThaiHienThi !== 'da-duyet' && (
+                          {isOverThreshold && trangThaiHienThi !== 'da-duyet' && (duocTrinhDuyet || duocPheDuyet) && (
                             <div className="mt-1 flex gap-1">
-                              {trangThaiHienThi !== 'da-trinh' && (
+                              {trangThaiHienThi !== 'da-trinh' && duocTrinhDuyet && (
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -397,22 +1018,24 @@ export function HopDongPage() {
                                   Đánh dấu đã trình
                                 </button>
                               )}
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  void capNhatPheDuyet(hd, 'da-duyet');
-                                }}
-                                disabled={pheDuyetBusyId === hd.id}
-                                className="rounded border border-emerald-500/40 px-1.5 py-0.5 text-2xs font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 disabled:opacity-50"
-                              >
-                                Xác nhận đã duyệt
-                              </button>
+                              {duocPheDuyet && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    void capNhatPheDuyet(hd, 'da-duyet');
+                                  }}
+                                  disabled={pheDuyetBusyId === hd.id}
+                                  className="rounded border border-emerald-500/40 px-1.5 py-0.5 text-2xs font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 disabled:opacity-50"
+                                >
+                                  Xác nhận đã duyệt
+                                </button>
+                              )}
                             </div>
                           )}
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              openGiaoViec(hd);
+                              openDetail(hd, 'giao-viec');
                             }}
                             className="btn-secondary mt-1 py-1 text-2xs font-bold gap-1"
                           >
@@ -438,451 +1061,9 @@ export function HopDongPage() {
               />
             </div>
 
-            <div className="lg:col-span-1 space-y-4">
-              {liveDetail && (
-                <div className="rounded-lg border border-border p-3 text-xs space-y-2">
-                  <h4 className="text-2xs font-black uppercase tracking-wider text-ink-muted">Quyết toán / Thanh lý (Điều 11)</h4>
-                  {liveDetail.trangThaiQuyetToan === 'da-quyet-toan' ? (
-                    <p className="flex items-center gap-1.5 text-success font-semibold">
-                      <CheckCircle2 size={14} />
-                      {liveDetail.ngayQuyetToan ? <>Đã quyết toán ngày {formatNgay(liveDetail.ngayQuyetToan)}</> : 'Đã quyết toán'}
-                    </p>
-                  ) : liveDetail.daThanhToan >= liveDetail.giaTri && liveDetail.giaTri > 0 ? (
-                    <p className="text-ink-secondary">Đã thu đủ tiền — có thể quyết toán, thanh lý hợp đồng.</p>
-                  ) : (
-                    <p className="text-ink-muted">Chưa thu đủ tiền ({formatTrieu(liveDetail.daThanhToan)}/{formatTrieu(liveDetail.giaTri)}).</p>
-                  )}
-                  <button
-                    onClick={() => void toggleQuyetToan(liveDetail)}
-                    disabled={quyetToanBusy}
-                    className="btn-secondary w-full justify-center py-1.5 text-2xs font-bold gap-1 disabled:opacity-50"
-                  >
-                    <ClipboardCheck size={12} />
-                    {liveDetail.trangThaiQuyetToan === 'da-quyet-toan' ? 'Bỏ đánh dấu đã quyết toán' : 'Đánh dấu đã quyết toán'}
-                  </button>
-                </div>
-              )}
-              {liveDetail &&
-                (() => {
-                  const canhBao = canhBaoPhatNopChamHoSo(liveDetail.nhomHD, liveDetail.ngayKy, liveDetail.ngayNopHoSo);
-                  if (!canhBao) return null;
-                  return (
-                    <div className="rounded-lg border border-danger/30 bg-danger-subtle p-3 text-xs space-y-1 text-danger">
-                      <p className="flex items-center gap-1.5 font-bold"><AlertCircle size={14} /> Cảnh báo phạt (Điều 14.2)</p>
-                      <p>
-                        Đã quá hạn <strong>{canhBao.quaHanNgay} ngày</strong> chưa nộp hồ sơ gốc về Viện — mức phạt gợi ý{' '}
-                        <strong>{canhBao.mucPhatPhanTram}%</strong> giá trị HĐ trước thuế. Ghi nhận quyết định thực tế ở bảng "Thưởng / Phạt" bên dưới sau khi có văn bản nhắc nhở.
-                      </p>
-                    </div>
-                  );
-                })()}
-              {liveDetail &&
-                (() => {
-                  const canhBao = canhBaoPhatChungTuTre(
-                    liveDetail.nhomHD,
-                    liveDetail.hanChungTuQuyetToan,
-                    liveDetail.trangThaiQuyetToan === 'da-quyet-toan',
-                  );
-                  if (!canhBao) return null;
-                  return (
-                    <div className="rounded-lg border border-danger/30 bg-danger-subtle p-3 text-xs space-y-1 text-danger">
-                      <p className="flex items-center gap-1.5 font-bold"><AlertCircle size={14} /> Cảnh báo phạt (Điều 14.2, dòng 2)</p>
-                      <p>
-                        Đã quá hạn <strong>{canhBao.quaHanNgay} ngày</strong> nộp chứng từ thanh quyết toán theo yêu cầu TCKT — mức phạt gợi ý{' '}
-                        <strong>{canhBao.mucPhatPhanTram}%</strong> trên phần giá trị vi phạm.
-                      </p>
-                    </div>
-                  );
-                })()}
-              <DotThanhToanPanel key={`dtt-${liveDetail?.id ?? 'none'}`} hopDongId={liveDetail?.id ?? ''} giaTri={liveDetail?.giaTri ?? 0} onChanged={refetch} />
-              <QuyetToanGiaiDoanPanel key={`qtgd-${liveDetail?.id ?? 'none'}`} hopDongId={liveDetail?.id ?? ''} onChanged={refetch} />
-              <ThuongPhatPanel key={`tp-${liveDetail?.id ?? 'none'}`} hopDongId={liveDetail?.id ?? ''} nhomHD={liveDetail?.nhomHD ?? null} nhanSuOptions={nhanSuOptions} onChanged={refetch} />
-              <KiemTraNoiBoPanel key={`kt-${liveDetail?.id ?? 'none'}`} hopDongId={liveDetail?.id ?? ''} nhanSuOptions={nhanSuOptions} onChanged={refetch} />
-              <HoSoHopDongPanel key={`hs-${liveDetail?.id ?? 'none'}`} hopDongId={liveDetail?.id ?? ''} onChanged={refetch} />
-            </div>
-          </div>
         </>
       )}
 
-      {/* Modal Phiếu Giao Việc Điện Tử theo Quy chế 2815 */}
-      <Modal
-        open={phieuGiaoViecOpen}
-        onClose={() => setPhieuGiaoViecOpen(false)}
-        title={`Phiếu giao việc điện tử (Quy chế 2815) - ${selectedHdGiaoViec?.soHD || ''}`}
-      >
-        <div className="space-y-4 text-xs">
-          <div className="rounded-lg bg-subtle p-3 space-y-2 border border-border">
-            <p className="font-bold text-ink text-sm">{selectedHdGiaoViec?.ten}</p>
-            <p className="text-ink-muted">Khách hàng: <strong>{selectedHdGiaoViec?.khachHang}</strong></p>
-            <p className="text-ink-muted">Giá trị hợp đồng: <strong className="text-primary">{formatTrieu(selectedHdGiaoViec?.giaTri ?? 0)}</strong></p>
-            <p className="text-ink-muted">Chủ trì hợp đồng: <strong>{selectedHdGiaoViec?.chuTri || '— Chưa phân công —'}</strong></p>
-          </div>
-
-          {(() => {
-            const han = selectedHdGiaoViec ? ngayHanNopHoSo(selectedHdGiaoViec.ngayKy) : null;
-            if (selectedHdGiaoViec?.ngayNopHoSo) {
-              return (
-                <div className="rounded-lg border border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-900/20 p-3 flex items-center gap-2 text-emerald-800 dark:text-emerald-200">
-                  <CheckCircle2 className="h-5 w-5 shrink-0" />
-                  <span>Đã nộp hồ sơ gốc về Viện ngày <strong>{formatNgay(selectedHdGiaoViec.ngayNopHoSo)}</strong>.</span>
-                </div>
-              );
-            }
-            if (!han) return null;
-            const conLai = soNgayConLai(han);
-            return (
-              <div className="rounded-lg border border-amber-500/30 bg-amber-50/50 dark:bg-amber-900/20 p-3 flex items-center gap-2 text-amber-800 dark:text-amber-200">
-                <AlertCircle className="h-5 w-5 shrink-0 text-amber-600" />
-                <span>
-                  <strong>Điều 6.3 / Điều 8.2 QC 2815:</strong>{' '}
-                  {conLai >= 0 ? (
-                    <>Còn <strong>{conLai} ngày</strong> để nộp bản Hợp đồng gốc về Viện</>
-                  ) : (
-                    <>Đã <strong>quá hạn {Math.abs(conLai)} ngày</strong> nộp bản Hợp đồng gốc về Viện</>
-                  )}
-                  {' '}(hạn {formatNgay(han.toISOString().slice(0, 10))}, kể từ ngày ký {formatNgay(selectedHdGiaoViec?.ngayKy || '')}).
-                </span>
-              </div>
-            );
-          })()}
-
-          {(() => {
-            if (!selectedHdGiaoViec) return null;
-            const canhBao = canhBaoPhatChungTuTre(
-              selectedHdGiaoViec.nhomHD,
-              selectedHdGiaoViec.hanChungTuQuyetToan,
-              selectedHdGiaoViec.trangThaiQuyetToan === 'da-quyet-toan',
-            );
-            if (!canhBao) return null;
-            return (
-              <div className="rounded-lg border border-danger/30 bg-danger-subtle p-3 flex items-center gap-2 text-danger">
-                <AlertCircle className="h-5 w-5 shrink-0" />
-                <span>
-                  <strong>Điều 14.2 (dòng 2) QC 2815:</strong> Đã quá hạn <strong>{canhBao.quaHanNgay} ngày</strong> nộp chứng từ thanh quyết toán theo yêu cầu TCKT — mức phạt gợi ý <strong>{canhBao.mucPhatPhanTram}%</strong> trên phần giá trị vi phạm.
-                </span>
-              </div>
-            );
-          })()}
-
-          <div className="space-y-3">
-            <h4 className="font-bold text-ink">Phân bổ theo Bảng 1 Quy chế 2815 ({selectedHdGiaoViec?.nhomHD ?? '— chưa chọn nhóm —'}):</h4>
-            {(() => {
-              if (!selectedHdGiaoViec?.nhomHD) {
-                return (
-                  <p className="rounded bg-muted/40 p-2 text-ink-muted">
-                    Chưa chọn nhóm hợp đồng QC 2815 — vào "Sửa hợp đồng" để chọn nhóm theo Bảng 1.
-                  </p>
-                );
-              }
-              const dmGiaoViec = timDinhMuc(selectedHdGiaoViec.nhomHD);
-              const pb = phanBoHopDong(selectedHdGiaoViec.nhomHD, selectedHdGiaoViec.giaTri || 0, {
-                loaiDacThu: selectedHdGiaoViec.loaiDacThu,
-                phanVienXa: selectedHdGiaoViec.phanVienXa,
-                giamTheoYeuCauDonVi: selectedHdGiaoViec.giamTheoYeuCauDonVi,
-              });
-              if (!pb) {
-                return (
-                  <p className="rounded bg-muted/40 p-2 text-ink-muted">
-                    {dmGiaoViec?.ten}: thanh toán theo nguyên tắc <strong>thực thanh, thực chi</strong> phù hợp dự toán được duyệt (Điều 12.2) — không áp dụng bảng phân bổ tỷ lệ cố định.
-                  </p>
-                );
-              }
-              return (
-                <div className="space-y-2">
-                  {pb.ghiChuDacThu.length > 0 && (
-                    <div className="rounded bg-sky-50 dark:bg-sky-900/20 p-2 text-2xs text-sky-800 dark:text-sky-300 space-y-0.5">
-                      {pb.ghiChuDacThu.map((g, i) => <p key={i}>⚑ {g}</p>)}
-                    </div>
-                  )}
-                  <div className="flex justify-between p-2 rounded bg-muted/40">
-                    <span>Thuế GTGT ({dmGiaoViec?.thueGtgt ?? '—'}%):</span>
-                    <span className="font-bold text-ink">{formatTrieu(pb.thueGtgt)}</span>
-                  </div>
-                  <div className="flex justify-between p-2 rounded bg-muted/40">
-                    <span>CPQL Viện, Lợi nhuận, chi khác:</span>
-                    <span className="font-bold text-primary">{formatTrieu(pb.cpqlLnChiKhac)}</span>
-                  </div>
-                  <div className="flex justify-between p-2 rounded bg-muted/40">
-                    <span>Khấu hao TSCĐ Viện:</span>
-                    <span className="font-bold text-ink">{formatTrieu(pb.khtscd)}</span>
-                  </div>
-                  {pb.hoTroDiLai > 0 && (
-                    <div className="flex justify-between p-2 rounded bg-muted/40">
-                      <span>Hỗ trợ đi lại (Phân viện/TT ở xa):</span>
-                      <span className="font-bold text-ink">{formatTrieu(pb.hoTroDiLai)}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between p-2 rounded bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 font-bold">
-                    <span>Kinh phí giao Đơn vị chủ trì & phối hợp:</span>
-                    <span>{formatTrieu(pb.tongGiaoDonVi)}</span>
-                  </div>
-                  {pb.chuTri != null && pb.donVi != null ? (
-                    <>
-                      <div className="flex justify-between pl-4 text-2xs text-ink-muted">
-                        <span>— Trong đó Chủ trì:</span>
-                        <span>{formatTrieu(pb.chuTri)}</span>
-                      </div>
-                      <div className="flex justify-between pl-4 text-2xs text-ink-muted">
-                        <span>— Trong đó Đơn vị phối hợp:</span>
-                        <span>{formatTrieu(pb.donVi)}</span>
-                      </div>
-                    </>
-                  ) : (
-                    <p className="pl-4 text-2xs italic text-ink-muted">
-                      Không tách chủ trì/đơn vị — tự thoả thuận nội bộ trong phần kinh phí giao trên.
-                    </p>
-                  )}
-                </div>
-              );
-            })()}
-          </div>
-
-          <div className="border-t border-border-subtle pt-4">
-            <h4 className="mb-3 font-bold text-ink">Lưu Phiếu giao việc chính thức (Điều 7):</h4>
-            {selectedHdGiaoViec && (
-              <PhieuGiaoViecForm
-                key={selectedHdGiaoViec.id}
-                hd={selectedHdGiaoViec}
-                nhanSuOptions={nhanSuOptions}
-                onClose={() => setPhieuGiaoViecOpen(false)}
-              />
-            )}
-          </div>
-        </div>
-      </Modal>
-
-      {/* Modal Thêm/Sửa Hợp đồng */}
-      <Modal
-        open={crud.modalOpen}
-        onClose={crud.closeModal}
-        title={crud.editing ? 'Chỉnh sửa hợp đồng' : 'Thêm hợp đồng mới'}
-      >
-        <form onSubmit={crud.submit} className="space-y-4">
-          {crud.actionError && (
-            <div className="rounded-lg bg-danger-subtle p-3 text-xs text-danger">
-              {crud.actionError}
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Số hợp đồng" required>
-              <input
-                type="text"
-                required
-                value={crud.form.soHD}
-                onChange={(e) => crud.setForm({ ...crud.form, soHD: e.target.value })}
-                className={inputCls}
-              />
-            </Field>
-
-            <Field label="Nhóm hợp đồng (Bảng 1 QC 2815)">
-              <select
-                value={crud.form.nhomHD}
-                onChange={(e) => crud.setForm({ ...crud.form, nhomHD: e.target.value })}
-                className={inputCls}
-              >
-                <option value="">-- Chọn nhóm --</option>
-                {([1, 2, 3, 4] as const).map((nhom) => (
-                  <optgroup key={nhom} label={`Nhóm ${nhom}`}>
-                    {BANG_1.filter((d) => d.nhom === nhom).map((d) => (
-                      <option key={d.id} value={d.id}>{d.ten}</option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-            </Field>
-          </div>
-
-          <Field label="Tên hợp đồng" required>
-            <input
-              type="text"
-              required
-              value={crud.form.ten}
-              onChange={(e) => crud.setForm({ ...crud.form, ten: e.target.value })}
-              className={inputCls}
-            />
-          </Field>
-
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Khách hàng">
-              <select
-                value={crud.form.khachHangId}
-                onChange={(e) => crud.setForm({ ...crud.form, khachHangId: e.target.value })}
-                className={inputCls}
-              >
-                <option value="">-- Chọn khách hàng --</option>
-                {khachHangOptions.map((k) => (
-                  <option key={k.id} value={k.id}>
-                    {k.ten}
-                  </option>
-                ))}
-              </select>
-            </Field>
-
-            <Field label="Đơn vị thực hiện">
-              <select
-                value={crud.form.donViId}
-                onChange={(e) => crud.setForm({ ...crud.form, donViId: e.target.value })}
-                className={inputCls}
-              >
-                <option value="">-- Chọn đơn vị --</option>
-                {donViOptions.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.ten}
-                  </option>
-                ))}
-              </select>
-            </Field>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Giá trị HĐ (triệu đồng)">
-              <input
-                type="number"
-                value={crud.form.giaTri}
-                onChange={(e) => crud.setForm({ ...crud.form, giaTri: e.target.value })}
-                className={inputCls}
-              />
-            </Field>
-
-            <Field label="Đã thanh toán (triệu đồng)">
-              <input
-                type="number"
-                value={crud.form.daThanhToan}
-                onChange={(e) => crud.setForm({ ...crud.form, daThanhToan: e.target.value })}
-                className={inputCls}
-              />
-            </Field>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Chủ trì hợp đồng">
-              <select
-                value={crud.form.chuTriId}
-                onChange={(e) => crud.setForm({ ...crud.form, chuTriId: e.target.value })}
-                className={inputCls}
-              >
-                <option value="">-- Chưa phân công --</option>
-                {nhanSuOptions.map((n) => (
-                  <option key={n.id} value={n.id}>{n.ten}</option>
-                ))}
-              </select>
-            </Field>
-
-            <Field label="Giá dự thầu (triệu đồng, nếu khác giá trị HĐ)">
-              <input
-                type="number"
-                value={crud.form.giaDuThau}
-                onChange={(e) => crud.setForm({ ...crud.form, giaDuThau: e.target.value })}
-                className={inputCls}
-                placeholder="Mặc định lấy Giá trị HĐ"
-              />
-            </Field>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Ngày ký">
-              <input
-                type="date"
-                value={crud.form.ngayKy}
-                onChange={(e) => crud.setForm({ ...crud.form, ngayKy: e.target.value })}
-                className={inputCls}
-              />
-            </Field>
-
-            <Field label="Hạn hoàn thành">
-              <input
-                type="date"
-                value={crud.form.hanHoanThanh}
-                onChange={(e) => crud.setForm({ ...crud.form, hanHoanThanh: e.target.value })}
-                className={inputCls}
-              />
-            </Field>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Ngày nộp hồ sơ gốc về Viện">
-              <input
-                type="date"
-                value={crud.form.ngayNopHoSo}
-                onChange={(e) => crud.setForm({ ...crud.form, ngayNopHoSo: e.target.value })}
-                className={inputCls}
-              />
-            </Field>
-            <div className="flex items-end pb-2 text-2xs text-ink-muted">
-              {crud.form.ngayKy && (() => {
-                const han = ngayHanNopHoSo(crud.form.ngayKy);
-                return han ? <>Hạn nộp (Điều 6.3): <strong className="ml-1 text-ink">{formatNgay(han.toISOString().slice(0, 10))}</strong></> : null;
-              })()}
-            </div>
-          </div>
-
-          <Field label="Hạn nộp chứng từ quyết toán (TCKT yêu cầu, nếu có)">
-            <input
-              type="date"
-              value={crud.form.hanChungTuQuyetToan}
-              onChange={(e) => crud.setForm({ ...crud.form, hanChungTuQuyetToan: e.target.value })}
-              className={inputCls}
-            />
-          </Field>
-
-          <Field label="Trường hợp đặc thù (Ghi chú Bảng 1 QC 2815)">
-            <select
-              value={crud.form.loaiDacThu}
-              onChange={(e) => crud.setForm({ ...crud.form, loaiDacThu: e.target.value })}
-              className={inputCls}
-            >
-              <option value="">-- Không có --</option>
-              {DAC_THU_OPTIONS.filter((d) => !crud.form.nhomHD || d.apDungNhom.includes(crud.form.nhomHD as any)).map((d) => (
-                <option key={d.id} value={d.id} title={d.ghiChu}>{d.ten}</option>
-              ))}
-            </select>
-          </Field>
-
-          <div className="grid grid-cols-2 gap-3">
-            <label className="flex items-center gap-2 text-xs font-medium text-ink-secondary">
-              <input
-                type="checkbox"
-                checked={crud.form.phanVienXa}
-                onChange={(e) => crud.setForm({ ...crud.form, phanVienXa: e.target.checked })}
-              />
-              Phân viện/TT ở xa (+ hỗ trợ đi lại)
-            </label>
-            <label className="flex items-center gap-2 text-xs font-medium text-ink-secondary">
-              <input
-                type="checkbox"
-                checked={crud.form.giamTheoYeuCauDonVi}
-                onChange={(e) => crud.setForm({ ...crud.form, giamTheoYeuCauDonVi: e.target.checked })}
-              />
-              Đơn vị tự yêu cầu Viện ký (giảm tỷ lệ giao khoán)
-            </label>
-          </div>
-
-          <Field label="Trạng thái">
-            <select
-              value={crud.form.trangThai}
-              onChange={(e) => crud.setForm({ ...crud.form, trangThai: e.target.value as any })}
-              className={inputCls}
-            >
-              {TRANG_THAI_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </Field>
-
-          <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={crud.closeModal} className="btn-ghost">
-              Hủy
-            </button>
-            <button type="submit" disabled={crud.saving} className="btn-primary">
-              {crud.saving && <LoaderCircle size={15} className="animate-spin" />}
-              {crud.editing ? 'Cập nhật' : 'Thêm mới'}
-            </button>
-          </div>
-        </form>
-      </Modal>
     </div>
   );
 }
@@ -892,11 +1073,13 @@ const EMPTY_GV_FORM: PhieuGiaoViecInput = { chuTriKyThuatId: '', kinhPhiGiao: ''
 function PhieuGiaoViecForm({
   hd,
   nhanSuOptions,
+  donViOptions,
   onClose,
 }: {
   hd: HopDong;
   nhanSuOptions: Option[];
-  onClose: () => void;
+  donViOptions: Option[];
+  onClose?: () => void;
 }) {
   const { data: phieu, refetch } = useAsyncData<PhieuGiaoViec | null>(() => fetchPhieuGiaoViec(hd.id), null);
   const pb = phanBoHopDong(hd.nhomHD, hd.giaTri || 0);
@@ -935,6 +1118,16 @@ function PhieuGiaoViecForm({
 
   return (
     <div className="space-y-3">
+      {/* Banner quy định Thẩm quyền Lập & Duyệt (Điều 7 QC 2815) */}
+      <div className="rounded-xl border border-sky-200 bg-sky-50/60 dark:border-sky-900/40 dark:bg-sky-950/20 p-3 text-xs space-y-1 text-sky-900 dark:text-sky-200">
+        <p className="flex items-center gap-1.5 font-bold">
+          <Info size={15} className="text-sky-600" /> Thẩm quyền Lập & Phê duyệt Phiếu giao việc (Điều 7 QC 2815):
+        </p>
+        <ul className="list-disc pl-5 space-y-0.5 text-[11px]">
+          <li><strong>Người lập:</strong> Trưởng đơn vị thực hiện (hoặc Chủ trì HĐ được giao quyền).</li>
+          <li><strong>Người duyệt:</strong> Trưởng đơn vị ký duyệt (HĐ giao khoán đơn vị) hoặc Lãnh đạo Viện phê duyệt (HĐ cấp Viện).</li>
+        </ul>
+      </div>
       <div className="grid grid-cols-2 gap-3">
         <Field label="Chủ trì kỹ thuật">
           <select
@@ -949,14 +1142,43 @@ function PhieuGiaoViecForm({
           </select>
         </Field>
         <Field label="Kinh phí giao (triệu đồng)">
-          <input
-            type="number"
+          <NumberInput
             value={form.kinhPhiGiao}
-            onChange={(e) => setForm({ ...form, kinhPhiGiao: e.target.value })}
+            onChange={(val) => setForm({ ...form, kinhPhiGiao: val })}
             className={inputCls}
           />
         </Field>
       </div>
+
+      {/* Điều 12.4a — đối chiếu kinh phí giao chủ trì với trần được phép giảm. */}
+      {(() => {
+        const kt = kiemTraKinhPhiChuTri(hd.nhomHD, hd.giaTri || 0, Number(form.kinhPhiGiao) || 0, {
+          loaiDacThu: hd.loaiDacThu,
+          phanVienXa: hd.phanVienXa,
+          giamTheoYeuCauDonVi: hd.giamTheoYeuCauDonVi,
+          capKy: hd.capKy,
+        });
+        if (!kt) return null;
+        return (
+          <div
+            className={cn(
+              'rounded-lg p-2.5 text-2xs space-y-0.5',
+              kt.hopLe ? 'bg-muted/50 text-ink-secondary' : 'bg-danger-subtle text-danger font-semibold',
+            )}
+          >
+            <p>
+              Chuẩn Bảng 1 (cột 3): <strong>{formatTrieu(kt.mucChuan)}</strong> · Được giảm tối đa{' '}
+              <strong>{kt.tranGiamPhanTram}%</strong> giá trị HĐ → thấp nhất{' '}
+              <strong>{formatTrieu(kt.mucToiThieu)}</strong>
+            </p>
+            {kt.thongBao && (
+              <p className="flex items-start gap-1.5">
+                <AlertCircle size={12} className="mt-px shrink-0" /> {kt.thongBao}
+              </p>
+            )}
+          </div>
+        );
+      })()}
 
       <Field label="Ngày giao">
         <input
@@ -977,27 +1199,593 @@ function PhieuGiaoViecForm({
       </Field>
 
       {err && <p className="text-2xs font-semibold text-danger">{err}</p>}
-      {phieu?.trangThai === 'da-duyet' && (
-        <p className="flex items-center gap-1.5 text-2xs font-semibold text-success">
-          <CheckCircle2 size={13} /> Đã lưu — duyệt ngày {formatNgay(phieu.ngayDuyet)}
-        </p>
-      )}
 
       <div className="flex justify-end gap-2">
-        <button type="button" onClick={onClose} className="btn-ghost">
-          Đóng
-        </button>
+        {onClose && (
+          <button type="button" onClick={onClose} className="btn-ghost">
+            Đóng
+          </button>
+        )}
         <button type="button" onClick={() => void save()} disabled={saving} className="btn-primary">
           {saving && <LoaderCircle size={15} className="animate-spin" />}
           Lưu Phiếu giao việc
         </button>
       </div>
 
+      {phieu && <ThanhKyGiaoViec phieu={phieu} capKy={hd.capKy} onChanged={refetch} />}
+
       {phieu ? (
-        <CtvGiaoViecPanel phieuGiaoViecId={phieu.id} nhanSuOptions={nhanSuOptions} />
+        <>
+          <DonViGiaoViecPanel
+            phieuGiaoViecId={phieu.id}
+            donViOptions={donViOptions}
+            giaTriHopDong={hd.giaTri || 0}
+          />
+          <CtvGiaoViecPanel phieuGiaoViecId={phieu.id} nhanSuOptions={nhanSuOptions} />
+        </>
       ) : (
         <p className="text-2xs italic text-ink-muted">Lưu phiếu giao việc trước để thêm cộng tác viên.</p>
       )}
+    </div>
+  );
+}
+
+// ═══ FORM THÊM/SỬA HỢP ĐỒNG — nhóm trường theo section ═══
+
+function FormSection({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="space-y-3 rounded-xl border border-border bg-subtle/30 p-4">
+      <h4 className="text-2xs font-black uppercase tracking-wider text-ink-muted">{title}</h4>
+      {children}
+    </div>
+  );
+}
+
+// ═══ TAB "THÔNG TIN CHUNG" — SlideOver chi tiết hợp đồng ═══
+
+function InfoField({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-2xs font-black uppercase tracking-wider text-ink-muted">{label}</p>
+      <p className="mt-0.5 text-xs font-medium text-ink">{value}</p>
+    </div>
+  );
+}
+
+function MiniStat({ label, value, tone }: { label: string; value: string; tone?: 'success' | 'warning' }) {
+  return (
+    <div className="rounded-lg border border-border p-2.5 text-center">
+      <p className="text-2xs font-black uppercase tracking-wider text-ink-muted">{label}</p>
+      <p
+        className={cn(
+          'mt-1 text-sm font-bold',
+          tone === 'success' && 'text-success',
+          tone === 'warning' && 'text-warning',
+          !tone && 'text-ink',
+        )}
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
+
+// ═══ KHUNG THÀNH VIÊN THAM GIA THỰC HIỆN HỢP ĐỒNG (ĐIỀU 7) ═══
+
+function ThanhVienHopDongSection({
+  hd,
+  onGoToGiaoViec,
+}: {
+  hd: HopDong;
+  onGoToGiaoViec?: () => void;
+}) {
+  const { data: phieu } = useAsyncData<PhieuGiaoViec | null>(() => fetchPhieuGiaoViec(hd.id), null);
+  const { data: ctvList } = useAsyncData<CtvGiaoViec[]>(
+    () => (phieu ? fetchCtvGiaoViec(phieu.id) : Promise.resolve([])),
+    [],
+  );
+
+  const chuTriHD = hd.chuTri || 'Chưa phân công';
+  const chuTriKyThuat = phieu?.chuTriKyThuat || 'Chưa phân công (Phiếu giao việc)';
+
+  return (
+    <div className="rounded-xl border border-border bg-surface p-3.5 space-y-3 shadow-2xs">
+      <div className="flex items-center justify-between">
+        <h4 className="flex items-center gap-2 text-xs font-bold text-ink">
+          <Users size={16} className="text-primary" /> Thành viên tham gia thực hiện (Điều 7 - Phiếu giao việc)
+        </h4>
+        {onGoToGiaoViec && (
+          <button
+            type="button"
+            onClick={onGoToGiaoViec}
+            className="flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
+          >
+            <ListChecks size={12} /> Chi tiết Giao việc & CTV
+          </button>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        {/* Chủ trì Hợp đồng */}
+        <div className="flex items-center gap-2.5 rounded-lg border border-purple-200 bg-purple-50/50 dark:border-purple-900/30 dark:bg-purple-950/20 p-2.5">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-purple-600 text-white font-bold text-xs shadow-2xs">
+            {chuTriHD.slice(0, 1)}
+          </div>
+          <div className="min-w-0">
+            <span className="inline-flex rounded bg-purple-200/80 dark:bg-purple-900/60 px-1.5 py-0.5 text-[9px] font-bold text-purple-900 dark:text-purple-200 uppercase">
+              Chủ trì Hợp đồng
+            </span>
+            <p className="mt-0.5 text-xs font-bold text-ink truncate">{chuTriHD}</p>
+          </div>
+        </div>
+
+        {/* Chủ trì Kỹ thuật (Phiếu giao việc) */}
+        <div className="flex items-center gap-2.5 rounded-lg border border-sky-200 bg-sky-50/50 dark:border-sky-900/30 dark:bg-sky-950/20 p-2.5">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-600 text-white font-bold text-xs shadow-2xs">
+            {chuTriKyThuat.slice(0, 1)}
+          </div>
+          <div className="min-w-0">
+            <span className="inline-flex rounded bg-sky-200/80 dark:bg-sky-900/60 px-1.5 py-0.5 text-[9px] font-bold text-sky-900 dark:text-sky-200 uppercase">
+              Chủ trì Kỹ thuật (Giao việc)
+            </span>
+            <p className="mt-0.5 text-xs font-bold text-ink truncate">{chuTriKyThuat}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Danh sách cán bộ / cộng tác viên phối hợp */}
+      <div className="pt-1">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-ink-muted mb-1.5">
+          Cán bộ / Cộng tác viên chuyên môn phối hợp ({ctvList?.length || 0}):
+        </p>
+
+        {ctvList && ctvList.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {ctvList.map((ctv) => (
+              <div
+                key={ctv.id}
+                className="flex items-center gap-2 rounded-lg border border-border bg-subtle/50 px-2.5 py-1.5 text-xs"
+              >
+                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary-100 text-primary-700 text-[10px] font-bold">
+                  {ctv.hoTen.slice(0, 1)}
+                </div>
+                <span className="font-semibold text-ink-primary">{ctv.hoTen}</span>
+                {ctv.tyLePhanChia > 0 && (
+                  <span className="rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 px-1.5 py-0.2 text-[10px] font-bold">
+                    {ctv.tyLePhanChia}%
+                  </span>
+                )}
+                {ctv.ghiChu && <span className="text-[10px] text-ink-muted italic">({ctv.ghiChu})</span>}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex items-center justify-between rounded-lg border border-dashed border-border p-2.5 text-xs text-ink-muted">
+            <span>Chưa bổ sung danh sách cộng tác viên phối hợp theo Phiếu giao việc.</span>
+            {onGoToGiaoViec && (
+              <button
+                type="button"
+                onClick={onGoToGiaoViec}
+                className="rounded bg-primary-subtle px-2 py-1 text-[11px] font-bold text-primary hover:bg-primary-100"
+              >
+                + Phân công ngay
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function HopDongThongTinTab({
+  hd,
+  pheDuyetBusyId,
+  onPheDuyet,
+  onRefetch,
+  onGoToGiaoViec,
+}: {
+  hd: HopDong;
+  pheDuyetBusyId: string | null;
+  onPheDuyet: (hd: HopDong, trangThai: TrangThaiPheDuyet) => void;
+  onRefetch?: () => void;
+  onGoToGiaoViec?: () => void;
+}) {
+  const { vaiTro } = useAuth();
+  const duocTrinhDuyet = coTheTrinhDuyet(vaiTro);
+  const duocPheDuyet = coThePheDuyet(vaiTro);
+  const isOverThreshold = canTrinhVienTruong(hd.nhomHD, hd.giaDuThau ?? hd.giaTri);
+  const trangThaiHienThi: TrangThaiPheDuyet =
+    isOverThreshold && hd.trangThaiPheDuyet === 'khong-ap-dung' ? 'chua-trinh' : hd.trangThaiPheDuyet;
+  const dm = timDinhMuc(hd.nhomHD);
+
+  return (
+    <div className="space-y-4">
+      {/* Workflow Stepper Engine */}
+      <WorkflowStepper
+        hopDongId={hd.id}
+        buocHienTai={hd.buocHienTai || 'du-thao'}
+        onStateChanged={() => onRefetch?.()}
+      />
+
+      {/* Khung File Dự Thảo Hợp đồng & Google Docs */}
+      <div className="rounded-xl border border-primary/25 bg-primary-subtle/20 p-3.5 space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="flex items-center gap-2 text-xs font-bold text-primary">
+            <FileText size={16} /> Hồ sơ & Dự thảo hợp đồng
+          </span>
+          {hd.fileDuThaoUrl ? (
+            <span className="rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 px-2 py-0.5 text-[10px] font-bold">
+              Đã đính kèm dự thảo
+            </span>
+          ) : (
+            <span className="rounded bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 px-2 py-0.5 text-[10px] font-bold">
+              Chưa đính kèm file
+            </span>
+          )}
+        </div>
+
+        {hd.fileDuThaoUrl ? (
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-ink truncate">
+                {hd.tenFileDuThao || (hd.fileDuThaoUrl.includes('google.com') ? 'Tài liệu Google Docs dự thảo' : 'File dự thảo hợp đồng')}
+              </p>
+              <p className="text-[11px] text-ink-muted truncate max-w-[360px]">
+                {hd.fileDuThaoUrl}
+              </p>
+            </div>
+            <a
+              href={hd.fileDuThaoUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="btn-primary shadow-2xs py-1.5 px-3 text-xs font-bold gap-1.5"
+            >
+              <ExternalLink size={13} /> Mở Link / Tải về
+            </a>
+          </div>
+        ) : (
+          <p className="text-xs text-ink-muted italic">
+            Chưa có tệp đính kèm. Bấm nút <strong>Sửa</strong> ở góc trên bên phải để tải tệp Word/PDF hoặc dán link Google Docs dự thảo.
+          </p>
+        )}
+      </div>
+
+      {/* Thành viên tham gia thực hiện Hợp đồng (Điều 7) */}
+      <ThanhVienHopDongSection hd={hd} onGoToGiaoViec={onGoToGiaoViec} />
+
+      {/* Khung Thông tin chi tiết Hợp đồng & Giá trị Tài chính */}
+      <div className="rounded-xl border border-border bg-surface p-4 space-y-4 shadow-2xs">
+        <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-border-subtle">
+          <div className="flex items-center gap-2">
+            <StatusBadge value={hd.trangThai} />
+            {dm && (
+              <span className="rounded bg-muted px-2 py-0.5 text-2xs font-bold text-ink-secondary" title={dm.ten}>
+                {dm.id} — {dm.ten}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <InfoField label="Khách hàng" value={hd.khachHang || '—'} />
+          <InfoField label="Đơn vị thực hiện" value={hd.donViThucHien || '—'} />
+          <InfoField label="Chủ trì hợp đồng" value={hd.chuTri || '— Chưa phân công —'} />
+          <InfoField label="Giá dự thầu" value={hd.giaDuThau != null ? formatTrieu(hd.giaDuThau) : '— (= Giá trị HĐ)'} />
+          <InfoField label="Ngày ký" value={hd.ngayKy ? formatNgay(hd.ngayKy) : '—'} />
+          <InfoField label="Hạn hoàn thành" value={hd.hanHoanThanh ? formatNgay(hd.hanHoanThanh) : '—'} />
+        </div>
+
+        <div className="grid grid-cols-3 gap-3 pt-3 border-t border-border-subtle">
+          <MiniStat label="Giá trị HĐ" value={formatTrieu(hd.giaTri)} />
+          <MiniStat label="Đã thanh toán" value={formatTrieu(hd.daThanhToan)} tone="success" />
+          <MiniStat label="Còn phải thu" value={formatTrieu(Math.max(0, hd.giaTri - hd.daThanhToan))} tone="warning" />
+        </div>
+      </div>
+
+      {isOverThreshold && (
+        <div className="rounded-lg border border-primary/20 bg-primary-subtle/30 p-3 text-xs space-y-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="flex items-center gap-1.5 font-bold text-primary">
+              <CheckCircle2 size={14} /> Điều 6.1 QC 2815: Vượt ngưỡng trình Viện trưởng
+            </p>
+            <span className={cn('rounded px-1.5 py-0.5 text-2xs font-bold', PHE_DUYET_TONE[trangThaiHienThi])}>
+              {PHE_DUYET_LABEL[trangThaiHienThi]}
+            </span>
+          </div>
+          {trangThaiHienThi !== 'da-duyet' && (
+            <div className="flex flex-wrap items-center gap-2">
+              {trangThaiHienThi !== 'da-trinh' && duocTrinhDuyet && (
+                <button
+                  onClick={() => onPheDuyet(hd, 'da-trinh')}
+                  disabled={pheDuyetBusyId === hd.id}
+                  className="rounded-lg border border-border px-2.5 py-1 text-2xs font-bold text-ink-secondary hover:bg-muted disabled:opacity-50"
+                >
+                  Đánh dấu đã trình
+                </button>
+              )}
+              {duocPheDuyet ? (
+                <button
+                  onClick={() => onPheDuyet(hd, 'da-duyet')}
+                  disabled={pheDuyetBusyId === hd.id}
+                  className="rounded-lg border border-emerald-500/40 px-2.5 py-1 text-2xs font-bold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 disabled:opacity-50"
+                >
+                  Xác nhận đã duyệt
+                </button>
+              ) : (
+                <span className="text-2xs italic text-ink-muted">
+                  Chờ Viện trưởng/Phó Viện trưởng phê duyệt — {NHAN_VAI_TRO[vaiTro]} không có thẩm quyền này (Điều 6.1).
+                </span>
+              )}
+            </div>
+          )}
+          {(hd.ngayTrinhDuyet || hd.ngayDuyet) && (
+            <p className="text-ink-muted">
+              {hd.ngayTrinhDuyet && <>Ngày trình: {formatNgay(hd.ngayTrinhDuyet)}. </>}
+              {hd.ngayDuyet && <>Ngày duyệt: {formatNgay(hd.ngayDuyet)}.</>}
+            </p>
+          )}
+        </div>
+      )}
+
+      {(() => {
+        const canhBao = canhBaoPhatNopChamHoSo(hd.nhomHD, hd.ngayKy, hd.ngayNopHoSo);
+        if (!canhBao) return null;
+        return (
+          <div className="rounded-lg border border-danger/30 bg-danger-subtle p-3 text-xs space-y-1 text-danger">
+            <p className="flex items-center gap-1.5 font-bold">
+              <AlertCircle size={14} /> Cảnh báo phạt (Điều 14.2)
+            </p>
+            <p>
+              Đã quá hạn <strong>{canhBao.quaHanNgay} ngày</strong> chưa nộp hồ sơ gốc về Viện — mức phạt gợi ý{' '}
+              <strong>{canhBao.mucPhatPhanTram}%</strong> giá trị HĐ trước thuế. Ghi nhận quyết định thực tế ở tab
+              "Thưởng / Phạt" sau khi có văn bản nhắc nhở.
+            </p>
+          </div>
+        );
+      })()}
+    </div>
+  );
+}
+
+// ═══ TAB "GIAO VIỆC (ĐIỀU 7)" — SlideOver chi tiết hợp đồng ═══
+
+function HopDongGiaoViecTab({ hd, nhanSuOptions, donViOptions }: { hd: HopDong; nhanSuOptions: Option[]; donViOptions: Option[] }) {
+  const han = ngayHanNopHoSo(hd.ngayKy);
+  const dm = timDinhMuc(hd.nhomHD);
+  const pb = hd.nhomHD
+    ? phanBoHopDong(hd.nhomHD, hd.giaTri || 0, {
+        loaiDacThu: hd.loaiDacThu,
+        phanVienXa: hd.phanVienXa,
+        giamTheoYeuCauDonVi: hd.giamTheoYeuCauDonVi,
+        capKy: hd.capKy,
+      })
+    : null;
+
+  return (
+    <div className="space-y-4">
+      {hd.ngayNopHoSo ? (
+        <div className="rounded-lg border border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-900/20 p-3 flex items-center gap-2 text-xs text-emerald-800 dark:text-emerald-200">
+          <CheckCircle2 className="h-5 w-5 shrink-0" />
+          <span>
+            Đã nộp hồ sơ gốc về Viện ngày <strong>{formatNgay(hd.ngayNopHoSo)}</strong>.
+          </span>
+        </div>
+      ) : (
+        han && (
+          (() => {
+            const conLai = soNgayConLai(han);
+            return (
+              <div className="rounded-lg border border-amber-500/30 bg-amber-50/50 dark:bg-amber-900/20 p-3 flex items-center gap-2 text-xs text-amber-800 dark:text-amber-200">
+                <AlertCircle className="h-5 w-5 shrink-0 text-amber-600" />
+                <span>
+                  <strong>Điều 6.3 / Điều 8.2 QC 2815:</strong>{' '}
+                  {conLai >= 0 ? (
+                    <>Còn <strong>{conLai} ngày</strong> để nộp bản Hợp đồng gốc về Viện</>
+                  ) : (
+                    <>Đã <strong>quá hạn {Math.abs(conLai)} ngày</strong> nộp bản Hợp đồng gốc về Viện</>
+                  )}
+                  {' '}(hạn {formatNgay(han.toISOString().slice(0, 10))}, kể từ ngày ký {formatNgay(hd.ngayKy || '')}).
+                </span>
+              </div>
+            );
+          })()
+        )
+      )}
+
+      <div className="space-y-3 text-xs">
+        <h4 className="font-bold text-ink">
+          Phân bổ theo Bảng 1 Quy chế 2815 ({hd.nhomHD ?? '— chưa chọn nhóm —'}):
+        </h4>
+        {!hd.nhomHD ? (
+          <p className="rounded bg-muted/40 p-2 text-ink-muted">
+            Chưa chọn nhóm hợp đồng QC 2815 — vào "Sửa" để chọn nhóm theo Bảng 1.
+          </p>
+        ) : !pb ? (
+          <p className="rounded bg-muted/40 p-2 text-ink-muted">
+            {dm?.ten}: thanh toán theo nguyên tắc <strong>thực thanh, thực chi</strong> phù hợp dự toán được duyệt
+            (Điều 12.2) — không áp dụng bảng phân bổ tỷ lệ cố định.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {pb.ghiChuDacThu.length > 0 && (
+              <div className="rounded bg-sky-50 dark:bg-sky-900/20 p-2 text-2xs text-sky-800 dark:text-sky-300 space-y-0.5">
+                {pb.ghiChuDacThu.map((g, i) => (
+                  <p key={i}>⚑ {g}</p>
+                ))}
+              </div>
+            )}
+            <div className="flex justify-between p-2 rounded bg-muted/40">
+              <span>Thuế GTGT ({dm?.thueGtgt ?? '—'}%):</span>
+              <span className="font-bold text-ink">{formatTrieu(pb.thueGtgt)}</span>
+            </div>
+            <div className="flex justify-between p-2 rounded bg-muted/40">
+              <span>CPQL Viện, Lợi nhuận, chi khác:</span>
+              <span className="font-bold text-primary">{formatTrieu(pb.cpqlLnChiKhac)}</span>
+            </div>
+            <div className="flex justify-between p-2 rounded bg-muted/40">
+              <span>Khấu hao TSCĐ Viện:</span>
+              <span className="font-bold text-ink">{formatTrieu(pb.khtscd)}</span>
+            </div>
+            {pb.hoTroDiLai > 0 && (
+              <div className="flex justify-between p-2 rounded bg-muted/40">
+                <span>Hỗ trợ đi lại (Phân viện/TT ở xa):</span>
+                <span className="font-bold text-ink">{formatTrieu(pb.hoTroDiLai)}</span>
+              </div>
+            )}
+            <div className="flex justify-between p-2 rounded bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 font-bold">
+              <span>Kinh phí giao Đơn vị chủ trì & phối hợp:</span>
+              <span>{formatTrieu(pb.tongGiaoDonVi)}</span>
+            </div>
+            {pb.chuTri != null && pb.donVi != null ? (
+              <>
+                <div className="flex justify-between pl-4 text-2xs text-ink-muted">
+                  <span>— Trong đó Chủ trì:</span>
+                  <span>{formatTrieu(pb.chuTri)}</span>
+                </div>
+                <div className="flex justify-between pl-4 text-2xs text-ink-muted">
+                  <span>— Trong đó Đơn vị phối hợp:</span>
+                  <span>{formatTrieu(pb.donVi)}</span>
+                </div>
+              </>
+            ) : (
+              <p className="pl-4 text-2xs italic text-ink-muted">
+                Không tách chủ trì/đơn vị — tự thoả thuận nội bộ trong phần kinh phí giao trên.
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="border-t border-border-subtle pt-4">
+        <h4 className="mb-3 text-xs font-bold text-ink">Lưu Phiếu giao việc chính thức (Điều 7):</h4>
+        <PhieuGiaoViecForm key={hd.id} hd={hd} nhanSuOptions={nhanSuOptions} donViOptions={donViOptions} />
+      </div>
+    </div>
+  );
+}
+
+// ═══ THANH KÝ QUYẾT ĐỊNH GIAO VIỆC (Điều 7.1c) ═══
+// Nút chỉ hiện với vai trò đủ thẩm quyền; trigger fn_kiem_soat_ky_giao_viec ở CSDL
+// mới là chốt chặn thật (giao diện có thể bị bỏ qua).
+
+function ThanhKyGiaoViec({
+  phieu,
+  capKy,
+  onChanged,
+}: {
+  phieu: PhieuGiaoViec;
+  capKy: CapKy | null;
+  onChanged: () => void;
+}) {
+  const { vaiTro } = useAuth();
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const tt = phieu.trangThai;
+  const ke = buocKeTiep(tt, capKy);
+  const duocKy = !!ke && ke.vaiTroChoPhep.includes(vaiTro);
+  const idxHienTai = CAC_BUOC_KY.findIndex((b) => b.id === tt);
+
+  const chuyen = async (den: TrangThaiGiaoViec, lyDo?: string) => {
+    setBusy(true);
+    setErr(null);
+    try {
+      await chuyenBuocGiaoViec(phieu.id, den, { lyDoTraLai: lyDo });
+      onChanged();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const traLai = () => {
+    const lyDo = window.prompt('Lý do trả lại phiếu giao việc:');
+    if (lyDo === null) return;
+    void chuyen('tra-lai', lyDo);
+  };
+
+  return (
+    <div className="space-y-2 rounded-lg border border-border p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h4 className="text-2xs font-black uppercase tracking-wider text-ink-muted">
+          Luồng ký Quyết định giao việc (Điều 7.1c)
+        </h4>
+        <span className={cn('rounded px-2 py-0.5 text-2xs font-bold', mauTrangThaiGiaoViec(tt))}>
+          {NHAN_TRANG_THAI_GIAO_VIEC[tt]}
+        </span>
+      </div>
+
+      {/* Thanh tiến trình 5 mốc */}
+      <div className="flex items-start justify-between gap-1 overflow-x-auto pt-1">
+        {CAC_BUOC_KY.map((b, i) => {
+          const xong = idxHienTai > i && tt !== 'tra-lai';
+          const dangO = b.id === tt;
+          return (
+            <div key={b.id} className="flex min-w-0 flex-1 flex-col items-center text-center">
+              <div
+                className={cn(
+                  'flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-bold',
+                  dangO
+                    ? 'bg-primary text-white ring-2 ring-primary-100'
+                    : xong
+                      ? 'bg-emerald-600 text-white'
+                      : 'border border-border bg-surface text-ink-muted',
+                )}
+              >
+                {xong ? <Check size={11} /> : i + 1}
+              </div>
+              <span className={cn('mt-1 text-[10px] leading-tight', dangO ? 'font-bold text-primary' : 'text-ink-muted')}>
+                {b.nhan}
+              </span>
+              <span className="text-[9px] leading-tight text-ink-muted">{b.moTa}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      {tt === 'tra-lai' && phieu.lyDoTraLai && (
+        <p className="rounded bg-danger-subtle p-2 text-2xs font-semibold text-danger">
+          Bị trả lại: {phieu.lyDoTraLai}
+        </p>
+      )}
+      {tt === 'da-duyet' && phieu.ngayDuyet && (
+        <p className="flex items-center gap-1.5 text-2xs font-semibold text-success">
+          <CheckCircle2 size={13} /> Đã phê duyệt ngày {formatNgay(phieu.ngayDuyet)}
+        </p>
+      )}
+      {err && (
+        <p className="flex items-start gap-1.5 rounded bg-danger-subtle p-2 text-2xs font-semibold text-danger">
+          <AlertCircle size={12} className="mt-px shrink-0" /> {err}
+        </p>
+      )}
+
+      <div className="flex flex-wrap items-center gap-2">
+        {ke && duocKy && (
+          <button
+            onClick={() => void chuyen(ke.den)}
+            disabled={busy}
+            className="btn-primary py-1 text-2xs font-bold disabled:opacity-50"
+          >
+            {busy && <LoaderCircle size={12} className="animate-spin" />} {ke.nhanNut}
+          </button>
+        )}
+        {ke && !duocKy && (
+          <span className="text-2xs italic text-ink-muted">
+            Bước kế tiếp: <strong>{ke.nhanNut}</strong> — {NHAN_VAI_TRO[vaiTro]} không có thẩm quyền này.
+          </span>
+        )}
+        {coTheTraLai(tt, vaiTro) && (
+          <button
+            onClick={traLai}
+            disabled={busy}
+            className="rounded-lg border border-danger/40 px-2.5 py-1 text-2xs font-bold text-danger hover:bg-danger-subtle disabled:opacity-50"
+          >
+            Trả lại để sửa
+          </button>
+        )}
+      </div>
     </div>
   );
 }

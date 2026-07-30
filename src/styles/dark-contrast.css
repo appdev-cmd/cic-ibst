@@ -51,16 +51,18 @@
 .dark [class~="bg-[#F0ECE1]"] { background-color: #1e293b !important; }
 .dark [class~="bg-[#ece7de]"] { background-color: #151d2e !important; }
 
-/* ── 4. LEGACY BORDERS ───────────────────────────────────────────────────── */
+/* ── 4. LEGACY BORDERS & CRISP DARK BORDERS ───────────────────────────────── */
+.dark .border-border,
+.dark .border-border-subtle,
 .dark .border-gray-100:not([class*="border-[var"]),
 .dark .border-gray-200:not([class*="border-[var"]),
 .dark .border-gray-300:not([class*="border-[var"]),
 .dark .border-slate-100:not([class*="border-[var"]),
 .dark .border-slate-200:not([class*="border-[var"]) {
-    border-color: #1e293b !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
 }
 .dark [class~="border-[#ece7de]"],
-.dark [class~="border-[#e5dfd4]"] { border-color: #1e293b !important; }
+.dark [class~="border-[#e5dfd4]"] { border-color: rgba(255, 255, 255, 0.15) !important; }
 
 /* ── 5. TABLE — moved to base.css (theme-aware via CSS variables).
    Only weight-emphasis text remain here. ─────────────────────────────────── */
