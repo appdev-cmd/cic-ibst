@@ -214,6 +214,7 @@ export interface DauThauInput {
   hsNangLucChung: boolean;
   bcTaiChinh: boolean;
   ccnnDuThau: boolean;
+  dangKyDauMoiId?: string;
 }
 
 function dauThauRow(i: DauThauInput) {
@@ -238,8 +239,11 @@ function dauThauRow(i: DauThauInput) {
 }
 
 export async function createDauThau(i: DauThauInput): Promise<void> {
-  const { error } = await supabase.from('dau_thau').insert(dauThauRow(i));
+  const { data, error } = await supabase.from('dau_thau').insert(dauThauRow(i)).select('id').single();
   throwIf(error);
+  if (data && i.dangKyDauMoiId) {
+    await supabase.from('dang_ky_dau_moi').update({ dau_thau_id: data.id }).eq('id', num(i.dangKyDauMoiId));
+  }
 }
 
 export async function updateDauThau(id: string, i: DauThauInput): Promise<void> {
@@ -248,11 +252,39 @@ export async function updateDauThau(id: string, i: DauThauInput): Promise<void> 
     .update(dauThauRow(i))
     .eq('id', num(id));
   throwIf(error);
+  if (i.dangKyDauMoiId) {
+    await supabase.from('dang_ky_dau_moi').update({ dau_thau_id: num(id) }).eq('id', num(i.dangKyDauMoiId));
+  }
 }
 
 export async function deleteDauThau(id: string): Promise<void> {
   const { error } = await supabase.from('dau_thau').delete().eq('id', num(id));
   throwIf(error);
+}
+
+import { recordAuditLog } from './auditLog';
+
+export async function updateTrangThaiDauThau(
+  id: string,
+  newTrangThai: string,
+  giaTrungThau?: number | null,
+  userTitle = 'KHKT / Cán bộ phụ trách',
+): Promise<void> {
+  const payload: any = { trang_thai: newTrangThai };
+  if (giaTrungThau !== undefined && giaTrungThau !== null) {
+    payload.gia_trung_thau = giaTrungThau;
+  }
+  const { error } = await supabase.from('dau_thau').update(payload).eq('id', num(id));
+  throwIf(error);
+
+  recordAuditLog({
+    loaiDoiTuong: 'dau_thau',
+    doiTuongId: String(id),
+    tuTrangThai: '',
+    denTrangThai: newTrangThai,
+    tenNguoiThucHien: userTitle,
+    ghiChu: giaTrungThau ? `Cập nhật trạng thái thầu sang "${newTrangThai}" với giá trúng thầu: ${giaTrungThau.toLocaleString('vi-VN')} triệu VNĐ` : `Cập nhật trạng thái gói thầu sang "${newTrangThai}"`,
+  });
 }
 
 // 4. Liên danh

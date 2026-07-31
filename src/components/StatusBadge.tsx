@@ -1,10 +1,26 @@
 import type { TrangThai } from '../types';
 import { cn } from '../lib/utils';
 
-const CONFIG: Record<TrangThai, { label: string; cls: string }> = {
+const CONFIG: Record<string, { label: string; cls: string }> = {
   moi: {
     label: 'Mới',
     cls: 'bg-primary-subtle text-primary border-primary-light/40 dark:bg-primary-900/30 dark:text-primary-300 dark:border-primary-700',
+  },
+  nhap: {
+    label: 'Nháp',
+    cls: 'bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
+  },
+  'cho-trinh-duyet': {
+    label: 'Chờ trình duyệt',
+    cls: 'bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-900/30 dark:text-amber-300',
+  },
+  'da-duyet': {
+    label: 'Đã duyệt VT',
+    cls: 'bg-purple-50 text-purple-800 border-purple-300 dark:bg-purple-900/30 dark:text-purple-300',
+  },
+  'da-ky': {
+    label: 'Đã ký HĐ',
+    cls: 'bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-900/30 dark:text-emerald-300',
   },
   'cho-duyet': {
     label: 'Chờ duyệt',
@@ -47,10 +63,14 @@ const CONFIG: Record<TrangThai, { label: string; cls: string }> = {
 /** Danh sách trạng thái cho select lọc/form (thứ tự theo vòng đời). */
 export const TRANG_THAI_OPTIONS: { value: TrangThai; label: string }[] = (
   ['moi', 'cho-duyet', 'dang-thuc-hien', 'tam-dung', 'nghiem-thu', 'quyet-toan', 'hoan-thanh', 'thanh-ly', 'huy', 'qua-han'] as TrangThai[]
-).map((v) => ({ value: v, label: CONFIG[v].label }));
+).map((v) => ({ value: v, label: CONFIG[v]?.label || v }));
 
-export function StatusBadge({ value }: { value: TrangThai }) {
-  const c = CONFIG[value];
+export function StatusBadge({ value }: { value: TrangThai | string }) {
+  const c = CONFIG[value] || {
+    label: value || 'Chưa xác định',
+    cls: 'bg-subtle text-ink-secondary border-border',
+  };
+
   return (
     <span
       className={cn(

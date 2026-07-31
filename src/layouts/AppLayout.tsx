@@ -51,26 +51,63 @@ const THEME_OPTIONS: { value: Theme; icon: typeof Sun; title: string; activeCls:
   { value: 'dark', icon: Moon, title: 'Tối', activeCls: 'text-indigo-500 dark:text-indigo-300' },
 ];
 
-const NAV = [
-  { to: '/', label: '1. Dashboard Lãnh đạo', icon: LayoutDashboard },
-  { to: '/hop-dong', label: '2. Hợp đồng & CRM', icon: Handshake },
-  { to: '/dau-thau', label: '• Đấu thầu & Chào giá', icon: Gavel },
-  { to: '/pvqlnn', label: '• Nhiệm vụ PVQLNN', icon: Landmark },
-  { to: '/uy-quyen', label: '• Quản lý Ủy quyền', icon: ShieldCheck },
-  { to: '/tai-chinh', label: '3. Tài chính & Thu chi', icon: Wallet },
-  { to: '/khoa-hoc', label: '4. Quản lý Khoa học & SHTT', icon: FlaskConical },
-  { to: '/nhan-su', label: '5. Nhân sự & Đảng - Đoàn', icon: Users },
-  { to: '/thi-nghiem', label: '6. Thử nghiệm LIMS & Lab', icon: Microscope },
-  { to: '/e-office', label: '7. Văn phòng số e-Office', icon: FileText },
-  { to: '/kho-luu-tru', label: '8. Kho Lưu trữ & AI-RAG', icon: FolderOpen },
-  { to: '/ibst-portal', label: 'Cổng thông tin IBST', icon: Globe },
+interface NavSubItem {
+  to: string;
+  label: string;
+  icon: typeof Gavel;
+}
+
+interface NavItem {
+  id: string;
+  to: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  children?: NavSubItem[];
+}
+
+const NAV_MENU: NavItem[] = [
+  { id: 'dashboard', to: '/', label: '1. Dashboard Lãnh đạo', icon: LayoutDashboard },
+  {
+    id: 'hop-dong-crm',
+    to: '/hop-dong',
+    label: '2. Hợp đồng & CRM',
+    icon: Handshake,
+    children: [
+      { to: '/dau-thau', label: 'Đấu thầu & Chào giá', icon: Gavel },
+      { to: '/pvqlnn', label: 'Nhiệm vụ PVQLNN', icon: Landmark },
+      { to: '/uy-quyen', label: 'Quản lý Ủy quyền', icon: ShieldCheck },
+    ],
+  },
+  { id: 'tai-chinh', to: '/tai-chinh', label: '3. Tài chính & Thu chi', icon: Wallet },
+  { id: 'khoa-hoc', to: '/khoa-hoc', label: '4. Quản lý Khoa học & SHTT', icon: FlaskConical },
+  { id: 'nhan-su', to: '/nhan-su', label: '5. Nhân sự & Đảng - Đoàn', icon: Users },
+  { id: 'thi-nghiem', to: '/thi-nghiem', label: '6. Thử nghiệm LIMS & Lab', icon: Microscope },
+  { id: 'e-office', to: '/e-office', label: '7. Văn phòng số e-Office', icon: FileText },
+  { id: 'kho-luu-tru', to: '/kho-luu-tru', label: '8. Kho Lưu trữ & AI-RAG', icon: FolderOpen },
+  { id: 'ibst-portal', to: '/ibst-portal', label: 'Cổng thông tin IBST', icon: Globe },
 ];
 
 export function AppLayout() {
   const { pathname } = useLocation();
   const { theme, setTheme, primaryColor, setPrimaryColor, zoom, setZoom } = useTheme();
   const { session, signOut } = useAuth();
-  const current = NAV.find((n) => n.to === pathname) ?? NAV[0];
+  
+  // Tự động tìm nhãn menu hiện tại
+  let currentLabel = '1. Dashboard Lãnh đạo';
+  for (const n of NAV_MENU) {
+    if (n.to === pathname) {
+      currentLabel = n.label;
+      break;
+    }
+    if (n.children) {
+      const sub = n.children.find((c) => c.to === pathname);
+      if (sub) {
+        currentLabel = `${n.label} → ${sub.label}`;
+        break;
+      }
+    }
+  }
+
   const fullName =
     (session?.user.user_metadata?.full_name as string | undefined) ??
     session?.user.email ??
@@ -86,6 +123,23 @@ export function AppLayout() {
   );
   const [searchOpen, setSearchOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  // Mặc định mở rộng nhóm nếu trang hiện tại nằm trong nhóm đó
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(() => {
+    const isHopDong = ['/hop-dong', '/dau-thau', '/pvqlnn', '/uy-quyen'].includes(pathname);
+    return { 'hop-dong-crm': isHopDong };
+  });
+
+  useEffect(() => {
+    if (['/hop-dong', '/dau-thau', '/pvqlnn', '/uy-quyen'].includes(pathname)) {
+      setExpandedGroups((prev) => ({ ...prev, 'hop-dong-crm': true }));
+    }
+  }, [pathname]);
+
+  const toggleGroup = (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setExpandedGroups((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
 
   useEffect(() => {
     localStorage.setItem('sidebar-collapsed', String(collapsed));
@@ -144,28 +198,107 @@ export function AppLayout() {
 
             {/* Navigation */}
             <nav className={cn('min-h-0 flex-1 space-y-1 overflow-y-auto p-4', collapsed && 'px-2')}>
-              {NAV.map(({ to, label, icon: Icon }) => (
-                <NavLink
-                  key={to}
-                  to={to}
-                  end={to === '/'}
-                  title={collapsed ? label : undefined}
-                  className={({ isActive }) =>
-                    cn(
-                      'relative mb-1 flex w-full items-center gap-3 rounded-lg px-4 py-3 text-[13px] font-bold transition-all',
-                      isActive
-                        ? 'border-l-[3px] border-l-primary-600 bg-primary-50 text-primary-700 shadow-card dark:border-l-primary-400 dark:bg-primary-900/30 dark:text-primary-300'
-                        : 'border-l-[3px] border-l-transparent text-ink-muted hover:bg-muted hover:text-ink',
-                      collapsed && 'justify-center px-0',
-                    )
-                  }
-                >
-                  <Icon className="h-[18px] w-[18px] shrink-0" />
-                  {!collapsed && (
-                    <span className="flex-1 overflow-hidden whitespace-nowrap">{label}</span>
-                  )}
-                </NavLink>
-              ))}
+              {NAV_MENU.map((item) => {
+                const Icon = item.icon;
+                const hasChildren = !!item.children && item.children.length > 0;
+                const isExpanded = expandedGroups[item.id] ?? false;
+
+                if (hasChildren) {
+                  const isParentActive =
+                    pathname === item.to || item.children?.some((c) => c.to === pathname);
+
+                  return (
+                    <div key={item.id} className="mb-1">
+                      <div
+                        className={cn(
+                          'relative flex w-full items-center justify-between transition-all rounded-lg cursor-pointer px-4 py-2.5 text-[13px] font-bold',
+                          isParentActive
+                            ? 'border-l-[3px] border-l-primary-600 bg-primary-50 text-primary-700 shadow-card dark:border-l-primary-400 dark:bg-primary-900/30 dark:text-primary-300'
+                            : 'border-l-[3px] border-l-transparent text-ink-muted hover:bg-muted hover:text-ink',
+                          collapsed && 'justify-center px-0 w-full',
+                        )}
+                        onClick={(e) => toggleGroup(item.id, e)}
+                      >
+                        <NavLink
+                          to={item.to}
+                          onClick={(e) => {
+                            // Mở nhóm nếu đang đóng khi click vào phân hệ cha
+                            if (!isExpanded) {
+                              setExpandedGroups((prev) => ({ ...prev, [item.id]: true }));
+                            }
+                          }}
+                          className="flex items-center gap-3 min-w-0 flex-1"
+                        >
+                          <Icon className="h-[18px] w-[18px] shrink-0" />
+                          {!collapsed && (
+                            <span className="truncate">{item.label}</span>
+                          )}
+                        </NavLink>
+
+                        {!collapsed && (
+                          <button
+                            type="button"
+                            onClick={(e) => toggleGroup(item.id, e)}
+                            className="p-1 hover:bg-black/5 dark:hover:bg-white/10 rounded transition-colors text-ink-muted shrink-0"
+                            title={isExpanded ? 'Ẩn các phân hệ con' : 'Hiện các phân hệ con'}
+                          >
+                            {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Render các phân hệ con khi MỞ RỘNG (Expanded) */}
+                      {isExpanded && !collapsed && (
+                        <div className="ml-4 pl-2 border-l border-border/60 space-y-1 mt-1 transition-all">
+                          {item.children?.map((child) => {
+                            const SubIcon = child.icon;
+                            return (
+                              <NavLink
+                                key={child.to}
+                                to={child.to}
+                                className={({ isActive }) =>
+                                  cn(
+                                    'flex items-center gap-2.5 rounded-lg px-3 py-2 text-[11px] font-semibold transition-all',
+                                    isActive
+                                      ? 'border-l-2 border-l-primary-500 bg-primary-50/70 text-primary-700 shadow-xs dark:border-l-primary-400 dark:bg-primary-900/20 dark:text-primary-300 font-bold'
+                                      : 'border-l-2 border-l-transparent text-ink-muted hover:bg-muted/70 hover:text-ink',
+                                  )
+                                }
+                              >
+                                <SubIcon className="h-3.5 w-3.5 shrink-0" />
+                                <span className="truncate">{child.label}</span>
+                              </NavLink>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
+                return (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    end={item.to === '/'}
+                    title={collapsed ? item.label : undefined}
+                    className={({ isActive }) =>
+                      cn(
+                        'relative mb-1 flex w-full items-center transition-all rounded-lg gap-3 text-[13px] font-bold py-2.5 px-4',
+                        isActive
+                          ? 'border-l-[3px] border-l-primary-600 bg-primary-50 text-primary-700 shadow-card dark:border-l-primary-400 dark:bg-primary-900/30 dark:text-primary-300'
+                          : 'border-l-[3px] border-l-transparent text-ink-muted hover:bg-muted hover:text-ink',
+                        collapsed && 'justify-center px-0 ml-0 w-full',
+                      )
+                    }
+                  >
+                    <Icon className="h-[18px] w-[18px] shrink-0" />
+                    {!collapsed && (
+                      <span className="flex-1 overflow-hidden whitespace-nowrap">{item.label}</span>
+                    )}
+                  </NavLink>
+                );
+              })}
             </nav>
           </div>
 
@@ -403,7 +536,7 @@ export function AppLayout() {
             <div className="flex items-center gap-1.5 text-xs font-medium text-ink-muted">
               <span>IBST ERP</span>
               <Crumb size={12} />
-              <span className="font-bold text-ink-secondary">{current.label}</span>
+              <span className="font-bold text-ink-secondary">{currentLabel}</span>
             </div>
           </div>
           <div className="px-4 pb-8 lg:px-6">

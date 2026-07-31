@@ -668,7 +668,7 @@ Yêu cầu định dạng câu trả lời:
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 z-50 flex h-14 w-14 cursor-pointer items-center justify-center rounded-full bg-gradient-to-tr from-primary-600 to-indigo-600 text-white shadow-lg transition-transform hover:scale-110 hover:shadow-xl active:scale-95 group focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+          className="fixed bottom-20 right-6 z-50 flex h-14 w-14 cursor-pointer items-center justify-center rounded-full bg-gradient-to-tr from-primary-600 to-indigo-600 text-white shadow-lg transition-transform hover:scale-110 hover:shadow-xl active:scale-95 group focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
           title="Trợ lý ảo IBST AI"
         >
           {/* Vòng sáng phát xung bên ngoài nút */}

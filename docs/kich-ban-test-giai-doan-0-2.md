@@ -34,16 +34,16 @@
 
 ## KB2 — Quy trình 1: Đăng ký đầu mối dự thầu (Đ.5.1c)
 
-*Vào **Đấu thầu** → tab **Đăng ký đầu mối (Đ.5.1c)**. Có sẵn 3 bản ghi `[TEST]` ở 3 trạng thái.*
+*Vào **Đấu thầu** → tab **Đăng ký đầu mối (Đ.5.1c)**. Bấm vào bất kỳ dòng cơ hội nào hoặc icon 👁 để mở Modal xem chi tiết 360° (gồm Stepper tiến độ 4 bước B1-B4, VCNLĐ phát hiện, ĐV đăng ký, lý do không tham gia...). Có sẵn 3 bản ghi `[TEST]` ở 3 trạng thái.*
 
 | # | Tài khoản | Thao tác | Kỳ vọng |
 |---|---|---|---|
 | 2.1 | `cic@ibst.vn` | Bấm **Đăng ký đầu mối mới**, điền tên cơ hội bất kỳ, đơn vị = ĐV Kết cấu, chọn VCNLĐ phát hiện | Tạo thành công, trạng thái *"Đã đăng ký, chờ KHKT tiếp nhận"*; KPI "Chờ KHKT tiếp nhận" tăng |
-| 2.2 | `cic@ibst.vn` | Tìm dòng vừa tạo — thử tìm nút "KHKT tiếp nhận" | **Không có nút** (Trưởng đơn vị không phải KHKT) — chỉ thấy trạng thái |
-| 2.3 | `khkt@ibst.vn` | Cùng dòng đó → bấm **KHKT tiếp nhận** | Chuyển *"Chờ Lãnh đạo Viện chỉ đạo"* |
+| 2.2 | `cic@ibst.vn` | Tìm dòng vừa tạo — bấm vào dòng / icon 👁 xem chi tiết và tìm nút "KHKT tiếp nhận" | **Không có nút** (Trưởng đơn vị không phải KHKT) — chỉ thấy trạng thái & tiến độ |
+| 2.3 | `khkt@ibst.vn` | Cùng dòng đó → bấm **KHKT tiếp nhận** (ở dòng danh sách hoặc trong modal chi tiết) | Chuyển *"Chờ Lãnh đạo Viện chỉ đạo"* |
 | 2.4 | `khkt@ibst.vn` | Dòng "[TEST] Khảo sát địa chất… Hòa Lạc GĐ2" (đang chờ LĐV) → bấm **Giao đầu mối** | Được phép (KHKT phản hồi thay theo Đ.5.1c) → *"Đã giao đầu mối"*, tự ghi ngày phản hồi |
-| 2.5 | `admin@ibst.vn` | Dòng ở bước 2.3 → bấm **Không tham gia**, nhập lý do | Chuyển *"Không tham gia"*, hiện lý do màu đỏ |
-| 2.6 | — | Xem dòng "[TEST] TV giám sát bệnh viện… Hưng Yên" | Mẫu sẵn trạng thái từ chối + lý do — đối chiếu hiển thị |
+| 2.5 | `admin@ibst.vn` | Dòng ở bước 2.3 → bấm **Không tham gia**, nhập lý do | Chuyển *"Không tham gia"*, hiện lý do màu đỏ trong modal & danh sách |
+| 2.6 | — | Bấm xem chi tiết dòng "[TEST] TV giám sát bệnh viện… Hưng Yên" | Mẫu sẵn trạng thái từ chối + lý do màu đỏ + Stepper bước B4 báo đỏ |
 
 ## KB3 — Gói thầu: Chủ trì HSDT + checklist năng lực (Đ.5.1d, 9.6g)
 

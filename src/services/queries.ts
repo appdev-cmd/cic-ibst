@@ -44,6 +44,7 @@ const str = (v: string) => v || null;
 export interface Option {
   id: string;
   ten: string;
+  donViId?: string | null;
 }
 
 export async function fetchDonViOptions(): Promise<Option[]> {
@@ -58,10 +59,27 @@ export async function fetchDonViOptions(): Promise<Option[]> {
 export async function fetchNhanSuOptions(): Promise<Option[]> {
   const { data, error } = await supabase
     .from('nhan_su')
-    .select('id, ho_va_ten')
+    .select('id, ho_va_ten, chuc_danh, don_vi_id')
     .order('ho_va_ten');
   throwIf(error);
-  return (data ?? []).map((r) => ({ id: String(r.id), ten: r.ho_va_ten }));
+
+  const seen = new Set<string>();
+  const list: Option[] = [];
+
+  for (const r of data ?? []) {
+    const key = (r.ho_va_ten || '').trim().toLowerCase();
+    if (!seen.has(key)) {
+      seen.add(key);
+      const chucVu = r.chuc_danh ? ` (${r.chuc_danh})` : '';
+      list.push({
+        id: String(r.id),
+        ten: `${r.ho_va_ten}${chucVu}`,
+        donViId: r.don_vi_id != null ? String(r.don_vi_id) : null,
+      });
+    }
+  }
+
+  return list;
 }
 
 export async function fetchKhachHangOptions(): Promise<Option[]> {
@@ -287,6 +305,7 @@ export interface HopDongInput {
   capKy: string;
   fileDuThaoUrl?: string;
   tenFileDuThao?: string;
+  dauThauId?: string;
 }
 
 function hopDongRow(i: HopDongInput) {
@@ -327,13 +346,20 @@ function thieuCotFileDuThao(error: { message: string } | null): boolean {
 
 export async function createHopDong(i: HopDongInput) {
   const row = hopDongRow(i);
-  const { error } = await supabase.from('hop_dong').insert(row);
-  if (!error) return;
-  if (!thieuCotFileDuThao(error)) throw new Error(error.message);
+  const { data, error } = await supabase.from('hop_dong').insert(row).select('id').single();
+  let createdId = data?.id;
+  if (error) {
+    if (!thieuCotFileDuThao(error)) throw new Error(error.message);
+    delete (row as any).file_du_thao_url;
+    delete (row as any).ten_file_du_thao;
+    const res2 = await supabase.from('hop_dong').insert(row).select('id').single();
+    throwIf(res2.error);
+    createdId = res2.data?.id;
+  }
 
-  delete (row as any).file_du_thao_url;
-  delete (row as any).ten_file_du_thao;
-  throwIf((await supabase.from('hop_dong').insert(row)).error);
+  if (createdId && i.dauThauId) {
+    await supabase.from('dau_thau').update({ hop_dong_id: createdId }).eq('id', Number(i.dauThauId));
+  }
 }
 
 export async function updateHopDong(id: string, i: HopDongInput) {

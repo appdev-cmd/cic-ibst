@@ -71,4 +71,4 @@ export function Field({
 }
 
 export const inputCls =
-  'w-full rounded-lg border border-border bg-subtle px-3 py-2 text-sm text-ink outline-none transition-colors placeholder:text-ink-muted focus:border-primary-500';
+  'w-full rounded-lg border border-border bg-subtle px-3 py-1.5 text-xs text-ink outline-none transition-colors placeholder:text-ink-muted focus:border-primary-500';

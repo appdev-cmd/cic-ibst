@@ -76,7 +76,7 @@ function PanelShell({
   footer,
 }: {
   title: string;
-  onAdd: () => void;
+  onAdd?: () => void;
   adding: boolean;
   children: ReactNode;
   footer?: ReactNode;
@@ -85,13 +85,15 @@ function PanelShell({
     <div className="rounded-lg border border-border">
       <div className="flex items-center justify-between border-b border-border-subtle px-3 py-2">
         <h4 className="text-2xs font-black uppercase tracking-wider text-ink-muted">{title}</h4>
-        <button
-          onClick={onAdd}
-          disabled={adding}
-          className="flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-2xs font-bold text-ink-secondary transition-colors hover:bg-muted disabled:opacity-50"
-        >
-          <Plus size={11} /> Thêm dòng
-        </button>
+        {onAdd && (
+          <button
+            onClick={onAdd}
+            disabled={adding}
+            className="flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-2xs font-bold text-ink-secondary transition-colors hover:bg-muted disabled:opacity-50"
+          >
+            <Plus size={11} /> Thêm dòng
+          </button>
+        )}
       </div>
       <div className="overflow-x-auto">{children}</div>
       {footer}
@@ -650,11 +652,15 @@ const EMPTY_CTV: CtvGiaoViecInput = { nhanSuId: '', tyLePhanChia: '', ghiChu: ''
 export function CtvGiaoViecPanel({
   phieuGiaoViecId,
   nhanSuOptions,
+  kinhPhiGiao,
   onChanged,
+  readOnly = false,
 }: {
   phieuGiaoViecId: string;
   nhanSuOptions: Option[];
+  kinhPhiGiao?: number;
   onChanged?: () => void;
+  readOnly?: boolean;
 }) {
   const { data: rows, refetch } = useAsyncData(() => fetchCtvGiaoViec(phieuGiaoViecId), []);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -693,94 +699,132 @@ export function CtvGiaoViecPanel({
   };
 
   const tongTyLe = rows.reduce((acc, r) => acc + (Number(r.tyLePhanChia) || 0), 0);
+  const kpBase = kinhPhiGiao || 0;
+  const tongSoTien = kpBase > 0 ? (tongTyLe / 100) * kpBase : 0;
 
-  const editor = (key: string) => (
-    <tr key={key} className="bg-subtle">
-      <td className="px-3 py-1.5">
-        <select className={miniInput} value={form.nhanSuId} onChange={(e) => setForm({ ...form, nhanSuId: e.target.value })}>
-          <option value="">-- Chọn nhân sự --</option>
-          {nhanSuOptions.map((n) => <option key={n.id} value={n.id}>{n.ten}</option>)}
-        </select>
-      </td>
-      <td className="px-3 py-1.5">
-        <input className={miniInput} type="number" min={0} max={100} placeholder="%" value={form.tyLePhanChia}
-          onChange={(e) => setForm({ ...form, tyLePhanChia: e.target.value })} />
-      </td>
-      <td className="px-3 py-1.5">
-        <input
-          className={miniInput}
-          list="vai-tro-2815-list"
-          placeholder="Vai trò / Ghi chú (QC 2815)"
-          value={form.ghiChu}
-          onChange={(e) => setForm({ ...form, ghiChu: e.target.value })}
-        />
-        <datalist id="vai-tro-2815-list">
-          <option value="Chủ trì Kỹ thuật / Chủ trì bộ môn" />
-          <option value="Chủ nhiệm dự án / Chủ nhiệm thiết kế / Khảo sát" />
-          <option value="Giám sát trưởng / Chỉ huy trưởng" />
-          <option value="Kiểm định viên chính" />
-          <option value="Thí nghiệm viên vật liệu" />
-          <option value="Cán bộ khảo sát địa kỹ thuật / Trắc đạc" />
-          <option value="Xử lý số liệu & Lập báo cáo" />
-        </datalist>
-      </td>
-      <td className="px-3 py-1.5">
-        <div className="flex flex-col gap-1">
-          <label className="flex items-center gap-1.5 text-2xs font-medium text-ink-secondary whitespace-nowrap">
-            <input
-              type="checkbox"
-              checked={form.laNgoaiVien}
-              onChange={(e) => setForm({ ...form, laNgoaiVien: e.target.checked })}
-            />
-            CTV ngoài Viện
-          </label>
-          {form.laNgoaiVien && (
-            <input
-              className={miniInput}
-              placeholder="Số HĐ giao khoán (bắt buộc — Đ.7.6)"
-              value={form.soHdGiaoKhoan}
-              onChange={(e) => setForm({ ...form, soHdGiaoKhoan: e.target.value })}
-            />
-          )}
-        </div>
-      </td>
-      <td className="px-3 py-1.5"><RowBtns onSave={save} onCancel={() => setEditingId(null)} saving={saving} /></td>
-    </tr>
-  );
+  const editor = (key: string) => {
+    const formPct = Number(form.tyLePhanChia) || 0;
+    const calcMoney = kpBase > 0 ? Math.round(((formPct / 100) * kpBase) * 100) / 100 : 0;
+
+    return (
+      <tr key={key} className="bg-subtle">
+        <td className="px-3 py-1.5">
+          <select className={miniInput} value={form.nhanSuId} onChange={(e) => setForm({ ...form, nhanSuId: e.target.value })}>
+            <option value="">-- Chọn cán bộ / nhân sự --</option>
+            {nhanSuOptions.map((n) => <option key={n.id} value={n.id}>{n.ten}</option>)}
+          </select>
+        </td>
+        <td className="px-3 py-1.5">
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-1">
+              <input className={miniInput} type="number" min={0} max={100} placeholder="%" value={form.tyLePhanChia}
+                onChange={(e) => setForm({ ...form, tyLePhanChia: e.target.value })} />
+              <span className="text-2xs font-bold text-ink-muted">%</span>
+            </div>
+            {kpBase > 0 && formPct > 0 && (
+              <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                = {formatTrieu(calcMoney)}
+              </span>
+            )}
+          </div>
+        </td>
+        {kpBase > 0 && (
+          <td className="px-3 py-1.5 font-mono text-xs font-bold text-emerald-700 dark:text-emerald-300">
+            {formatTrieu(calcMoney)}
+          </td>
+        )}
+        <td className="px-3 py-1.5">
+          <input
+            className={miniInput}
+            list="vai-tro-2815-list"
+            placeholder="Vai trò / Ghi chú (QC 2815)"
+            value={form.ghiChu}
+            onChange={(e) => setForm({ ...form, ghiChu: e.target.value })}
+          />
+          <datalist id="vai-tro-2815-list">
+            <option value="Chủ trì Kỹ thuật / Chủ trì bộ môn" />
+            <option value="Chủ nhiệm dự án / Chủ nhiệm thiết kế / Khảo sát" />
+            <option value="Giám sát trưởng / Chỉ huy trưởng" />
+            <option value="Kiểm định viên chính" />
+            <option value="Thí nghiệm viên vật liệu" />
+            <option value="Cán bộ khảo sát địa kỹ thuật / Trắc đạc" />
+            <option value="Xử lý số liệu & Lập báo cáo" />
+          </datalist>
+        </td>
+        <td className="px-3 py-1.5">
+          <div className="flex flex-col gap-1">
+            <label className="flex items-center gap-1.5 text-2xs font-medium text-ink-secondary whitespace-nowrap">
+              <input
+                type="checkbox"
+                checked={form.laNgoaiVien}
+                onChange={(e) => setForm({ ...form, laNgoaiVien: e.target.checked })}
+              />
+              CTV ngoài Viện
+            </label>
+            {form.laNgoaiVien && (
+              <input
+                className={miniInput}
+                placeholder="Số HĐ giao khoán (bắt buộc — Đ.7.6)"
+                value={form.soHdGiaoKhoan}
+                onChange={(e) => setForm({ ...form, soHdGiaoKhoan: e.target.value })}
+              />
+            )}
+          </div>
+        </td>
+        <td className="px-3 py-1.5"><RowBtns onSave={save} onCancel={() => setEditingId(null)} saving={saving} /></td>
+      </tr>
+    );
+  };
 
   return (
     <PanelShell
       title="Thành viên / Cán bộ phối hợp thực hiện (Điều 7)"
       adding={editingId !== null}
-      onAdd={() => { setForm(EMPTY_CTV); setEditingId('new'); }}
+      onAdd={readOnly ? undefined : () => { setForm(EMPTY_CTV); setEditingId('new'); }}
       footer={
-        <div className="flex items-center justify-between border-t border-border-subtle bg-muted/30 px-3 py-2 text-2xs">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border-subtle bg-muted/30 px-3 py-2 text-2xs">
           <span className="font-semibold text-ink-muted">Tổng tỷ lệ phân chia kinh phí giao việc:</span>
-          <span className={cn('font-mono font-bold', tongTyLe === 100 ? 'text-success' : 'text-primary')}>
-            {tongTyLe}% / 100%
-          </span>
+          <div className="flex items-center gap-3">
+            {kpBase > 0 && (
+              <span className="font-mono text-emerald-700 dark:text-emerald-300 font-bold">
+                Tổng kinh phí phân bổ: {formatTrieu(tongSoTien)}
+              </span>
+            )}
+            <span className={cn('font-mono font-bold', tongTyLe === 100 ? 'text-success' : 'text-primary')}>
+              {tongTyLe}% / 100%
+            </span>
+          </div>
         </div>
       }
     >
       {err && <p className="px-3 py-1.5 text-2xs font-semibold text-danger">{err}</p>}
-      <table className="w-full min-w-[420px]">
+      <table className="w-full min-w-[480px]">
         <thead>
           <tr>
-            <th className="th-cell">Nhân sự</th>
-            <th className="th-cell">Tỷ lệ (%)</th>
-            <th className="th-cell">Ghi chú</th>
+            <th className="th-cell">Cán bộ / Thành viên</th>
+            <th className="th-cell text-center">Tỷ lệ (%)</th>
+            {kpBase > 0 && <th className="th-cell text-right">Kinh phí giao (triệu VNĐ)</th>}
+            <th className="th-cell">Ghi chú / Vai trò (QC 2815)</th>
             <th className="th-cell">Ngoài Viện (Đ.7.6)</th>
-            <th className="th-cell text-right">Thao tác</th>
+            {!readOnly && <th className="th-cell text-right">Thao tác</th>}
           </tr>
         </thead>
         <tbody>
-          {rows.map((r) =>
-            editingId === r.id ? (
+          {rows.map((r) => {
+            const rowPct = Number(r.tyLePhanChia) || 0;
+            const rowMoney = kpBase > 0 ? (rowPct / 100) * kpBase : 0;
+
+            return editingId === r.id ? (
               editor(r.id)
             ) : (
               <tr key={r.id} className="tr-hover">
-                <td className="td-cell text-xs font-medium">{r.hoTen || '—'}</td>
-                <td className="td-cell font-mono text-xs">{r.tyLePhanChia}</td>
+                <td className="td-cell text-xs font-bold text-ink">{r.hoTen || '—'}</td>
+                <td className="td-cell text-center font-mono text-xs font-bold text-primary">{r.tyLePhanChia}%</td>
+                {kpBase > 0 && (
+                  <td className="td-cell text-right font-mono text-xs font-black text-emerald-700 dark:text-emerald-300">
+                    {formatTrieu(rowMoney)}
+                  </td>
+                )}
                 <td className="td-cell text-xs text-ink-secondary">{r.ghiChu || '—'}</td>
                 <td className="td-cell text-xs">
                   {r.laNgoaiVien ? (
@@ -797,27 +841,29 @@ export function CtvGiaoViecPanel({
                     <span className="text-ink-muted">—</span>
                   )}
                 </td>
-                <td className="td-cell">
-                  <EditDeleteBtns
-                    onEdit={() => {
-                      setForm({
-                        nhanSuId: r.nhanSuId ?? '',
-                        tyLePhanChia: String(r.tyLePhanChia),
-                        ghiChu: r.ghiChu,
-                        laNgoaiVien: r.laNgoaiVien,
-                        soHdGiaoKhoan: r.soHdGiaoKhoan,
-                      });
-                      setEditingId(r.id);
-                    }}
-                    onDelete={() => remove(r.id)}
-                  />
-                </td>
+                {!readOnly && (
+                  <td className="td-cell">
+                    <EditDeleteBtns
+                      onEdit={() => {
+                        setForm({
+                          nhanSuId: r.nhanSuId ?? '',
+                          tyLePhanChia: String(r.tyLePhanChia),
+                          ghiChu: r.ghiChu,
+                          laNgoaiVien: r.laNgoaiVien,
+                          soHdGiaoKhoan: r.soHdGiaoKhoan,
+                        });
+                        setEditingId(r.id);
+                      }}
+                      onDelete={() => remove(r.id)}
+                    />
+                  </td>
+                )}
               </tr>
-            ),
-          )}
+            );
+          })}
           {editingId === 'new' && editor('new')}
           {rows.length === 0 && editingId !== 'new' && (
-            <tr><td colSpan={5} className="td-cell py-3 text-center text-xs italic text-ink-muted">Chưa có cộng tác viên</td></tr>
+            <tr><td colSpan={kpBase > 0 ? 6 : 5} className="td-cell py-3 text-center text-xs italic text-ink-muted">Chưa có thành viên / cán bộ phối hợp thực hiện</td></tr>
           )}
         </tbody>
       </table>
@@ -1391,10 +1437,12 @@ export function DonViGiaoViecPanel({
   phieuGiaoViecId,
   donViOptions,
   giaTriHopDong,
+  readOnly = false,
 }: {
   phieuGiaoViecId: string;
   donViOptions: Option[];
   giaTriHopDong: number;
+  readOnly?: boolean;
 }) {
   const { data: rows, refetch } = useAsyncData(() => fetchDonViGiaoViec(phieuGiaoViecId), []);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -1466,7 +1514,7 @@ export function DonViGiaoViecPanel({
     <PanelShell
       title="Đơn vị thực hiện & tỷ lệ chia giá trị (Điều 7.1)"
       adding={editingId !== null}
-      onAdd={() => { setForm(EMPTY_DVGV); setEditingId('new'); }}
+      onAdd={readOnly ? undefined : () => { setForm(EMPTY_DVGV); setEditingId('new'); }}
       footer={
         <div className="space-y-1 border-t border-border-subtle px-3 py-2 text-xs">
           <div className="flex flex-wrap justify-end gap-4">
@@ -1498,7 +1546,7 @@ export function DonViGiaoViecPanel({
             <th className="th-cell">Vai trò</th>
             <th className="th-cell">Tỷ lệ (%)</th>
             <th className="th-cell">Giá trị tương ứng</th>
-            <th className="th-cell text-right">Thao tác</th>
+            {!readOnly && <th className="th-cell text-right">Thao tác</th>}
           </tr>
         </thead>
         <tbody>
@@ -1520,15 +1568,17 @@ export function DonViGiaoViecPanel({
                 <td className="td-cell font-mono text-xs text-ink-secondary">
                   {formatTrieu((giaTriHopDong * r.tyLeGiaTri) / 100)}
                 </td>
-                <td className="td-cell">
-                  <EditDeleteBtns
-                    onEdit={() => {
-                      setForm({ donViId: r.donViId ?? '', tyLeGiaTri: String(r.tyLeGiaTri), vaiTro: r.vaiTro, ghiChu: r.ghiChu });
-                      setEditingId(r.id);
-                    }}
-                    onDelete={() => remove(r.id)}
-                  />
-                </td>
+                {!readOnly && (
+                  <td className="td-cell">
+                    <EditDeleteBtns
+                      onEdit={() => {
+                        setForm({ donViId: r.donViId ?? '', tyLeGiaTri: String(r.tyLeGiaTri), vaiTro: r.vaiTro, ghiChu: r.ghiChu });
+                        setEditingId(r.id);
+                      }}
+                      onDelete={() => remove(r.id)}
+                    />
+                  </td>
+                )}
               </tr>
             ),
           )}

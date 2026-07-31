@@ -1,4 +1,4 @@
-import { Search, Pencil, Trash2 } from 'lucide-react';
+import { Search, Pencil, Trash2, Eye } from 'lucide-react';
 import { TableToolbar, Pagination } from './TableToolbar';
 
 export interface Column<T> {
@@ -14,8 +14,10 @@ export function MasterTable<T extends { id: string }>({
   onSearchChange,
   columns,
   data,
+  onView,
   onEdit,
   onDelete,
+  onRowClick,
   page,
   totalPages,
   onPageChange,
@@ -27,13 +29,18 @@ export function MasterTable<T extends { id: string }>({
   onSearchChange?: (q: string) => void;
   columns: Column<T>[];
   data: T[];
+  onView?: (item: T) => void;
   onEdit?: (item: T) => void;
   onDelete?: (item: T) => void;
+  onRowClick?: (item: T) => void;
   page?: number;
   totalPages?: number;
   onPageChange?: (p: number) => void;
   actions?: React.ReactNode;
 }) {
+  const hasActions = Boolean(onView || onEdit || onDelete);
+  const clickable = Boolean(onRowClick || onView);
+
   return (
     <div className="rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
       {(title || onSearchChange || actions) && (
@@ -66,27 +73,43 @@ export function MasterTable<T extends { id: string }>({
                   {col.header}
                 </th>
               ))}
-              {(onEdit || onDelete) && <th className="px-4 py-3 font-bold text-right">Thao tác</th>}
+              {hasActions && <th className="px-4 py-3 font-bold text-right">Thao tác</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-border-subtle">
             {data.length === 0 && (
               <tr>
-                <td colSpan={columns.length + (onEdit || onDelete ? 1 : 0)} className="px-4 py-8 text-center text-xs text-ink-muted italic">
+                <td colSpan={columns.length + (hasActions ? 1 : 0)} className="px-4 py-8 text-center text-xs text-ink-muted italic">
                   Không tìm thấy dữ liệu phù hợp
                 </td>
               </tr>
             )}
             {data.map((item) => (
-              <tr key={item.id} className="hover:bg-hover-row transition-colors">
+              <tr
+                key={item.id}
+                className={`hover:bg-hover-row transition-colors ${clickable ? 'cursor-pointer' : ''}`}
+                onClick={() => {
+                  if (onRowClick) onRowClick(item);
+                  else if (onView) onView(item);
+                }}
+              >
                 {columns.map((col, idx) => (
                   <td key={idx} className={`px-4 py-3 ${col.className || ''}`}>
                     {col.accessor(item)}
                   </td>
                 ))}
-                {(onEdit || onDelete) && (
-                  <td className="px-4 py-3 text-right">
+                {hasActions && (
+                  <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-end gap-1">
+                      {onView && (
+                        <button
+                          onClick={() => onView(item)}
+                          className="rounded p-1 text-ink-muted hover:bg-muted hover:text-primary transition-colors"
+                          title="Xem chi tiết"
+                        >
+                          <Eye size={14} />
+                        </button>
+                      )}
                       {onEdit && (
                         <button
                           onClick={() => onEdit(item)}

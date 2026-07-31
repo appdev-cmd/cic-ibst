@@ -1,32 +1,23 @@
 import { useState } from 'react';
-import { Plus, Users2, Building2, Clock, CheckCircle2, XCircle, Trash2, LoaderCircle } from 'lucide-react';
-import { Modal, Field, inputCls } from './Modal';
+import { Plus, Users2, Building2, Clock, CheckCircle2, XCircle, Trash2, LoaderCircle, Eye, FileText, Award } from 'lucide-react';
 import { KpiCard } from './KpiCard';
 import { DataState } from './DataState';
+import { DangKyDauMoiChiTietPanel } from './DangKyDauMoiChiTietPanel';
+import { DangKyDauMoiFormPanel } from './DangKyDauMoiFormPanel';
+import { useSlidePanel } from '../context/SlidePanelContext';
 import { useAsyncData } from '../hooks/useAsyncData';
 import { useAuth } from '../context/AuthContext';
 import {
   fetchDangKyDauMoi,
-  createDangKyDauMoi,
   khktTiepNhan,
   phanHoiDangKy,
   deleteDangKyDauMoi,
   NHAN_TRANG_THAI_DANG_KY,
   MAU_TRANG_THAI_DANG_KY,
   type DangKyDauMoi,
-  type DangKyDauMoiInput,
 } from '../services/dangKyDauMoi';
 import type { Option } from '../services/queries';
 import { formatNgay, cn } from '../lib/utils';
-
-const EMPTY_FORM: DangKyDauMoiInput = {
-  tenCoHoi: '',
-  moTa: '',
-  nguoiPhatHienId: '',
-  donViDangKyId: '',
-  nguoiDangKyId: '',
-  ngayDangKy: new Date().toISOString().slice(0, 10),
-};
 
 /**
  * Đăng ký đầu mối thị trường — Quy trình 1, Điều 5.1c QC 2815 (B1–B4):
@@ -34,12 +25,18 @@ const EMPTY_FORM: DangKyDauMoiInput = {
  * báo cáo LĐV → LĐV cho ý kiến → KHKT phản hồi giao/không giao đầu mối.
  * Tránh nhiều đơn vị trong Viện cùng cạnh tranh 1 gói thầu (Đ.5.1c).
  */
-export function DangKyDauMoiPanel({ donViOptions, nhanSuOptions }: { donViOptions: Option[]; nhanSuOptions: Option[] }) {
+export function DangKyDauMoiPanel({
+  donViOptions,
+  nhanSuOptions,
+  khachHangOptions = [],
+}: {
+  donViOptions: Option[];
+  nhanSuOptions: Option[];
+  khachHangOptions?: Option[];
+}) {
   const { vaiTro } = useAuth();
+  const { openPanel } = useSlidePanel();
   const { data: list, loading, error, refetch } = useAsyncData(fetchDangKyDauMoi, []);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [form, setForm] = useState<DangKyDauMoiInput>(EMPTY_FORM);
-  const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -51,24 +48,34 @@ export function DangKyDauMoiPanel({ donViOptions, nhanSuOptions }: { donViOption
   const soDaGiao = list.filter((d) => d.trangThai === 'giao-dau-moi').length;
 
   const handleOpenCreate = () => {
-    setForm({ ...EMPTY_FORM, ngayDangKy: new Date().toISOString().slice(0, 10) });
-    setActionError(null);
-    setModalOpen(true);
+    openPanel({
+      id: 'tao-dang-ky-dau-moi',
+      title: 'Đăng ký đầu mối thị trường / dự thầu',
+      subtitle: 'Quy trình 1 — Điều 5.1c QC 2815',
+      icon: <Plus size={16} />,
+      content: (
+        <DangKyDauMoiFormPanel
+          donViOptions={donViOptions}
+          nhanSuOptions={nhanSuOptions}
+          khachHangOptions={khachHangOptions}
+          onDone={refetch}
+        />
+      ),
+      defaultWidth: 800,
+      storageKey: 'panel-tao-dang-ky-dau-moi',
+    });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    setActionError(null);
-    try {
-      await createDangKyDauMoi(form);
-      setModalOpen(false);
-      refetch();
-    } catch (err) {
-      setActionError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setSaving(false);
-    }
+  const handleOpenChiTiet = (item: DangKyDauMoi) => {
+    openPanel({
+      id: `dang-ky-dau-moi-${item.id}`,
+      title: item.tenCoHoi,
+      subtitle: `Đăng ký đầu mối (QC 2815 Đ.5.1c) · ${NHAN_TRANG_THAI_DANG_KY[item.trangThai]}`,
+      icon: <FileText size={16} />,
+      content: <DangKyDauMoiChiTietPanel item={item} onRefetch={refetch} />,
+      defaultWidth: 800,
+      storageKey: 'panel-dang-ky-dau-moi',
+    });
   };
 
   const handleTiepNhan = async (item: DangKyDauMoi) => {
@@ -146,19 +153,26 @@ export function DangKyDauMoiPanel({ donViOptions, nhanSuOptions }: { donViOption
         </div>
       )}
 
-      <div className="rounded-xl border border-border bg-surface shadow-sm divide-y divide-border-subtle">
+      <div className="rounded-xl border border-border bg-surface shadow-sm divide-y divide-border-subtle overflow-hidden">
         {list.map((item) => (
-          <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 p-3">
+          <div
+            key={item.id}
+            className="flex flex-wrap items-center justify-between gap-3 p-3.5 hover:bg-muted/40 transition-colors group cursor-pointer"
+            onClick={() => handleOpenChiTiet(item)}
+          >
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <p className="font-bold text-ink text-sm truncate">{item.tenCoHoi}</p>
+                <p className="font-bold text-ink text-sm truncate group-hover:text-primary transition-colors flex items-center gap-1.5">
+                  <Eye size={14} className="text-ink-muted group-hover:text-primary shrink-0" />
+                  {item.tenCoHoi}
+                </p>
                 <span className={cn('inline-flex shrink-0 rounded-full px-2 py-0.5 text-2xs font-bold', MAU_TRANG_THAI_DANG_KY[item.trangThai])}>
                   {NHAN_TRANG_THAI_DANG_KY[item.trangThai]}
                 </span>
               </div>
-              <p className="text-2xs text-ink-muted mt-0.5 flex items-center gap-1 flex-wrap">
-                <Building2 size={11} /> {item.donViDangKy || '—'}
-                {item.nguoiPhatHien && <span>· VCNLĐ phát hiện: {item.nguoiPhatHien}</span>}
+              <p className="text-2xs text-ink-muted mt-1 flex items-center gap-2 flex-wrap">
+                <span className="flex items-center gap-1"><Building2 size={11} /> {item.donViDangKy || '—'}</span>
+                {item.nguoiPhatHien && <span className="flex items-center gap-1 text-primary-600 dark:text-primary-400 font-medium"><Award size={11} /> VCNLĐ: {item.nguoiPhatHien}</span>}
                 <span>· Đăng ký {item.ngayDangKy ? formatNgay(item.ngayDangKy) : '—'}</span>
                 {item.ngayPhanHoi && <span>· Phản hồi {formatNgay(item.ngayPhanHoi)}</span>}
               </p>
@@ -166,7 +180,14 @@ export function DangKyDauMoiPanel({ donViOptions, nhanSuOptions }: { donViOption
                 <p className="text-2xs text-danger mt-1">Lý do: {item.lyDoKhongThamGia}</p>
               )}
             </div>
-            <div className="flex shrink-0 items-center gap-1.5">
+            <div className="flex shrink-0 items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+              <button
+                onClick={() => handleOpenChiTiet(item)}
+                className="rounded-md p-1.5 text-ink-muted hover:bg-muted hover:text-primary"
+                title="Xem chi tiết"
+              >
+                <Eye size={14} />
+              </button>
               {item.trangThai === 'dang-ky' && coTheKhkt && (
                 <button
                   onClick={() => handleTiepNhan(item)}
@@ -208,89 +229,6 @@ export function DangKyDauMoiPanel({ donViOptions, nhanSuOptions }: { donViOption
           <p className="p-6 text-center text-xs text-ink-muted">Chưa có đăng ký đầu mối nào.</p>
         )}
       </div>
-
-      <Modal title="Đăng ký đầu mối thị trường / dự thầu" open={modalOpen} onClose={() => setModalOpen(false)}>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Field label="Tên cơ hội / dự án / gói thầu" required>
-            <input
-              className={inputCls}
-              required
-              value={form.tenCoHoi}
-              onChange={(e) => setForm({ ...form, tenCoHoi: e.target.value })}
-              placeholder="VD: Gói thầu tư vấn giám sát dự án XYZ"
-            />
-          </Field>
-          <Field label="Mô tả / ghi chú">
-            <textarea
-              className={inputCls}
-              rows={2}
-              value={form.moTa}
-              onChange={(e) => setForm({ ...form, moTa: e.target.value })}
-            />
-          </Field>
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Đơn vị đăng ký đầu mối" required>
-              <select
-                className={inputCls}
-                required
-                value={form.donViDangKyId}
-                onChange={(e) => setForm({ ...form, donViDangKyId: e.target.value })}
-              >
-                <option value="">-- Chọn đơn vị --</option>
-                {donViOptions.map((d) => (
-                  <option key={d.id} value={d.id}>{d.ten}</option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Ngày đăng ký">
-              <input
-                type="date"
-                className={inputCls}
-                value={form.ngayDangKy}
-                onChange={(e) => setForm({ ...form, ngayDangKy: e.target.value })}
-              />
-            </Field>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="VCNLĐ phát hiện cơ hội (Đ.5.1a)">
-              <select
-                className={inputCls}
-                value={form.nguoiPhatHienId}
-                onChange={(e) => setForm({ ...form, nguoiPhatHienId: e.target.value })}
-              >
-                <option value="">-- Chọn nhân sự --</option>
-                {nhanSuOptions.map((n) => (
-                  <option key={n.id} value={n.id}>{n.ten}</option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Người đăng ký (GĐ ĐV/PGĐ/Trưởng phòng)">
-              <select
-                className={inputCls}
-                value={form.nguoiDangKyId}
-                onChange={(e) => setForm({ ...form, nguoiDangKyId: e.target.value })}
-              >
-                <option value="">-- Chọn nhân sự --</option>
-                {nhanSuOptions.map((n) => (
-                  <option key={n.id} value={n.id}>{n.ten}</option>
-                ))}
-              </select>
-            </Field>
-          </div>
-
-          {actionError && modalOpen && <p className="text-xs font-semibold text-danger">{actionError}</p>}
-
-          <div className="flex justify-end gap-2 border-t border-border-subtle pt-4">
-            <button type="button" onClick={() => setModalOpen(false)} className="rounded-xl border border-border px-4 py-2.5 text-[13px] font-bold text-ink-secondary hover:bg-muted">
-              Hủy
-            </button>
-            <button type="submit" disabled={saving} className="btn-primary disabled:opacity-60">
-              {saving && <LoaderCircle size={15} className="animate-spin" />}
-              Đăng ký
-            </button>
-          </div>
-        </form>
-      </Modal>
     </div>
   );
 }
