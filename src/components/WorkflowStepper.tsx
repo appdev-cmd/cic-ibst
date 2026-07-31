@@ -22,10 +22,12 @@ export function WorkflowStepper({
   hopDongId,
   buocHienTai,
   onStateChanged,
+  readOnly = false,
 }: {
-  hopDongId: string;
+  hopDongId?: string;
   buocHienTai: BuocHopDong | string;
-  onStateChanged: () => void;
+  onStateChanged?: () => void;
+  readOnly?: boolean;
 }) {
   const { vaiTro } = useAuth();
   const [updating, setUpdating] = useState(false);
@@ -59,8 +61,8 @@ export function WorkflowStepper({
     setUpdating(true);
     setErr(null);
     try {
-      await updateBuocHopDong(hopDongId, nextStep);
-      onStateChanged();
+      if (hopDongId) await updateBuocHopDong(hopDongId, nextStep);
+      onStateChanged?.();
     } catch (e) {
       // Ghi trạng thái thất bại — trả về bước cũ và báo rõ, tuyệt đối không im lặng.
       setLocalStep(buocHienTai);
@@ -137,7 +139,7 @@ export function WorkflowStepper({
       )}
 
       {/* Action Buttons for Next Transitions */}
-      {availableNext.length > 0 && (
+      {!readOnly && hopDongId && availableNext.length > 0 && (
         <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-border-subtle/80">
           <span className="text-[10px] font-bold text-ink-muted uppercase mr-1">Chuyển bước tiếp:</span>
           {availableNext.map((nextStep) => {

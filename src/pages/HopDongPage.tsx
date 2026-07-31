@@ -623,6 +623,12 @@ export function HopDongPage() {
 
   const buildFormFields = () => (
     <form id="hopdong-form" onSubmit={crud.submit} className="space-y-4 p-5">
+      {/* Workflow Stepper hiển thị quy trình khởi tạo / hiện tại */}
+      <WorkflowStepper
+        buocHienTai={crud.editing ? (crud.form.trangThai || 'du-thao') : 'du-thao'}
+        readOnly={true}
+      />
+
       {crud.actionError && (
         <div className="rounded-lg bg-danger-subtle p-3 text-xs text-danger">
           {crud.actionError}
@@ -2051,13 +2057,6 @@ function HopDongThongTinTab({
 
   return (
     <div className="space-y-4">
-      {/* Workflow Stepper Engine */}
-      <WorkflowStepper
-        hopDongId={hd.id}
-        buocHienTai={hd.buocHienTai || 'du-thao'}
-        onStateChanged={() => onRefetch?.()}
-      />
-
       {/* Khung File Dự Thảo Hợp đồng & Google Docs */}
       <div className="rounded-xl border border-sky-300 bg-sky-50/80 dark:border-sky-800/80 dark:bg-sky-950/60 p-3.5 space-y-2 shadow-xs">
         <div className="flex items-center justify-between">
