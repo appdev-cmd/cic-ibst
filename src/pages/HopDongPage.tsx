@@ -261,7 +261,7 @@ export function HopDongPage() {
   const panelIdForHopDong = (id: string) => `hopdong-${id}`;
 
   // Thẩm quyền thao tác theo Điều 6.1 / Điều 11 — xem lib/quyenHopDong.ts.
-  const { vaiTro } = useAuth();
+  const { vaiTro, nhanSuId } = useAuth();
   const duocTrinhDuyet = coTheTrinhDuyet(vaiTro);
   const duocPheDuyet = coThePheDuyet(vaiTro);
   const [thaoTacError, setThaoTacError] = useState<string | null>(null);
@@ -282,7 +282,10 @@ export function HopDongPage() {
       await updateHopDongPheDuyet(hd.id, {
         trangThaiPheDuyet: trangThai,
         ...(trangThai === 'da-trinh' ? { ngayTrinhDuyet: today } : {}),
-        ...(trangThai === 'da-duyet' ? { ngayDuyet: today } : {}),
+        // Ghi đúng người thật đã bấm duyệt (Điều 6.1), không chỉ ngày tháng — nhanSuId
+        // có thể null nếu tài khoản chưa gắn hồ sơ nhân sự, khi đó vẫn duyệt được nhưng
+        // không lưu được danh tính (đã có ngày làm bằng chứng tối thiểu).
+        ...(trangThai === 'da-duyet' ? { ngayDuyet: today, ...(nhanSuId ? { nguoiDuyetId: nhanSuId } : {}) } : {}),
       });
       await refetch();
     } catch (e) {
@@ -1082,7 +1085,11 @@ function PhieuGiaoViecForm({
   onClose?: () => void;
 }) {
   const { data: phieu, refetch } = useAsyncData<PhieuGiaoViec | null>(() => fetchPhieuGiaoViec(hd.id), null);
-  const pb = phanBoHopDong(hd.nhomHD, hd.giaTri || 0);
+  // Phải nhớ (useMemo) — phanBoHopDong() trả về object mới mỗi lần gọi; nếu tính lại vô
+  // điều kiện ở mỗi render thì effect bên dưới (đang có pb trong dependency) sẽ nhận diện
+  // "pb đổi" ở MỌI render, kể cả render do chính effect đó gây ra qua setForm() — tạo vòng
+  // lặp vô hạn (Maximum update depth exceeded) với các HĐ chưa có phiếu giao việc.
+  const pb = useMemo(() => phanBoHopDong(hd.nhomHD, hd.giaTri || 0), [hd.nhomHD, hd.giaTri]);
   const [form, setForm] = useState<PhieuGiaoViecInput>(EMPTY_GV_FORM);
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -1116,101 +1123,139 @@ function PhieuGiaoViecForm({
     }
   };
 
+  const daKhoa = phieu?.trangThai === 'da-duyet';
+
   return (
     <div className="space-y-3">
-      {/* Banner quy định Thẩm quyền Lập & Duyệt (Điều 7 QC 2815) */}
-      <div className="rounded-xl border border-sky-200 bg-sky-50/60 dark:border-sky-900/40 dark:bg-sky-950/20 p-3 text-xs space-y-1 text-sky-900 dark:text-sky-200">
-        <p className="flex items-center gap-1.5 font-bold">
-          <Info size={15} className="text-sky-600" /> Thẩm quyền Lập & Phê duyệt Phiếu giao việc (Điều 7 QC 2815):
-        </p>
-        <ul className="list-disc pl-5 space-y-0.5 text-[11px]">
-          <li><strong>Người lập:</strong> Trưởng đơn vị thực hiện (hoặc Chủ trì HĐ được giao quyền).</li>
-          <li><strong>Người duyệt:</strong> Trưởng đơn vị ký duyệt (HĐ giao khoán đơn vị) hoặc Lãnh đạo Viện phê duyệt (HĐ cấp Viện).</li>
-        </ul>
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Chủ trì kỹ thuật">
-          <select
-            value={form.chuTriKyThuatId}
-            onChange={(e) => setForm({ ...form, chuTriKyThuatId: e.target.value })}
-            className={inputCls}
-          >
-            <option value="">-- Chưa phân công --</option>
-            {nhanSuOptions.map((n) => (
-              <option key={n.id} value={n.id}>{n.ten}</option>
-            ))}
-          </select>
-        </Field>
-        <Field label="Kinh phí giao (triệu đồng)">
-          <NumberInput
-            value={form.kinhPhiGiao}
-            onChange={(val) => setForm({ ...form, kinhPhiGiao: val })}
-            className={inputCls}
-          />
-        </Field>
-      </div>
-
-      {/* Điều 12.4a — đối chiếu kinh phí giao chủ trì với trần được phép giảm. */}
-      {(() => {
-        const kt = kiemTraKinhPhiChuTri(hd.nhomHD, hd.giaTri || 0, Number(form.kinhPhiGiao) || 0, {
-          loaiDacThu: hd.loaiDacThu,
-          phanVienXa: hd.phanVienXa,
-          giamTheoYeuCauDonVi: hd.giamTheoYeuCauDonVi,
-          capKy: hd.capKy,
-        });
-        if (!kt) return null;
-        return (
-          <div
-            className={cn(
-              'rounded-lg p-2.5 text-2xs space-y-0.5',
-              kt.hopLe ? 'bg-muted/50 text-ink-secondary' : 'bg-danger-subtle text-danger font-semibold',
+      {daKhoa ? (
+        // Điều 7.1c: phiếu đã phê duyệt là chốt cuối, có hiệu lực — không cho sửa trực tiếp
+        // nữa (CSDL cũng chặn ở fn_kiem_soat_ky_giao_viec). Muốn thay đổi chủ trì/kinh phí
+        // phải lập phiếu điều chỉnh mới theo đúng trình tự (Điều 7.1 Ghi chú).
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 dark:border-emerald-900/40 dark:bg-emerald-950/20 p-3 text-xs space-y-2 text-emerald-900 dark:text-emerald-200">
+          <p className="flex items-center gap-1.5 font-bold">
+            <CheckCircle2 size={15} className="text-emerald-600" /> Phiếu giao việc đã phê duyệt — có hiệu lực, không thể sửa trực tiếp
+          </p>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[11px]">
+            <p><span className="text-emerald-700/70 dark:text-emerald-300/70">Chủ trì kỹ thuật:</span> <strong>{phieu?.chuTriKyThuat || 'Chưa phân công'}</strong></p>
+            <p><span className="text-emerald-700/70 dark:text-emerald-300/70">Kinh phí giao:</span> <strong>{formatTrieu(Number(form.kinhPhiGiao) || 0)}</strong></p>
+            <p><span className="text-emerald-700/70 dark:text-emerald-300/70">Ngày giao:</span> <strong>{formatNgay(form.ngayGiao)}</strong></p>
+            {phieu?.nguoiSoan && (
+              <p><span className="text-emerald-700/70 dark:text-emerald-300/70">Người soạn:</span> <strong>{phieu.nguoiSoan}</strong></p>
             )}
-          >
-            <p>
-              Chuẩn Bảng 1 (cột 3): <strong>{formatTrieu(kt.mucChuan)}</strong> · Được giảm tối đa{' '}
-              <strong>{kt.tranGiamPhanTram}%</strong> giá trị HĐ → thấp nhất{' '}
-              <strong>{formatTrieu(kt.mucToiThieu)}</strong>
-            </p>
-            {kt.thongBao && (
-              <p className="flex items-start gap-1.5">
-                <AlertCircle size={12} className="mt-px shrink-0" /> {kt.thongBao}
-              </p>
+            {phieu?.nguoiDonViXacNhan && (
+              <p><span className="text-emerald-700/70 dark:text-emerald-300/70">Đơn vị xác nhận:</span> <strong>{phieu.nguoiDonViXacNhan}</strong></p>
+            )}
+            {phieu?.nguoiKhktThamTra && (
+              <p><span className="text-emerald-700/70 dark:text-emerald-300/70">KHKT thẩm tra:</span> <strong>{phieu.nguoiKhktThamTra}</strong></p>
+            )}
+            {phieu?.nguoiDuyet && (
+              <p><span className="text-emerald-700/70 dark:text-emerald-300/70">Người duyệt:</span> <strong>{phieu.nguoiDuyet}</strong></p>
             )}
           </div>
-        );
-      })()}
+          {form.noiDung && (
+            <p><span className="text-emerald-700/70 dark:text-emerald-300/70">Nội dung:</span> {form.noiDung}</p>
+          )}
+          <p className="text-[10px] italic text-emerald-700/70 dark:text-emerald-300/70">
+            Cần thay đổi chủ trì hợp đồng/chủ trì kỹ thuật thì lập lại phiếu theo đúng trình tự Điều 7.1c.
+          </p>
+        </div>
+      ) : (
+        <>
+          {/* Banner quy định Thẩm quyền Lập & Duyệt (Điều 7 QC 2815) */}
+          <div className="rounded-xl border border-sky-200 bg-sky-50/60 dark:border-sky-900/40 dark:bg-sky-950/20 p-3 text-xs space-y-1 text-sky-900 dark:text-sky-200">
+            <p className="flex items-center gap-1.5 font-bold">
+              <Info size={15} className="text-sky-600" /> Thẩm quyền Lập & Phê duyệt Phiếu giao việc (Điều 7 QC 2815):
+            </p>
+            <ul className="list-disc pl-5 space-y-0.5 text-[11px]">
+              <li><strong>Người lập:</strong> Trưởng đơn vị thực hiện (hoặc Chủ trì HĐ được giao quyền).</li>
+              <li><strong>Người duyệt:</strong> Trưởng đơn vị ký duyệt (HĐ giao khoán đơn vị) hoặc Lãnh đạo Viện phê duyệt (HĐ cấp Viện).</li>
+            </ul>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Chủ trì kỹ thuật">
+              <select
+                value={form.chuTriKyThuatId}
+                onChange={(e) => setForm({ ...form, chuTriKyThuatId: e.target.value })}
+                className={inputCls}
+              >
+                <option value="">-- Chưa phân công --</option>
+                {nhanSuOptions.map((n) => (
+                  <option key={n.id} value={n.id}>{n.ten}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Kinh phí giao (triệu đồng)">
+              <NumberInput
+                value={form.kinhPhiGiao}
+                onChange={(val) => setForm({ ...form, kinhPhiGiao: val })}
+                className={inputCls}
+              />
+            </Field>
+          </div>
 
-      <Field label="Ngày giao">
-        <input
-          type="date"
-          value={form.ngayGiao}
-          onChange={(e) => setForm({ ...form, ngayGiao: e.target.value })}
-          className={inputCls}
-        />
-      </Field>
+          {/* Điều 12.4a — đối chiếu kinh phí giao chủ trì với trần được phép giảm. */}
+          {(() => {
+            const kt = kiemTraKinhPhiChuTri(hd.nhomHD, hd.giaTri || 0, Number(form.kinhPhiGiao) || 0, {
+              loaiDacThu: hd.loaiDacThu,
+              phanVienXa: hd.phanVienXa,
+              giamTheoYeuCauDonVi: hd.giamTheoYeuCauDonVi,
+              capKy: hd.capKy,
+            });
+            if (!kt) return null;
+            return (
+              <div
+                className={cn(
+                  'rounded-lg p-2.5 text-2xs space-y-0.5',
+                  kt.hopLe ? 'bg-muted/50 text-ink-secondary' : 'bg-danger-subtle text-danger font-semibold',
+                )}
+              >
+                <p>
+                  Chuẩn Bảng 1 (cột 3): <strong>{formatTrieu(kt.mucChuan)}</strong> · Được giảm tối đa{' '}
+                  <strong>{kt.tranGiamPhanTram}%</strong> giá trị HĐ → thấp nhất{' '}
+                  <strong>{formatTrieu(kt.mucToiThieu)}</strong>
+                </p>
+                {kt.thongBao && (
+                  <p className="flex items-start gap-1.5">
+                    <AlertCircle size={12} className="mt-px shrink-0" /> {kt.thongBao}
+                  </p>
+                )}
+              </div>
+            );
+          })()}
 
-      <Field label="Nội dung công việc giao">
-        <textarea
-          value={form.noiDung}
-          onChange={(e) => setForm({ ...form, noiDung: e.target.value })}
-          className={inputCls}
-          rows={3}
-        />
-      </Field>
+          <Field label="Ngày giao">
+            <input
+              type="date"
+              value={form.ngayGiao}
+              onChange={(e) => setForm({ ...form, ngayGiao: e.target.value })}
+              className={inputCls}
+            />
+          </Field>
 
-      {err && <p className="text-2xs font-semibold text-danger">{err}</p>}
+          <Field label="Nội dung công việc giao">
+            <textarea
+              value={form.noiDung}
+              onChange={(e) => setForm({ ...form, noiDung: e.target.value })}
+              className={inputCls}
+              rows={3}
+            />
+          </Field>
 
-      <div className="flex justify-end gap-2">
-        {onClose && (
-          <button type="button" onClick={onClose} className="btn-ghost">
-            Đóng
-          </button>
-        )}
-        <button type="button" onClick={() => void save()} disabled={saving} className="btn-primary">
-          {saving && <LoaderCircle size={15} className="animate-spin" />}
-          Lưu Phiếu giao việc
-        </button>
-      </div>
+          {err && <p className="text-2xs font-semibold text-danger">{err}</p>}
+
+          <div className="flex justify-end gap-2">
+            {onClose && (
+              <button type="button" onClick={onClose} className="btn-ghost">
+                Đóng
+              </button>
+            )}
+            <button type="button" onClick={() => void save()} disabled={saving} className="btn-primary">
+              {saving && <LoaderCircle size={15} className="animate-spin" />}
+              Lưu Phiếu giao việc
+            </button>
+          </div>
+        </>
+      )}
 
       {phieu && <ThanhKyGiaoViec phieu={phieu} capKy={hd.capKy} onChanged={refetch} />}
 
@@ -1474,6 +1519,7 @@ function HopDongThongTinTab({
           <InfoField label="Giá dự thầu" value={hd.giaDuThau != null ? formatTrieu(hd.giaDuThau) : '— (= Giá trị HĐ)'} />
           <InfoField label="Ngày ký" value={hd.ngayKy ? formatNgay(hd.ngayKy) : '—'} />
           <InfoField label="Hạn hoàn thành" value={hd.hanHoanThanh ? formatNgay(hd.hanHoanThanh) : '—'} />
+          <InfoField label="Người tạo hồ sơ" value={hd.nguoiTao || '—'} />
         </div>
 
         <div className="grid grid-cols-3 gap-3 pt-3 border-t border-border-subtle">
@@ -1522,7 +1568,12 @@ function HopDongThongTinTab({
           {(hd.ngayTrinhDuyet || hd.ngayDuyet) && (
             <p className="text-ink-muted">
               {hd.ngayTrinhDuyet && <>Ngày trình: {formatNgay(hd.ngayTrinhDuyet)}. </>}
-              {hd.ngayDuyet && <>Ngày duyệt: {formatNgay(hd.ngayDuyet)}.</>}
+              {hd.ngayDuyet && (
+                <>
+                  Ngày duyệt: {formatNgay(hd.ngayDuyet)}
+                  {hd.nguoiDuyet && <> bởi <strong>{hd.nguoiDuyet}</strong></>}.
+                </>
+              )}
             </p>
           )}
         </div>
@@ -1678,7 +1729,7 @@ function ThanhKyGiaoViec({
   capKy: CapKy | null;
   onChanged: () => void;
 }) {
-  const { vaiTro } = useAuth();
+  const { vaiTro, nhanSuId } = useAuth();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -1691,7 +1742,7 @@ function ThanhKyGiaoViec({
     setBusy(true);
     setErr(null);
     try {
-      await chuyenBuocGiaoViec(phieu.id, den, { lyDoTraLai: lyDo });
+      await chuyenBuocGiaoViec(phieu.id, den, { lyDoTraLai: lyDo, actorNhanSuId: nhanSuId });
       onChanged();
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
@@ -1753,6 +1804,7 @@ function ThanhKyGiaoViec({
       {tt === 'da-duyet' && phieu.ngayDuyet && (
         <p className="flex items-center gap-1.5 text-2xs font-semibold text-success">
           <CheckCircle2 size={13} /> Đã phê duyệt ngày {formatNgay(phieu.ngayDuyet)}
+          {phieu.nguoiDuyet && <> bởi <strong>{phieu.nguoiDuyet}</strong></>}
         </p>
       )}
       {err && (

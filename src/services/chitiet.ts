@@ -89,13 +89,18 @@ export interface PhieuGiaoViec {
   ngayDuyet: string;
   trangThai: TrangThaiGiaoViec;
   lyDoTraLai: string;
+  /** Tên người thật đã soạn/xác nhận/thẩm tra/duyệt từng bước Điều 7.1c (không chỉ ngày tháng). */
+  nguoiSoan: string;
+  nguoiDonViXacNhan: string;
+  nguoiKhktThamTra: string;
+  nguoiDuyet: string;
 }
 
 export async function fetchPhieuGiaoViec(hopDongId: string): Promise<PhieuGiaoViec | null> {
   const { data, error } = await supabase
     .from('phieu_giao_viec')
     .select(
-      'id, hop_dong_id, chu_tri_ky_thuat_id, kinh_phi_giao, noi_dung, ngay_giao, ngay_duyet, trang_thai, ly_do_tra_lai, chu_tri_ky_thuat:nhan_su!phieu_giao_viec_chu_tri_ky_thuat_id_fkey(ho_va_ten)',
+      'id, hop_dong_id, chu_tri_ky_thuat_id, kinh_phi_giao, noi_dung, ngay_giao, ngay_duyet, trang_thai, ly_do_tra_lai, chu_tri_ky_thuat:nhan_su!phieu_giao_viec_chu_tri_ky_thuat_id_fkey(ho_va_ten), nguoi_soan:nhan_su!phieu_giao_viec_nguoi_soan_id_fkey(ho_va_ten), nguoi_don_vi_xac_nhan:nhan_su!phieu_giao_viec_nguoi_don_vi_xac_nhan_id_fkey(ho_va_ten), nguoi_khkt_tham_tra:nhan_su!phieu_giao_viec_nguoi_khkt_tham_tra_id_fkey(ho_va_ten), nguoi_duyet:nhan_su!phieu_giao_viec_nguoi_duyet_id_fkey(ho_va_ten)',
     )
     .eq('hop_dong_id', Number(hopDongId))
     .maybeSingle();
@@ -112,6 +117,10 @@ export async function fetchPhieuGiaoViec(hopDongId: string): Promise<PhieuGiaoVi
     ngayDuyet: data.ngay_duyet ?? '',
     trangThai: data.trang_thai as TrangThaiGiaoViec,
     lyDoTraLai: data.ly_do_tra_lai ?? '',
+    nguoiSoan: (data.nguoi_soan as unknown as { ho_va_ten: string } | null)?.ho_va_ten ?? '',
+    nguoiDonViXacNhan: (data.nguoi_don_vi_xac_nhan as unknown as { ho_va_ten: string } | null)?.ho_va_ten ?? '',
+    nguoiKhktThamTra: (data.nguoi_khkt_tham_tra as unknown as { ho_va_ten: string } | null)?.ho_va_ten ?? '',
+    nguoiDuyet: (data.nguoi_duyet as unknown as { ho_va_ten: string } | null)?.ho_va_ten ?? '',
   };
 }
 
@@ -144,17 +153,32 @@ export async function upsertPhieuGiaoViec(hopDongId: string, i: PhieuGiaoViecInp
   );
 }
 
-/** Chuyển phiếu sang bước ký kế tiếp (hoặc trả lại). Thẩm quyền do trigger CSDL chốt chặn. */
+/**
+ * Chuyển phiếu sang bước ký kế tiếp (hoặc trả lại). Thẩm quyền do trigger CSDL chốt chặn.
+ * `actorNhanSuId` là mã nhân sự của người thật đang bấm nút — ghi vào đúng cột "nguoi_*_id"
+ * tương ứng với bước vừa hoàn tất, không chỉ ghi ngày tháng. Có thể là null (tài khoản chưa
+ * gắn hồ sơ nhân sự) — khi đó bước vẫn chuyển được nhưng không lưu được danh tính.
+ */
 export async function chuyenBuocGiaoViec(
   phieuId: string,
   den: TrangThaiGiaoViec,
-  opts?: { lyDoTraLai?: string },
+  opts?: { lyDoTraLai?: string; actorNhanSuId?: string | null },
 ) {
   const homNay = new Date().toISOString().slice(0, 10);
+  const actor = opts?.actorNhanSuId ? Number(opts.actorNhanSuId) : null;
   const row: Record<string, unknown> = { trang_thai: den };
-  if (den === 'cho-khkt-tham-tra') row.ngay_don_vi_xac_nhan = homNay;
-  if (den === 'cho-lanh-dao-duyet') row.ngay_khkt_tham_tra = homNay;
-  if (den === 'da-duyet') row.ngay_duyet = homNay;
+  if (den === 'cho-khkt-tham-tra') {
+    row.ngay_don_vi_xac_nhan = homNay;
+    if (actor) row.nguoi_don_vi_xac_nhan_id = actor;
+  }
+  if (den === 'cho-lanh-dao-duyet') {
+    row.ngay_khkt_tham_tra = homNay;
+    if (actor) row.nguoi_khkt_tham_tra_id = actor;
+  }
+  if (den === 'da-duyet') {
+    row.ngay_duyet = homNay;
+    if (actor) row.nguoi_duyet_id = actor;
+  }
   if (den === 'tra-lai') row.ly_do_tra_lai = opts?.lyDoTraLai || null;
   throwIf((await supabase.from('phieu_giao_viec').update(row).eq('id', Number(phieuId))).error);
 }

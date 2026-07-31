@@ -51,6 +51,8 @@ export interface HopDong {
   donViId: string | null;
   giaTri: number; // triệu đồng
   daThanhToan: number; // triệu đồng
+  nguoiTaoId: string | null;
+  nguoiTao: string; // tên người tạo bản ghi (hiển thị) — tự động gán ở CSDL, không sửa qua form
   ngayKy: string;
   hanHoanThanh: string;
   trangThai: TrangThai;
@@ -62,6 +64,8 @@ export interface HopDong {
   trangThaiPheDuyet: TrangThaiPheDuyet;
   ngayTrinhDuyet: string;
   ngayDuyet: string;
+  nguoiDuyetId: string | null;
+  nguoiDuyet: string; // tên người phê duyệt Điều 6.1 (hiển thị)
   trangThaiQuyetToan: 'chua-quyet-toan' | 'da-quyet-toan';
   ngayQuyetToan: string;
   hanChungTuQuyetToan: string; // hạn TCKT yêu cầu nộp chứng từ quyết toán; '' = chưa đặt hạn

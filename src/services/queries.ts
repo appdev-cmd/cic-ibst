@@ -196,7 +196,7 @@ export async function deleteDeTai(id: string) {
 // ─── HỢP ĐỒNG ───
 
 const COT_HOP_DONG_CO_BAN =
-  'id, so_hop_dong, ten_hop_dong, khach_hang_id, don_vi_id, gia_tri, da_thanh_toan, ngay_ky, han_hoan_thanh, trang_thai, nhom_hd, chu_tri_id, gia_du_thau, ngay_nop_ho_so, trang_thai_phe_duyet, ngay_trinh_duyet, ngay_duyet, trang_thai_quyet_toan, ngay_quyet_toan, han_chung_tu_quyet_toan, loai_dac_thu, phan_vien_xa, giam_theo_yeu_cau_don_vi, cap_ky, khach_hang(ten_to_chuc), don_vi(ten_don_vi), chu_tri:nhan_su!hop_dong_chu_tri_id_fkey(ho_va_ten)';
+  'id, so_hop_dong, ten_hop_dong, khach_hang_id, don_vi_id, gia_tri, da_thanh_toan, ngay_ky, han_hoan_thanh, trang_thai, nhom_hd, chu_tri_id, gia_du_thau, ngay_nop_ho_so, trang_thai_phe_duyet, ngay_trinh_duyet, ngay_duyet, nguoi_duyet_id, trang_thai_quyet_toan, ngay_quyet_toan, han_chung_tu_quyet_toan, loai_dac_thu, phan_vien_xa, giam_theo_yeu_cau_don_vi, cap_ky, nguoi_tao_id, khach_hang(ten_to_chuc), don_vi(ten_don_vi), chu_tri:nhan_su!hop_dong_chu_tri_id_fkey(ho_va_ten), nguoi_duyet:nhan_su!hop_dong_nguoi_duyet_id_fkey(ho_va_ten), nguoi_tao:nhan_su!hop_dong_nguoi_tao_id_fkey(ho_va_ten)';
 
 export async function fetchHopDong(): Promise<HopDong[]> {
   let fetchedData: any[] = [];
@@ -229,6 +229,8 @@ export async function fetchHopDong(): Promise<HopDong[]> {
     donViId: r.don_vi_id != null ? String(r.don_vi_id) : null,
     giaTri: Number(r.gia_tri),
     daThanhToan: Number(r.da_thanh_toan),
+    nguoiTaoId: r.nguoi_tao_id != null ? String(r.nguoi_tao_id) : null,
+    nguoiTao: (r.nguoi_tao as unknown as { ho_va_ten: string } | null)?.ho_va_ten ?? '',
     ngayKy: r.ngay_ky ?? '',
     hanHoanThanh: r.han_hoan_thanh ?? '',
     trangThai: r.trang_thai as TrangThai,
@@ -241,6 +243,8 @@ export async function fetchHopDong(): Promise<HopDong[]> {
     trangThaiPheDuyet: r.trang_thai_phe_duyet as HopDong['trangThaiPheDuyet'],
     ngayTrinhDuyet: r.ngay_trinh_duyet ?? '',
     ngayDuyet: r.ngay_duyet ?? '',
+    nguoiDuyetId: r.nguoi_duyet_id != null ? String(r.nguoi_duyet_id) : null,
+    nguoiDuyet: (r.nguoi_duyet as unknown as { ho_va_ten: string } | null)?.ho_va_ten ?? '',
     trangThaiQuyetToan: r.trang_thai_quyet_toan as HopDong['trangThaiQuyetToan'],
     ngayQuyetToan: r.ngay_quyet_toan ?? '',
     hanChungTuQuyetToan: r.han_chung_tu_quyet_toan ?? '',
