@@ -31,6 +31,15 @@ export function coThePheDuyet(vaiTro: VaiTro): boolean {
 }
 
 /**
+ * Điều 9.6c — Ký tắt thẩm tra pháp lý hồ sơ hợp đồng trước khi trình Lãnh đạo Viện:
+ * thẩm quyền của Phòng KHKT (Lãnh đạo Viện/quản trị được thao tác thay).
+ * Phải khớp trigger fn_kiem_soat_tham_quyen_hop_dong (migration 0026).
+ */
+export function coTheThamTraKhkt(vaiTro: VaiTro): boolean {
+  return vaiTro === 'quan-tri' || vaiTro === 'lanh-dao' || vaiTro === 'phong-khkt';
+}
+
+/**
  * Điều 11 — Quyết toán, thanh lý hợp đồng:
  *  - Điều 11.1, HĐ Viện ký: TCKT trình Lãnh đạo Viện ký duyệt bản phân phối quyết toán —
  *    Trưởng đơn vị KHÔNG có thẩm quyền tự quyết toán loại HĐ này. P.TCKT là đầu mối

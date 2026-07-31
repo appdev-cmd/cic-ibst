@@ -336,11 +336,17 @@ export function kiemTraKinhPhiChuTri(
   };
 }
 
-export function canTrinhVienTruong(nhom: NhomHD | null | undefined, giaTriTruocThue: number): boolean {
+export function canTrinhVienTruong(
+  nhom: NhomHD | null | undefined,
+  giaTriTruocThue: number,
+  phucTap = false,
+): boolean {
+  // Điều 6.1 điều kiện 2: HĐ kỹ thuật phức tạp / tính chính trị / pháp lý quan trọng —
+  // buộc trình Viện trưởng bất kể nhóm và giá trị.
+  if (phucTap) return true;
   const dm = timDinhMuc(nhom);
   if (!dm) return false;
-  // Điều 6.1: "Các việc nhóm 1" luôn phải trình Viện trưởng, không phụ thuộc giá trị HĐ
-  // (khác với 2 điều kiện còn lại — kỹ thuật phức tạp, và ngưỡng giá trị — vốn chỉ áp cho Nhóm 2/3).
+  // Điều 6.1: "Các việc nhóm 1" luôn phải trình Viện trưởng, không phụ thuộc giá trị HĐ.
   if (dm.nhom === 1) return true;
   if (dm.nguongTrinhVienTruong == null) return false;
   const gt = giaTriTruocThue || 0;

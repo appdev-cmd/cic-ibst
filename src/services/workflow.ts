@@ -120,6 +120,39 @@ export async function updateUyQuyen(id: string, i: UyQuyenInput): Promise<void> 
   throwIf(error);
 }
 
+export interface UyQuyenKyHieuLuc {
+  id: string;
+  nguoiDuocUyQuyen: string;
+  soQuyetDinh: string;
+  denNgay: string;
+}
+
+/**
+ * Đ.6.2 — Kiểm tra ủy quyền ký HĐ còn hiệu lực cho một đơn vị (trước khi đơn vị ký
+ * bằng pháp nhân đơn vị). Trả về danh sách ủy quyền loại 'ky-hop-dong'/'toan-quyen'
+ * đang hiệu lực mà người được ủy quyền thuộc đơn vị đó; rỗng = chưa có ủy quyền,
+ * cần lập ủy quyền riêng trình Viện trưởng ký (nhánh DK2 lưu đồ QT2).
+ */
+export async function fetchUyQuyenKyHopDong(donViId: string): Promise<UyQuyenKyHieuLuc[]> {
+  const today = new Date().toISOString().slice(0, 10);
+  const { data, error } = await supabase
+    .from('uy_quyen')
+    .select('id, so_quyet_dinh, tu_ngay, den_ngay, nguoi_duoc:nhan_su!uy_quyen_nguoi_duoc_uy_quyen_id_fkey!inner(ho_va_ten, don_vi_id)')
+    .in('loai_uy_quyen', ['ky-hop-dong', 'toan-quyen'])
+    .eq('trang_thai', 'hieu-luc')
+    .lte('tu_ngay', today)
+    .eq('nguoi_duoc.don_vi_id', Number(donViId));
+  throwIf(error);
+  return (data || [])
+    .filter((r: any) => !r.den_ngay || r.den_ngay >= today)
+    .map((r: any) => ({
+      id: String(r.id),
+      nguoiDuocUyQuyen: r.nguoi_duoc?.ho_va_ten ?? '',
+      soQuyetDinh: r.so_quyet_dinh || '',
+      denNgay: r.den_ngay || '',
+    }));
+}
+
 export async function deleteUyQuyen(id: string): Promise<void> {
   const { error } = await supabase.from('uy_quyen').delete().eq('id', num(id));
   throwIf(error);
@@ -239,6 +272,8 @@ export async function fetchLienDanh(hopDongId: string): Promise<LienDanh[]> {
     vaiTro: r.vai_tro || '',
     giaTriPhanViec: r.gia_tri_phan_viec != null ? Number(r.gia_tri_phan_viec) : null,
     ghiChu: r.ghi_chu || '',
+    soVanBanKhkt: r.so_van_ban_khkt || '',
+    ngayThongBaoKhkt: r.ngay_thong_bao_khkt || '',
   }));
 }
 
@@ -250,10 +285,12 @@ export interface LienDanhInput {
   vaiTro: string;
   giaTriPhanViec: string;
   ghiChu: string;
+  soVanBanKhkt: string;
+  ngayThongBaoKhkt: string;
 }
 
-export async function createLienDanh(i: LienDanhInput): Promise<void> {
-  const { error } = await supabase.from('lien_danh').insert({
+function lienDanhRow(i: LienDanhInput) {
+  return {
     hop_dong_id: num(i.hopDongId),
     ten_doi_tac: i.tenDoiTac || null,
     ma_so_thue: i.maSoThue || null,
@@ -261,23 +298,18 @@ export async function createLienDanh(i: LienDanhInput): Promise<void> {
     vai_tro: i.vaiTro || null,
     gia_tri_phan_viec: num(i.giaTriPhanViec),
     ghi_chu: i.ghiChu || null,
-  });
+    so_van_ban_khkt: i.soVanBanKhkt || null,
+    ngay_thong_bao_khkt: i.ngayThongBaoKhkt || null,
+  };
+}
+
+export async function createLienDanh(i: LienDanhInput): Promise<void> {
+  const { error } = await supabase.from('lien_danh').insert(lienDanhRow(i));
   throwIf(error);
 }
 
 export async function updateLienDanh(id: string, i: LienDanhInput): Promise<void> {
-  const { error } = await supabase
-    .from('lien_danh')
-    .update({
-      hop_dong_id: num(i.hopDongId),
-      ten_doi_tac: i.tenDoiTac || null,
-      ma_so_thue: i.maSoThue || null,
-      ty_le_phan_tram: num(i.tyLePhanTram),
-      vai_tro: i.vaiTro || null,
-      gia_tri_phan_viec: num(i.giaTriPhanViec),
-      ghi_chu: i.ghiChu || null,
-    })
-    .eq('id', num(id));
+  const { error } = await supabase.from('lien_danh').update(lienDanhRow(i)).eq('id', num(id));
   throwIf(error);
 }
 

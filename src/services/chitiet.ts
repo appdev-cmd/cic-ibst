@@ -191,12 +191,15 @@ export interface CtvGiaoViec {
   hoTen: string;
   tyLePhanChia: number; // %
   ghiChu: string;
+  /** Đ.7.6 — CTV ngoài Viện bắt buộc có HĐ giao khoán công việc do Trưởng đơn vị ký. */
+  laNgoaiVien: boolean;
+  soHdGiaoKhoan: string;
 }
 
 export async function fetchCtvGiaoViec(phieuGiaoViecId: string): Promise<CtvGiaoViec[]> {
   const { data, error } = await supabase
     .from('phieu_giao_viec_ctv')
-    .select('id, nhan_su_id, ty_le_phan_chia, ghi_chu, nhan_su(ho_va_ten)')
+    .select('id, nhan_su_id, ty_le_phan_chia, ghi_chu, la_ngoai_vien, so_hd_giao_khoan, nhan_su(ho_va_ten)')
     .eq('phieu_giao_viec_id', Number(phieuGiaoViecId))
     .order('id');
   throwIf(error);
@@ -206,6 +209,8 @@ export async function fetchCtvGiaoViec(phieuGiaoViecId: string): Promise<CtvGiao
     hoTen: (r.nhan_su as unknown as { ho_va_ten: string } | null)?.ho_va_ten ?? '',
     tyLePhanChia: Number(r.ty_le_phan_chia) || 0,
     ghiChu: r.ghi_chu ?? '',
+    laNgoaiVien: !!r.la_ngoai_vien,
+    soHdGiaoKhoan: r.so_hd_giao_khoan ?? '',
   }));
 }
 
@@ -213,13 +218,22 @@ export interface CtvGiaoViecInput {
   nhanSuId: string;
   tyLePhanChia: string;
   ghiChu: string;
+  laNgoaiVien: boolean;
+  soHdGiaoKhoan: string;
 }
 
 function ctvRow(i: CtvGiaoViecInput) {
+  // Đ.7.6: CTV ngoài Viện bắt buộc có HĐ giao khoán — chặn sớm với thông báo rõ ràng
+  // (trigger CSDL không kiểm tra điều này nên lớp service là chốt chặn duy nhất).
+  if (i.laNgoaiVien && !i.soHdGiaoKhoan.trim()) {
+    throw new Error('Điều 7.6 QC 2815: CTV ngoài Viện bắt buộc phải có HĐ giao khoán công việc do Trưởng đơn vị ký — hãy nhập số HĐ giao khoán.');
+  }
   return {
     nhan_su_id: i.nhanSuId ? Number(i.nhanSuId) : null,
     ty_le_phan_chia: Number(i.tyLePhanChia) || 0,
     ghi_chu: i.ghiChu || null,
+    la_ngoai_vien: i.laNgoaiVien,
+    so_hd_giao_khoan: i.laNgoaiVien ? i.soHdGiaoKhoan.trim() : null,
   };
 }
 
@@ -944,4 +958,99 @@ export async function updateTienDo(id: string, i: TienDoInput) {
 }
 export async function deleteTienDo(id: string) {
   throwIf((await supabase.from('tien_do_hop_dong').delete().eq('id', Number(id))).error);
+}
+
+// ─── PHÂN PHỐI & LƯU TRỮ HĐ ĐÃ KÝ (Điều 6.3 QC 2815) ───
+
+export interface PhanPhoiHopDong {
+  id: string;
+  noiNhan: string;
+  hinhThuc: 'giay' | 'dien-tu';
+  daGui: boolean;
+  ngayGui: string;
+  ghiChu: string;
+}
+
+export async function fetchPhanPhoiHopDong(hopDongId: string): Promise<PhanPhoiHopDong[]> {
+  const { data, error } = await supabase
+    .from('phan_phoi_hop_dong')
+    .select('id, noi_nhan, hinh_thuc, da_gui, ngay_gui, ghi_chu')
+    .eq('hop_dong_id', Number(hopDongId))
+    .order('id');
+  throwIf(error);
+  return (data ?? []).map((r) => ({
+    id: String(r.id),
+    noiNhan: r.noi_nhan,
+    hinhThuc: (r.hinh_thuc as PhanPhoiHopDong['hinhThuc']) ?? 'giay',
+    daGui: !!r.da_gui,
+    ngayGui: r.ngay_gui ?? '',
+    ghiChu: r.ghi_chu ?? '',
+  }));
+}
+
+/** Danh sách nơi nhận chuẩn theo Đ.6.3 cho từng loại hợp đồng. */
+export function mauPhanPhoi(capKy: string | null, dienTu: boolean): { noiNhan: string; hinhThuc: 'giay' | 'dien-tu'; ghiChu: string }[] {
+  if (capKy === 'don-vi-ky') {
+    return [
+      { noiNhan: 'P.Tổng hợp đơn vị (lưu trữ — vai trò tương tự P.TCHC)', hinhThuc: 'giay', ghiChu: '' },
+      { noiNhan: 'P.KHKT — thống kê HĐKT định kỳ tuần/tháng', hinhThuc: 'giay', ghiChu: 'Gửi bảng thống kê theo mẫu' },
+    ];
+  }
+  if (dienTu) {
+    // HĐ Viện ký, bản điện tử: chủ trì email bản ký số đủ chữ ký các bên.
+    return [
+      { noiNhan: 'Viện trưởng', hinhThuc: 'dien-tu', ghiChu: '' },
+      { noiNhan: 'Lãnh đạo Viện phụ trách', hinhThuc: 'dien-tu', ghiChu: '' },
+      { noiNhan: 'Giám đốc Đơn vị chủ trì', hinhThuc: 'dien-tu', ghiChu: '' },
+      { noiNhan: 'P.Tổng hợp ĐV chủ trì', hinhThuc: 'dien-tu', ghiChu: '' },
+      { noiNhan: 'P.Tổng hợp các ĐV phối hợp', hinhThuc: 'dien-tu', ghiChu: 'Nếu HĐ có ĐV phối hợp' },
+      { noiNhan: 'P.TCHC (lưu trữ + thư viện)', hinhThuc: 'dien-tu', ghiChu: '' },
+      { noiNhan: 'P.KHKT', hinhThuc: 'dien-tu', ghiChu: '' },
+      { noiNhan: 'P.TCKT', hinhThuc: 'dien-tu', ghiChu: '' },
+    ];
+  }
+  // HĐ Viện ký, bản giấy.
+  return [
+    { noiNhan: 'P.Tổng hợp ĐV chủ trì — 01 bản sao', hinhThuc: 'giay', ghiChu: '' },
+    { noiNhan: 'P.Tổng hợp mỗi ĐV phối hợp — 01 bản sao', hinhThuc: 'giay', ghiChu: 'Nếu HĐ có ĐV phối hợp' },
+    { noiNhan: 'P.TCHC — 02 bộ chính', hinhThuc: 'giay', ghiChu: 'TCHC lưu 01 bộ' },
+    { noiNhan: 'P.TCKT — 01 bộ chính (TCHC chuyển)', hinhThuc: 'giay', ghiChu: '' },
+    { noiNhan: 'P.KHKT — bản scan (TCHC gửi)', hinhThuc: 'dien-tu', ghiChu: '' },
+  ];
+}
+
+/** Sinh checklist nơi nhận theo mẫu Đ.6.3 — chỉ khi hợp đồng chưa có dòng phân phối nào. */
+export async function taoChecklistPhanPhoi(hopDongId: string, capKy: string | null, dienTu: boolean) {
+  const rows = mauPhanPhoi(capKy, dienTu).map((m) => ({
+    hop_dong_id: Number(hopDongId),
+    noi_nhan: m.noiNhan,
+    hinh_thuc: m.hinhThuc,
+    ghi_chu: m.ghiChu || null,
+  }));
+  throwIf((await supabase.from('phan_phoi_hop_dong').insert(rows)).error);
+}
+
+export async function toggleDaGuiPhanPhoi(id: string, daGui: boolean) {
+  throwIf(
+    (
+      await supabase
+        .from('phan_phoi_hop_dong')
+        .update({ da_gui: daGui, ngay_gui: daGui ? new Date().toISOString().slice(0, 10) : null })
+        .eq('id', Number(id))
+    ).error,
+  );
+}
+
+export async function deletePhanPhoiHopDong(id: string) {
+  throwIf((await supabase.from('phan_phoi_hop_dong').delete().eq('id', Number(id))).error);
+}
+
+export async function createPhanPhoiHopDong(hopDongId: string, noiNhan: string, hinhThuc: 'giay' | 'dien-tu') {
+  throwIf(
+    (
+      await supabase
+        .from('phan_phoi_hop_dong')
+        .insert({ hop_dong_id: Number(hopDongId), noi_nhan: noiNhan, hinh_thuc: hinhThuc })
+    ).error,
+  );
 }

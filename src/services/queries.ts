@@ -196,7 +196,7 @@ export async function deleteDeTai(id: string) {
 // ─── HỢP ĐỒNG ───
 
 const COT_HOP_DONG_CO_BAN =
-  'id, so_hop_dong, ten_hop_dong, khach_hang_id, don_vi_id, gia_tri, da_thanh_toan, ngay_ky, han_hoan_thanh, trang_thai, nhom_hd, chu_tri_id, gia_du_thau, ngay_nop_ho_so, trang_thai_phe_duyet, ngay_trinh_duyet, ngay_duyet, nguoi_duyet_id, trang_thai_quyet_toan, ngay_quyet_toan, han_chung_tu_quyet_toan, loai_dac_thu, phan_vien_xa, giam_theo_yeu_cau_don_vi, cap_ky, nguoi_tao_id, khach_hang(ten_to_chuc), don_vi(ten_don_vi), chu_tri:nhan_su!hop_dong_chu_tri_id_fkey(ho_va_ten), nguoi_duyet:nhan_su!hop_dong_nguoi_duyet_id_fkey(ho_va_ten), nguoi_tao:nhan_su!hop_dong_nguoi_tao_id_fkey(ho_va_ten)';
+  'id, so_hop_dong, ten_hop_dong, khach_hang_id, don_vi_id, gia_tri, da_thanh_toan, ngay_ky, han_hoan_thanh, trang_thai, nhom_hd, chu_tri_id, gia_du_thau, ngay_nop_ho_so, trang_thai_phe_duyet, ngay_trinh_duyet, ngay_duyet, nguoi_duyet_id, trang_thai_quyet_toan, ngay_quyet_toan, han_chung_tu_quyet_toan, loai_dac_thu, phan_vien_xa, giam_theo_yeu_cau_don_vi, phuc_tap, cap_ky, nguoi_tao_id, khach_hang(ten_to_chuc), don_vi(ten_don_vi), chu_tri:nhan_su!hop_dong_chu_tri_id_fkey(ho_va_ten), nguoi_duyet:nhan_su!hop_dong_nguoi_duyet_id_fkey(ho_va_ten), nguoi_tao:nhan_su!hop_dong_nguoi_tao_id_fkey(ho_va_ten)';
 
 export async function fetchHopDong(): Promise<HopDong[]> {
   let fetchedData: any[] = [];
@@ -251,6 +251,7 @@ export async function fetchHopDong(): Promise<HopDong[]> {
     loaiDacThu: (r.loai_dac_thu as HopDong['loaiDacThu']) ?? null,
     phanVienXa: !!r.phan_vien_xa,
     giamTheoYeuCauDonVi: !!r.giam_theo_yeu_cau_don_vi,
+    phucTap: !!r.phuc_tap,
     capKy: (r.cap_ky as HopDong['capKy']) ?? null,
     buocHienTai: r.buoc_hien_tai ?? 'du-thao',
     fileDuThaoUrl: r.file_du_thao_url ?? r.fileDuThaoUrl ?? '',
@@ -282,6 +283,7 @@ export interface HopDongInput {
   loaiDacThu: string;
   phanVienXa: boolean;
   giamTheoYeuCauDonVi: boolean;
+  phucTap: boolean;
   capKy: string;
   fileDuThaoUrl?: string;
   tenFileDuThao?: string;
@@ -308,6 +310,7 @@ function hopDongRow(i: HopDongInput) {
     loai_dac_thu: str(i.loaiDacThu),
     phan_vien_xa: i.phanVienXa,
     giam_theo_yeu_cau_don_vi: i.giamTheoYeuCauDonVi,
+    phuc_tap: i.phucTap,
     cap_ky: i.capKy || null,
     ngay_duyet: str(i.ngayDuyet ?? ''),
     buoc_hien_tai: i.trangThai === 'cho-duyet' ? 'cho-duyet' : i.trangThai === 'dang-thuc-hien' ? 'dang-thuc-hien' : 'du-thao',

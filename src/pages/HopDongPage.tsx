@@ -24,6 +24,7 @@ import {
   BarChart3,
   ExternalLink,
   Link2,
+  Send,
 } from 'lucide-react';
 import {
   DotThanhToanPanel,
@@ -61,9 +62,11 @@ import {
   coTheTrinhDuyet,
   coThePheDuyet,
   coTheQuyetToan,
+  coTheThamTraKhkt,
   lyDoKhongDuThamQuyen,
   NHAN_VAI_TRO,
 } from '../lib/quyenHopDong';
+import { fetchUyQuyenKyHopDong } from '../services/workflow';
 import { KhachHangPage } from './KhachHangPage';
 import { useAsyncData } from '../hooks/useAsyncData';
 import { useTableControls } from '../hooks/useTableControls';
@@ -86,10 +89,12 @@ import {
   upsertPhieuGiaoViec,
   chuyenBuocGiaoViec,
   fetchCtvGiaoViec,
+  fetchChungChiTheoNhanSu,
   type PhieuGiaoViec,
   type PhieuGiaoViecInput,
   type CtvGiaoViec,
 } from '../services/chitiet';
+import { PhanPhoiHopDongPanel } from '../components/PhanPhoiHopDongPanel';
 import type { HopDong, TrangThaiPheDuyet } from '../types';
 import {
   BANG_1,
@@ -132,6 +137,7 @@ const EMPTY_FORM: HopDongInput = {
   loaiDacThu: '',
   phanVienXa: false,
   giamTheoYeuCauDonVi: false,
+  phucTap: false,
   capKy: '',
   fileDuThaoUrl: '',
   tenFileDuThao: '',
@@ -141,24 +147,47 @@ const NGAY_30 = 30 * 24 * 3600 * 1000;
 
 const PHE_DUYET_LABEL: Record<TrangThaiPheDuyet, string> = {
   'khong-ap-dung': 'Không áp dụng',
-  'chua-trinh': 'Chờ trình Viện trưởng',
-  'da-trinh': 'Đã trình, chờ duyệt',
+  'chua-trinh': 'Chờ trình KHKT',
+  'cho-khkt-tham-tra': 'KHKT đang thẩm tra (Đ.9.6c)',
+  'da-trinh': 'Đã trình, chờ VT duyệt',
   'da-duyet': 'Đã duyệt',
 };
 
 const PHE_DUYET_TONE: Record<TrangThaiPheDuyet, string> = {
   'khong-ap-dung': 'bg-muted text-ink-muted',
   'chua-trinh': 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
+  'cho-khkt-tham-tra': 'bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-300',
   'da-trinh': 'bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300',
   'da-duyet': 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
 };
 
-type DetailTab = 'thong-tin' | 'giao-viec' | 'thanh-toan' | 'thuong-phat' | 'kiem-tra' | 'ho-so' | 'lien-danh' | 'luu-tru' | 'nhat-ky' | 'thuc-hien';
+/**
+ * Bước kế tiếp của luồng phê duyệt Đ.6.1 (từ 0026 có thêm bước KHKT thẩm tra Đ.9.6c).
+ * Trả về null khi không còn hành động (đã duyệt xong).
+ */
+function buocPheDuyetKeTiep(
+  hienTai: TrangThaiPheDuyet,
+): { den: TrangThaiPheDuyet; nhanNut: string; kiemTraQuyen: 'trinh' | 'khkt' | 'duyet' } | null {
+  switch (hienTai) {
+    case 'khong-ap-dung':
+    case 'chua-trinh':
+      return { den: 'cho-khkt-tham-tra', nhanNut: 'Trình KHKT thẩm tra', kiemTraQuyen: 'trinh' };
+    case 'cho-khkt-tham-tra':
+      return { den: 'da-trinh', nhanNut: 'KHKT ký tắt — trình Lãnh đạo Viện', kiemTraQuyen: 'khkt' };
+    case 'da-trinh':
+      return { den: 'da-duyet', nhanNut: 'Xác nhận Viện trưởng đã duyệt', kiemTraQuyen: 'duyet' };
+    case 'da-duyet':
+      return null;
+  }
+}
+
+type DetailTab = 'thong-tin' | 'giao-viec' | 'thanh-toan' | 'thuong-phat' | 'kiem-tra' | 'ho-so' | 'phan-phoi' | 'lien-danh' | 'luu-tru' | 'nhat-ky' | 'thuc-hien';
 
 const DETAIL_TABS: SlideOverTabDef<DetailTab>[] = [
   { id: 'thong-tin', label: 'Thông tin chung', icon: Info },
   { id: 'giao-viec', label: 'Giao việc (Đ.7)', icon: ListChecks },
   { id: 'thanh-toan', label: 'Thanh toán & QT (Đ.11)', icon: Wallet },
+  { id: 'phan-phoi', label: 'Phân phối HĐ (Đ.6.3)', icon: Send },
   { id: 'thuong-phat', label: 'Thưởng / Phạt (Đ.13-14)', icon: Gavel },
   { id: 'kiem-tra', label: 'Kiểm tra nội bộ (Đ.10)', icon: ShieldCheck },
   { id: 'ho-so', label: 'Hồ sơ (Đ.8.4)', icon: Paperclip },
@@ -205,6 +234,7 @@ export function HopDongPage() {
       loaiDacThu: hd.loaiDacThu ?? '',
       phanVienXa: hd.phanVienXa,
       giamTheoYeuCauDonVi: hd.giamTheoYeuCauDonVi,
+      phucTap: hd.phucTap,
       capKy: hd.capKy ?? '',
       fileDuThaoUrl: hd.fileDuThaoUrl ?? '',
       tenFileDuThao: hd.tenFileDuThao ?? '',
@@ -250,7 +280,7 @@ export function HopDongPage() {
   const choTrinhVienTruongCount = useMemo(
     () =>
       hopDongList.filter(
-        (h) => canTrinhVienTruong(h.nhomHD, h.giaDuThau ?? h.giaTri) && h.trangThaiPheDuyet !== 'da-duyet',
+        (h) => canTrinhVienTruong(h.nhomHD, h.giaDuThau ?? h.giaTri, h.phucTap) && h.trangThaiPheDuyet !== 'da-duyet',
       ).length,
     [hopDongList],
   );
@@ -268,10 +298,23 @@ export function HopDongPage() {
 
   const [pheDuyetBusyId, setPheDuyetBusyId] = useState<string | null>(null);
   const capNhatPheDuyet = async (hd: HopDong, trangThai: TrangThaiPheDuyet) => {
-    const duocPhep = trangThai === 'da-duyet' ? duocPheDuyet : duocTrinhDuyet;
+    // Quyền theo từng bước: trình (mọi vai trò soạn) → KHKT ký tắt (Đ.9.6c) → VT duyệt (Đ.6.1).
+    const duocPhep =
+      trangThai === 'da-duyet'
+        ? duocPheDuyet
+        : trangThai === 'da-trinh'
+          ? coTheThamTraKhkt(vaiTro)
+          : duocTrinhDuyet;
     if (!duocPhep) {
       setThaoTacError(
-        lyDoKhongDuThamQuyen(vaiTro, trangThai === 'da-duyet' ? 'phê duyệt hợp đồng (Điều 6.1)' : 'trình duyệt hợp đồng'),
+        lyDoKhongDuThamQuyen(
+          vaiTro,
+          trangThai === 'da-duyet'
+            ? 'phê duyệt hợp đồng (Điều 6.1)'
+            : trangThai === 'da-trinh'
+              ? 'ký tắt thẩm tra hồ sơ — thẩm quyền Phòng KHKT (Điều 9.6c)'
+              : 'trình duyệt hợp đồng',
+        ),
       );
       return;
     }
@@ -414,6 +457,7 @@ export function HopDongPage() {
           <KiemTraNoiBoPanel key={`kt-${hd.id}`} hopDongId={hd.id} nhanSuOptions={nhanSuOptions} onChanged={refetch} />
         )}
         {tab === 'ho-so' && <HoSoHopDongPanel hopDongId={hd.id} onChanged={refetch} />}
+        {tab === 'phan-phoi' && <PhanPhoiHopDongPanel key={`pp-${hd.id}`} hd={hd} />}
         {tab === 'lien-danh' && <LienDanhPanel hopDongId={hd.id} />}
         {tab === 'luu-tru' && <LuuTruHoSoPanel hopDongId={hd.id} nhanSuOptions={nhanSuOptions} />}
         {tab === 'thuc-hien' && <ThucHienHopDongPanel key={`th-${hd.id}`} hopDongId={hd.id} />}
@@ -558,6 +602,8 @@ export function HopDongPage() {
                 <option key={n.id} value={n.id}>{n.ten}</option>
               ))}
             </select>
+            {/* Đ.7.4 — đối chiếu CCNN ngay khi chọn chủ trì; key để nạp lại khi đổi người */}
+            {crud.form.chuTriId && <ChungChiTomTat key={crud.form.chuTriId} nhanSuId={crud.form.chuTriId} />}
           </Field>
 
           {crud.editing && (
@@ -715,7 +761,23 @@ export function HopDongPage() {
             />
             Đơn vị tự yêu cầu Viện ký (giảm tỷ lệ giao khoán)
           </label>
+          <label
+            className="col-span-2 flex items-center gap-2 text-xs font-medium text-ink-secondary"
+            title="Điều 6.1: buộc trình Viện trưởng bất kể giá trị; Điều 5.2b: P.KHKT là đầu mối phối hợp soạn HĐ"
+          >
+            <input
+              type="checkbox"
+              checked={crud.form.phucTap}
+              onChange={(e) => crud.setForm({ ...crud.form, phucTap: e.target.checked })}
+            />
+            HĐ kỹ thuật phức tạp / tính chính trị / pháp lý quan trọng / Bộ giao (Đ.6.1 — buộc trình Viện trưởng)
+          </label>
         </div>
+
+        {/* Đ.6.2 — nhắc ngay trong form khi chọn đơn vị ký mà đơn vị chưa có ủy quyền hiệu lực */}
+        {crud.form.capKy === 'don-vi-ky' && crud.form.donViId && (
+          <UyQuyenKyCanhBao key={`uq-${crud.form.donViId}`} donViId={crud.form.donViId} />
+        )}
       </FormSection>
 
       <FormSection title="📁 Tệp dự thảo Hợp đồng & Link Google Docs">
@@ -961,7 +1023,7 @@ export function HopDongPage() {
                     const hd = hdItem as HopDong;
                     const active = stack.some((p) => p.id === panelIdForHopDong(hd.id));
                     const dm = timDinhMuc(hd.nhomHD);
-                    const isOverThreshold = canTrinhVienTruong(hd.nhomHD, hd.giaDuThau ?? hd.giaTri);
+                    const isOverThreshold = canTrinhVienTruong(hd.nhomHD, hd.giaDuThau ?? hd.giaTri, hd.phucTap);
                     // Hợp đồng vừa vượt ngưỡng nhưng chưa từng được triage phê duyệt (cột DB vẫn ở giá trị mặc định) — hiển thị "Chờ trình" thay vì "Không áp dụng".
                     const trangThaiHienThi: TrangThaiPheDuyet =
                       isOverThreshold && hd.trangThaiPheDuyet === 'khong-ap-dung' ? 'chua-trinh' : hd.trangThaiPheDuyet;
@@ -1007,34 +1069,37 @@ export function HopDongPage() {
                               </span>
                             )}
                           </div>
-                          {isOverThreshold && trangThaiHienThi !== 'da-duyet' && (duocTrinhDuyet || duocPheDuyet) && (
-                            <div className="mt-1 flex gap-1">
-                              {trangThaiHienThi !== 'da-trinh' && duocTrinhDuyet && (
+                          {isOverThreshold && (() => {
+                            // 1 nút = bước kế tiếp của luồng Đ.6.1, chỉ hiện với vai trò đủ thẩm quyền.
+                            const ke = buocPheDuyetKeTiep(trangThaiHienThi);
+                            if (!ke) return null;
+                            const duocPhep =
+                              ke.kiemTraQuyen === 'duyet'
+                                ? duocPheDuyet
+                                : ke.kiemTraQuyen === 'khkt'
+                                  ? coTheThamTraKhkt(vaiTro)
+                                  : duocTrinhDuyet;
+                            if (!duocPhep) return null;
+                            return (
+                              <div className="mt-1">
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    void capNhatPheDuyet(hd, 'da-trinh');
+                                    void capNhatPheDuyet(hd, ke.den);
                                   }}
                                   disabled={pheDuyetBusyId === hd.id}
-                                  className="rounded border border-border px-1.5 py-0.5 text-2xs font-semibold text-ink-secondary hover:bg-muted disabled:opacity-50"
+                                  className={cn(
+                                    'rounded border px-1.5 py-0.5 text-2xs font-semibold disabled:opacity-50',
+                                    ke.den === 'da-duyet'
+                                      ? 'border-emerald-500/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
+                                      : 'border-border text-ink-secondary hover:bg-muted',
+                                  )}
                                 >
-                                  Đánh dấu đã trình
+                                  {ke.nhanNut}
                                 </button>
-                              )}
-                              {duocPheDuyet && (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    void capNhatPheDuyet(hd, 'da-duyet');
-                                  }}
-                                  disabled={pheDuyetBusyId === hd.id}
-                                  className="rounded border border-emerald-500/40 px-1.5 py-0.5 text-2xs font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 disabled:opacity-50"
-                                >
-                                  Xác nhận đã duyệt
-                                </button>
-                              )}
-                            </div>
-                          )}
+                              </div>
+                            );
+                          })()}
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -1315,6 +1380,65 @@ function MiniStat({ label, value, tone }: { label: string; value: string; tone?:
   );
 }
 
+/** Đ.6.2 — Cảnh báo/khẳng định ủy quyền ký HĐ còn hiệu lực khi hợp đồng do đơn vị ký. */
+function UyQuyenKyCanhBao({ donViId }: { donViId: string }) {
+  const { data: uyQuyens, loading } = useAsyncData(() => fetchUyQuyenKyHopDong(donViId), []);
+  if (loading) return null;
+  if (uyQuyens.length > 0) {
+    const uq = uyQuyens[0];
+    return (
+      <div className="rounded-lg border border-emerald-500/25 bg-emerald-50/50 dark:bg-emerald-900/10 p-2.5 text-2xs text-emerald-800 dark:text-emerald-300">
+        <span className="font-bold">✓ Đ.6.2 — Ủy quyền ký hợp lệ:</span> {uq.nguoiDuocUyQuyen}
+        {uq.soQuyetDinh && <> (QĐ {uq.soQuyetDinh})</>}
+        {uq.denNgay ? <>, hiệu lực đến {formatNgay(uq.denNgay)}.</> : ', không giới hạn thời hạn.'}
+      </div>
+    );
+  }
+  return (
+    <div className="rounded-lg border border-amber-500/30 bg-amber-50/60 dark:bg-amber-900/10 p-2.5 text-2xs text-amber-800 dark:text-amber-300">
+      <span className="font-bold">⚠ Đ.6.2 — Chưa có ủy quyền ký HĐ còn hiệu lực</span> cho đơn vị thực hiện.
+      Cần ủy quyền chung hàng năm hoặc lập ủy quyền riêng để P.KHKT trình Viện trưởng ký — quản lý tại phân hệ{' '}
+      <a href="/uy-quyen" className="font-bold underline">Ủy quyền</a>.
+    </div>
+  );
+}
+
+/** Đ.7.4/7.5 — Tóm tắt chứng chỉ năng lực của nhân sự được chọn làm chủ trì (đối chiếu tự động). */
+function ChungChiTomTat({ nhanSuId }: { nhanSuId: string }) {
+  const { data: chungChis, loading } = useAsyncData(() => fetchChungChiTheoNhanSu(nhanSuId), []);
+  if (loading || !nhanSuId) return null;
+  if (chungChis.length === 0) {
+    return (
+      <p className="mt-1 flex items-start gap-1.5 rounded-lg bg-amber-50/60 dark:bg-amber-900/10 p-2 text-2xs font-semibold text-amber-800 dark:text-amber-300">
+        <AlertCircle size={12} className="mt-px shrink-0" />
+        Đ.7.4: nhân sự này chưa có chứng chỉ năng lực/hành nghề trong hồ sơ — kiểm tra trước khi giao chủ trì.
+      </p>
+    );
+  }
+  const today = new Date().toISOString().slice(0, 10);
+  return (
+    <div className="mt-1 space-y-0.5">
+      {chungChis.slice(0, 3).map((cc) => {
+        const hetHan = !!cc.ngayHetHan && cc.ngayHetHan < today;
+        return (
+          <p
+            key={cc.id}
+            className={cn(
+              'text-2xs',
+              hetHan ? 'font-semibold text-danger' : 'text-ink-muted',
+            )}
+          >
+            {hetHan ? '⚠' : '✓'} {cc.tenLinhVuc}
+            {cc.hang && <> ({cc.hang})</>}
+            {cc.ngayHetHan && <> — {hetHan ? 'HẾT HẠN' : 'hạn'} {formatNgay(cc.ngayHetHan)}</>}
+          </p>
+        );
+      })}
+      {chungChis.length > 3 && <p className="text-2xs text-ink-muted">… và {chungChis.length - 3} chứng chỉ khác</p>}
+    </div>
+  );
+}
+
 // ═══ KHUNG THÀNH VIÊN THAM GIA THỰC HIỆN HỢP ĐỒNG (ĐIỀU 7) ═══
 
 function ThanhVienHopDongSection({
@@ -1439,7 +1563,7 @@ function HopDongThongTinTab({
   const { vaiTro } = useAuth();
   const duocTrinhDuyet = coTheTrinhDuyet(vaiTro);
   const duocPheDuyet = coThePheDuyet(vaiTro);
-  const isOverThreshold = canTrinhVienTruong(hd.nhomHD, hd.giaDuThau ?? hd.giaTri);
+  const isOverThreshold = canTrinhVienTruong(hd.nhomHD, hd.giaDuThau ?? hd.giaTri, hd.phucTap);
   const trangThaiHienThi: TrangThaiPheDuyet =
     isOverThreshold && hd.trangThaiPheDuyet === 'khong-ap-dung' ? 'chua-trinh' : hd.trangThaiPheDuyet;
   const dm = timDinhMuc(hd.nhomHD);
@@ -1530,41 +1654,75 @@ function HopDongThongTinTab({
       </div>
 
       {isOverThreshold && (
-        <div className="rounded-lg border border-primary/20 bg-primary-subtle/30 p-3 text-xs space-y-2">
+        <div className="rounded-lg border border-primary/20 bg-primary-subtle/30 p-3 text-xs space-y-2.5">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="flex items-center gap-1.5 font-bold text-primary">
-              <CheckCircle2 size={14} /> Điều 6.1 QC 2815: Vượt ngưỡng trình Viện trưởng
+              <CheckCircle2 size={14} /> Điều 6.1 QC 2815: {hd.phucTap ? 'HĐ phức tạp/chính trị — buộc trình Viện trưởng' : 'Vượt ngưỡng trình Viện trưởng'}
             </p>
             <span className={cn('rounded px-1.5 py-0.5 text-2xs font-bold', PHE_DUYET_TONE[trangThaiHienThi])}>
               {PHE_DUYET_LABEL[trangThaiHienThi]}
             </span>
           </div>
-          {trangThaiHienThi !== 'da-duyet' && (
-            <div className="flex flex-wrap items-center gap-2">
-              {trangThaiHienThi !== 'da-trinh' && duocTrinhDuyet && (
-                <button
-                  onClick={() => onPheDuyet(hd, 'da-trinh')}
-                  disabled={pheDuyetBusyId === hd.id}
-                  className="rounded-lg border border-border px-2.5 py-1 text-2xs font-bold text-ink-secondary hover:bg-muted disabled:opacity-50"
-                >
-                  Đánh dấu đã trình
-                </button>
-              )}
-              {duocPheDuyet ? (
-                <button
-                  onClick={() => onPheDuyet(hd, 'da-duyet')}
-                  disabled={pheDuyetBusyId === hd.id}
-                  className="rounded-lg border border-emerald-500/40 px-2.5 py-1 text-2xs font-bold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 disabled:opacity-50"
-                >
-                  Xác nhận đã duyệt
-                </button>
-              ) : (
-                <span className="text-2xs italic text-ink-muted">
-                  Chờ Viện trưởng/Phó Viện trưởng phê duyệt — {NHAN_VAI_TRO[vaiTro]} không có thẩm quyền này (Điều 6.1).
-                </span>
-              )}
-            </div>
+
+          {/* Thanh tiến trình 4 bước: Trình → KHKT thẩm tra → Trình VT → Duyệt */}
+          <div className="flex items-center gap-1">
+            {(['chua-trinh', 'cho-khkt-tham-tra', 'da-trinh', 'da-duyet'] as TrangThaiPheDuyet[]).map((buoc, idx) => {
+              const thuTuHienTai = ['chua-trinh', 'cho-khkt-tham-tra', 'da-trinh', 'da-duyet'].indexOf(trangThaiHienThi);
+              const daQua = idx < thuTuHienTai || trangThaiHienThi === 'da-duyet';
+              const dangO = idx === thuTuHienTai && trangThaiHienThi !== 'da-duyet';
+              return (
+                <div key={buoc} className="flex flex-1 flex-col items-center gap-1" title={PHE_DUYET_LABEL[buoc]}>
+                  <div
+                    className={cn(
+                      'h-1.5 w-full rounded-full',
+                      daQua ? 'bg-emerald-500' : dangO ? 'bg-primary' : 'bg-border',
+                    )}
+                  />
+                  <span className={cn('text-[9px] font-bold leading-tight text-center', dangO ? 'text-primary' : daQua ? 'text-emerald-600' : 'text-ink-muted')}>
+                    {['1. Soạn & trình', '2. KHKT thẩm tra', '3. Trình VT', '4. Đã duyệt'][idx]}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          {trangThaiHienThi === 'cho-khkt-tham-tra' && (
+            <p className="rounded bg-violet-50 dark:bg-violet-900/20 px-2 py-1 text-2xs font-semibold text-violet-700 dark:text-violet-300">
+              ⏱ SLA Đ.9.6c: KHKT thẩm tra ≤ 01 ngày làm việc; hồ sơ thiếu phải báo lại đơn vị trong 06 giờ.
+            </p>
           )}
+
+          {(() => {
+            const ke = buocPheDuyetKeTiep(trangThaiHienThi);
+            if (!ke) return null;
+            const duocPhep =
+              ke.kiemTraQuyen === 'duyet'
+                ? duocPheDuyet
+                : ke.kiemTraQuyen === 'khkt'
+                  ? coTheThamTraKhkt(vaiTro)
+                  : duocTrinhDuyet;
+            return duocPhep ? (
+              <button
+                onClick={() => onPheDuyet(hd, ke.den)}
+                disabled={pheDuyetBusyId === hd.id}
+                className={cn(
+                  'rounded-lg border px-2.5 py-1 text-2xs font-bold disabled:opacity-50',
+                  ke.den === 'da-duyet'
+                    ? 'border-emerald-500/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
+                    : 'border-border text-ink-secondary hover:bg-muted',
+                )}
+              >
+                {ke.nhanNut}
+              </button>
+            ) : (
+              <span className="text-2xs italic text-ink-muted">
+                {ke.kiemTraQuyen === 'khkt'
+                  ? `Chờ Phòng KHKT ký tắt thẩm tra (Đ.9.6c) — ${NHAN_VAI_TRO[vaiTro]} không có thẩm quyền này.`
+                  : `Chờ Viện trưởng/Phó Viện trưởng phê duyệt — ${NHAN_VAI_TRO[vaiTro]} không có thẩm quyền này (Điều 6.1).`}
+              </span>
+            );
+          })()}
+
           {(hd.ngayTrinhDuyet || hd.ngayDuyet) && (
             <p className="text-ink-muted">
               {hd.ngayTrinhDuyet && <>Ngày trình: {formatNgay(hd.ngayTrinhDuyet)}. </>}
@@ -1577,6 +1735,11 @@ function HopDongThongTinTab({
             </p>
           )}
         </div>
+      )}
+
+      {/* Đ.6.2 — HĐ đơn vị ký: kiểm tra ủy quyền chung còn hiệu lực */}
+      {hd.capKy === 'don-vi-ky' && hd.donViId && (
+        <UyQuyenKyCanhBao key={`uq-${hd.donViId}`} donViId={hd.donViId} />
       )}
 
       {(() => {

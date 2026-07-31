@@ -53,20 +53,24 @@ function PanelShell({
   );
 }
 
-/* ─── 1. LIÊN DANH PANEL (Điều 5.3) ─── */
+/* ─── 1. LIÊN DANH PANEL (Điều 5.3, 4.7) ─── */
+const LIEN_DANH_EMPTY = (hopDongId: string): LienDanhInput => ({
+  hopDongId,
+  tenDoiTac: '',
+  maSoThue: '',
+  tyLePhanTram: '',
+  vaiTro: 'thanh-vien',
+  giaTriPhanViec: '',
+  ghiChu: '',
+  soVanBanKhkt: '',
+  ngayThongBaoKhkt: '',
+});
+
 export function LienDanhPanel({ hopDongId }: { hopDongId: string }) {
   const { data: list, loading, refetch } = useAsyncData(() => fetchLienDanh(hopDongId), []);
   const [adding, setAdding] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState<LienDanhInput>({
-    hopDongId,
-    tenDoiTac: '',
-    maSoThue: '',
-    tyLePhanTram: '',
-    vaiTro: 'thanh-vien',
-    giaTriPhanViec: '',
-    ghiChu: '',
-  });
+  const [form, setForm] = useState<LienDanhInput>(LIEN_DANH_EMPTY(hopDongId));
 
   const handleSave = async () => {
     if (!form.tenDoiTac.trim()) return;
@@ -74,7 +78,7 @@ export function LienDanhPanel({ hopDongId }: { hopDongId: string }) {
     try {
       await createLienDanh({ ...form, hopDongId });
       setAdding(false);
-      setForm({ hopDongId, tenDoiTac: '', maSoThue: '', tyLePhanTram: '', vaiTro: 'thanh-vien', giaTriPhanViec: '', ghiChu: '' });
+      setForm(LIEN_DANH_EMPTY(hopDongId));
       refetch();
     } finally {
       setSaving(false);
@@ -89,8 +93,21 @@ export function LienDanhPanel({ hopDongId }: { hopDongId: string }) {
 
   if (loading) return <div className="p-4 text-center text-xs text-ink-muted">Đang tải danh sách liên danh...</div>;
 
+  // Đ.4.7 — liên danh chưa ghi nhận văn bản thông báo P.KHKT: cảnh báo vi phạm.
+  const chuaThongBao = list.filter((ld) => !ld.soVanBanKhkt && !ld.ngayThongBaoKhkt);
+
   return (
-    <PanelShell title="Đối tác liên danh (Điều 5.3)" icon={Users} onAdd={() => setAdding(true)} adding={adding}>
+    <div className="space-y-3">
+      {chuaThongBao.length > 0 && (
+        <div className="flex items-start gap-2 rounded-lg border border-danger/30 bg-danger-subtle p-2.5 text-2xs font-semibold text-danger">
+          <ShieldAlert size={14} className="mt-px shrink-0" />
+          <span>
+            Đ.4.7 QC 2815: {chuaThongBao.length} đối tác liên danh <strong>chưa ghi nhận văn bản thông báo P.KHKT</strong> trước
+            khi ký thỏa thuận. Vi phạm bị xử lý theo Điều 14 — bổ sung số/ngày văn bản vào từng dòng bên dưới.
+          </span>
+        </div>
+      )}
+    <PanelShell title="Đối tác liên danh (Điều 5.3, 4.7)" icon={Users} onAdd={() => setAdding(true)} adding={adding}>
       <table className="w-full text-left text-xs">
         <thead className="border-b border-border bg-subtle text-2xs uppercase text-ink-muted">
           <tr>
@@ -99,6 +116,7 @@ export function LienDanhPanel({ hopDongId }: { hopDongId: string }) {
             <th className="px-3 py-1.5 font-bold">Vai trò</th>
             <th className="px-3 py-1.5 font-bold text-right">% Liên danh</th>
             <th className="px-3 py-1.5 font-bold text-right">Giá trị (trđ)</th>
+            <th className="px-3 py-1.5 font-bold">Thông báo KHKT (Đ.4.7)</th>
             <th className="px-3 py-1.5 font-bold">Thao tác</th>
           </tr>
         </thead>
@@ -150,6 +168,22 @@ export function LienDanhPanel({ hopDongId }: { hopDongId: string }) {
                 />
               </td>
               <td className="p-2">
+                <div className="flex flex-col gap-1">
+                  <input
+                    className={miniInput}
+                    placeholder="Số văn bản TB KHKT..."
+                    value={form.soVanBanKhkt}
+                    onChange={(e) => setForm({ ...form, soVanBanKhkt: e.target.value })}
+                  />
+                  <input
+                    type="date"
+                    className={miniInput}
+                    value={form.ngayThongBaoKhkt}
+                    onChange={(e) => setForm({ ...form, ngayThongBaoKhkt: e.target.value })}
+                  />
+                </div>
+              </td>
+              <td className="p-2">
                 <div className="flex items-center gap-1">
                   <button onClick={handleSave} disabled={saving} className="btn-primary py-1 px-2 text-2xs">
                     {saving ? <LoaderCircle size={12} className="animate-spin" /> : <Check size={12} />}
@@ -163,7 +197,7 @@ export function LienDanhPanel({ hopDongId }: { hopDongId: string }) {
           )}
           {list.length === 0 && !adding && (
             <tr>
-              <td colSpan={6} className="px-3 py-4 text-center text-xs text-ink-muted italic">
+              <td colSpan={7} className="px-3 py-4 text-center text-xs text-ink-muted italic">
                 Chưa có thông tin liên danh
               </td>
             </tr>
@@ -180,6 +214,18 @@ export function LienDanhPanel({ hopDongId }: { hopDongId: string }) {
               <td className="px-3 py-2 text-right font-semibold">{item.tyLePhanTram}%</td>
               <td className="px-3 py-2 text-right font-semibold">{item.giaTriPhanViec ? item.giaTriPhanViec.toLocaleString('vi-VN') : '—'}</td>
               <td className="px-3 py-2">
+                {item.soVanBanKhkt || item.ngayThongBaoKhkt ? (
+                  <span className="text-2xs text-emerald-700 dark:text-emerald-300 font-semibold">
+                    ✓ {item.soVanBanKhkt || 'Đã thông báo'}
+                    {item.ngayThongBaoKhkt && <> ({formatNgay(item.ngayThongBaoKhkt)})</>}
+                  </span>
+                ) : (
+                  <span className="inline-flex rounded bg-danger-subtle px-1.5 py-0.5 text-3xs font-bold text-danger">
+                    Chưa thông báo Đ.4.7
+                  </span>
+                )}
+              </td>
+              <td className="px-3 py-2">
                 <button onClick={() => handleDelete(item.id)} className="text-danger hover:text-danger-600 p-1">
                   <Trash2 size={13} />
                 </button>
@@ -189,6 +235,7 @@ export function LienDanhPanel({ hopDongId }: { hopDongId: string }) {
         </tbody>
       </table>
     </PanelShell>
+    </div>
   );
 }
 

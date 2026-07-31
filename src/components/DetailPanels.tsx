@@ -645,7 +645,7 @@ export function ChungChiPanel({ nhanSuId, onChanged }: { nhanSuId: string; onCha
 
 // ═══ CỘNG TÁC VIÊN GIAO VIỆC ═══
 
-const EMPTY_CTV: CtvGiaoViecInput = { nhanSuId: '', tyLePhanChia: '', ghiChu: '' };
+const EMPTY_CTV: CtvGiaoViecInput = { nhanSuId: '', tyLePhanChia: '', ghiChu: '', laNgoaiVien: false, soHdGiaoKhoan: '' };
 
 export function CtvGiaoViecPanel({
   phieuGiaoViecId,
@@ -724,6 +724,26 @@ export function CtvGiaoViecPanel({
           <option value="Xử lý số liệu & Lập báo cáo" />
         </datalist>
       </td>
+      <td className="px-3 py-1.5">
+        <div className="flex flex-col gap-1">
+          <label className="flex items-center gap-1.5 text-2xs font-medium text-ink-secondary whitespace-nowrap">
+            <input
+              type="checkbox"
+              checked={form.laNgoaiVien}
+              onChange={(e) => setForm({ ...form, laNgoaiVien: e.target.checked })}
+            />
+            CTV ngoài Viện
+          </label>
+          {form.laNgoaiVien && (
+            <input
+              className={miniInput}
+              placeholder="Số HĐ giao khoán (bắt buộc — Đ.7.6)"
+              value={form.soHdGiaoKhoan}
+              onChange={(e) => setForm({ ...form, soHdGiaoKhoan: e.target.value })}
+            />
+          )}
+        </div>
+      </td>
       <td className="px-3 py-1.5"><RowBtns onSave={save} onCancel={() => setEditingId(null)} saving={saving} /></td>
     </tr>
   );
@@ -749,6 +769,7 @@ export function CtvGiaoViecPanel({
             <th className="th-cell">Nhân sự</th>
             <th className="th-cell">Tỷ lệ (%)</th>
             <th className="th-cell">Ghi chú</th>
+            <th className="th-cell">Ngoài Viện (Đ.7.6)</th>
             <th className="th-cell text-right">Thao tác</th>
           </tr>
         </thead>
@@ -761,10 +782,31 @@ export function CtvGiaoViecPanel({
                 <td className="td-cell text-xs font-medium">{r.hoTen || '—'}</td>
                 <td className="td-cell font-mono text-xs">{r.tyLePhanChia}</td>
                 <td className="td-cell text-xs text-ink-secondary">{r.ghiChu || '—'}</td>
+                <td className="td-cell text-xs">
+                  {r.laNgoaiVien ? (
+                    r.soHdGiaoKhoan ? (
+                      <span className="inline-flex rounded bg-sky-100 dark:bg-sky-900/40 px-1.5 py-0.5 text-2xs font-bold text-sky-800 dark:text-sky-300" title="CTV ngoài Viện — có HĐ giao khoán">
+                        Giao khoán: {r.soHdGiaoKhoan}
+                      </span>
+                    ) : (
+                      <span className="inline-flex rounded bg-danger-subtle px-1.5 py-0.5 text-2xs font-bold text-danger">
+                        Thiếu HĐ giao khoán!
+                      </span>
+                    )
+                  ) : (
+                    <span className="text-ink-muted">—</span>
+                  )}
+                </td>
                 <td className="td-cell">
                   <EditDeleteBtns
                     onEdit={() => {
-                      setForm({ nhanSuId: r.nhanSuId ?? '', tyLePhanChia: String(r.tyLePhanChia), ghiChu: r.ghiChu });
+                      setForm({
+                        nhanSuId: r.nhanSuId ?? '',
+                        tyLePhanChia: String(r.tyLePhanChia),
+                        ghiChu: r.ghiChu,
+                        laNgoaiVien: r.laNgoaiVien,
+                        soHdGiaoKhoan: r.soHdGiaoKhoan,
+                      });
                       setEditingId(r.id);
                     }}
                     onDelete={() => remove(r.id)}
@@ -775,7 +817,7 @@ export function CtvGiaoViecPanel({
           )}
           {editingId === 'new' && editor('new')}
           {rows.length === 0 && editingId !== 'new' && (
-            <tr><td colSpan={4} className="td-cell py-3 text-center text-xs italic text-ink-muted">Chưa có cộng tác viên</td></tr>
+            <tr><td colSpan={5} className="td-cell py-3 text-center text-xs italic text-ink-muted">Chưa có cộng tác viên</td></tr>
           )}
         </tbody>
       </table>

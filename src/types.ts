@@ -72,6 +72,8 @@ export interface HopDong {
   loaiDacThu: LoaiDacThu | null;
   phanVienXa: boolean;
   giamTheoYeuCauDonVi: boolean;
+  /** Đ.6.1 điều kiện 2 — kỹ thuật phức tạp/chính trị/pháp lý quan trọng/Bộ giao: buộc trình VT bất kể giá trị. */
+  phucTap: boolean;
   /** Điều 6.1 — cấp ký hợp đồng: Viện ký hay đơn vị ký theo phân cấp/ủy quyền. */
   capKy: CapKy | null;
   buocHienTai: string;
@@ -79,7 +81,8 @@ export interface HopDong {
   tenFileDuThao?: string | null;
 }
 
-export type TrangThaiPheDuyet = 'khong-ap-dung' | 'chua-trinh' | 'da-trinh' | 'da-duyet';
+/** Luồng trình/duyệt Viện trưởng Đ.6.1 — từ migration 0026 bắt buộc qua bước KHKT thẩm tra (Đ.9.6c). */
+export type TrangThaiPheDuyet = 'khong-ap-dung' | 'chua-trinh' | 'cho-khkt-tham-tra' | 'da-trinh' | 'da-duyet';
 
 export interface MauThiNghiem {
   id: string;
@@ -204,6 +207,9 @@ export interface LienDanh {
   vaiTro: 'dung-dau' | 'thanh-vien';
   giaTriPhanViec: number | null;
   ghiChu: string;
+  /** Đ.4.7 — PHẢI thông báo bằng văn bản cho P.KHKT trước khi ký thỏa thuận liên danh. */
+  soVanBanKhkt: string;
+  ngayThongBaoKhkt: string;
 }
 
 /* ─── Nhiệm vụ PVQLNN (Điều 3 QC 2815) ─── */
