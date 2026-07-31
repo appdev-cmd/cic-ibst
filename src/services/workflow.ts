@@ -131,9 +131,10 @@ export async function fetchDauThau(): Promise<DauThau[]> {
     .from('dau_thau')
     .select(`
       *,
-      khach_hang:chu_dau_tu_id(ten_khach_hang),
+      khach_hang:chu_dau_tu_id(ten_to_chuc),
       don_vi:don_vi_thuc_hien_id(ten_don_vi),
-      nhan_su:nguoi_phu_trach_id(ho_va_ten),
+      nhan_su:nhan_su!dau_thau_nguoi_phu_trach_id_fkey(ho_va_ten),
+      chu_tri_hsdt:nhan_su!dau_thau_chu_tri_hsdt_id_fkey(ho_va_ten),
       hop_dong:hop_dong_id(so_hop_dong)
     `)
     .order('created_at', { ascending: false });
@@ -155,6 +156,11 @@ export async function fetchDauThau(): Promise<DauThau[]> {
     nguoiPhuTrachId: r.nguoi_phu_trach_id ? String(r.nguoi_phu_trach_id) : null,
     nguoiPhuTrach: r.nhan_su?.ho_va_ten || '',
     ghiChu: r.ghi_chu || '',
+    chuTriHsdtId: r.chu_tri_hsdt_id ? String(r.chu_tri_hsdt_id) : null,
+    chuTriHsdt: r.chu_tri_hsdt?.ho_va_ten || '',
+    hsNangLucChung: !!r.hs_nang_luc_chung,
+    bcTaiChinh: !!r.bc_tai_chinh,
+    ccnnDuThau: !!r.ccnn_du_thau,
   }));
 }
 
@@ -171,10 +177,14 @@ export interface DauThauInput {
   hopDongId: string;
   nguoiPhuTrachId: string;
   ghiChu: string;
+  chuTriHsdtId: string;
+  hsNangLucChung: boolean;
+  bcTaiChinh: boolean;
+  ccnnDuThau: boolean;
 }
 
-export async function createDauThau(i: DauThauInput): Promise<void> {
-  const { error } = await supabase.from('dau_thau').insert({
+function dauThauRow(i: DauThauInput) {
+  return {
     ten_goi_thau: i.tenGoiThau || null,
     chu_dau_tu_id: num(i.chuDauTuId),
     don_vi_thuc_hien_id: num(i.donViThucHienId),
@@ -187,27 +197,22 @@ export async function createDauThau(i: DauThauInput): Promise<void> {
     hop_dong_id: num(i.hopDongId),
     nguoi_phu_trach_id: num(i.nguoiPhuTrachId),
     ghi_chu: i.ghiChu || null,
-  });
+    chu_tri_hsdt_id: num(i.chuTriHsdtId),
+    hs_nang_luc_chung: i.hsNangLucChung,
+    bc_tai_chinh: i.bcTaiChinh,
+    ccnn_du_thau: i.ccnnDuThau,
+  };
+}
+
+export async function createDauThau(i: DauThauInput): Promise<void> {
+  const { error } = await supabase.from('dau_thau').insert(dauThauRow(i));
   throwIf(error);
 }
 
 export async function updateDauThau(id: string, i: DauThauInput): Promise<void> {
   const { error } = await supabase
     .from('dau_thau')
-    .update({
-      ten_goi_thau: i.tenGoiThau || null,
-      chu_dau_tu_id: num(i.chuDauTuId),
-      don_vi_thuc_hien_id: num(i.donViThucHienId),
-      hinh_thuc: i.hinhThuc || null,
-      gia_du_thau: num(i.giaDuThau),
-      gia_trung_thau: num(i.giaTrungThau),
-      ngay_mo_thau: i.ngayMoThau || null,
-      ngay_dong_thau: i.ngayDongThau || null,
-      trang_thai: i.trangThai || null,
-      hop_dong_id: num(i.hopDongId),
-      nguoi_phu_trach_id: num(i.nguoiPhuTrachId),
-      ghi_chu: i.ghiChu || null,
-    })
+    .update(dauThauRow(i))
     .eq('id', num(id));
   throwIf(error);
 }

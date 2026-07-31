@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Gavel, Plus, Search, Filter, Building2, Calendar, FileText, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { Gavel, Plus, Search, Filter, Building2, Calendar, FileText, CheckCircle2, XCircle, Clock, Users2 } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { KpiCard } from '../components/KpiCard';
 import { MasterTable } from '../components/MasterTable';
 import { Field, inputCls } from '../components/Modal';
+import { DangKyDauMoiPanel } from '../components/DangKyDauMoiPanel';
 import { useAsyncData } from '../hooks/useAsyncData';
 import { useCrudForm } from '../hooks/useCrudForm';
 import { useTableControls } from '../hooks/useTableControls';
@@ -18,6 +19,8 @@ import { fetchKhachHangOptions, fetchDonViOptions, fetchNhanSuOptions } from '..
 import type { DauThau, TrangThaiDauThau, HinhThucDauThau } from '../types';
 import { formatTrieu, formatNgay } from '../lib/utils';
 
+type Tab = 'goi-thau' | 'dang-ky-dau-moi';
+
 const EMPTY_FORM: DauThauInput = {
   tenGoiThau: '',
   chuDauTuId: '',
@@ -31,6 +34,10 @@ const EMPTY_FORM: DauThauInput = {
   hopDongId: '',
   nguoiPhuTrachId: '',
   ghiChu: '',
+  chuTriHsdtId: '',
+  hsNangLucChung: false,
+  bcTaiChinh: false,
+  ccnnDuThau: false,
 };
 
 const HINH_THUC_LABEL: Record<HinhThucDauThau, string> = {
@@ -60,7 +67,8 @@ const TRANG_THAI_TONE: Record<TrangThaiDauThau, string> = {
 };
 
 export function DauThauPage() {
-  const { data: list, loading, refetch } = useAsyncData(fetchDauThau, []);
+  const [tab, setTab] = useState<Tab>('goi-thau');
+  const { data: list, loading, error, refetch } = useAsyncData(fetchDauThau, []);
   const { data: khachHangOptions } = useAsyncData(fetchKhachHangOptions, []);
   const { data: donViOptions } = useAsyncData(fetchDonViOptions, []);
   const { data: nhanSuOptions } = useAsyncData(fetchNhanSuOptions, []);
@@ -80,6 +88,10 @@ export function DauThauPage() {
       hopDongId: item.hopDongId || '',
       nguoiPhuTrachId: item.nguoiPhuTrachId || '',
       ghiChu: item.ghiChu || '',
+      chuTriHsdtId: item.chuTriHsdtId || '',
+      hsNangLucChung: item.hsNangLucChung,
+      bcTaiChinh: item.bcTaiChinh,
+      ccnnDuThau: item.ccnnDuThau,
     }),
     getId: (item) => item.id,
     create: createDauThau,
@@ -98,15 +110,46 @@ export function DauThauPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Quản lý Đấu thầu & Chào giá (Điều 4 QC 2815)"
-        subtitle="Theo dõi toàn bộ gói thầu, hồ sơ dự thầu và kết quả lựa chọn nhà thầu của Viện"
+        title="Quản lý Đấu thầu & Chào giá (Điều 4, 5.1 QC 2815)"
+        subtitle="Đăng ký đầu mối thị trường, theo dõi gói thầu, hồ sơ dự thầu và kết quả lựa chọn nhà thầu của Viện"
         actions={
-          <button onClick={crud.openCreate} className="btn-primary flex items-center gap-1.5 text-xs">
-            <Plus size={14} /> Thêm gói thầu mới
-          </button>
+          tab === 'goi-thau' && (
+            <button onClick={crud.openCreate} className="btn-primary flex items-center gap-1.5 text-xs">
+              <Plus size={14} /> Thêm gói thầu mới
+            </button>
+          )
         }
       />
 
+      {/* Tabs Switcher */}
+      <div className="flex gap-1 border-b border-border">
+        <button
+          onClick={() => setTab('goi-thau')}
+          className={`flex items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-bold transition-colors ${
+            tab === 'goi-thau' ? 'border-primary text-primary' : 'border-transparent text-ink-muted hover:text-ink'
+          }`}
+        >
+          <Gavel size={13} /> Gói thầu & Kết quả
+        </button>
+        <button
+          onClick={() => setTab('dang-ky-dau-moi')}
+          className={`flex items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-bold transition-colors ${
+            tab === 'dang-ky-dau-moi' ? 'border-primary text-primary' : 'border-transparent text-ink-muted hover:text-ink'
+          }`}
+        >
+          <Users2 size={13} /> Đăng ký đầu mối (Đ.5.1c)
+        </button>
+      </div>
+
+      {tab === 'dang-ky-dau-moi' && <DangKyDauMoiPanel donViOptions={donViOptions} nhanSuOptions={nhanSuOptions} />}
+
+      {tab === 'goi-thau' && (
+      <>
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-danger dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
+          Lỗi tải dữ liệu: {error}
+        </div>
+      )}
       {/* KPI Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard label="Tổng số gói thầu" value={String(list.length)} icon={Gavel} tone="primary" />
@@ -151,6 +194,28 @@ export function DauThauPage() {
             ),
           },
           {
+            header: 'Chủ trì HSDT / Hồ sơ NL (Đ.5.1d)',
+            accessor: (item: DauThau) => {
+              const soDu = [item.hsNangLucChung, item.bcTaiChinh, item.ccnnDuThau].filter(Boolean).length;
+              return (
+                <div className="text-2xs">
+                  <p className="font-semibold text-ink">{item.chuTriHsdt || '—'}</p>
+                  <span
+                    className={`inline-flex mt-0.5 rounded px-1.5 py-0.5 font-bold ${
+                      soDu === 3
+                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
+                        : soDu === 0
+                          ? 'bg-subtle text-ink-muted'
+                          : 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'
+                    }`}
+                  >
+                    Hồ sơ năng lực {soDu}/3
+                  </span>
+                </div>
+              );
+            },
+          },
+          {
             header: 'Giá dự thầu (trđ)',
             accessor: (item: DauThau) => (
               <span className="font-bold text-ink">{item.giaDuThau ? item.giaDuThau.toLocaleString('vi-VN') : '—'}</span>
@@ -176,6 +241,8 @@ export function DauThauPage() {
         totalPages={table.totalPages}
         onPageChange={table.setPage}
       />
+      </>
+      )}
 
       {/* Modal */}
       {crud.modalOpen && (
@@ -275,6 +342,51 @@ export function DauThauPage() {
                     ))}
                   </select>
                 </Field>
+              </div>
+
+              <Field label="Chủ trì lập HSDT (Đ.5.1d — do GĐ Đơn vị chỉ định)">
+                <select
+                  className={inputCls}
+                  value={crud.form.chuTriHsdtId}
+                  onChange={(e) => crud.setForm({ ...crud.form, chuTriHsdtId: e.target.value })}
+                >
+                  <option value="">-- Chọn nhân sự --</option>
+                  {nhanSuOptions.map((n) => (
+                    <option key={n.id} value={n.id}>{n.ten}</option>
+                  ))}
+                </select>
+              </Field>
+
+              <div className="rounded-lg border border-border p-3">
+                <p className="mb-2 text-2xs font-black uppercase tracking-wider text-ink-muted">
+                  Checklist hồ sơ năng lực (Đ.5.1d, 9.6g)
+                </p>
+                <div className="space-y-2 text-xs">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={crud.form.hsNangLucChung}
+                      onChange={(e) => crud.setForm({ ...crud.form, hsNangLucChung: e.target.checked })}
+                    />
+                    Hồ sơ năng lực chung của Viện + chữ ký số đấu thầu (P.KHKT cung cấp)
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={crud.form.bcTaiChinh}
+                      onChange={(e) => crud.setForm({ ...crud.form, bcTaiChinh: e.target.checked })}
+                    />
+                    Báo cáo tài chính (P.TCKT cung cấp)
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={crud.form.ccnnDuThau}
+                      onChange={(e) => crud.setForm({ ...crud.form, ccnnDuThau: e.target.checked })}
+                    />
+                    Chứng chỉ năng lực/hành nghề + hồ sơ nhân sự (P.TCHC cung cấp)
+                  </label>
+                </div>
               </div>
 
               <div className="flex justify-end gap-2 pt-2">

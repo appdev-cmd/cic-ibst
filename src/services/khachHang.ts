@@ -95,6 +95,71 @@ export async function updateKhachHang(id: string, i: KhachHangInput) {
   throwIf((await supabase.from('khach_hang').update(row(i)).eq('id', Number(id))).error);
 }
 
+// ─── Hồ sơ 360° khách hàng (Giai đoạn 1 kế hoạch số hóa) ───
+
+export interface HopDongCuaKhachHang {
+  id: string;
+  soHD: string;
+  ten: string;
+  giaTri: number;
+  daThanhToan: number;
+  trangThai: string;
+  ngayKy: string;
+}
+
+export interface DauThauCuaKhachHang {
+  id: string;
+  tenGoiThau: string;
+  hinhThuc: string;
+  trangThai: string;
+  giaDuThau: number | null;
+  giaTrungThau: number | null;
+  ngayMoThau: string;
+}
+
+export interface KhachHangChiTiet {
+  hopDongs: HopDongCuaKhachHang[];
+  dauThaus: DauThauCuaKhachHang[];
+}
+
+/** Lịch sử hợp đồng đã ký + gói thầu đã/đang tham gia của một khách hàng — dùng cho hồ sơ 360°. */
+export async function fetchKhachHangChiTiet(id: string): Promise<KhachHangChiTiet> {
+  const [hd, dt] = await Promise.all([
+    supabase
+      .from('hop_dong')
+      .select('id, so_hop_dong, ten_hop_dong, gia_tri, da_thanh_toan, trang_thai, ngay_ky')
+      .eq('khach_hang_id', Number(id))
+      .order('ngay_ky', { ascending: false }),
+    supabase
+      .from('dau_thau')
+      .select('id, ten_goi_thau, hinh_thuc, trang_thai, gia_du_thau, gia_trung_thau, ngay_mo_thau')
+      .eq('chu_dau_tu_id', Number(id))
+      .order('ngay_mo_thau', { ascending: false }),
+  ]);
+  throwIf(hd.error);
+  throwIf(dt.error);
+  return {
+    hopDongs: (hd.data ?? []).map((r) => ({
+      id: String(r.id),
+      soHD: r.so_hop_dong,
+      ten: r.ten_hop_dong,
+      giaTri: Number(r.gia_tri) || 0,
+      daThanhToan: Number(r.da_thanh_toan) || 0,
+      trangThai: r.trang_thai,
+      ngayKy: r.ngay_ky ?? '',
+    })),
+    dauThaus: (dt.data ?? []).map((r) => ({
+      id: String(r.id),
+      tenGoiThau: r.ten_goi_thau,
+      hinhThuc: r.hinh_thuc,
+      trangThai: r.trang_thai,
+      giaDuThau: r.gia_du_thau != null ? Number(r.gia_du_thau) : null,
+      giaTrungThau: r.gia_trung_thau != null ? Number(r.gia_trung_thau) : null,
+      ngayMoThau: r.ngay_mo_thau ?? '',
+    })),
+  };
+}
+
 export async function deleteKhachHang(id: string) {
   // Chặn sớm với thông báo dễ hiểu — FK từ hop_dong/mau_thi_nghiem sẽ chặn ở CSDL
   // nhưng thông báo lỗi Postgres khó đọc với người dùng nghiệp vụ.

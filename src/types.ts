@@ -185,6 +185,13 @@ export interface DauThau {
   nguoiPhuTrachId: string | null;
   nguoiPhuTrach: string;
   ghiChu: string;
+  /** Chủ trì lập HSDT do GĐ Đơn vị chỉ định (Đ.5.1d) */
+  chuTriHsdtId: string | null;
+  chuTriHsdt: string;
+  /** Checklist thu thập hồ sơ năng lực (Đ.5.1d, 9.6g) */
+  hsNangLucChung: boolean;
+  bcTaiChinh: boolean;
+  ccnnDuThau: boolean;
 }
 
 /* ─── Liên danh (Điều 5.3 QC 2815) ─── */

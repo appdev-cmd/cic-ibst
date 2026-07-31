@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react';
-import { Plus, Building2, Search, Pencil, Trash2, Phone, Mail, MapPin, User, FileText, LoaderCircle } from 'lucide-react';
+import { Plus, Building2, Search, Pencil, Trash2, Phone, Mail, MapPin, User, FileText, LoaderCircle, Eye } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { KpiCard } from '../components/KpiCard';
 import { Modal, Field, inputCls } from '../components/Modal';
 import { DataState } from '../components/DataState';
+import { KhachHangChiTietPanel } from '../components/KhachHangChiTietPanel';
+import { useSlidePanel } from '../context/SlidePanelContext';
 import { useAsyncData } from '../hooks/useAsyncData';
 import {
   fetchKhachHang,
@@ -36,6 +38,7 @@ const LOAI_BADGE: Record<LoaiKhachHang, { label: string; cls: string }> = {
 
 export function KhachHangPage() {
   const { data: list, loading, error, refetch } = useAsyncData(fetchKhachHang, []);
+  const { openPanel } = useSlidePanel();
   const [search, setSearch] = useState('');
   const [filterLoai, setFilterLoai] = useState('');
 
@@ -91,6 +94,18 @@ export function KhachHangPage() {
     } catch (e) {
       setThaoTacError(e instanceof Error ? e.message : String(e));
     }
+  };
+
+  const handleOpenChiTiet = (item: KhachHang) => {
+    openPanel({
+      id: `khach-hang-${item.id}`,
+      title: item.tenToChuc,
+      subtitle: LOAI_KHACH_HANG_OPTIONS.find((o) => o.value === item.loai)?.label,
+      icon: <Building2 size={16} />,
+      content: <KhachHangChiTietPanel khachHang={item} />,
+      defaultWidth: 480,
+      storageKey: 'panel-khach-hang',
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -179,7 +194,15 @@ export function KhachHangPage() {
           <tbody>
             {filteredList.map((item) => (
               <tr key={item.id} className="tr-hover">
-                <td className="td-cell font-semibold max-w-xs truncate" title={item.tenToChuc}>{item.tenToChuc}</td>
+                <td className="td-cell font-semibold max-w-xs truncate">
+                  <button
+                    onClick={() => handleOpenChiTiet(item)}
+                    className="truncate text-left hover:text-primary hover:underline"
+                    title={item.tenToChuc}
+                  >
+                    {item.tenToChuc}
+                  </button>
+                </td>
                 <td className="td-cell font-mono text-xs text-primary font-bold">{item.maSoThue || '—'}</td>
                 <td className="td-cell">
                   <span className={cn('inline-flex items-center px-2 py-0.5 rounded text-xs font-black', LOAI_BADGE[item.loai].cls)}>
@@ -202,6 +225,13 @@ export function KhachHangPage() {
                 <td className="td-cell text-center font-mono text-xs font-bold text-ink-secondary">{item.soHopDongDaKy}</td>
                 <td className="td-cell">
                   <div className="flex justify-end gap-1">
+                    <button
+                      onClick={() => handleOpenChiTiet(item)}
+                      className="rounded-md p-1.5 text-ink-muted transition-colors hover:bg-muted hover:text-primary-600"
+                      title="Xem hồ sơ 360°"
+                    >
+                      <Eye size={14} />
+                    </button>
                     <button
                       onClick={() => handleOpenEdit(item)}
                       className="rounded-md p-1.5 text-ink-muted transition-colors hover:bg-muted hover:text-primary-600"
