@@ -326,6 +326,47 @@ export function LoginPage() {
                 <span>Đăng nhập</span>
               )}
             </button>
+
+            {/* Quick Demo Login Chips */}
+            <div className="pt-3 space-y-1.5">
+              <span className="text-[10px] font-bold text-ink-muted uppercase tracking-wider block text-center">
+                Hoặc chọn tài khoản thử nghiệm nhanh (Mật khẩu: 123456)
+              </span>
+              <div className="grid grid-cols-2 gap-1.5 text-xs font-semibold">
+                <button
+                  type="button"
+                  onClick={() => { setEmail('tonghop@ibst.vn'); setPassword('123456'); }}
+                  className="rounded-lg border border-sky-300 bg-sky-50 dark:bg-sky-950/40 dark:border-sky-800 p-2 text-sky-900 dark:text-sky-200 hover:bg-sky-100 text-left transition-colors"
+                >
+                  🏢 Phòng Tổng hợp
+                  <span className="block text-[10px] font-normal text-sky-700 dark:text-sky-300">tonghop@ibst.vn</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setEmail('khkt@ibst.vn'); setPassword('123456'); }}
+                  className="rounded-lg border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 dark:border-emerald-800 p-2 text-emerald-900 dark:text-emerald-200 hover:bg-emerald-100 text-left transition-colors"
+                >
+                  📋 Phòng KHKT
+                  <span className="block text-[10px] font-normal text-emerald-700 dark:text-emerald-300">khkt@ibst.vn</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setEmail('tckt@ibst.vn'); setPassword('123456'); }}
+                  className="rounded-lg border border-purple-300 bg-purple-50 dark:bg-purple-950/40 dark:border-purple-800 p-2 text-purple-900 dark:text-purple-200 hover:bg-purple-100 text-left transition-colors"
+                >
+                  💰 Phòng TCKT
+                  <span className="block text-[10px] font-normal text-purple-700 dark:text-purple-300">tckt@ibst.vn</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setEmail('cic@ibst.vn'); setPassword('123456'); }}
+                  className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/40 dark:border-amber-800 p-2 text-amber-900 dark:text-amber-200 hover:bg-amber-100 text-left transition-colors"
+                >
+                  👤 Trưởng ĐV (VKCT)
+                  <span className="block text-[10px] font-normal text-amber-700 dark:text-amber-300">cic@ibst.vn</span>
+                </button>
+              </div>
+            </div>
           </form>
 
           <div className="mt-12 text-center text-2xs text-ink-muted">
