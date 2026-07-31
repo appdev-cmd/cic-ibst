@@ -10,6 +10,8 @@ export default defineConfig({
     },
   },
   server: {
-    port: 5180,
+    // Cho phép gán cổng qua biến môi trường PORT (chạy song song nhiều phiên dev);
+    // mặc định giữ 5180 như trước.
+    port: Number(process.env.PORT) || 5180,
   },
 });

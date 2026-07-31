@@ -1,50 +1,49 @@
 import { useMemo, useState } from 'react';
-import { Plus, Building2, Search, Pencil, Trash2, Phone, Mail, MapPin, User, FileText } from 'lucide-react';
+import { Plus, Building2, Search, Pencil, Trash2, Phone, Mail, MapPin, User, FileText, LoaderCircle } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { KpiCard } from '../components/KpiCard';
 import { Modal, Field, inputCls } from '../components/Modal';
-import { TableToolbar, FilterSelect, Pagination } from '../components/TableToolbar';
+import { DataState } from '../components/DataState';
+import { useAsyncData } from '../hooks/useAsyncData';
+import {
+  fetchKhachHang,
+  createKhachHang,
+  updateKhachHang,
+  deleteKhachHang,
+  LOAI_KHACH_HANG_OPTIONS,
+  type KhachHang,
+  type KhachHangInput,
+  type LoaiKhachHang,
+} from '../services/khachHang';
 import { cn } from '../lib/utils';
 
-interface KhachHang {
-  id: string;
-  tenToChuc: string;
-  maSoThue: string;
-  loai: 'Chu-dau-tu' | 'Nha-thau' | 'Doi-tac-KHCN' | 'Khac';
-  nguoiDaiDien: string;
-  soDienThoai: string;
-  email: string;
-  diaChi: string;
-  soHopDongDaKy: number;
-}
+const EMPTY_FORM: KhachHangInput = {
+  tenToChuc: '',
+  maSoThue: '',
+  loai: 'chu-dau-tu',
+  nguoiDaiDien: '',
+  soDienThoai: '',
+  email: '',
+  diaChi: '',
+};
 
-const INITIAL_KHACH_HANG: KhachHang[] = [
-  { id: '1', tenToChuc: 'Tập đoàn Vingroup - Công ty CP', maSoThue: '0102187654', loai: 'Chu-dau-tu', nguoiDaiDien: 'Ông Phạm Nhật Vượng', soDienThoai: '024-39749999', email: 'info@vingroup.net', diaChi: 'Số 7 Đường Bằng Lăng 1, Vinhomes Riverside, Long Biên, Hà Nội', soHopDongDaKy: 15 },
-  { id: '2', tenToChuc: 'Công ty Cổ phần Xây dựng Coteccons', maSoThue: '0303443745', loai: 'Nha-thau', nguoiDaiDien: 'Ông Bolat Duisenov', soDienThoai: '028-35142255', email: 'contact@coteccons.vn', diaChi: '236/6 Điện Biên Phủ, Phường 17, Bình Thạnh, TP. Hồ Chí Minh', soHopDongDaKy: 8 },
-  { id: '3', tenToChuc: 'Viện Kiến trúc Quốc gia (VIAR)', maSoThue: '0106654321', loai: 'Doi-tac-KHCN', nguoiDaiDien: 'GS.TS. Nguyễn Đình Toàn', soDienThoai: '024-38253456', email: 'viar@moc.gov.vn', diaChi: '389 Đội Cấn, Ba Đình, Hà Nội', soHopDongDaKy: 5 },
-  { id: '4', tenToChuc: 'Tập đoàn Đèo Cả', maSoThue: '0310245678', loai: 'Nha-thau', nguoiDaiDien: 'Ông Hồ Minh Hoàng', soDienThoai: '024-62823456', email: 'info@deoca.vn', diaChi: 'Tầng 26, Tòa nhà Lotte, 54 Liễu Giai, Ba Đình, Hà Nội', soHopDongDaKy: 12 },
-  { id: '5', tenToChuc: 'Trường Đại học Xây dựng Hà Nội (HUCE)', maSoThue: '0101185432', loai: 'Doi-tac-KHCN', nguoiDaiDien: 'PGS.TS. Hoàng Tùng', soDienThoai: '024-38691381', email: 'dhxd@huce.edu.vn', diaChi: 'Số 55 Giải Phóng, Đồng Tâm, Hai Bà Trưng, Hà Nội', soHopDongDaKy: 3 },
-];
+const LOAI_BADGE: Record<LoaiKhachHang, { label: string; cls: string }> = {
+  'chu-dau-tu': { label: 'Chủ đầu tư', cls: 'bg-primary/10 text-primary' },
+  'nha-thau': { label: 'Nhà thầu', cls: 'bg-accent-bg text-accent' },
+  'doi-tac-khcn': { label: 'Đối tác KHCN', cls: 'bg-success/10 text-success' },
+  khac: { label: 'Khác', cls: 'bg-subtle text-ink-muted' },
+};
 
 export function KhachHangPage() {
-  const [list, setList] = useState<KhachHang[]>(INITIAL_KHACH_HANG);
+  const { data: list, loading, error, refetch } = useAsyncData(fetchKhachHang, []);
   const [search, setSearch] = useState('');
   const [filterLoai, setFilterLoai] = useState('');
 
-  // Modals state
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<KhachHang | null>(null);
-
-  // Form states
-  const [form, setForm] = useState<Omit<KhachHang, 'id' | 'soHopDongDaKy'>>({
-    tenToChuc: '',
-    maSoThue: '',
-    loai: 'Chu-dau-tu',
-    nguoiDaiDien: '',
-    soDienThoai: '',
-    email: '',
-    diaChi: '',
-  });
+  const [form, setForm] = useState<KhachHangInput>(EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
+  const [thaoTacError, setThaoTacError] = useState<string | null>(null);
 
   const filteredList = useMemo(() => {
     return list.filter((item) => {
@@ -56,22 +55,15 @@ export function KhachHangPage() {
   }, [list, search, filterLoai]);
 
   // Statistics
-  const countCdt = list.filter((x) => x.loai === 'Chu-dau-tu').length;
-  const countNhaThau = list.filter((x) => x.loai === 'Nha-thau').length;
-  const countDoiTac = list.filter((x) => x.loai === 'Doi-tac-KHCN').length;
+  const countCdt = list.filter((x) => x.loai === 'chu-dau-tu').length;
+  const countNhaThau = list.filter((x) => x.loai === 'nha-thau').length;
+  const countDoiTac = list.filter((x) => x.loai === 'doi-tac-khcn').length;
   const totalHĐ = list.reduce((sum, item) => sum + item.soHopDongDaKy, 0);
 
   const handleOpenCreate = () => {
     setEditingItem(null);
-    setForm({
-      tenToChuc: '',
-      maSoThue: '',
-      loai: 'Chu-dau-tu',
-      nguoiDaiDien: '',
-      soDienThoai: '',
-      email: '',
-      diaChi: '',
-    });
+    setForm(EMPTY_FORM);
+    setThaoTacError(null);
     setModalOpen(true);
   };
 
@@ -86,27 +78,38 @@ export function KhachHangPage() {
       email: item.email,
       diaChi: item.diaChi,
     });
+    setThaoTacError(null);
     setModalOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa hồ sơ khách hàng/đối tác này?')) return;
-    setList(list.filter((x) => x.id !== id));
+  const handleDelete = async (item: KhachHang) => {
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa hồ sơ "${item.tenToChuc}"?`)) return;
+    setThaoTacError(null);
+    try {
+      await deleteKhachHang(item.id);
+      refetch();
+    } catch (e) {
+      setThaoTacError(e instanceof Error ? e.message : String(e));
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingItem) {
-      setList(list.map((x) => (x.id === editingItem.id ? { ...x, ...form } : x)));
-    } else {
-      const newItem: KhachHang = {
-        id: String(Date.now()),
-        soHopDongDaKy: 0,
-        ...form,
-      };
-      setList([...list, newItem]);
+    setSaving(true);
+    setThaoTacError(null);
+    try {
+      if (editingItem) {
+        await updateKhachHang(editingItem.id, form);
+      } else {
+        await createKhachHang(form);
+      }
+      setModalOpen(false);
+      refetch();
+    } catch (err) {
+      setThaoTacError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSaving(false);
     }
-    setModalOpen(false);
   };
 
   return (
@@ -145,12 +148,18 @@ export function KhachHangPage() {
           onChange={(e) => setFilterLoai(e.target.value)}
         >
           <option value="">Tất cả phân loại</option>
-          <option value="Chu-dau-tu">Chủ đầu tư</option>
-          <option value="Nha-thau">Nhà thầu / Tổng thầu</option>
-          <option value="Doi-tac-KHCN">Đối tác KHCN</option>
-          <option value="Khac">Khác</option>
+          {LOAI_KHACH_HANG_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
         </select>
       </div>
+
+      <DataState loading={loading} error={error} empty={!loading && !error && list.length === 0} />
+      {thaoTacError && !modalOpen && (
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-danger dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
+          {thaoTacError}
+        </div>
+      )}
 
       {/* Table */}
       <div className="card overflow-x-auto">
@@ -171,30 +180,24 @@ export function KhachHangPage() {
             {filteredList.map((item) => (
               <tr key={item.id} className="tr-hover">
                 <td className="td-cell font-semibold max-w-xs truncate" title={item.tenToChuc}>{item.tenToChuc}</td>
-                <td className="td-cell font-mono text-xs text-primary font-bold">{item.maSoThue}</td>
+                <td className="td-cell font-mono text-xs text-primary font-bold">{item.maSoThue || '—'}</td>
                 <td className="td-cell">
-                  <span className={cn(
-                    'inline-flex items-center px-2 py-0.5 rounded text-xs font-black',
-                    item.loai === 'Chu-dau-tu' && 'bg-primary/10 text-primary',
-                    item.loai === 'Nha-thau' && 'bg-accent-bg text-accent',
-                    item.loai === 'Doi-tac-KHCN' && 'bg-success/10 text-success',
-                    item.loai === 'Khac' && 'bg-subtle text-ink-muted'
-                  )}>
-                    {item.loai === 'Chu-dau-tu' && 'Chủ đầu tư'}
-                    {item.loai === 'Nha-thau' && 'Nhà thầu'}
-                    {item.loai === 'Doi-tac-KHCN' && 'Đối tác KHCN'}
-                    {item.loai === 'Khac' && 'Khác'}
+                  <span className={cn('inline-flex items-center px-2 py-0.5 rounded text-xs font-black', LOAI_BADGE[item.loai].cls)}>
+                    {LOAI_BADGE[item.loai].label}
                   </span>
                 </td>
-                <td className="td-cell text-ink-secondary">{item.nguoiDaiDien}</td>
+                <td className="td-cell text-ink-secondary">{item.nguoiDaiDien || '—'}</td>
                 <td className="td-cell">
                   <div className="text-xs text-ink-secondary space-y-0.5">
-                    <p className="flex items-center gap-1"><Phone size={12} className="text-ink-muted" /> {item.soDienThoai}</p>
-                    <p className="flex items-center gap-1"><Mail size={12} className="text-ink-muted" /> {item.email}</p>
+                    {item.soDienThoai && <p className="flex items-center gap-1"><Phone size={12} className="text-ink-muted" /> {item.soDienThoai}</p>}
+                    {item.email && <p className="flex items-center gap-1"><Mail size={12} className="text-ink-muted" /> {item.email}</p>}
+                    {!item.soDienThoai && !item.email && '—'}
                   </div>
                 </td>
                 <td className="td-cell text-ink-secondary text-xs max-w-xs truncate" title={item.diaChi}>
-                  <p className="flex items-start gap-1"><MapPin size={12} className="text-ink-muted mt-0.5 shrink-0" /> {item.diaChi}</p>
+                  {item.diaChi ? (
+                    <p className="flex items-start gap-1"><MapPin size={12} className="text-ink-muted mt-0.5 shrink-0" /> {item.diaChi}</p>
+                  ) : '—'}
                 </td>
                 <td className="td-cell text-center font-mono text-xs font-bold text-ink-secondary">{item.soHopDongDaKy}</td>
                 <td className="td-cell">
@@ -206,7 +209,7 @@ export function KhachHangPage() {
                       <Pencil size={14} />
                     </button>
                     <button
-                      onClick={() => handleDelete(item.id)}
+                      onClick={() => handleDelete(item)}
                       className="rounded-md p-1.5 text-ink-muted transition-colors hover:bg-red-50 hover:text-danger"
                     >
                       <Trash2 size={14} />
@@ -215,7 +218,7 @@ export function KhachHangPage() {
                 </td>
               </tr>
             ))}
-            {filteredList.length === 0 && (
+            {!loading && filteredList.length === 0 && list.length > 0 && (
               <tr>
                 <td colSpan={8} className="td-cell py-6 text-center text-ink-muted">
                   Không tìm thấy thông tin phù hợp.
@@ -257,12 +260,11 @@ export function KhachHangPage() {
               <select
                 className={inputCls}
                 value={form.loai}
-                onChange={(e) => setForm({ ...form, loai: e.target.value as any })}
+                onChange={(e) => setForm({ ...form, loai: e.target.value as LoaiKhachHang })}
               >
-                <option value="Chu-dau-tu">Chủ đầu tư</option>
-                <option value="Nha-thau">Nhà thầu / Tổng thầu</option>
-                <option value="Doi-tac-KHCN">Đối tác khoa học công nghệ / Đào tạo</option>
-                <option value="Khac">Khác</option>
+                {LOAI_KHACH_HANG_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
               </select>
             </Field>
           </div>
@@ -304,6 +306,10 @@ export function KhachHangPage() {
             />
           </Field>
 
+          {thaoTacError && modalOpen && (
+            <p className="text-xs font-semibold text-danger">{thaoTacError}</p>
+          )}
+
           <div className="flex justify-end gap-2 border-t border-border-subtle pt-4">
             <button
               type="button"
@@ -312,7 +318,8 @@ export function KhachHangPage() {
             >
               Hủy
             </button>
-            <button type="submit" className="btn-primary">
+            <button type="submit" disabled={saving} className="btn-primary disabled:opacity-60">
+              {saving && <LoaderCircle size={15} className="animate-spin" />}
               {editingItem ? 'Lưu thay đổi' : 'Thêm hồ sơ'}
             </button>
           </div>

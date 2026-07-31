@@ -2,6 +2,26 @@ import type { VaiTro } from '../context/AuthContext';
 
 export type BuocHopDong = 'du-thao' | 'cho-duyet' | 'dang-thuc-hien' | 'tam-dung' | 'nghiem-thu' | 'quyet-toan' | 'hoan-thanh' | 'thanh-ly' | 'huy';
 
+/** 4 cấp thao tác vòng đời hợp đồng (bảng transitions bên dưới). */
+type CapThaoTac = 'quan-tri' | 'lanh-dao' | 'truong-don-vi' | 'chuyen-vien';
+
+/**
+ * Quy đổi vai trò phòng chức năng (migration 0022) về cấp thao tác vòng đời HĐ:
+ * các phòng chức năng tham gia thẩm tra/quyết toán qua luồng riêng (kyGiaoViec,
+ * quyenHopDong), không trực tiếp điều khiển vòng đời HĐ nên xếp cấp chuyên viên.
+ */
+function capThaoTac(vaiTro: VaiTro): CapThaoTac {
+  switch (vaiTro) {
+    case 'quan-tri':
+    case 'lanh-dao':
+    case 'truong-don-vi':
+    case 'chuyen-vien':
+      return vaiTro;
+    default:
+      return 'chuyen-vien';
+  }
+}
+
 export function getAvailableTransitions(currentState: BuocHopDong | string, userRole: VaiTro): BuocHopDong[] {
   // Chuẩn hóa tất cả các trạng thái cũ/khác về 5 bước chuẩn
   const normState: BuocHopDong =
@@ -13,7 +33,7 @@ export function getAvailableTransitions(currentState: BuocHopDong | string, user
     currentState === 'tam-dung' ? 'tam-dung' :
     currentState === 'huy' ? 'huy' : 'du-thao';
 
-  const transitions: Record<BuocHopDong, Record<VaiTro, BuocHopDong[]>> = {
+  const transitions: Record<BuocHopDong, Record<CapThaoTac, BuocHopDong[]>> = {
     'du-thao': {
       'quan-tri': ['cho-duyet', 'huy'],
       'lanh-dao': ['cho-duyet', 'huy'],
@@ -70,7 +90,7 @@ export function getAvailableTransitions(currentState: BuocHopDong | string, user
     },
   };
 
-  return transitions[normState]?.[userRole] || [];
+  return transitions[normState]?.[capThaoTac(userRole)] || [];
 }
 
 export function canTransition(from: BuocHopDong, to: BuocHopDong, userRole: VaiTro): boolean {

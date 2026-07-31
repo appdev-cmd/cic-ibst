@@ -8,12 +8,31 @@ import {
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 
-export type VaiTro = 'quan-tri' | 'lanh-dao' | 'truong-don-vi' | 'chuyen-vien';
+/**
+ * Vai trò hệ thống theo ma trận RACI Điều 4 QC 2815.
+ * 4 vai trò đầu là vai trò cấp bậc; 5 vai trò sau là phòng chức năng (migration 0022):
+ * P.KHKT thẩm tra hồ sơ cấp Viện (Đ.9.6c), P.TCKT đầu mối quyết toán (Đ.11.4),
+ * P.TCHC lưu trữ/con dấu (Đ.9.8), P.Tổng hợp đơn vị thẩm tra nội bộ (Đ.7.1c-4),
+ * Phụ trách kế toán đơn vị làm thủ tục thanh quyết toán (Đ.11.1).
+ */
+export type VaiTro =
+  | 'quan-tri'
+  | 'lanh-dao'
+  | 'truong-don-vi'
+  | 'chuyen-vien'
+  | 'phong-khkt'
+  | 'phong-tckt'
+  | 'phong-tchc'
+  | 'phong-th-don-vi'
+  | 'phu-trach-ke-toan-dv';
 
 interface AuthContextValue {
   session: Session | null;
   loading: boolean;
   vaiTro: VaiTro;
+  /** Mã nhân sự (bảng nhan_su) gắn với tài khoản đang đăng nhập — dùng để ghi nhận đúng
+   * người thật đã phê duyệt/ký từng bước (Điều 6.1, 7.1c), không chỉ ghi ngày tháng. */
+  nhanSuId: string | null;
   signIn: (email: string, password: string) => Promise<string | null>;
   signOut: () => Promise<void>;
 }
@@ -22,6 +41,7 @@ const AuthContext = createContext<AuthContextValue>({
   session: null,
   loading: true,
   vaiTro: 'chuyen-vien',
+  nhanSuId: null,
   signIn: async () => null,
   signOut: async () => {},
 });
@@ -30,6 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [vaiTro, setVaiTro] = useState<VaiTro>('chuyen-vien');
+  const [nhanSuId, setNhanSuId] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
@@ -57,15 +78,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  // Nạp vai trò khi có phiên đăng nhập
+  // Nạp vai trò + mã nhân sự khi có phiên đăng nhập
   useEffect(() => {
     if (!session) {
       setVaiTro('chuyen-vien');
+      setNhanSuId(null);
       return;
     }
     supabase
       .rpc('fn_vai_tro')
       .then(({ data }) => setVaiTro((data as VaiTro) ?? 'chuyen-vien'));
+    supabase
+      .from('nguoi_dung')
+      .select('nhan_su_id')
+      .eq('user_id', session.user.id)
+      .maybeSingle()
+      .then(({ data }) => setNhanSuId(data?.nhan_su_id != null ? String(data.nhan_su_id) : null));
   }, [session]);
 
   const signIn = async (email: string, password: string) => {
@@ -78,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ session, loading, vaiTro, signIn, signOut }}>
+    <AuthContext.Provider value={{ session, loading, vaiTro, nhanSuId, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );

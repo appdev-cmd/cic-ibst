@@ -9,6 +9,11 @@ export const VAI_TRO_LABEL: Record<string, string> = {
   'lanh-dao': 'Lãnh đạo Viện',
   'truong-don-vi': 'Trưởng đơn vị',
   'chuyen-vien': 'Chuyên viên',
+  'phong-khkt': 'Phòng Kế hoạch – Kỹ thuật',
+  'phong-tckt': 'Phòng Tài chính – Kế toán',
+  'phong-tchc': 'Phòng Tổ chức – Hành chính',
+  'phong-th-don-vi': 'Phòng Tổng hợp đơn vị',
+  'phu-trach-ke-toan-dv': 'Phụ trách kế toán đơn vị',
 };
 
 export const VAI_TRO_OPTIONS = Object.entries(VAI_TRO_LABEL).map(([value, label]) => ({
