@@ -11,11 +11,11 @@ import {
 import { updateBuocHopDong } from '../services/workflow';
 
 const STEPS: { id: BuocHopDong; label: string; note: string }[] = [
-  { id: 'du-thao', label: '1. Dự thảo', note: 'Lập HĐ & Giao việc' },
-  { id: 'cho-duyet', label: '2. Chờ duyệt', note: 'Duyệt HĐ & Giao việc' },
-  { id: 'dang-thuc-hien', label: '3. Đang thực hiện', note: 'Triển khai kỹ thuật' },
-  { id: 'hoan-thanh', label: '4. Hoàn thành', note: 'Nghiệm thu & Quyết toán' },
-  { id: 'thanh-ly', label: '5. Thanh lý & Lưu trữ', note: 'Lưu kho hồ sơ (Đ.8)' },
+  { id: 'du-thao', label: 'Dự thảo', note: 'Lập HĐ & Giao việc' },
+  { id: 'cho-duyet', label: 'Chờ duyệt', note: 'Duyệt HĐ & Giao việc' },
+  { id: 'dang-thuc-hien', label: 'Đang thực hiện', note: 'Triển khai kỹ thuật' },
+  { id: 'hoan-thanh', label: 'Hoàn thành', note: 'Nghiệm thu & Quyết toán' },
+  { id: 'thanh-ly', label: 'Thanh lý & Lưu trữ', note: 'Lưu kho hồ sơ (Đ.8)' },
 ];
 
 export function WorkflowStepper({
