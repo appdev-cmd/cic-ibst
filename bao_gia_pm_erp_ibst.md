@@ -1,126 +1,109 @@
-# BẢNG MÔ TẢ TÍNH NĂNG CHI TIẾT & BÁO GIÁ HỆ THỐNG ERP TÍCH HỢP IBST
-### Phục vụ công tác Thuyết minh Giải pháp & Thương thảo Hợp đồng Phát triển Phần mềm
+# BÁO GIÁ KINH PHÍ PHÁT TRIỂN HỆ THỐNG ERP TÍCH HỢP IBST
+### Kính gửi: Viện Khoa học Công nghệ Xây dựng (IBST)
 
 ---
 
-Hệ thống ERP tích hợp IBST được thiết kế và xây dựng tuân thủ nghiêm ngặt các Khung kiến trúc và Tiêu chuẩn dữ liệu dùng chung của Bộ Xây dựng: **QĐ 942/QĐ-BXD** (Khung kiến trúc Chính phủ điện tử), **QĐ 945/QĐ-BXD** (Từ điển dữ liệu dùng chung), **QĐ 946/QĐ-BXD** (Quy chế bảo mật dữ liệu gốc và thông tin định danh) và **QĐ 943/QĐ-BXD** (Danh mục dữ liệu mở ngành Xây dựng).
+Thực hiện Kế hoạch ứng dụng công nghệ thông tin và chuyển đổi số giai đoạn 2026 – 2027 của Viện Khoa học Công nghệ Xây dựng; tuân thủ các Quyết định, Quy định của Bộ Xây dựng về Khung kiến trúc Chính phủ điện tử, Từ điển dữ liệu dùng chung, Quy chế bảo mật dữ liệu gốc và Danh mục dữ liệu mở ngành Xây dựng;
 
-## 1. Báo giá Chi phí Phát triển Phần mềm
+Công ty Cổ phần Công nghệ và Tư vấn Xây dựng (CIC) trân trọng gửi tới Quý Viện Báo giá kinh phí phát triển phần mềm và dự toán hạ tầng cho Hệ thống ERP tích hợp IBST như sau:
 
-Căn cứ vào nhu cầu số hóa và yêu cầu nghiệp vụ thực tế của Viện, chúng tôi xin trân trọng gửi tới Quý Cơ quan bảng báo giá chi phí phát triển **08 Nhóm Phân hệ Phần mềm cốt lõi**. 
+---
 
-Bảng dưới đây bao gồm báo giá chi tiết kèm theo phân tích tính năng, giải pháp công nghệ và hiệu quả vận hành (Tổng kinh phí phần mềm dự kiến: **2.260.000.000 VNĐ**):
+## I. BÁO GIÁ KINH PHÍ PHÁT TRIỂN PHẦN MỀM
 
-| STT | Tên Nhóm Phân hệ | Mô tả Nghiệp vụ chính | Đặc thù phức tạp công nghệ (Yêu cầu phát triển) | Hiệu quả quản lý & Vận hành thực tế | Dự toán Phát triển (VNĐ) |
+Căn cứ Mục tiêu chiến lược giai đoạn 2026 – 2027 của Viện IBST (bao gồm: Nền tảng Văn phòng điện tử; Nền tảng Triển khai Dịch vụ kỹ thuật; Nền tảng Cơ sở dữ liệu), dự toán chi phí phát triển **07 Nhóm phân hệ phần mềm cốt lõi** như sau:
+
+**Tổng kinh phí phát triển phần mềm:** **2.260.000.000 VNĐ** *(Bằng chữ: Hai tỷ hai trăm sáu mươi triệu đồng chẵn./.)*
+
+| STT | Tên Nhóm Phân hệ | Mô tả Nghiệp vụ chính | Yêu cầu Kỹ thuật & Giải pháp | Mục tiêu & Hiệu quả Quản lý | Dự toán Kinh phí (VNĐ) |
 | :---: | :--- | :--- | :--- | :--- | :---: |
-| **1** | **Dashboard Tổng quan Giám sát & Điều hành của Lãnh đạo Viện** | - Trung tâm tích hợp và trực quan hóa số liệu thời gian thực (Real-time BI) phục vụ điều hành của Viện trưởng.<br>- Tự động hóa đánh giá Chỉ số sức khỏe đơn vị (Unit Health Score) và dự báo dòng tiền. | - Thuật toán tổng hợp dữ liệu (Data Aggregation Engine) đa chiều từ 16 đơn vị trực thuộc và 11 PTN.<br>- Thiết lập biểu đồ nâng cao tích hợp (Composed Chart). | - Cung cấp góc nhìn toàn cục, tức thời về sức khỏe tài chính và tiến độ nhiệm vụ.<br>- Hỗ trợ ra quyết định điều hành nhanh chóng, chính xác. | **180.000.000** |
-| **2** | **Quản lý Hợp đồng (Quy chế 2815) & Khách hàng (CRM)** | - Phân loại tự động hợp đồng thành 4 Nhóm (QLNN, Tư vấn, Thi công, Cung ứng) theo Điều 1 QC 2815.<br>- Số hóa quy trình lập và duyệt "Phiếu giao việc" điện tử.<br>- Quản lý thông tin khách hàng, phân hạng tiềm năng. | - Thuật toán tự động bóc tách tỷ lệ dòng tiền khoán (Chủ trì, Đơn vị, Viện) theo Bảng 1 QC 2815.<br>- Cấu hình động (Dynamic Settings) tỷ lệ phần trăm phân bổ tài chính. | - Kiểm soát chính xác nghĩa vụ trích nộp theo từng Nhóm hợp đồng.<br>- Đảm bảo dòng tiền minh bạch, tuân thủ tuyệt đối quy chế tài chính nội bộ. | **320.000.000** |
-| **3** | **Quản lý Tài chính & Thu chi Hợp đồng** | - Quản lý thu chi theo từng Hợp đồng (Doanh thu, Chi phí dự kiến/thực tế).<br>- Theo dõi dòng tiền: Tạm ứng, Tiền về, Đã xuất HĐ VAT, Công nợ phải thu/trả.<br>- Tự động tính Lợi nhuận gộp quản trị và Tỷ suất lợi nhuận (Margin) của dự án. | - Xây dựng hệ thống tính toán tài chính tự động ở tầng Database (Trigger/RPC) cho từng Hợp đồng.<br>- Tích hợp API đồng bộ hóa giao dịch ngân hàng hoặc hệ thống kế toán hiện hữu (MISA, Bravo). | - Kiểm soát chính xác "sức khỏe tài chính" của từng hợp đồng dự án.<br>- Lãnh đạo nắm bắt kịp thời dòng tiền thực tế (Cash-in/Cash-out) và công nợ để đôn đốc thu hồi. | **160.000.000** |
-| **4** | **Quản lý Khoa học: Đề tài, Sở hữu Trí tuệ & Chuyển giao** | - Lưu trữ thuyết minh, quản lý tiến độ, giải ngân Đề tài KHCN các cấp.<br>- Quản lý Bằng độc quyền sáng chế, cảnh báo đóng phí duy trì.<br>- Quản lý hợp đồng chuyển giao công nghệ và phân bổ hoa hồng tác giả. | - Xây dựng cơ chế giám sát song song tiến độ giải ngân kinh phí và sản phẩm KHCN.<br>- Kết nối trực tiếp dòng tiền chuyển giao về phân hệ Kế toán để phân bổ lợi ích. | - Quản lý nguồn vốn sự nghiệp KHCN minh bạch, đúng quy định.<br>- Thương mại hóa hiệu quả kết quả nghiên cứu và khuyến khích sáng tạo. | **260.000.000** |
-| **5** | **Quản lý Tổ chức Nhân sự, Đào tạo & Đảng - Đoàn thể** | - Quản lý hồ sơ CBNV, Chứng chỉ hành nghề hoạt động xây dựng (cảnh báo hết hạn).<br>- Quản lý hồ sơ, mốc bảo vệ luận án của Nghiên cứu sinh (NCS).<br>- Quản lý hồ sơ Đảng viên, Đoàn viên, Công đoàn; sinh hoạt chi bộ; thu chi Đảng phí/Đoàn phí & phong trào thi đua. | - Mã hóa dữ liệu nhạy cảm cấp trường thông tin (lương, định danh). Phân quyền truy cập đa cấp (RLS).<br>- Xây dựng luồng phê duyệt hồ sơ khoa học đa bước tuân thủ quy chế Bộ GD&ĐT. | - Phục vụ công tác chuẩn bị hồ sơ dự thầu chính xác, hạn chế rủi ro pháp lý chứng chỉ.<br>- Số hóa quy trình đào tạo Tiến sĩ và các hoạt động phong trào Đoàn thể. | **260.000.000** |
-| **6** | **Hệ thống Thử nghiệm (LIMS), Thiết bị Lab & Đầu tư** | - Tiếp nhận mẫu, tính kết quả cơ lý, xuất Phiếu kết quả thí nghiệm chuẩn ISO/IEC 17025.<br>- Quản lý danh mục thiết bị 11 phòng LAS-XD, nhắc lịch hiệu chuẩn/kiểm định trước 30 ngày.<br>- Giám sát tiến độ giải ngân vốn đầu tư công. | - Tích hợp bộ công cụ cấu hình biểu mẫu động Excel-like cho phép tự thiết lập công thức tính toán.<br>- Tích hợp chữ ký số CA điện tử trực tiếp lên tệp PDF. | - Chuẩn hóa và tự động hóa nghiệp vụ 11 phòng LAS-XD toàn quốc, rút ngắn 50% thời gian trả kết quả.<br>- Đảm bảo tính pháp lý thiết bị, kiểm soát chặt dòng vốn đầu tư công. | **430.000.000** |
-| **7** | **Văn phòng số (e-Office): Văn bản, Lịch biểu & Giao việc** | - Quản lý luồng văn bản đến/đi, tích hợp chữ ký số CA, liên thông Trục văn bản Bộ Xây dựng.<br>- Xây dựng lịch công tác, đăng ký trực tuyến phòng họp, xe công tác.<br>- Phân công chỉ tiêu công việc, nhiệm vụ khoa học, giám sát tiến độ hoàn thành. | - Thiết lập luồng phê duyệt động (Workflow engine) và API liên thông Bộ Xây dựng.<br>- Thuật toán giải quyết tranh chấp phòng họp thời gian thực và tự động tính tiến độ công việc lũy kế. | - Triển khai văn phòng không giấy tờ, tiết kiệm 80% thời gian gửi nhận công văn.<br>- Tối ưu hóa khai thác tài sản chung và hiệu suất làm việc của cán bộ. | **440.000.000** |
-| **8** | **Kho Lưu trữ Số hóa Hồ sơ Kỹ thuật & Trợ lý AI-RAG** | - Lưu trữ số hóa bản vẽ kỹ thuật CAD/BIM, báo cáo địa kỹ thuật.<br>- Quản lý trạng thái văn bản.<br>- Tích hợp Trợ lý Trí tuệ Nhân tạo (AI-RAG) tra cứu văn bản quy chuẩn xây dựng QCVN. | - Phân quyền truy cập tài liệu chi tiết (Granular Access Control).<br>- Xây dựng Pipeline trích xuất văn bản (QCVN 06:2022, TCVN...), Vector Embeddings và tích hợp LLM API. | - Bảo vệ tuyệt đối tài sản trí tuệ và bí mật kỹ thuật độc quyền của Viện.<br>- Cán bộ tra cứu siêu tốc các quy định kỹ thuật bằng ngôn ngữ tự nhiên tiếng Việt. | **210.000.000** |
+| **1** | **Dashboard Giám sát & Lịch công tác, Điều hành công việc** | - Trung tâm tích hợp và trực quan hóa số liệu thời gian thực (Real-time BI) phục vụ **Lịch công tác và Điều hành công việc** của Lãnh đạo Viện.<br>- Đánh giá Chỉ số sức khỏe đơn vị (Unit Health Score) và dự báo dòng tiền. | - Thuật toán tổng hợp dữ liệu đa chiều từ 16 đơn vị trực thuộc và 11 Phòng thí nghiệm.<br>- Xây dựng hệ thống biểu đồ hợp phần (Composed Chart). | - Cung cấp báo cáo toàn cục về tài chính và tiến độ điều hành công việc.<br>- Hỗ trợ ra quyết định điều hành chính xác, kịp thời. | **180.000.000** |
+| **2** | **Quản lý Khách hàng, Hợp đồng, Triển khai & Thu chi Dịch vụ Kỹ thuật** | - **Quản lý khách hàng, hợp đồng, quy trình và hoạt động triển khai Dịch vụ kỹ thuật** theo Quy chế 2815.<br>- **Tổng hợp thanh toán thu chi từ các hợp đồng dịch vụ kỹ thuật** (Tạm ứng, Tiền về, Công nợ, Doanh thu thực tế).<br>- Số hóa quy trình lập và duyệt Phiếu giao việc điện tử, theo dõi đối soát nghĩa vụ thanh toán. | - Thuật toán tự động bóc tách tỷ lệ dòng tiền khoán (Chủ trì, Đơn vị, Viện) theo Quy chế 2815.<br>- Thuật toán tự động tổng hợp dữ liệu thu chi theo mã định danh Hợp đồng Dịch vụ.<br>- Tích hợp API đồng bộ chứng từ thanh toán với hệ thống kế toán hiện hữu. | - Kiểm soát chính xác nghĩa vụ trích nộp, hoạt động triển khai và dòng tiền thu chi thực tế.<br>- Đảm bảo minh bạch tài chính, quản lý tức thời công nợ và tuân thủ quy chế nội bộ. | **510.000.000** |
+| **3** | **Quản lý các Nhiệm vụ phục vụ QLNN & Nhiệm vụ KHCN** | - **Quản lý các nhiệm vụ phục vụ QLNN và nhiệm vụ KHCN** các cấp (lưu trữ thuyết minh, quản lý tiến độ, sản phẩm và giải ngân).<br>- Quản lý Bằng độc quyền sáng chế, hợp đồng chuyển giao công nghệ và hoa hồng tác giả. | - Xây dựng cơ chế giám sát song song tiến độ giải ngân kinh phí và sản phẩm QLNN / KHCN.<br>- Kết nối dữ liệu dòng tiền chuyển giao về hệ thống kế toán. | - Quản lý chuẩn xác các nhiệm vụ QLNN và nguồn vốn sự nghiệp KHCN theo quy định.<br>- Thúc đẩy thương mại hóa kết quả nghiên cứu khoa học. | **260.000.000** |
+| **4** | **Quản lý Nhân sự, Đào tạo, Tạp chí & Công tác Đảng - Đoàn thể** | - **Quản lý nhân sự** (hồ sơ CBNV, Chứng chỉ hành nghề xây dựng).<br>- **Quản lý công tác đào tạo (Tiến sĩ/NCS) & Tạp chí KHCN** (tòa soạn, nhận bài báo, phản biện khoa học).<br>- **Quản lý công tác đảng vụ, đoàn thể** (Đảng viên, Đoàn thanh niên, Công đoàn, sinh hoạt chi bộ, Đảng phí/Đoàn phí & thi đua). | - Mã hóa dữ liệu thông tin nhân sự và phân quyền truy cập đa cấp (RLS).<br>- Xây dựng luồng nhận bài, phản biện bài báo KHCN và phê duyệt hồ sơ đào tạo theo quy định. | - Đảm bảo chính xác hồ sơ nhân sự, hạn chế rủi ro pháp lý chứng chỉ.<br>- Số hóa toàn diện công tác Nhân sự, Đào tạo Tiến sĩ, Tòa soạn Tạp chí KHCN và Đảng - Đoàn thể. | **260.000.000** |
+| **5** | **Hệ thống Thử nghiệm (LIMS), Kết quả Thí nghiệm / Kiểm nghiệm số & Thiết bị** | - Tiếp nhận mẫu, tính toán kết quả cơ lý, kết xuất **Kết quả thí nghiệm, kiểm nghiệm số** chuẩn ISO/IEC 17025.<br>- Quản lý danh mục thiết bị 11 phòng LAS-XD, nhắc lịch hiệu chuẩn/kiểm định.<br>- Giám sát tiến độ giải ngân vốn đầu tư công. | - Tích hợp bộ công cụ cấu hình biểu mẫu tính toán tự động.<br>- Tích hợp chữ ký số CA điện tử trực tiếp lên tệp PDF. | - Chuẩn hóa và tự động hóa kết xuất kết quả thí nghiệm, kiểm nghiệm số cho 11 phòng LAS-XD.<br>- Đảm bảo tính pháp lý thiết bị và kiểm soát vốn đầu tư công. | **400.000.000** |
+| **6** | **Văn phòng số (e-Office): Quản lý Hồ sơ Văn bản, Tài liệu, Phòng họp & Giao việc** | - **Quản lý hồ sơ văn bản, tài liệu** (luồng văn bản đến/đi, tích hợp chữ ký số CA, liên thông Trục văn bản Bộ Xây dựng).<br>- **Quản lý phòng họp** (đăng ký trực tuyến, xếp lịch) và quản lý xe công tác.<br>- **Lịch công tác và điều hành công việc** (phân công chỉ tiêu công việc, giao nhiệm vụ và giám sát tiến độ). | - Thiết lập luồng phê duyệt động (Workflow engine) và API liên thông Trục văn bản Bộ Xây dựng.<br>- Thuật toán xử lý lịch phòng họp và tự động tính tiến độ công việc lũy kế. | - Tối ưu hóa quy trình xử lý công văn, văn bản tài liệu.<br>- Tối ưu hóa khai thác phòng họp, tài sản chung và hiệu suất làm việc. | **440.000.000** |
+| **7** | **Nền tảng CSDL: Số hóa Tài liệu, Lưu trữ Tập trung & Trợ lý AI-RAG** | - **Số hóa tài liệu và lưu trữ tập trung**, **quản lý và lưu trữ thông tin** (bản vẽ CAD/BIM, báo cáo địa kỹ thuật, tài liệu chuyên ngành).<br>- Quản lý trạng thái và phân quyền truy cập thông tin.<br>- Tích hợp Trợ lý AI-RAG tra cứu văn bản quy phạm pháp luật, quy chuẩn kỹ thuật. | - Phân quyền truy cập tài liệu chi tiết (Granular Access Control).<br>- Xây dựng Pipeline trích xuất văn bản (Luật, Nghị định, Thông tư, QCVN, TCVN...), Vector Embeddings và tích hợp LLM API. | - Bảo vệ tài sản trí tuệ và hồ sơ kỹ thuật của Viện.<br>- Hỗ trợ cán bộ tra cứu nhanh chóng các quy định kỹ thuật chuyên ngành. | **210.000.000** |
 | | **TỔNG CỘNG DỰ TOÁN PHẦN MỀM** | | | | **2.260.000.000** |
 
-*(Bằng chữ: Hai tỷ hai trăm sáu mươi triệu đồng chẵn./.)*
-
 ---
 
-### 1.1. Chi tiết chuyên sâu: Giải pháp phần mềm cho Phân hệ Quản lý Hợp đồng (Đảm bảo tuân thủ Quy chế 2815/QĐ-VKH)
+## II. DỰ TOÁN HẠ TẦNG THIẾT BỊ VÀ DỊCH VỤ MÁY CHỦ
 
-Phân hệ Quản lý Hợp đồng (Phân hệ số 2) được thiết kế chuyên biệt để đáp ứng các quy định quản lý tài chính và dịch vụ kỹ thuật khắt khe theo Quy chế 2815 của Viện:
+Nhằm đảm bảo hệ thống vận hành an toàn, liên tục 24/7 và đáp ứng nhu cầu lưu trữ hồ sơ kỹ thuật dung lượng lớn, dự toán hạ tầng thiết bị đề xuất như sau:
 
-- **Số hóa Luồng Phê duyệt & Cảnh báo hạn mức (Điều 6):** Hệ thống tự động nhận diện và kích hoạt luồng "Báo cáo xin chỉ đạo Viện trưởng" đối với các hợp đồng vượt ngưỡng phân cấp (Kiểm định > 2 tỷ, Tư vấn > 5 tỷ, Thi công > 10 tỷ).
-- **Quản lý Phiếu giao việc (Điều 7 & 8):** Cung cấp biểu mẫu *Phiếu giao việc điện tử*, hỗ trợ khai báo linh hoạt tỷ lệ phân chia kinh phí giữa Đơn vị chủ trì và Đơn vị phối hợp. Tự động cảnh báo đếm ngược thời hạn 30 ngày phải nộp hợp đồng gốc về Viện kể từ ngày ký.
-- **Tự động Phân bổ Dòng tiền theo Định mức Bảng 1 (Điều 12):** Thuật toán cốt lõi tự động nhận diện 4 Nhóm hợp đồng (QLNN, Tư vấn, Thi công, Cung ứng) để bóc tách doanh thu trước thuế. Hệ thống tự động chia các khoản: Thuế GTGT, Chi phí quản lý & Lợi nhuận (CPQL), Khấu hao tài sản (KHTSCĐ), Quỹ Đơn vị, và Quỹ Chủ trì. Cung cấp tính năng *Cấu hình Động (Dynamic Settings)* cho phép Lãnh đạo tự thay đổi tỷ lệ hàng năm.
-- **Hệ thống Kiểm soát Thưởng/Phạt Tự động (Chương III):**
-  - *Phạt chậm trễ:* Tự động tính toán trừ kinh phí nếu đơn vị chậm nộp hồ sơ (phạt 0.5% - 1% tùy nhóm hợp đồng).
-  - *Nợ quá hạn:* Tự động tính tiền lãi phạt (bằng 130% lãi suất ngân hàng) đối với các khoản tạm ứng quá hạn.
-  - *Đảm bảo SLA:* Hệ thống đếm ngược thời gian xử lý chứng từ thanh toán tại Phòng TCKT (SLA cam kết tối đa 03 ngày làm việc).
-
-## 2. Dự toán Thiết bị Hạ tầng (Hardware & Infrastructure)
-
-Để đảm bảo hệ thống phần mềm vận hành ổn định, truy cập 24/7 từ mọi chi nhánh và có không gian lưu trữ an toàn cho các tài liệu kỹ thuật dung lượng lớn, Viện cần trang bị kết hợp hạ tầng máy chủ đám mây và thiết bị lưu trữ vật lý chuyên dụng.
-
-| STT | Hạng mục Thiết bị & Dịch vụ | Mô tả thông số kỹ thuật (Dự kiến) | Mục đích sử dụng | Đơn giá dự kiến (VNĐ) |
+| STT | Hạng mục Thiết bị & Dịch vụ | Thông số Kỹ thuật (Dự kiến) | Mục đích Sử dụng | Dự toán Chi phí (VNĐ) |
 | :---: | :--- | :--- | :--- | :---: |
-| **1** | **Thuê Máy chủ Đám mây (Viettel Cloud)** | - Cấu hình Cloud Server cao cấp (Ví dụ: 16 vCPU, 32GB RAM, 500GB SSD NVMe).<br>- Tích hợp hệ thống Tường lửa (Firewall) chống DDoS, đảm bảo An toàn thông tin chuẩn Bộ TT&TT. | - Vận hành mã nguồn ERP, ứng dụng LIMS, e-Office và Hệ quản trị Cơ sở dữ liệu (Metadata).<br>- Đảm bảo tốc độ truy xuất nhanh, liên tục 24/7 từ 16 đơn vị trực thuộc. | **~ 50.000.000 / năm** |
-| **2** | **Hệ thống lưu trữ mạng NAS (Dung lượng sử dụng ~50TB)** | - Thiết bị NAS 8-bay Doanh nghiệp (vd: Synology DS1823xs+ có sẵn cổng 10GbE): ~50 triệu VNĐ.<br>- Cấu hình 5 ổ cứng 16TB Enterprise (Seagate IronWolf Pro / WD Red Pro) chạy RAID 6 (mất 2 ổ dự phòng, dung lượng khả dụng ~48TB): ~70 triệu VNĐ.<br>- Nâng cấp RAM & SSD Cache (tăng tốc truy xuất): ~15 triệu VNĐ. | - Làm không gian lưu trữ tập trung (File Server) tốc độ cao cho Kho Lưu trữ Hồ sơ Kỹ thuật (CAD/BIM).<br>- Chạy tác vụ sao lưu (Backup) tự động toàn bộ CSDL của ERP hàng ngày để phòng chống mã độc (Ransomware). | **135.000.000** |
+| **1** | **Thuê Máy chủ Đám mây (Cloud Server)** | - Cấu hình Cloud Server (16 vCPU, 32GB RAM, 500GB SSD NVMe).<br>- Tích hợp Tường lửa (Firewall) bảo vệ an toàn thông tin theo quy định. | - Vận hành phần mềm ERP, ứng dụng LIMS, e-Office và Hệ quản trị cơ sở dữ liệu.<br>- Đảm bảo truy cập ổn định 24/7 từ các đơn vị trực thuộc. | **~ 50.000.000 / năm** |
+| **2** | **Hệ thống Lưu trữ Mạng NAS (Dung lượng ~ 50TB)** | - Thiết bị NAS Doanh nghiệp (8 bay có kết nối 10GbE).<br>- Cấu hình 05 ổ cứng 16TB Enterprise chạy RAID 6 (dung lượng khả dụng ~48TB).<br>- Nâng cấp RAM & SSD Cache tăng tốc truy xuất. | - Lưu trữ tập trung tệp tin dung lượng lớn (Bản vẽ CAD/BIM, hồ sơ kỹ thuật).<br>- Thực hiện tự động sao lưu (Backup) cơ sở dữ liệu hàng ngày. | **135.000.000** |
 
-*(Ghi chú: Đơn giá hạ tầng mang tính chất tham khảo (CIC khái toán hộ IBST). Hạng mục này IBST sẽ trực tiếp làm việc và thuê một đơn vị cung cấp thiết bị phần cứng khác để triển khai).*
-
----
-
-## 3. Các Giải pháp Công nghệ Tiên tiến & Tính năng Ưu việt
-
-Hệ thống được thiết kế tích hợp các giải pháp kỹ thuật hiện đại nhằm đáp ứng yêu cầu chuyển đổi số toàn diện của đơn vị sự nghiệp khoa học đầu ngành:
-
-### 1. Công nghệ Xác thực văn bản số thông qua Chữ ký số pháp lý
-*   **Mô tả giải pháp:** Số hóa toàn diện quy trình kiểm soát tính toàn vẹn và pháp lý của các tài liệu kỹ thuật, Phiếu kết quả thử nghiệm và Chứng chỉ kiểm định do Viện cấp.
-*   **Hiệu quả ứng dụng:** Toàn bộ các văn bản điện tử và phiếu kết quả kết xuất từ hệ thống LIMS được tự động ký số bằng chữ ký số cơ quan. Nhờ đó, cơ quan quản lý, chủ đầu tư hoặc đơn vị thanh tra xây dựng có thể xác thực nguồn gốc và tính toàn vẹn của tệp tài liệu số gốc, loại bỏ hoàn toàn rủi ro giả mạo tài liệu kiểm định trên thị trường.
-
-### 2. Giải pháp Trí tuệ nhân tạo hỗ trợ tra cứu văn bản quy phạm kỹ thuật xây dựng (AI-RAG)
-*   **Mô tả giải pháp:** Ứng dụng mô hình ngôn ngữ lớn kết hợp cơ chế truy xuất dữ liệu tăng cường (RAG) trên kho tư liệu khoa học kỹ thuật và quy chuẩn chuyên ngành của Viện.
-*   **Hiệu quả ứng dụng:** Hỗ trợ cán bộ nghiên cứu và kỹ sư thiết kế tra cứu nhanh các quy định kỹ thuật bằng ngôn ngữ tự nhiên (Ví dụ: *"Yêu cầu về giới hạn chịu lửa của cấu kiện chịu lực đối với nhà cao tầng theo QCVN 06:2022 là gì?"*). Trợ lý AI sẽ tự động phân tích kho văn bản số hóa, trích xuất chính xác điều khoản, chương mục liên quan và hiển thị văn bản gốc để phục vụ công tác đối chiếu thiết kế và lập thuyết minh đề tài, rút ngắn 90% thời gian tra cứu.
-
-### 3. Hệ thống Tự động hóa Cảnh báo Đa phương thức (Omnichannel Alerts)
-*   **Mô tả giải pháp:** Cơ chế tự động quét dữ liệu định kỳ để phát hiện các thời hạn hành chính, tài chính và kỹ thuật quan trọng.
-*   **Hiệu quả ứng dụng:** Tự động gửi thông tin nhắc nhở đa kênh (hệ thống thông báo nội bộ, Email công vụ, tin nhắn bảo mật Zalo ZNS) tới cán bộ phụ trách và Lãnh đạo Viện khi có dữ liệu phát sinh: Thiết bị thí nghiệm đến hạn kiểm định/hiệu chuẩn định kỳ, công nợ quá hạn của khách hàng, hoặc thời hạn nghiệm thu đề tài KHCN sự nghiệp.
-
-### 4. Chế độ hiển thị tối ưu hóa thị giác theo môi trường làm việc (Multi-theme Adaptability)
-*   **Mô tả giải pháp:** Thiết kế giao diện đa chế độ màu sắc thích ứng linh hoạt theo thời gian thực.
-*   **Hiệu quả ứng dụng:** Người dùng có thể chuyển đổi linh hoạt giữa 3 giao diện:
-    *   *Light Mode:* Giao diện sáng tiêu chuẩn phục vụ báo cáo, hội thảo chuyên đề.
-    *   *Dark Mode:* Giao diện tối chuyên sâu giúp giảm điều tiết mắt cho bộ phận kế toán và xử lý số liệu thí nghiệm liên tục.
-    *   *Nature Mode:* Giao diện dịu mát bảo vệ mắt (Eyecare) sử dụng tông màu lục chủ đạo, được thiết kế đặc thù cho các chuyên gia khoa học nghiên cứu tài liệu kỹ thuật dài trong môi trường thiếu sáng vào ban đêm.
+*(Ghi chú: Chi phí hạ tầng mang tính chất khái toán tham khảo. Viện IBST sẽ trực tiếp lựa chọn đơn vị cung cấp thiết bị và hạ tầng để triển khai).*
 
 ---
 
-## 4. Giải pháp Công nghệ & Kiến trúc Hạ tầng Tiêu chuẩn (Tech Stack)
+## III. CÁC GIẢI PHÁP CÔNG NGHỆ VÀ TÍNH NĂNG CHỦ YẾU
 
-Hệ thống được thiết kế dựa trên kiến trúc hiện đại, đảm bảo tính bảo mật tối đa, tuân thủ nghiêm ngặt Luật An ninh mạng Việt Nam và đáp ứng khả năng vận hành liên tục 24/7:
+### 3.1. Xác thực văn bản số thông qua Chữ ký số
+*   **Giải pháp:** Số hóa quy trình kiểm soát tính pháp lý và toàn vẹn của tài liệu kỹ thuật, Phiếu kết quả thử nghiệm và Chứng chỉ kiểm định do Viện cấp.
+*   **Hiệu quả:** Toàn bộ văn bản điện tử và phiếu kết quả kết xuất từ hệ thống được tự động ký số bằng chữ ký số cơ quan, đảm bảo tính pháp lý và chống giả mạo tài liệu.
 
-### 1. Hạ tầng Máy chủ & Lưu trữ Dữ liệu Phân tán (Cloud & Local NAS)
-*   **Hạ tầng Đám mây (Cloud) lưu trữ CSDL (Metadata):** Hệ thống được triển khai trên hạ tầng điện toán đám mây nội địa đạt chuẩn an toàn thông tin (như **Viettel Cloud**, **FPT Smart Cloud**, hoặc **VNPT Cloud**). Toàn bộ dữ liệu CSDL (Metadata, text, cấu hình hệ thống) được lưu trữ trên Cloud để đảm bảo tốc độ truy vấn cao và linh hoạt.
-*   **Hạ tầng NAS nội bộ lưu trữ Tệp dung lượng lớn:** Các tệp tin dung lượng lớn (Bản vẽ CAD/BIM, tài liệu số hóa, hồ sơ địa kỹ thuật...) được điều hướng lưu trữ vật lý trực tiếp tại thiết bị NAS chuyên dụng đặt tại Viện. Giải pháp này giúp tối ưu chi phí lưu trữ Cloud và bảo mật tuyệt đối các tệp kỹ thuật cốt lõi.
-*   **Bảo toàn chủ quyền dữ liệu:** Đảm bảo 100% dữ liệu của Viện IBST tuân thủ tuyệt đối Nghị định 53/2022/NĐ-CP hướng dẫn Luật An ninh mạng.
+### 3.2. Trợ lý Trí tuệ nhân tạo tra cứu quy định kỹ thuật (AI-RAG)
+*   **Giải pháp:** Ứng dụng mô hình ngôn ngữ lớn kết hợp cơ chế truy xuất dữ liệu tăng cường (RAG) trên kho tư liệu quy chuẩn, tiêu chuẩn chuyên ngành của Viện.
+*   **Hiệu quả:** Hỗ trợ cán bộ nghiên cứu và kỹ sư tra cứu nhanh các quy định kỹ thuật bằng ngôn ngữ tự nhiên, trích xuất chính xác điều khoản văn bản gốc phục vụ công tác lập thuyết minh và thiết kế.
 
-### 2. Chi tiết Lớp Công nghệ (Technology Stack)
-*   **Lớp Giao diện (Frontend Client):** 
-    *   Sử dụng thư viện **React** kết hợp ngôn ngữ kiểm soát kiểu chặt chẽ **TypeScript** giúp tối ưu tốc độ tải trang và đảm bảo độ tin cậy của mã nguồn.
-    *   Cấu trúc biên dịch (build) bằng **Vite** tối ưu hóa hiệu năng kết xuất dữ liệu và render biểu đồ thời gian thực.
-    *   Giao diện thiết kế theo triết lý Responsive hiển thị mượt mà trên mọi thiết bị (máy tính để bàn, máy tính bảng, điện thoại di động).
-*   **Lớp Cơ sở dữ liệu & Logic nghiệp vụ (Database & Backend):**
-    *   Hệ quản trị cơ sở dữ liệu **PostgreSQL** kết hợp công nghệ nền tảng **Supabase (phiên bản tự vận hành - Self-hosted)** triển khai trực tiếp trên hạ tầng máy chủ ảo (Cloud VPS/Kubernetes) của nhà cung cấp nội địa.
-    *   Áp dụng cơ chế **Row-Level Security (RLS)** ở lớp cơ sở dữ liệu để phân quyền xem/sửa dữ liệu tự động giữa 16 đơn vị trực thuộc, ngăn chặn rò rỉ chéo thông tin tài chính và đề tài khoa học.
-*   **Lớp Liên thông & Tích hợp (API & Integration):**
-    *   Giao tiếp dữ liệu bảo mật thông qua giao thức **RESTful API** mã hóa SSL/TLS cường độ cao.
-    *   Trục văn bản tích hợp cổng giao tiếp SOAP/REST xử lý gói tin định dạng XML mã hóa theo Thông tư 02/2017/TT-VPCP phục vụ liên thông trực tiếp với Trục văn bản Bộ Xây dựng.
+### 3.3. Hệ thống Cảnh báo tự động đa phương thức
+*   **Giải pháp:** Tự động quét dữ liệu định kỳ để phát hiện các thời hạn hành chính, tài chính và kỹ thuật quan trọng.
+*   **Hiệu quả:** Gửi thông tin nhắc nhở qua các kênh hệ thống (Thông báo nội bộ, Email công vụ, tin nhắn Zalo ZNS) về thời hạn hiệu chuẩn thiết bị, công nợ hợp đồng hoặc tiến độ nghiệm thu đề tài.
 
-### 3. Tiêu chuẩn An toàn thông tin & Khả năng mở rộng
-*   **Bảo mật đường truyền:** Toàn bộ kết nối được mã hóa HTTPS. Hỗ trợ tích hợp kênh truyền riêng VPN cho các đơn vị cần bảo mật dữ liệu cấp cao.
-*   **Kiến trúc mở rộng (Scalability):** Hệ thống thiết kế dạng Modular Service, cho phép nâng cấp, bổ sung các phân hệ nâng cao (Mua sắm kho bãi, Điều phối đội xe công tác, Thi đua khen thưởng) hoặc liên thông dữ liệu tài chính với Bộ Xây dựng dễ dàng mà không phá vỡ cấu trúc cũ.
+### 3.4. Tùy biến giao diện hiển thị
+*   **Giải pháp:** Thiết kế giao diện đa chế độ màu sắc thích ứng theo môi trường làm việc.
+*   **Hiệu quả:** Cho phép người dùng chuyển đổi linh hoạt giữa giao diện tiêu chuẩn (Light Mode) và giao diện giảm mỏi mắt (Dark Mode), nâng cao hiệu suất làm việc liên tục.
 
 ---
 
-## 5. Lộ trình Triển khai Dự kiến (Phân kỳ Đầu tư)
+## IV. GIẢI PHÁP CÔNG NGHỆ VÀ BẢO MẬT HỆ THỐNG
 
-Để đảm bảo dự án vận hành mượt mà và giảm thiểu rủi ro triển khai, đề xuất phân kỳ triển khai 2.26 tỷ VNĐ theo 3 Giai đoạn:
+### 4.1. Hạ tầng Máy chủ và Lưu trữ Dữ liệu
+*   **Lưu trữ Dữ liệu quản lý (Metadata):** Triển khai trên hạ tầng điện toán đám mây nội địa đạt chuẩn an toàn thông tin (Viettel Cloud/FPT Smart Cloud/VNPT Cloud), đảm bảo tốc độ truy vấn cao.
+*   **Lưu trữ Tệp dung lượng lớn:** Các tệp tin dung lượng lớn (CAD/BIM, hồ sơ địa kỹ thuật) được lưu trữ tại thiết bị NAS nội bộ đặt tại Viện nhằm bảo mật và tối ưu chi phí.
+*   **Bảo vệ chủ quyền dữ liệu:** Tuân thủ tuyệt đối Luật An ninh mạng và các Nghị định của Chính phủ hướng dẫn thi hành.
 
-| Giai đoạn triển khai | Mốc thời gian dự kiến | Các phân hệ trọng tâm | Thời lượng |
-| :--- | :--- | :--- | :--- |
-| **Giai đoạn 1: Nền tảng & Lõi Nghiệp vụ** | **Tháng 8 - Tháng 9** | - Quản lý Tài chính & Thu chi Hợp đồng<br>- Quản lý Kinh doanh, Hợp đồng & Khách hàng<br>- Hệ thống Thử nghiệm LIMS | ~ 60 ngày |
-| **Giai đoạn 2: Điều hành & Số hóa** | **Tháng 10 - Tháng 11** | - Văn phòng số e-Office<br>- Quản lý Khoa học<br>- Quản lý Nhân sự & Đào tạo | ~ 60 ngày |
-| **Giai đoạn 3: Thông minh hóa & BI** | **Tháng 12** | - Kho Lưu trữ Kỹ thuật & AI-RAG<br>- Dashboard Lãnh đạo BI | ~ 30 ngày |
+### 4.2. Chi tiết Lớp Công nghệ (Tech Stack)
+*   **Lớp Giao diện (Frontend):** Sử dụng thư viện React kết hợp TypeScript và Vite giúp tối ưu tốc độ tải trang, hiển thị mượt mà trên các thiết bị.
+*   **Lớp Cơ sở dữ liệu & Logic (Backend):** Sử dụng Hệ quản trị CSDL PostgreSQL kết hợp Supabase (Self-hosted) triển khai trên hạ tầng máy chủ ảo; áp dụng cơ chế Row-Level Security (RLS) để phân quyền dữ liệu giữa 16 đơn vị.
+*   **Lớp Tích hợp (API):** Giao tiếp dữ liệu qua RESTful API mã hóa SSL/TLS; Trục văn bản xử lý gói tin XML phục vụ liên thông trực tiếp với Trục văn bản Bộ Xây dựng.
 
-### Chi tiết Phân kỳ (Tổng thời gian ~ 5 tháng):
-1. **Giai đoạn 1 (Tháng 8 - Tháng 9): Nền tảng Dòng tiền & Lõi Thử nghiệm (910.000.000 VNĐ)**
-   * Tập trung số hóa Dòng tiền (Kế toán), Hợp đồng khách hàng và Hệ thống LIMS (Phân hệ 2, 3, 6).
-   * Giúp Viện kiểm soát ngay thu chi và chuẩn hóa 11 phòng LAS-XD.
-2. **Giai đoạn 2 (Tháng 10 - Tháng 11): Điều hành Hành chính & Đào tạo (960.000.000 VNĐ)**
-   * Triển khai e-Office, Liên thông Trục văn bản BXD, Quản lý Khoa học và Nhân sự (Phân hệ 4, 5, 7).
-   * Đưa Viện vào trạng thái làm việc "Văn phòng không giấy tờ".
-3. **Giai đoạn 3 (Tháng 12): Tích hợp AI-RAG & Dashboard Điều hành (390.000.000 VNĐ)**
-   * Đưa Trợ lý AI-RAG tra cứu QCVN vào hoạt động và hoàn thiện Dashboard BI cho Viện trưởng (Phân hệ 1, 8).
-   * Tổng hợp toàn bộ dữ liệu hệ thống lên trung tâm điều hành.
+### 4.3. Tiêu chuẩn An toàn thông tin và Khả năng mở rộng
+*   **Bảo mật đường truyền:** Mã hóa HTTPS toàn bộ kết nối và hỗ trợ kết nối kênh truyền riêng VPN.
+*   **Khả năng mở rộng:** Kiến trúc dạng phân hệ (Modular Service) cho phép mở rộng các tính năng nâng cao và liên thông dữ liệu trong tương lai mà không làm ảnh hưởng đến cấu trúc hệ thống.
+
+---
+
+## V. LỘ TRÌNH VÀ KẾ HOẠCH TRIỂN KHAI (GIAI ĐOẠN 2026 – 2027)
+
+Lộ trình triển khai tổng kinh phí phần mềm **2.260.000.000 VNĐ** được phân kỳ theo 03 Giai đoạn (từ tháng 08/2026 đến tháng 03/2027):
+
+| Giai đoạn triển khai | Mốc thời gian | Mục tiêu & Nội dung Trọng tâm | Thời lượng | Kinh phí Phần mềm |
+| :--- | :--- | :--- | :--- | :---: |
+| **Giai đoạn 1: Hoàn thiện thể chế & Nâng cấp hạ tầng** | **08/2026 - 09/2026** | - Hoàn thiện thể chế, quy trình nghiệp vụ nội bộ.<br>- Nâng cấp hạ tầng cơ bản (Máy chủ Cloud Server, Hệ thống NAS 50TB, Bảo mật).<br>- Triển khai Lõi Dòng tiền Hợp đồng & Nghiệp vụ Thử nghiệm (**Phân hệ 2, 5**). | ~ 60 ngày *(2 tháng)* | **910.000.000 VNĐ** |
+| **Giai đoạn 2: Tích hợp hệ thống & Kho dữ liệu số** | **10/2026 - 01/2027** | - Triển khai hệ thống tích hợp & Văn phòng số (**Phân hệ 3, 4, 6**).<br>- Xây dựng kho dữ liệu số, số hóa tài liệu và mở rộng ứng dụng số (**Phân hệ 7**). | ~ 120 ngày *(4 tháng)* | **1.170.000.000 VNĐ** |
+| **Giai đoạn 3: Sinh thái số & Ra quyết định dữ liệu** | **02/2027 - 03/2027** | - Hoàn thiện hệ sinh thái số, tối ưu hóa quy trình luồng công việc.<br>- Nâng cao năng lực phân tích dữ liệu và ra quyết định dựa trên dữ liệu (**Phân hệ 1 - Dashboard BI & Trợ lý AI-RAG**). | ~ 60 ngày *(2 tháng)* | **180.000.000 VNĐ** |
+
+### 5.1. Chi tiết Phân kỳ Kế hoạch Triển khai (Tổng thời gian 8 tháng - ~ 240 ngày):
+
+* **Giai đoạn 1 (08/2026 – 09/2026): Hoàn thiện thể chế, nâng cấp hạ tầng cơ bản (910.000.000 VNĐ)**
+   * **Nội dung:** Hoàn thiện thể chế quy trình quản lý; Khởi tạo hạ tầng máy chủ Viettel Cloud và lắp đặt thiết bị lưu trữ NAS 50TB; Số hóa Lõi Quản lý Hợp đồng Quy chế 2815, Thu chi Dịch vụ và Hệ thống LIMS thử nghiệm (Phân hệ 2, 5).
+   * **Kết quả:** Chuẩn hóa hạ tầng an toàn thông tin, kiểm soát ngay dòng tiền hợp đồng và 11 phòng LAS-XD toàn quốc.
+
+* **Giai đoạn 2 (10/2026 – 01/2027): Triển khai hệ thống tích hợp, xây dựng kho dữ liệu số, mở rộng ứng dụng số trong nghiệp vụ (1.170.000.000 VNĐ)**
+   * **Nội dung:** Triển khai tích hợp Văn phòng số e-Office, Liên thông Trục văn bản Bộ Xây dựng, Quản lý Nhiệm vụ QLNN & KHCN, Quản lý Nhân sự, Đào tạo & Tòa soạn Tạp chí KHCN (Phân hệ 3, 4, 6); Xây dựng Kho cơ sở dữ liệu số hóa lưu trữ tập trung tài liệu kỹ thuật CAD/BIM (Phân hệ 7).
+   * **Kết quả:** Đưa Viện vào vận hành quy trình số hóa công văn, tập trung hóa kho tư liệu kỹ thuật và mở rộng ứng dụng số cho toàn thể cán bộ.
+
+* **Giai đoạn 3 (02/2027 – 03/2027): Hoàn thiện hệ sinh thái số, tối ưu hóa quy trình, nâng cao năng lực phân tích dữ liệu và ra quyết định dựa trên dữ liệu (180.000.000 VNĐ)**
+   * **Nội dung:** Hoàn thiện toàn diện hệ sinh thái số ERP-IBST, tinh chỉnh tối ưu hóa quy trình luồng công việc; Kích hoạt Trợ lý Trí tuệ nhân tạo (AI-RAG) tra cứu Luật, Nghị định, Thông tư, QCVN, TCVN và hoàn thiện Trung tâm Điều hành BI Dashboard trực quan hóa dữ liệu cho Viện trưởng (Phân hệ 1).
+   * **Kết quả:** Hỗ trợ Lãnh đạo Viện ra quyết định điều hành dựa trên dữ liệu thời gian thực và hoàn thiện công tác chuyển đổi số.
+
+---
+
+**ĐƠN VỊ LẬP BÁO GIÁ**  
+**CÔNG TY CỔ PHẦN CÔNG NGHỆ VÀ TƯ VẤN XÂY DỰNG (CIC)**
