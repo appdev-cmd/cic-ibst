@@ -30,14 +30,29 @@ Căn cứ Mục tiêu chiến lược giai đoạn 2026 – 2027 của Viện IB
 
 ## II. DỰ TOÁN HẠ TẦNG THIẾT BỊ VÀ DỊCH VỤ MÁY CHỦ
 
-Nhằm đảm bảo hệ thống vận hành an toàn, liên tục 24/7 và đáp ứng nhu cầu lưu trữ hồ sơ kỹ thuật dung lượng lớn, dự toán hạ tầng thiết bị đề xuất như sau:
+Nhằm đảm bảo hệ thống vận hành an toàn, liên tục 24/7, đáp ứng nhu cầu lưu trữ hồ sơ kỹ thuật dung lượng lớn và hạ tầng tính toán Trợ lý AI (AI-RAG), dự toán hạ tầng thiết bị và dịch vụ đám mây đề xuất như sau:
 
 | STT | Hạng mục Thiết bị & Dịch vụ | Thông số Kỹ thuật (Dự kiến) | Mục đích Sử dụng | Dự toán Chi phí (VNĐ) |
 | :---: | :--- | :--- | :--- | :---: |
 | **1** | **Thuê Máy chủ Đám mây (Cloud Server)** | - Cấu hình Cloud Server (16 vCPU, 32GB RAM, 500GB SSD NVMe).<br>- Tích hợp Tường lửa (Firewall) bảo vệ an toàn thông tin theo quy định. | - Vận hành phần mềm ERP, ứng dụng LIMS, e-Office và Hệ quản trị cơ sở dữ liệu.<br>- Đảm bảo truy cập ổn định 24/7 từ các đơn vị trực thuộc. | **~ 50.000.000 / năm** |
-| **2** | **Hệ thống Lưu trữ Mạng NAS (Dung lượng ~ 50TB)** | - Thiết bị NAS Doanh nghiệp (8 bay có kết nối 10GbE).<br>- Cấu hình 05 ổ cứng 16TB Enterprise chạy RAID 6 (dung lượng khả dụng ~48TB).<br>- Nâng cấp RAM & SSD Cache tăng tốc truy xuất. | - Lưu trữ tập trung tệp tin dung lượng lớn (Bản vẽ CAD/BIM, hồ sơ kỹ thuật).<br>- Thực hiện tự động sao lưu (Backup) cơ sở dữ liệu hàng ngày. | **135.000.000** |
+| **2** | **Hệ thống Lưu trữ Mạng NAS (Dung lượng ~ 150TB)** | - Thiết bị NAS Doanh nghiệp (12-bay Rackmount có kết nối 10GbE).<br>- Cấu hình 10 ổ cứng 18TB Enterprise chạy RAID 6 (dung lượng khả dụng ~144TB - 150TB).<br>- Nâng cấp RAM & SSD Cache tăng tốc truy xuất. | - Lưu trữ tập trung tệp tin dung lượng lớn (Bản vẽ CAD/BIM, hồ sơ kỹ thuật).<br>- Thực hiện tự động sao lưu (Backup) cơ sở dữ liệu hàng ngày. | **260.000.000** |
+| **3** | **Dịch vụ Máy chủ AI Đám mây (FPT AI Cloud MaaS)** | - Mô hình AI LLM thế hệ mới (Qwen 2.5 32B / DeepSeek-V3) kết nối API chuẩn OpenAI.<br>- Cơ chế tính chi phí linh hoạt theo dung lượng sử dụng (Pay-as-you-go). | - Phục vụ Trợ lý AI-RAG tra cứu văn bản quy phạm pháp luật, QCVN, TCVN.<br>- Hỗ trợ biên soạn thuyết minh, báo cáo và trích xuất dữ liệu kỹ thuật. | **~ 12.000.000 / năm** |
 
 *(Ghi chú: Chi phí hạ tầng mang tính chất khái toán tham khảo. Viện IBST sẽ trực tiếp lựa chọn đơn vị cung cấp thiết bị và hạ tầng để triển khai).*
+
+### 2.1. Phương án Máy chủ Đám mây và Lưu trữ Mạng NAS Nội bộ
+* **Máy chủ Đám mây (Cloud Server 16 vCPU / 32GB RAM):** Triển khai toàn bộ ứng dụng phần mềm ERP, LIMS, e-Office và cơ sở dữ liệu PostgreSQL/Supabase trên hạ tầng Cloud nội địa đạt chuẩn an toàn thông tin (Viettel/FPT/VNPT), giúp hệ thống hoạt động ổn định 24/7, sẵn sàng tường lửa bảo vệ và sao lưu tự động.
+* **Hệ thống Lưu trữ Mạng NAS (150TB RAID 6):** Lắp đặt thiết bị NAS chuyên dụng (12-bay Rackmount) tại Trung tâm dữ liệu của Viện IBST nhằm lưu trữ tập trung các tệp tin dung lượng lớn (bản vẽ CAD/BIM, tài liệu thí nghiệm) với chi phí tối ưu, đồng thời thực hiện tự động sao lưu dữ liệu gốc hàng ngày.
+
+### 2.2. Phương án Dịch vụ Máy chủ AI Đám mây (FPT AI Cloud MaaS)
+Để cung cấp hạ tầng tính toán cho **Trợ lý AI-RAG tra cứu quy định kỹ thuật** (Phân hệ 7 & Mục 3.2), giải pháp đề xuất khai thác dịch vụ máy chủ trí tuệ nhân tạo đám mây **FPT AI Cloud MaaS (Model as a Service)**:
+
+* **Mô hình AI Đề xuất:** **Qwen 2.5 32B / DeepSeek-V3** (Inference API trên cụm máy chủ FPT AI Factory).
+* **Lý do lựa chọn hạ tầng FPT AI MaaS:**
+  1. **Tối ưu Chi phí Hạ tầng (Pay-as-you-go):** Không cần đầu tư cụm máy chủ GPU đắt đỏ (hàng trăm triệu VNĐ) để tự host model tại Viện. Chi phí chỉ phát sinh dựa trên lượng token thực tế (~ 1.000.000 VNĐ/tháng).
+  2. **Bảo mật & Chủ quyền Dữ liệu:** Hạ tầng máy chủ AI đặt hoàn toàn tại Data Center Việt Nam, tuân thủ Luật An ninh mạng và các quy định bảo mật dữ liệu công vụ của Bộ Xây dựng.
+  3. **Năng lực Xử lý Tiếng Việt & Tài liệu Kỹ thuật:** Qwen 2.5 và DeepSeek-V3 đạt hiệu suất cao trong xử lý tiếng Việt chuyên ngành, đọc hiểu tốt cấu trúc phức tạp của các bộ tiêu chuẩn xây dựng (TCVN, QCVN) và văn bản quy phạm pháp luật.
+  4. **Kết nối Chuẩn hóa:** Tích hợp trực tiếp với phần mềm qua giao thức API chuẩn OpenAI-Compatible.
 
 ---
 
@@ -48,7 +63,7 @@ Nhằm đảm bảo hệ thống vận hành an toàn, liên tục 24/7 và đá
 *   **Hiệu quả:** Toàn bộ văn bản điện tử và phiếu kết quả kết xuất từ hệ thống được tự động ký số bằng chữ ký số cơ quan, đảm bảo tính pháp lý và chống giả mạo tài liệu.
 
 ### 3.2. Trợ lý Trí tuệ nhân tạo tra cứu quy định kỹ thuật (AI-RAG)
-*   **Giải pháp:** Ứng dụng mô hình ngôn ngữ lớn kết hợp cơ chế truy xuất dữ liệu tăng cường (RAG) trên kho tư liệu quy chuẩn, tiêu chuẩn chuyên ngành của Viện.
+*   **Giải pháp:** Ứng dụng mô hình ngôn ngữ lớn (Qwen 2.5 / DeepSeek-V3 qua hạ tầng FPT AI Cloud MaaS) kết hợp cơ chế truy xuất dữ liệu tăng cường (RAG) trên kho tư liệu quy chuẩn, tiêu chuẩn chuyên ngành của Viện.
 *   **Hiệu quả:** Hỗ trợ cán bộ nghiên cứu và kỹ sư tra cứu nhanh các quy định kỹ thuật bằng ngôn ngữ tự nhiên, trích xuất chính xác điều khoản văn bản gốc phục vụ công tác lập thuyết minh và thiết kế.
 
 ### 3.3. Hệ thống Cảnh báo tự động đa phương thức
@@ -85,14 +100,14 @@ Lộ trình triển khai tổng kinh phí phần mềm **2.260.000.000 VNĐ** đ
 
 | Giai đoạn triển khai | Mốc thời gian | Mục tiêu & Nội dung Trọng tâm | Thời lượng | Kinh phí Phần mềm |
 | :--- | :--- | :--- | :--- | :---: |
-| **Giai đoạn 1: Hoàn thiện thể chế & Nâng cấp hạ tầng** | **08/2026 - 09/2026** | - Hoàn thiện thể chế, quy trình nghiệp vụ nội bộ.<br>- Nâng cấp hạ tầng cơ bản (Máy chủ Cloud Server, Hệ thống NAS 50TB, Bảo mật).<br>- Triển khai Lõi Dòng tiền Hợp đồng & Nghiệp vụ Thử nghiệm (**Phân hệ 2, 5**). | ~ 60 ngày *(2 tháng)* | **910.000.000 VNĐ** |
+| **Giai đoạn 1: Hoàn thiện thể chế & Nâng cấp hạ tầng** | **08/2026 - 09/2026** | - Hoàn thiện thể chế, quy trình nghiệp vụ nội bộ.<br>- Nâng cấp hạ tầng cơ bản (Máy chủ Cloud Server, Hệ thống NAS 150TB, Bảo mật).<br>- Triển khai Lõi Dòng tiền Hợp đồng & Nghiệp vụ Thử nghiệm (**Phân hệ 2, 5**). | ~ 60 ngày *(2 tháng)* | **910.000.000 VNĐ** |
 | **Giai đoạn 2: Tích hợp hệ thống & Kho dữ liệu số** | **10/2026 - 01/2027** | - Triển khai hệ thống tích hợp & Văn phòng số (**Phân hệ 3, 4, 6**).<br>- Xây dựng kho dữ liệu số, số hóa tài liệu và mở rộng ứng dụng số (**Phân hệ 7**). | ~ 120 ngày *(4 tháng)* | **1.170.000.000 VNĐ** |
 | **Giai đoạn 3: Sinh thái số & Ra quyết định dữ liệu** | **02/2027 - 03/2027** | - Hoàn thiện hệ sinh thái số, tối ưu hóa quy trình luồng công việc.<br>- Nâng cao năng lực phân tích dữ liệu và ra quyết định dựa trên dữ liệu (**Phân hệ 1 - Dashboard BI & Trợ lý AI-RAG**). | ~ 60 ngày *(2 tháng)* | **180.000.000 VNĐ** |
 
 ### 5.1. Chi tiết Phân kỳ Kế hoạch Triển khai (Tổng thời gian 8 tháng - ~ 240 ngày):
 
 * **Giai đoạn 1 (08/2026 – 09/2026): Hoàn thiện thể chế, nâng cấp hạ tầng cơ bản (910.000.000 VNĐ)**
-   * **Nội dung:** Hoàn thiện thể chế quy trình quản lý; Khởi tạo hạ tầng máy chủ Viettel Cloud và lắp đặt thiết bị lưu trữ NAS 50TB; Số hóa Lõi Quản lý Hợp đồng Quy chế 2815, Thu chi Dịch vụ và Hệ thống LIMS thử nghiệm (Phân hệ 2, 5).
+   * **Nội dung:** Hoàn thiện thể chế quy trình quản lý; Khởi tạo hạ tầng máy chủ Viettel Cloud và lắp đặt thiết bị lưu trữ NAS 150TB; Số hóa Lõi Quản lý Hợp đồng Quy chế 2815, Thu chi Dịch vụ và Hệ thống LIMS thử nghiệm (Phân hệ 2, 5).
    * **Kết quả:** Chuẩn hóa hạ tầng an toàn thông tin, kiểm soát ngay dòng tiền hợp đồng và 11 phòng LAS-XD toàn quốc.
 
 * **Giai đoạn 2 (10/2026 – 01/2027): Triển khai hệ thống tích hợp, xây dựng kho dữ liệu số, mở rộng ứng dụng số trong nghiệp vụ (1.170.000.000 VNĐ)**
