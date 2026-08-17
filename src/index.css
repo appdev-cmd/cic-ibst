@@ -73,13 +73,15 @@
     @apply font-sans text-ink antialiased;
     transition: background-color 0.3s ease, color 0.3s ease;
   }
-  /* Thu nhỏ toàn bộ giao diện tương đương zoom trình duyệt 75% để hiển thị nhiều nội dung hơn (với zoom = 100%).
-     Dùng transform và tính toán kích thước theo biến --zoom-scale để thu phóng linh hoạt từ 100% đến 200%. */
   #root {
-    width: calc(100% / var(--zoom-scale, 0.75));
-    height: calc(100% / var(--zoom-scale, 0.75));
-    transform: scale(var(--zoom-scale, 0.75));
-    transform-origin: top left;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+  }
+
+  :focus-visible {
+    outline: 2px solid rgb(var(--color-primary-500));
+    outline-offset: 2px;
   }
 }
 
@@ -88,16 +90,30 @@
     @apply rounded-xl border border-border bg-surface shadow-card;
   }
   .th-cell {
-    @apply bg-subtle px-4 py-2.5 text-left text-2xs font-black uppercase tracking-wider text-ink-muted;
+    @apply bg-subtle px-4 py-3 text-left text-xs font-extrabold uppercase tracking-wide text-ink-muted;
   }
   .td-cell {
-    @apply border-t border-border px-4 py-3 text-[13px];
+    @apply border-t border-border px-4 py-3 text-sm;
   }
   .tr-hover {
     @apply transition-colors hover:bg-[var(--bg-hover-row)];
   }
   .btn-primary {
-    @apply flex items-center gap-2 rounded-xl bg-primary-500 px-4 py-2.5 text-[13px] font-bold text-white shadow-card transition-all hover:bg-primary-600 hover:shadow-card-hover active:scale-95;
+    @apply flex min-h-10 items-center justify-center gap-2 rounded-xl bg-primary-500 px-4 py-2.5 text-sm font-bold text-white shadow-card transition-all hover:bg-primary-600 hover:shadow-card-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .icon-button {
+    @apply inline-flex min-h-10 min-w-10 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-muted hover:text-ink disabled:cursor-not-allowed disabled:opacity-40;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 

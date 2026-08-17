@@ -21,10 +21,12 @@ export function TableToolbar({
       <div className="relative min-w-56 flex-1 sm:max-w-xs">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" />
         <input
+          type="search"
+          aria-label={placeholder}
           value={search}
           onChange={(e) => onSearch(e.target.value)}
           placeholder={placeholder}
-          className="w-full rounded-lg border border-border bg-subtle py-2 pl-9 pr-3 text-sm text-ink outline-none transition-colors placeholder:text-ink-muted focus:border-primary-500"
+          className="min-h-10 w-full rounded-lg border border-border bg-subtle py-2 pl-9 pr-3 text-sm text-ink outline-none transition-colors placeholder:text-ink-muted focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20"
         />
       </div>
       {children}
@@ -49,10 +51,11 @@ export function FilterSelect({
 }) {
   return (
     <select
+      aria-label={allLabel}
       value={value}
       onChange={(e) => onChange(e.target.value)}
       className={cn(
-        'rounded-lg border border-border bg-subtle px-2.5 py-2 text-xs font-semibold text-ink-secondary outline-none transition-colors focus:border-primary-500',
+        'min-h-10 rounded-lg border border-border bg-subtle px-3 py-2 text-sm font-semibold text-ink-secondary outline-none transition-colors focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20',
         value && 'border-primary-400 text-primary-600 dark:text-primary-300',
       )}
     >
@@ -78,11 +81,13 @@ export function Pagination({
 }) {
   if (totalPages <= 1) return null;
   return (
-    <div className="flex items-center justify-end gap-1 border-t border-border-subtle px-4 pr-24 py-2.5">
+    <div className="flex items-center justify-end gap-1 border-t border-border-subtle px-4 py-2.5">
       <button
+        type="button"
+        aria-label="Trang trước"
         onClick={() => onChange(page - 1)}
         disabled={page <= 1}
-        className="rounded-lg border border-border p-1.5 text-ink-muted transition-colors hover:bg-muted hover:text-ink disabled:opacity-40"
+        className="icon-button border border-border"
       >
         <ChevronLeft size={14} />
       </button>
@@ -90,9 +95,11 @@ export function Pagination({
         {page} / {totalPages}
       </span>
       <button
+        type="button"
+        aria-label="Trang sau"
         onClick={() => onChange(page + 1)}
         disabled={page >= totalPages}
-        className="rounded-lg border border-border p-1.5 text-ink-muted transition-colors hover:bg-muted hover:text-ink disabled:opacity-40"
+        className="icon-button border border-border"
       >
         <ChevronRight size={14} />
       </button>
@@ -111,22 +118,26 @@ export function RowActions({
   return (
     <div className="flex justify-end gap-1">
       <button
+        type="button"
+        aria-label="Sửa bản ghi"
         onClick={(e) => {
           e.stopPropagation();
           onEdit();
         }}
         title="Sửa"
-        className="rounded-lg p-1.5 text-ink-muted transition-colors hover:bg-muted hover:text-primary-600"
+        className="icon-button hover:text-primary-600"
       >
         <Pencil size={13} />
       </button>
       <button
+        type="button"
+        aria-label="Xóa bản ghi"
         onClick={(e) => {
           e.stopPropagation();
           onDelete();
         }}
         title="Xóa"
-        className="rounded-lg p-1.5 text-ink-muted transition-colors hover:bg-red-50 hover:text-danger dark:hover:bg-red-900/20"
+        className="icon-button hover:bg-red-50 hover:text-danger dark:hover:bg-red-900/20"
       >
         <Trash2 size={13} />
       </button>

@@ -52,10 +52,11 @@ export function MasterTable<T extends { id: string }>({
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted" />
                 <input
                   type="text"
+                  aria-label={searchPlaceholder || 'Tìm kiếm bản ghi'}
                   placeholder={searchPlaceholder || 'Tìm kiếm...'}
                   value={searchQuery || ''}
                   onChange={(e) => onSearchChange(e.target.value)}
-                  className="w-64 rounded-lg border border-border bg-subtle pl-8 pr-3 py-1.5 text-xs text-ink outline-none focus:border-primary-500"
+                  className="min-h-10 w-full rounded-lg border border-border bg-subtle py-2 pl-9 pr-3 text-sm text-ink outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 sm:w-64"
                 />
               </div>
             )}
@@ -65,8 +66,8 @@ export function MasterTable<T extends { id: string }>({
       )}
 
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs">
-          <thead className="border-b border-border bg-subtle text-2xs uppercase tracking-wider text-ink-muted font-bold">
+        <table className="w-full text-left text-sm">
+          <thead className="border-b border-border bg-subtle text-xs uppercase tracking-wide text-ink-muted font-bold">
             <tr>
               {columns.map((col, idx) => (
                 <th key={idx} className={`px-4 py-3 font-bold ${col.className || ''}`}>
@@ -103,8 +104,10 @@ export function MasterTable<T extends { id: string }>({
                     <div className="flex items-center justify-end gap-1">
                       {onView && (
                         <button
+                          type="button"
+                          aria-label="Xem chi tiết bản ghi"
                           onClick={() => onView(item)}
-                          className="rounded p-1 text-ink-muted hover:bg-muted hover:text-primary transition-colors"
+                          className="icon-button hover:text-primary"
                           title="Xem chi tiết"
                         >
                           <Eye size={14} />
@@ -112,8 +115,10 @@ export function MasterTable<T extends { id: string }>({
                       )}
                       {onEdit && (
                         <button
+                          type="button"
+                          aria-label="Sửa bản ghi"
                           onClick={() => onEdit(item)}
-                          className="rounded p-1 text-ink-muted hover:bg-muted hover:text-primary transition-colors"
+                          className="icon-button hover:text-primary"
                           title="Sửa"
                         >
                           <Pencil size={14} />
@@ -121,8 +126,10 @@ export function MasterTable<T extends { id: string }>({
                       )}
                       {onDelete && (
                         <button
+                          type="button"
+                          aria-label="Xóa bản ghi"
                           onClick={() => onDelete(item)}
-                          className="rounded p-1 text-ink-muted hover:bg-muted hover:text-danger transition-colors"
+                          className="icon-button hover:text-danger"
                           title="Xóa"
                         >
                           <Trash2 size={14} />

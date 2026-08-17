@@ -34,6 +34,8 @@ import {
   Gavel,
   Landmark,
   ShieldCheck,
+  Menu,
+  X,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useTheme, PRIMARY_COLORS, type Theme } from '../context/ThemeContext';
@@ -123,6 +125,9 @@ export function AppLayout() {
   );
   const [searchOpen, setSearchOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(() => window.matchMedia('(min-width: 1024px)').matches);
+  const sidebarCollapsed = collapsed && isDesktop;
 
   // Mặc định mở rộng nhóm nếu trang hiện tại nằm trong nhóm đó
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(() => {
@@ -134,7 +139,15 @@ export function AppLayout() {
     if (['/hop-dong', '/dau-thau', '/pvqlnn', '/uy-quyen'].includes(pathname)) {
       setExpandedGroups((prev) => ({ ...prev, 'hop-dong-crm': true }));
     }
+    setMobileMenuOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(min-width: 1024px)');
+    const updateViewport = (event: MediaQueryListEvent) => setIsDesktop(event.matches);
+    mediaQuery.addEventListener('change', updateViewport);
+    return () => mediaQuery.removeEventListener('change', updateViewport);
+  }, []);
 
   const toggleGroup = (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -159,13 +172,27 @@ export function AppLayout() {
 
   return (
     <SlidePanelProvider>
-    <div className="flex h-full overflow-hidden bg-page">
+    <div className="flex h-full min-w-0 overflow-hidden bg-page">
+      {mobileMenuOpen && (
+        <button
+          type="button"
+          aria-label="Đóng trình đơn điều hướng"
+          className="fixed inset-0 z-40 bg-black/45 backdrop-blur-sm lg:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
       {/* ── Sidebar ── */}
-      <aside className="sticky top-0 z-40 h-full shrink-0 shadow-xl transition-all duration-300 ease-out">
+      <aside
+        aria-label="Điều hướng chính"
+        className={cn(
+          'fixed inset-y-0 left-0 z-50 h-full shrink-0 -translate-x-full shadow-xl transition-transform duration-300 ease-out lg:sticky lg:top-0 lg:z-40 lg:translate-x-0',
+          mobileMenuOpen && 'translate-x-0',
+        )}
+      >
         <div
           className={cn(
-            'flex h-full flex-col justify-between border-r border-border bg-surface transition-all duration-300 ease-out',
-            collapsed ? 'w-20' : 'w-64',
+            'flex h-full w-[min(86vw,19rem)] flex-col justify-between border-r border-border bg-surface transition-all duration-300 ease-out',
+            sidebarCollapsed ? 'lg:w-20' : 'lg:w-64',
           )}
         >
           <div className="flex h-full flex-col overflow-hidden">
@@ -173,7 +200,7 @@ export function AppLayout() {
             <div
               className={cn(
                 'relative flex h-16 shrink-0 items-center border-b border-border-subtle px-4',
-                collapsed && 'justify-center px-3',
+                sidebarCollapsed && 'justify-center px-3',
               )}
             >
               <div className="absolute bottom-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
@@ -181,7 +208,7 @@ export function AppLayout() {
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-border bg-surface p-1.5 shadow-card">
                   <img src={logo} alt="IBST Logo" className="h-full w-full object-contain" />
                 </div>
-                {!collapsed && (
+                {!sidebarCollapsed && (
                   <div className="flex min-w-0 animate-fade-in flex-col justify-center">
                     <h1 className="w-full bg-gradient-to-r from-blue-700 via-blue-400 to-blue-800 dark:from-blue-400 dark:via-blue-200 dark:to-blue-400 bg-clip-text text-[14px] font-black uppercase leading-tight tracking-wide text-transparent drop-shadow-sm">
                       Bộ Xây dựng
@@ -197,7 +224,7 @@ export function AppLayout() {
             </div>
 
             {/* Navigation */}
-            <nav className={cn('min-h-0 flex-1 space-y-1 overflow-y-auto p-4', collapsed && 'px-2')}>
+            <nav className={cn('min-h-0 flex-1 space-y-1 overflow-y-auto p-4', sidebarCollapsed && 'px-2')}>
               {NAV_MENU.map((item) => {
                 const Icon = item.icon;
                 const hasChildren = !!item.children && item.children.length > 0;
@@ -215,7 +242,7 @@ export function AppLayout() {
                           isParentActive
                             ? 'border-l-[3px] border-l-primary-600 bg-primary-50 text-primary-700 shadow-card dark:border-l-primary-400 dark:bg-primary-900/30 dark:text-primary-300'
                             : 'border-l-[3px] border-l-transparent text-ink-muted hover:bg-muted hover:text-ink',
-                          collapsed && 'justify-center px-0 w-full',
+                          sidebarCollapsed && 'justify-center px-0 w-full',
                         )}
                         onClick={(e) => toggleGroup(item.id, e)}
                       >
@@ -230,12 +257,12 @@ export function AppLayout() {
                           className="flex items-center gap-3 min-w-0 flex-1"
                         >
                           <Icon className="h-[18px] w-[18px] shrink-0" />
-                          {!collapsed && (
+                          {!sidebarCollapsed && (
                             <span className="truncate">{item.label}</span>
                           )}
                         </NavLink>
 
-                        {!collapsed && (
+                        {!sidebarCollapsed && (
                           <button
                             type="button"
                             onClick={(e) => toggleGroup(item.id, e)}
@@ -248,7 +275,7 @@ export function AppLayout() {
                       </div>
 
                       {/* Render các phân hệ con khi MỞ RỘNG (Expanded) */}
-                      {isExpanded && !collapsed && (
+                      {isExpanded && !sidebarCollapsed && (
                         <div className="ml-4 pl-2 border-l border-border/60 space-y-1 mt-1 transition-all">
                           {item.children?.map((child) => {
                             const SubIcon = child.icon;
@@ -281,19 +308,19 @@ export function AppLayout() {
                     key={item.to}
                     to={item.to}
                     end={item.to === '/'}
-                    title={collapsed ? item.label : undefined}
+                    title={sidebarCollapsed ? item.label : undefined}
                     className={({ isActive }) =>
                       cn(
                         'relative mb-1 flex w-full items-center transition-all rounded-lg gap-3 text-[13px] font-bold py-2.5 px-4',
                         isActive
                           ? 'border-l-[3px] border-l-primary-600 bg-primary-50 text-primary-700 shadow-card dark:border-l-primary-400 dark:bg-primary-900/30 dark:text-primary-300'
                           : 'border-l-[3px] border-l-transparent text-ink-muted hover:bg-muted hover:text-ink',
-                        collapsed && 'justify-center px-0 ml-0 w-full',
+                        sidebarCollapsed && 'justify-center px-0 ml-0 w-full',
                       )
                     }
                   >
                     <Icon className="h-[18px] w-[18px] shrink-0" />
-                    {!collapsed && (
+                    {!sidebarCollapsed && (
                       <span className="flex-1 overflow-hidden whitespace-nowrap">{item.label}</span>
                     )}
                   </NavLink>
@@ -303,16 +330,16 @@ export function AppLayout() {
           </div>
 
           {/* Footer */}
-          <div className={cn('space-y-1 border-t border-border-subtle p-4', collapsed && 'px-2')}>
+          <div className={cn('space-y-1 border-t border-border-subtle p-4', sidebarCollapsed && 'px-2')}>
             <button
               onClick={() => setCollapsed(!collapsed)}
               className={cn(
                 'mb-1 flex w-full items-center gap-3 rounded-lg border-l-[3px] border-l-transparent px-4 py-3 text-[13px] font-bold text-ink-muted transition-all hover:bg-muted hover:text-ink',
-                collapsed && 'justify-center px-0',
+                sidebarCollapsed && 'justify-center px-0',
               )}
-              title={collapsed ? 'Mở rộng sidebar' : 'Thu gọn sidebar'}
+              title={sidebarCollapsed ? 'Mở rộng sidebar' : 'Thu gọn sidebar'}
             >
-              {collapsed ? (
+              {sidebarCollapsed ? (
                 <ChevronRight className="h-[18px] w-[18px]" />
               ) : (
                 <>
@@ -323,30 +350,30 @@ export function AppLayout() {
             </button>
             <NavLink
               to="/cai-dat"
-              title={collapsed ? 'Cài đặt hệ thống' : undefined}
+              title={sidebarCollapsed ? 'Cài đặt hệ thống' : undefined}
               className={({ isActive }) =>
                 cn(
                   'mb-1 flex w-full items-center gap-3 rounded-lg border-l-[3px] border-l-transparent px-4 py-3 text-[13px] font-bold transition-all',
                   isActive
                     ? 'border-l-primary-600 bg-primary-50 text-primary-700 shadow-card dark:border-l-primary-400 dark:bg-primary-900/30 dark:text-primary-300'
                     : 'text-ink-muted hover:bg-muted hover:text-ink',
-                  collapsed && 'justify-center px-0',
+                  sidebarCollapsed && 'justify-center px-0',
                 )
               }
             >
               <Settings className="h-[18px] w-[18px]" />
-              {!collapsed && <span className="flex-1 text-left">Cài đặt hệ thống</span>}
+              {!sidebarCollapsed && <span className="flex-1 text-left">Cài đặt hệ thống</span>}
             </NavLink>
             <button
               onClick={() => signOut()}
               className={cn(
                 'mb-1 flex w-full items-center gap-3 rounded-lg border-l-[3px] border-l-transparent px-4 py-3 text-[13px] font-bold text-ink-muted transition-all hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400',
-                collapsed && 'justify-center px-0',
+                sidebarCollapsed && 'justify-center px-0',
               )}
               title="Đăng xuất"
             >
               <LogOut className="h-[18px] w-[18px]" />
-              {!collapsed && <span className="flex-1 text-left">Đăng xuất</span>}
+              {!sidebarCollapsed && <span className="flex-1 text-left">Đăng xuất</span>}
             </button>
           </div>
         </div>
@@ -356,6 +383,15 @@ export function AppLayout() {
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         {/* Header */}
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-surface px-4 backdrop-blur-md transition-colors duration-200 lg:px-6">
+          <button
+            type="button"
+            aria-label={mobileMenuOpen ? 'Đóng trình đơn' : 'Mở trình đơn'}
+            aria-expanded={mobileMenuOpen}
+            onClick={() => setMobileMenuOpen((open) => !open)}
+            className="icon-button mr-2 shrink-0 lg:hidden"
+          >
+            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
           {/* Search */}
           <div className="relative flex max-w-md flex-1">
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
@@ -473,37 +509,39 @@ export function AppLayout() {
                       {/* Tỷ lệ thu phóng */}
                       <div className="space-y-1.5 pt-1.5 border-t border-border-subtle">
                         <div className="flex justify-between items-center text-2xs font-semibold text-ink-secondary">
-                          <span>Tỷ lệ hiển thị</span>
+                          <span>Cỡ chữ giao diện</span>
                           <span className="font-bold text-primary-500">{zoom}%</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <button
                             type="button"
-                            onClick={() => setZoom(Math.max(100, zoom - 10))}
-                            disabled={zoom <= 100}
-                            title="Thu nhỏ (Giảm 10%)"
-                            className="w-7 h-7 flex items-center justify-center rounded-lg border border-border bg-subtle hover:bg-muted text-ink-secondary transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                            onClick={() => setZoom(Math.max(90, zoom - 10))}
+                            disabled={zoom <= 90}
+                            title="Giảm cỡ chữ 10%"
+                            aria-label="Giảm cỡ chữ"
+                            className="icon-button border border-border bg-subtle"
                           >
                             <ZoomOut size={12} />
                           </button>
                           <input
                             type="range"
-                            min="100"
-                            max="200"
+                            min="90"
+                            max="120"
                             step="10"
                             value={zoom}
                             onChange={(e) => setZoom(Number(e.target.value))}
                             className="flex-1 h-1.5 rounded-lg bg-muted appearance-none cursor-pointer accent-[var(--color-primary)] focus:outline-none"
                             style={{
-                              background: `linear-gradient(to right, var(--color-primary) 0%, var(--color-primary) ${zoom - 100}%, var(--bg-muted) ${zoom - 100}%, var(--bg-muted) 100%)`
+                              background: `linear-gradient(to right, var(--color-primary) 0%, var(--color-primary) ${((zoom - 90) / 30) * 100}%, var(--bg-muted) ${((zoom - 90) / 30) * 100}%, var(--bg-muted) 100%)`
                             }}
                           />
                           <button
                             type="button"
-                            onClick={() => setZoom(Math.min(200, zoom + 10))}
-                            disabled={zoom >= 200}
-                            title="Phóng to (Tăng 10%)"
-                            className="w-7 h-7 flex items-center justify-center rounded-lg border border-border bg-subtle hover:bg-muted text-ink-secondary transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                            onClick={() => setZoom(Math.min(120, zoom + 10))}
+                            disabled={zoom >= 120}
+                            title="Tăng cỡ chữ 10%"
+                            aria-label="Tăng cỡ chữ"
+                            className="icon-button border border-border bg-subtle"
                           >
                             <ZoomIn size={12} />
                           </button>
@@ -549,7 +587,7 @@ export function AppLayout() {
 
       <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
       <AiChatbot />
-      <SlidePanelStack sidebarWidth={collapsed ? 80 : 256} />
+      <SlidePanelStack sidebarWidth={isDesktop ? (collapsed ? 80 : 256) : 0} />
     </div>
     </SlidePanelProvider>
   );

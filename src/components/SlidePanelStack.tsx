@@ -23,16 +23,6 @@ function readSavedWidth(storageKey: string | undefined): number | null {
   return Number.isFinite(saved) && saved > 0 ? saved : null;
 }
 
-// `style.width` của panel nằm trong hệ toạ độ TRƯỚC khi #root bị transform: scale(--zoom-scale)
-// (xem src/index.css) — còn window.innerWidth là kích thước viewport SAU scale. Phải quy đổi
-// qua --zoom-scale thì ceiling mới đúng bằng mép thật của sidebar/viewport, nếu không panel sẽ
-// dừng sớm hơn nhiều so với mép sidebar.
-function getZoomScale(): number {
-  if (typeof document === 'undefined') return 0.75;
-  const v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--zoom-scale'));
-  return Number.isFinite(v) && v > 0 ? v : 0.75;
-}
-
 /** Tính chiều rộng thực tế (px) từng panel trong ngăn xếp theo chuỗi ràng buộc trên.
  * `sidebarWidth` trừ đi phần bị sidebar chiếm bên trái, để panel không bao giờ đè lên
  * sidebar — chỉ mở rộng tối đa "đến mép sidebar". */
@@ -42,9 +32,9 @@ function computeWidths(
   sidebarWidth: number,
 ): number[] {
   const viewportWidth = typeof window === 'undefined' ? 1280 : window.innerWidth;
-  const innerWidth = viewportWidth / getZoomScale() - sidebarWidth;
+  const innerWidth = viewportWidth - sidebarWidth;
   const widths: number[] = [];
-  let ceiling = innerWidth - BASE_GAP;
+  let ceiling = innerWidth - (viewportWidth < 640 ? 0 : BASE_GAP);
   stack.forEach((panel, i) => {
     const isTop = i === stack.length - 1;
     const saved = readSavedWidth(panel.storageKey);
@@ -58,7 +48,8 @@ function computeWidths(
     } else {
       natural = ceiling; // panel sau: mặc định bám sát mép panel liền trước
     }
-    const w = Math.max(panel.minWidth ?? MIN_PANEL_WIDTH, Math.min(natural, ceiling));
+    const minimum = Math.min(panel.minWidth ?? MIN_PANEL_WIDTH, ceiling);
+    const w = Math.max(minimum, Math.min(natural, ceiling));
     widths.push(w);
     ceiling = w - STACKING_OFFSET;
   });
@@ -226,7 +217,7 @@ export function SlidePanelStack({ sidebarWidth = 0 }: { sidebarWidth?: number })
     const topIndex = stack.length - 1;
     const ceiling =
       topIndex <= 0
-        ? window.innerWidth / getZoomScale() - sidebarWidth - BASE_GAP
+        ? window.innerWidth - sidebarWidth - (window.innerWidth < 640 ? 0 : BASE_GAP)
         : widths[topIndex - 1] - STACKING_OFFSET;
     const minW = stack[topIndex]?.minWidth ?? MIN_PANEL_WIDTH;
     const onMove = (e: MouseEvent) => {

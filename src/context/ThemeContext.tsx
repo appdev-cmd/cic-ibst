@@ -263,7 +263,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [zoom, setZoomState] = useState<number>(() => {
     const saved = localStorage.getItem('appZoom');
     const val = Number(saved);
-    return val >= 100 && val <= 200 ? val : 100;
+    return val >= 90 && val <= 120 ? val : 100;
   });
 
   useEffect(() => {
@@ -275,9 +275,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, [primaryColor]);
 
   useEffect(() => {
-    // Calculate scale factor relative to the base 0.75 scale of the application
-    const scale = (zoom / 100) * 0.75;
-    document.documentElement.style.setProperty('--zoom-scale', String(scale));
+    document.documentElement.style.fontSize = `${zoom}%`;
   }, [zoom]);
 
   const setTheme = useCallback((t: Theme) => {
@@ -291,7 +289,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const setZoom = useCallback((z: number) => {
-    const clamped = Math.max(100, Math.min(200, z));
+    const clamped = Math.max(90, Math.min(120, z));
     setZoomState(clamped);
     localStorage.setItem('appZoom', String(clamped));
   }, []);
