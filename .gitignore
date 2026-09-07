@@ -5,3 +5,7 @@ dist
 *.tsbuildinfo
 docs/.~lock*
 .temp
+
+.~lock*
+~$*
+*.tmp
