@@ -151,3 +151,73 @@ export async function fetchCongNoTheoDonVi(): Promise<
     .filter((r) => r.phaiThu > 0 || r.daThu > 0)
     .sort((a, b) => b.phaiThu - a.phaiThu);
 }
+
+// ─── Dữ liệu phụ trợ cho bộ luật rà soát QC 2815 (lib/canhBao2815.ts) ───
+// Gom trong vài truy vấn thay vì để engine tự hỏi CSDL từng hợp đồng.
+
+export interface DuLieuCanhBaoRaw {
+  lienDanhChuaBaoKhkt: Set<string>;
+  tamUngQuaHan: Map<string, number>;
+  hoaDonChuaThu: Map<string, number>;
+  viPhamDieu83: Set<string>;
+}
+
+const MOT_NGAY = 24 * 3600 * 1000;
+const soNgayTu = (iso: string) => Math.floor((Date.now() - new Date(iso).getTime()) / MOT_NGAY);
+
+export async function fetchDuLieuCanhBao(): Promise<DuLieuCanhBaoRaw> {
+  // Đ.4.7 — liên danh phải thông báo bằng văn bản với P.KHKT trước khi ký
+  const lienDanh = await supabase
+    .from('lien_danh')
+    .select('hop_dong_id, so_van_ban_khkt, ngay_thong_bao_khkt');
+  throwIf(lienDanh.error);
+  const lienDanhChuaBaoKhkt = new Set<string>();
+  for (const r of lienDanh.data ?? []) {
+    if (!r.so_van_ban_khkt && !r.ngay_thong_bao_khkt) lienDanhChuaBaoKhkt.add(String(r.hop_dong_id));
+  }
+
+  // Đ.14 mục 2 dòng 6 — tạm ứng quá hạn hoàn
+  const tamUng = await supabase
+    .from('tam_ung')
+    .select('hop_dong_id, han_hoan, trang_thai')
+    .eq('trang_thai', 'dang-no');
+  throwIf(tamUng.error);
+  const tamUngQuaHan = new Map<string, number>();
+  for (const r of tamUng.data ?? []) {
+    if (!r.han_hoan) continue;
+    const qua = soNgayTu(r.han_hoan);
+    if (qua <= 0) continue;
+    const id = String(r.hop_dong_id);
+    tamUngQuaHan.set(id, Math.max(tamUngQuaHan.get(id) ?? 0, qua));
+  }
+
+  // Đ.14 mục 2 dòng 7 — đã xuất hóa đơn mà bên A chưa trả (đồng hồ VAT 1 năm)
+  const dot = await supabase
+    .from('dot_thanh_toan')
+    .select('hop_dong_id, ngay_xuat_hoa_don, ngay_thuc_thu')
+    .not('ngay_xuat_hoa_don', 'is', null)
+    .is('ngay_thuc_thu', null);
+  throwIf(dot.error);
+  const hoaDonChuaThu = new Map<string, number>();
+  for (const r of dot.data ?? []) {
+    if (!r.ngay_xuat_hoa_don) continue;
+    const id = String(r.hop_dong_id);
+    hoaDonChuaThu.set(id, Math.max(hoaDonChuaThu.get(id) ?? 0, soNgayTu(r.ngay_xuat_hoa_don)));
+  }
+
+  // Đ.8.3 — Trưởng đơn vị là chủ trì mà chưa giao Phó đơn vị quản lý
+  const hd = await supabase
+    .from('hop_dong')
+    .select('id, chu_tri_id, pho_don_vi_quan_ly_id, don_vi:don_vi_id(truong_don_vi_id)')
+    .not('chu_tri_id', 'is', null);
+  throwIf(hd.error);
+  const viPhamDieu83 = new Set<string>();
+  for (const r of hd.data ?? []) {
+    const truong = (r.don_vi as unknown as { truong_don_vi_id: number | null } | null)?.truong_don_vi_id;
+    if (truong != null && Number(r.chu_tri_id) === Number(truong) && r.pho_don_vi_quan_ly_id == null) {
+      viPhamDieu83.add(String(r.id));
+    }
+  }
+
+  return { lienDanhChuaBaoKhkt, tamUngQuaHan, hoaDonChuaThu, viPhamDieu83 };
+}

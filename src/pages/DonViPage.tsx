@@ -52,7 +52,7 @@ const EMPTY_FORM: DonViInput = {
   phuTrachId: '',
 };
 
-export function DonViPage() {
+export function DonViPage({ hideHeader = false }: { hideHeader?: boolean } = {}) {
   const { data: donViList, loading, error, refetch } = useAsyncData(fetchDonVi, []);
   const { data: nhanSuList } = useAsyncData(fetchNhanSuFull, []);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -146,15 +146,27 @@ export function DonViPage() {
 
   return (
     <div>
-      <PageHeader
-        title="Đơn vị - Tổ chức"
-        subtitle="Cơ cấu tổ chức và chức năng nhiệm vụ 19 đơn vị trực thuộc — theo ibst.vn"
-        actions={
+      {!hideHeader ? (
+        <PageHeader
+          title="Đơn vị - Tổ chức"
+          subtitle="Cơ cấu tổ chức và chức năng nhiệm vụ 19 đơn vị trực thuộc — theo ibst.vn"
+          actions={
+            <button className="btn-primary" onClick={openCreate}>
+              <Plus size={16} /> Thêm đơn vị
+            </button>
+          }
+        />
+      ) : (
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h3 className="text-base font-bold text-ink">Sơ đồ cơ cấu tổ chức & Đơn vị trực thuộc</h3>
+            <p className="text-xs text-ink-muted">Cơ cấu 19 đơn vị trực thuộc và sơ đồ cây phân cấp Viện IBST</p>
+          </div>
           <button className="btn-primary" onClick={openCreate}>
             <Plus size={16} /> Thêm đơn vị
           </button>
-        }
-      />
+        </div>
+      )}
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard icon={Network} label="Đơn vị trực thuộc" value={String(soDonVi)} tone="primary" />

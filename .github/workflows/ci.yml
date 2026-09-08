@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    name: Type check & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Khác cic-erp-contract: repo này đang type-check SẠCH nên để CHẶN THẬT,
+      # không dùng continue-on-error. Nếu sau này có lỗi tồn đọng thì sửa lỗi,
+      # đừng nới lỏng bước này.
+      - name: Type check
+        run: npx tsc -b --noEmit
+
+      - name: Build
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+  migrations:
+    name: Kiểm tra migration idempotent
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Chốt chặn cho quy tắc trong scripts/README.md: migration phải chạy lại được
+      # mà không vỡ. Bắt các lệnh DDL thiếu mệnh đề phòng vệ.
+      - name: Bắt DDL không idempotent
+        run: |
+          set -e
+          loi=0
+          for f in supabase/migrations/*.sql; do
+            # Bỏ qua các migration cũ trước khi áp quy tắc (0001-0027).
+            so=$(basename "$f" | cut -c1-4)
+            if [ "$so" -lt "0028" ] 2>/dev/null; then continue; fi
+
+            if grep -nEi '^[[:space:]]*create table[[:space:]]+(if[[:space:]]+not[[:space:]]+exists)?' "$f" \
+               | grep -vi 'if not exists' | grep -q .; then
+              echo "::error file=$f::create table thiếu 'if not exists'"; loi=1
+            fi
+            if grep -nEi '^[[:space:]]*create trigger' "$f" >/dev/null; then
+              soTrigger=$(grep -cEi '^[[:space:]]*create trigger' "$f" || true)
+              soDrop=$(grep -cEi 'drop trigger if exists' "$f" || true)
+              if [ "$soDrop" -lt "$soTrigger" ]; then
+                echo "::error file=$f::create trigger chưa có 'drop trigger if exists' đi kèm"; loi=1
+              fi
+            fi
+            if grep -nEi '^[[:space:]]*create policy' "$f" >/dev/null; then
+              soPolicy=$(grep -cEi '^[[:space:]]*create policy' "$f" || true)
+              soDropP=$(grep -cEi 'drop policy if exists' "$f" || true)
+              if [ "$soDropP" -lt "$soPolicy" ]; then
+                echo "::error file=$f::create policy chưa có 'drop policy if exists' đi kèm"; loi=1
+              fi
+            fi
+          done
+          if [ "$loi" -ne 0 ]; then
+            echo "Xem quy tắc tại scripts/README.md — migration phải idempotent."
+            exit 1
+          fi
+          echo "Tất cả migration từ 0028 trở đi đều idempotent."

@@ -82,7 +82,16 @@ const NAV_MENU: NavItem[] = [
   },
   { id: 'tai-chinh', to: '/tai-chinh', label: '3. Tài chính & Thu chi', icon: Wallet },
   { id: 'khoa-hoc', to: '/khoa-hoc', label: '4. Quản lý Khoa học & SHTT', icon: FlaskConical },
-  { id: 'nhan-su', to: '/nhan-su', label: '5. Nhân sự & Đảng - Đoàn', icon: Users },
+  {
+    id: 'nhan-su',
+    to: '/nhan-su',
+    label: '5. Nhân sự & Đảng - Đoàn',
+    icon: Users,
+    children: [
+      { to: '/don-vi', label: 'Sơ đồ Tổ chức & Đơn vị', icon: Network },
+      { to: '/nhan-su', label: 'Hồ sơ CBNV & Đảng - Đoàn', icon: Users },
+    ],
+  },
   { id: 'thi-nghiem', to: '/thi-nghiem', label: '6. Thử nghiệm LIMS & Lab', icon: Microscope },
   { id: 'e-office', to: '/e-office', label: '7. Văn phòng số e-Office', icon: FileText },
   { id: 'kho-luu-tru', to: '/kho-luu-tru', label: '8. Kho Lưu trữ & AI-RAG', icon: FolderOpen },
@@ -132,12 +141,16 @@ export function AppLayout() {
   // Mặc định mở rộng nhóm nếu trang hiện tại nằm trong nhóm đó
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(() => {
     const isHopDong = ['/hop-dong', '/dau-thau', '/pvqlnn', '/uy-quyen'].includes(pathname);
-    return { 'hop-dong-crm': isHopDong };
+    const isNhanSu = ['/nhan-su', '/don-vi'].includes(pathname);
+    return { 'hop-dong-crm': isHopDong, 'nhan-su': isNhanSu };
   });
 
   useEffect(() => {
     if (['/hop-dong', '/dau-thau', '/pvqlnn', '/uy-quyen'].includes(pathname)) {
       setExpandedGroups((prev) => ({ ...prev, 'hop-dong-crm': true }));
+    }
+    if (['/nhan-su', '/don-vi'].includes(pathname)) {
+      setExpandedGroups((prev) => ({ ...prev, 'nhan-su': true }));
     }
     setMobileMenuOpen(false);
   }, [pathname]);

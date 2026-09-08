@@ -49,14 +49,17 @@ import { SlideOverTabs, type SlideOverTabDef } from '../components/SlideOver';
 import { TableToolbar, FilterSelect, Pagination, RowActions } from '../components/TableToolbar';
 import { ThucHienHopDongPanel } from '../components/ThucHienHopDongPanel';
 import { BaoCaoKhktPanel } from '../components/BaoCaoKhktPanel';
+import { CanhBaoQuyChePanel } from '../components/CanhBaoQuyChePanel';
 import { useSlidePanel } from '../context/SlidePanelContext';
 import { useAuth } from '../context/AuthContext';
 import {
-  CAC_BUOC_KY,
+  DAC_TA_NHANH,
   NHAN_TRANG_THAI_GIAO_VIEC,
   buocKeTiep,
+  cacBuocKy,
   coTheTraLai,
   mauTrangThaiGiaoViec,
+  nhanhKyGiaoViec,
   type TrangThaiGiaoViec,
 } from '../lib/kyGiaoViec';
 import {
@@ -96,6 +99,7 @@ import {
   type CtvGiaoViec,
 } from '../services/chitiet';
 import { PhanPhoiHopDongPanel } from '../components/PhanPhoiHopDongPanel';
+import { QuyetToanDieu11Panel } from '../components/QuyetToanDieu11Panel';
 import type { HopDong, TrangThaiPheDuyet } from '../types';
 import {
   BANG_1,
@@ -123,7 +127,6 @@ const EMPTY_FORM: HopDongInput = {
   khachHangId: '',
   donViId: '',
   giaTri: '',
-  daThanhToan: '',
   ngayKy: '',
   hanHoanThanh: '',
   trangThai: 'moi',
@@ -140,6 +143,11 @@ const EMPTY_FORM: HopDongInput = {
   giamTheoYeuCauDonVi: false,
   phucTap: false,
   capKy: '',
+  quanLyTapTrung: false,
+  dongDauSoBo: false,
+  ngayDongDauSoBo: '',
+  soVbChapThuanDauSoBo: '',
+  phoDonViQuanLyId: '',
   fileDuThaoUrl: '',
   tenFileDuThao: '',
 };
@@ -338,7 +346,6 @@ export function HopDongPage() {
       khachHangId: hd.khachHangId ?? '',
       donViId: hd.donViId ?? '',
       giaTri: String(hd.giaTri || ''),
-      daThanhToan: String(hd.daThanhToan || ''),
       ngayKy: hd.ngayKy,
       hanHoanThanh: hd.hanHoanThanh,
       trangThai: hd.trangThai,
@@ -355,6 +362,11 @@ export function HopDongPage() {
       giamTheoYeuCauDonVi: hd.giamTheoYeuCauDonVi,
       phucTap: hd.phucTap,
       capKy: hd.capKy ?? '',
+      quanLyTapTrung: hd.quanLyTapTrung,
+      dongDauSoBo: hd.dongDauSoBo,
+      ngayDongDauSoBo: hd.ngayDongDauSoBo,
+      soVbChapThuanDauSoBo: hd.soVbChapThuanDauSoBo,
+      phoDonViQuanLyId: hd.phoDonViQuanLyId ?? '',
       fileDuThaoUrl: hd.fileDuThaoUrl ?? '',
       tenFileDuThao: hd.tenFileDuThao ?? '',
     }),
@@ -572,6 +584,7 @@ export function HopDongPage() {
               );
             })()}
             <DotThanhToanPanel key={`dtt-${hd.id}`} hopDongId={hd.id} giaTri={hd.giaTri} onChanged={refetch} />
+            <QuyetToanDieu11Panel key={`qt11-${hd.id}`} hd={hd} nhanSuOptions={nhanSuOptions} />
             <QuyetToanGiaiDoanPanel key={`qtgd-${hd.id}`} hopDongId={hd.id} onChanged={refetch} />
           </div>
         )}
@@ -581,7 +594,9 @@ export function HopDongPage() {
         {tab === 'kiem-tra' && (
           <KiemTraNoiBoPanel key={`kt-${hd.id}`} hopDongId={hd.id} nhanSuOptions={nhanSuOptions} onChanged={refetch} />
         )}
-        {tab === 'ho-so' && <HoSoHopDongPanel hopDongId={hd.id} onChanged={refetch} />}
+        {tab === 'ho-so' && (
+          <HoSoHopDongPanel hopDongId={hd.id} trangThaiHopDong={hd.trangThai} onChanged={refetch} />
+        )}
         {tab === 'phan-phoi' && <PhanPhoiHopDongPanel key={`pp-${hd.id}`} hd={hd} />}
         {tab === 'lien-danh' && <LienDanhPanel hopDongId={hd.id} />}
         {tab === 'luu-tru' && <LuuTruHoSoPanel hopDongId={hd.id} nhanSuOptions={nhanSuOptions} />}
@@ -785,11 +800,14 @@ export function HopDongPage() {
 
           {crud.editing && (
             <Field label="Đã thanh toán (triệu đồng)">
-              <NumberInput
-                value={crud.form.daThanhToan}
-                onChange={(val) => crud.setForm({ ...crud.form, daThanhToan: val })}
-                className={inputCls}
-              />
+              <div className="rounded-lg border border-border bg-subtle px-3 py-2">
+                <p className="font-mono text-sm font-bold text-ink">
+                  {formatTrieu(crud.editing.daThanhToan)}
+                </p>
+                <p className="mt-0.5 text-2xs text-ink-muted">
+                  Tự cộng từ các đợt đã có ngày thực thu — nhập ở tab “Thanh toán &amp; QT (Đ.11)”.
+                </p>
+              </div>
             </Field>
           )}
         </div>
@@ -968,13 +986,94 @@ export function HopDongPage() {
             />
             HĐ kỹ thuật phức tạp / tính chính trị / pháp lý quan trọng / Bộ giao (Đ.6.1 — buộc trình Viện trưởng)
           </label>
+          <label
+            className="col-span-2 flex items-center gap-2 text-xs font-medium text-ink-secondary"
+            title="Điều 3.o: bắt buộc với HĐ tư vấn giám sát, tư vấn QLDA và thi công — Giám đốc đơn vị điều hành tập trung"
+          >
+            <input
+              type="checkbox"
+              checked={crud.form.quanLyTapTrung}
+              onChange={(e) => crud.setForm({ ...crud.form, quanLyTapTrung: e.target.checked })}
+            />
+            HĐ theo mô hình quản lý tập trung tại đơn vị (Đ.3.o — TVGS / TVQLDA / thi công)
+          </label>
         </div>
+
+        {/* Nhánh ký giao việc suy ra từ các cờ trên — cho người nhập thấy ngay hệ quả (Đ.7.1c) */}
+        <p className="mt-2 rounded-lg border border-border bg-subtle px-3 py-2 text-2xs text-ink-secondary">
+          Luồng ký Quyết định giao việc sẽ đi{' '}
+          <strong className="text-primary">
+            nhánh {nhanhKyGiaoViec({
+              capKy: (crud.form.capKy || null) as CapKy | null,
+              phucTap: crud.form.phucTap,
+              quanLyTapTrung: crud.form.quanLyTapTrung,
+            })}
+          </strong>{' '}
+          —{' '}
+          {DAC_TA_NHANH[nhanhKyGiaoViec({
+            capKy: (crud.form.capKy || null) as CapKy | null,
+            phucTap: crud.form.phucTap,
+            quanLyTapTrung: crud.form.quanLyTapTrung,
+          })].canCu}
+        </p>
 
         {/* Đ.6.2 — nhắc ngay trong form khi chọn đơn vị ký mà đơn vị chưa có ủy quyền hiệu lực */}
         {crud.form.capKy === 'don-vi-ky' && crud.form.donViId && (
           <UyQuyenKyCanhBao key={`uq-${crud.form.donViId}`} donViId={crud.form.donViId} />
         )}
       </FormSection>
+
+      {crud.editing && (
+        <FormSection title="Đóng dấu sơ bộ & Phân công quản lý (Đ.8.2, Đ.8.3)">
+          <label
+            className="flex items-center gap-2 text-xs font-medium text-ink-secondary"
+            title="Điều 8.2: hồ sơ kết quả chỉ được đóng dấu khi HĐ đã ký kết; nếu đang chờ thủ tục ký mà cần đóng dấu sơ bộ thì phải được Lãnh đạo Viện (HĐ Viện ký) hoặc Giám đốc đơn vị (HĐ đơn vị ký) chấp thuận"
+          >
+            <input
+              type="checkbox"
+              checked={crud.form.dongDauSoBo}
+              onChange={(e) => crud.setForm({ ...crud.form, dongDauSoBo: e.target.checked })}
+            />
+            Đã được chấp thuận đóng dấu sơ bộ khi HĐ chưa ký đủ các bên (Đ.8.2)
+          </label>
+
+          {crud.form.dongDauSoBo && (
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <Field label="Ngày chấp thuận đóng dấu sơ bộ">
+                <input
+                  type="date"
+                  value={crud.form.ngayDongDauSoBo || ''}
+                  onChange={(e) => crud.setForm({ ...crud.form, ngayDongDauSoBo: e.target.value })}
+                  className={inputCls}
+                />
+              </Field>
+              <Field label="Số văn bản chấp thuận">
+                <input
+                  value={crud.form.soVbChapThuanDauSoBo || ''}
+                  onChange={(e) => crud.setForm({ ...crud.form, soVbChapThuanDauSoBo: e.target.value })}
+                  className={inputCls}
+                  placeholder="VD: 145/VKH-KHKT"
+                />
+              </Field>
+            </div>
+          )}
+
+          <div className="mt-3">
+            <Field label="Phó đơn vị được giao quản lý HĐ (Đ.8.3 — bắt buộc khi Trưởng đơn vị là chủ trì)">
+              <select
+                value={crud.form.phoDonViQuanLyId || ''}
+                onChange={(e) => crud.setForm({ ...crud.form, phoDonViQuanLyId: e.target.value })}
+                className={inputCls}
+              >
+                <option value="">-- Không áp dụng --</option>
+                {nhanSuOptions.map((n) => (
+                  <option key={n.id} value={n.id}>{n.ten}</option>
+                ))}
+              </select>
+            </Field>
+          </div>
+        </FormSection>
+      )}
 
       <FormSection title="📁 Tệp dự thảo Hợp đồng & Link Google Docs">
         <Field label="Link Google Docs / Drive / Cloud (Xem trực tuyến)">
@@ -1127,7 +1226,12 @@ export function HopDongPage() {
       </div>
 
       {activeTab === 'crm-khach-hang' && <KhachHangPage />}
-      {activeTab === 'bao-cao-khkt' && <BaoCaoKhktPanel hopDongList={hopDongList} />}
+      {activeTab === 'bao-cao-khkt' && (
+        <div className="space-y-4">
+          <BaoCaoKhktPanel hopDongList={hopDongList} />
+          <CanhBaoQuyChePanel hopDongList={hopDongList} />
+        </div>
+      )}
 
       {activeTab === 'hop-dong-2815' && (
         <>
@@ -1370,7 +1474,13 @@ function PhieuGiaoViecForm({
   donViOptions: Option[];
   onClose?: () => void;
 }) {
-  const { data: phieu, refetch } = useAsyncData<PhieuGiaoViec | null>(() => fetchPhieuGiaoViec(hd.id), null);
+  // `loading` là bắt buộc: useAsyncData trả data = null trong lúc đang nạp, không phân biệt
+  // được với "hợp đồng chưa có phiếu". Nếu bỏ qua nó, effect khởi tạo bên dưới sẽ chạy ngay
+  // khi mở tab và upsert đè nội dung phiếu THẬT bằng chuỗi mặc định (mất dữ liệu).
+  const { data: phieu, loading: dangTaiPhieu, refetch } = useAsyncData<PhieuGiaoViec | null>(
+    () => fetchPhieuGiaoViec(hd.id),
+    null,
+  );
   // Phải nhớ (useMemo) — phanBoHopDong() trả về object mới mỗi lần gọi; nếu tính lại vô
   // điều kiện ở mỗi render thì effect bên dưới (đang có pb trong dependency) sẽ nhận diện
   // "pb đổi" ở MỌI render, kể cả render do chính effect đó gây ra qua setForm() — tạo vòng
@@ -1383,6 +1493,8 @@ function PhieuGiaoViecForm({
 
   useEffect(() => {
     if (loaded) return;
+    // Chưa nạp xong thì chưa biết hợp đồng đã có phiếu hay chưa — không được khởi tạo vội.
+    if (dangTaiPhieu) return;
     if (phieu) {
       setForm({
         chuTriKyThuatId: phieu.chuTriKyThuatId ?? '',
@@ -1407,7 +1519,7 @@ function PhieuGiaoViecForm({
         setLoaded(true);
       });
     }
-  }, [phieu, loaded, pb, hd.id, hd.soHD, hd.ten, hd.ngayKy, refetch]);
+  }, [phieu, dangTaiPhieu, loaded, pb, hd.id, hd.soHD, hd.ten, hd.ngayKy, refetch]);
 
   const save = async () => {
     setSaving(true);
@@ -1674,7 +1786,15 @@ function PhieuGiaoViecForm({
       )}
 
       {/* Luồng ký quyết định giao việc (Điều 7.1c) nếu chưa khóa */}
-      {!daKhoa && phieu && <ThanhKyGiaoViec phieu={phieu} capKy={hd.capKy} onChanged={refetch} />}
+      {!daKhoa && phieu && (
+        <ThanhKyGiaoViec
+          phieu={phieu}
+          capKy={hd.capKy}
+          phucTap={hd.phucTap}
+          quanLyTapTrung={hd.quanLyTapTrung}
+          onChanged={refetch}
+        />
+      )}
 
       {err && <p className="text-2xs font-semibold text-danger">{err}</p>}
 
@@ -2377,10 +2497,14 @@ function HopDongGiaoViecTab({ hd, nhanSuOptions, donViOptions }: { hd: HopDong; 
 function ThanhKyGiaoViec({
   phieu,
   capKy,
+  phucTap,
+  quanLyTapTrung,
   onChanged,
 }: {
   phieu: PhieuGiaoViec;
   capKy: CapKy | null;
+  phucTap?: boolean;
+  quanLyTapTrung?: boolean;
   onChanged: () => void;
 }) {
   const { vaiTro, nhanSuId } = useAuth();
@@ -2388,9 +2512,12 @@ function ThanhKyGiaoViec({
   const [err, setErr] = useState<string | null>(null);
 
   const tt = phieu.trangThai;
-  const ke = buocKeTiep(tt, capKy);
+  // Nhánh Đ.7.1c quyết định số bước và ai ký từng bước (khớp fn_nhanh_ky_giao_viec — 0035).
+  const nhanh = nhanhKyGiaoViec({ capKy, phucTap, quanLyTapTrung });
+  const buoc = cacBuocKy(nhanh);
+  const ke = buocKeTiep(tt, nhanh);
   const duocKy = !!ke && ke.vaiTroChoPhep.includes(vaiTro);
-  const idxHienTai = CAC_BUOC_KY.findIndex((b) => b.id === tt);
+  const idxHienTai = buoc.findIndex((b) => b.id === tt);
 
   const chuyen = async (den: TrangThaiGiaoViec, lyDo?: string) => {
     setBusy(true);
@@ -2417,14 +2544,22 @@ function ThanhKyGiaoViec({
         <h4 className="text-2xs font-black uppercase tracking-wider text-ink-muted">
           Luồng ký Quyết định giao việc (Điều 7.1c)
         </h4>
-        <span className={cn('rounded px-2 py-0.5 text-2xs font-bold', mauTrangThaiGiaoViec(tt))}>
-          {NHAN_TRANG_THAI_GIAO_VIEC[tt]}
-        </span>
+        <div className="flex items-center gap-1.5">
+          <span
+            className="rounded bg-primary-subtle px-2 py-0.5 text-2xs font-bold text-primary dark:bg-primary-900/30 dark:text-primary-300"
+            title={DAC_TA_NHANH[nhanh].canCu}
+          >
+            Nhánh {nhanh} — {DAC_TA_NHANH[nhanh].ten}
+          </span>
+          <span className={cn('rounded px-2 py-0.5 text-2xs font-bold', mauTrangThaiGiaoViec(tt))}>
+            {NHAN_TRANG_THAI_GIAO_VIEC[tt]}
+          </span>
+        </div>
       </div>
 
-      {/* Thanh tiến trình 5 mốc */}
+      {/* Thanh tiến trình theo nhánh (4 bước với A/C, 2 bước với B/D) */}
       <div className="flex items-start justify-between gap-1 overflow-x-auto pt-1">
-        {CAC_BUOC_KY.map((b, i) => {
+        {buoc.map((b, i) => {
           const xong = idxHienTai > i && tt !== 'tra-lai';
           const dangO = b.id === tt;
           return (

@@ -9,15 +9,22 @@ import { TableToolbar, FilterSelect, Pagination } from '../components/TableToolb
 import { useAsyncData } from '../hooks/useAsyncData';
 import { useTableControls } from '../hooks/useTableControls';
 import { useCrudForm } from '../hooks/useCrudForm';
+import { useSlidePanelForm } from '../hooks/useSlidePanelCrud';
 import {
   fetchLopDaoTao,
   createLopDaoTao,
   updateLopDaoTao,
   deleteLopDaoTao,
   LOAI_DAO_TAO_OPTIONS,
+  fetchNghienCuuSinh,
+  createNghienCuuSinh,
+  updateNghienCuuSinh,
+  deleteNghienCuuSinh,
   type LopDaoTaoInput,
+  type NghienCuuSinhInput,
 } from '../services/queries';
-import type { LopDaoTao } from '../types';
+import type { LopDaoTao, NghienCuuSinh } from '../types';
+import { TRANG_THAI_HOI_DONG_NCS } from '../types';
 import { formatNgay, cn } from '../lib/utils';
 
 const LOAI_CLS: Record<string, string> = {
@@ -26,21 +33,23 @@ const LOAI_CLS: Record<string, string> = {
   'Hội thảo': 'bg-amber-50 text-warning dark:bg-amber-900/20 dark:text-amber-400',
 };
 
-interface NghienCuuSinh {
-  id: string;
-  hoTen: string;
-  ngayNhapHoc: string;
-  gvHuongDan: string;
-  tenDeTai: string;
-  trangThaiHoiDong: 'Chua-thanh-lap' | 'Bao-ve-co-so' | 'Bao-ve-cap-Vien' | 'Da-cap-bang';
-}
+const NCS_TRANG_THAI_CLS: Record<string, string> = {
+  'chua-thanh-lap': 'bg-subtle text-ink-muted',
+  'bao-ve-co-so': 'bg-info/10 text-info',
+  'bao-ve-cap-vien': 'bg-warning/10 text-warning',
+  'da-cap-bang': 'bg-success/10 text-success',
+};
 
-const INITIAL_NCS: NghienCuuSinh[] = [
-  { id: '1', hoTen: 'Nguyễn Hoàng Giang', ngayNhapHoc: '2023-11-10', gvHuongDan: 'PGS.TS. Lê Quang Hùng', tenDeTai: 'Nghiên cứu ảnh hưởng của tro bay hoạt tính cao đến cường độ nén bê tông M1000', trangThaiHoiDong: 'Bao-ve-co-so' },
-  { id: '2', hoTen: 'Phạm Thanh Sơn', ngayNhapHoc: '2024-05-15', gvHuongDan: 'GS.TS. Nguyễn Minh Hải', tenDeTai: 'Phát triển giải pháp neo tường chắn đất sâu trong hầm ngầm đô thị Việt Nam', trangThaiHoiDong: 'Chua-thanh-lap' },
-  { id: '3', hoTen: 'Trần Thuỳ Trang', ngayNhapHoc: '2022-09-01', gvHuongDan: 'PGS.TS. Trần Thế Anh', tenDeTai: 'Mô phỏng động lực học chất lưu (CFD) tải trọng gió lên cụm công trình nhà cao tầng hình dáng phức tạp', trangThaiHoiDong: 'Bao-ve-cap-Vien' },
-  { id: '4', hoTen: 'Lê Minh Đức', ngayNhapHoc: '2021-12-20', gvHuongDan: 'GS.TS. Cao Duy Tiến', tenDeTai: 'Nghiên cứu độ bền lâu của kết cấu bê tông cốt thép trong điều kiện khí hậu biển Việt Nam', trangThaiHoiDong: 'Da-cap-bang' },
-];
+const EMPTY_NCS_FORM: NghienCuuSinhInput = {
+  nhanSuId: '',
+  hoTen: '',
+  ngayNhapHoc: '',
+  gvHuongDan: '',
+  tenDeTai: '',
+  donViId: '',
+  trangThaiHoiDong: 'chua-thanh-lap',
+  ghiChu: '',
+};
 
 const EMPTY_FORM: LopDaoTaoInput = {
   ten: '',
@@ -89,19 +98,29 @@ export function DaoTaoPage() {
 
   const tableLop = useTableControls(filteredLop, (ld) => `${ld.ten} ${ld.loai}`);
 
-  // Tab 2: NghiencuSinh
-  const [ncsList, setNcsList] = useState<NghienCuuSinh[]>(INITIAL_NCS);
+  // Tab 2: Nghiên cứu sinh (bảng nghien_cuu_sinh — thật, không còn mock)
+  const { data: ncsList, refetch: refetchNcs } = useAsyncData(fetchNghienCuuSinh, []);
   const [ncsSearch, setNcsSearch] = useState('');
   const [filterNcsTrangThai, setFilterNcsTrangThai] = useState('');
-  const [ncsModalOpen, setNcsModalOpen] = useState(false);
-  const [editingNcs, setEditingNcs] = useState<NghienCuuSinh | null>(null);
-  
-  const [formNcs, setFormNcs] = useState<Omit<NghienCuuSinh, 'id'>>({
-    hoTen: '',
-    ngayNhapHoc: '',
-    gvHuongDan: '',
-    tenDeTai: '',
-    trangThaiHoiDong: 'Chua-thanh-lap',
+
+  const ncsCrud = useCrudForm<NghienCuuSinh, NghienCuuSinhInput>({
+    empty: EMPTY_NCS_FORM,
+    toForm: (ncs) => ({
+      nhanSuId: ncs.nhanSuId ?? '',
+      hoTen: ncs.hoTen,
+      ngayNhapHoc: ncs.ngayNhapHoc,
+      gvHuongDan: ncs.gvHuongDan,
+      tenDeTai: ncs.tenDeTai,
+      donViId: ncs.donViId ?? '',
+      trangThaiHoiDong: ncs.trangThaiHoiDong,
+      ghiChu: ncs.ghiChu,
+    }),
+    getId: (ncs) => ncs.id,
+    create: createNghienCuuSinh,
+    update: updateNghienCuuSinh,
+    remove: deleteNghienCuuSinh,
+    deleteMessage: (ncs) => `Xóa hồ sơ nghiên cứu sinh "${ncs.hoTen}"?`,
+    onDone: refetchNcs,
   });
 
   const filteredNcs = useMemo(() => {
@@ -113,58 +132,95 @@ export function DaoTaoPage() {
     });
   }, [ncsList, ncsSearch, filterNcsTrangThai]);
 
-  const handleOpenNcsCreate = () => {
-    setEditingNcs(null);
-    setFormNcs({
-      hoTen: '',
-      ngayNhapHoc: '',
-      gvHuongDan: '',
-      tenDeTai: '',
-      trangThaiHoiDong: 'Chua-thanh-lap',
-    });
-    setNcsModalOpen(true);
-  };
-
-  const handleOpenNcsEdit = (item: NghienCuuSinh) => {
-    setEditingNcs(item);
-    setFormNcs({
-      hoTen: item.hoTen,
-      ngayNhapHoc: item.ngayNhapHoc,
-      gvHuongDan: item.gvHuongDan,
-      tenDeTai: item.tenDeTai,
-      trangThaiHoiDong: item.trangThaiHoiDong,
-    });
-    setNcsModalOpen(true);
-  };
-
-  const handleNcsDelete = (id: string) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa nghiên cứu sinh này khỏi danh sách?')) return;
-    setNcsList(ncsList.filter((x) => x.id !== id));
-  };
-
-  const handleNcsSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (editingNcs) {
-      setNcsList(ncsList.map((x) => (x.id === editingNcs.id ? { ...x, ...formNcs } : x)));
-    } else {
-      const newItem: NghienCuuSinh = {
-        id: String(Date.now()),
-        ...formNcs,
-      };
-      setNcsList([...ncsList, newItem]);
-    }
-    setNcsModalOpen(false);
-  };
-
   // ─── KPI từ dữ liệu thật ───
   const nam = String(new Date().getFullYear());
-  const ncsDangDaoTao = ncsList.filter((ld) => ld.trangThaiHoiDong !== 'Da-cap-bang').length;
+  const ncsDangDaoTao = ncsList.filter((ld) => ld.trangThaiHoiDong !== 'da-cap-bang').length;
   const luotHocVienNam = lopList
     .filter((ld) => ld.batDau.startsWith(nam) || ld.ketThuc.startsWith(nam))
     .reduce((s, ld) => s + ld.soHocVien, 0);
   const sapDienRa = lopList.filter(
     (ld) => ld.trangThai === 'moi' && ld.batDau && new Date(ld.batDau).getTime() > Date.now(),
   ).length;
+
+  // ─── Slide panel: biểu mẫu Thêm/Sửa hồ sơ Nghiên cứu sinh ───
+  useSlidePanelForm({
+    id: 'ncs-form',
+    open: ncsCrud.modalOpen,
+    title: ncsCrud.editing ? 'Sửa hồ sơ Nghiên cứu sinh' : 'Thêm hồ sơ Nghiên cứu sinh',
+    subtitle: ncsCrud.editing?.hoTen,
+    storageKey: 'slideover-width-ncs-form',
+    deps: [ncsCrud.form, ncsCrud.editing, ncsCrud.saving, ncsCrud.actionError],
+    onDongNgoaiLuong: ncsCrud.closeModal,
+    footer: (
+      <>
+        <button type="button" onClick={ncsCrud.closeModal} className="btn-ghost">Hủy</button>
+        <button type="submit" form="form-ncs" disabled={ncsCrud.saving} className="btn-primary disabled:opacity-60">
+          {ncsCrud.saving && <LoaderCircle size={15} className="animate-spin" />}
+          {ncsCrud.editing ? 'Lưu thay đổi' : 'Thêm NCS'}
+        </button>
+      </>
+    ),
+    content: (
+      <form id="form-ncs" onSubmit={ncsCrud.submit} className="space-y-4 p-5">
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Họ và tên NCS" required>
+                <input
+                  className={inputCls}
+                  required
+                  value={ncsCrud.form.hoTen}
+                  onChange={(e) => ncsCrud.setForm({ ...ncsCrud.form, hoTen: e.target.value })}
+                  placeholder="VD: Nguyễn Văn A"
+                />
+              </Field>
+              <Field label="Ngày nhập học" required>
+                <input
+                  type="date"
+                  className={inputCls}
+                  required
+                  value={ncsCrud.form.ngayNhapHoc}
+                  onChange={(e) => ncsCrud.setForm({ ...ncsCrud.form, ngayNhapHoc: e.target.value })}
+                />
+              </Field>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Người hướng dẫn khoa học" required>
+                <input
+                  className={inputCls}
+                  required
+                  value={ncsCrud.form.gvHuongDan}
+                  onChange={(e) => ncsCrud.setForm({ ...ncsCrud.form, gvHuongDan: e.target.value })}
+                  placeholder="VD: GS.TS. Nguyễn Văn B"
+                />
+              </Field>
+              <Field label="Trạng thái hội đồng luận án" required>
+                <select
+                  className={inputCls}
+                  value={ncsCrud.form.trangThaiHoiDong}
+                  onChange={(e) => ncsCrud.setForm({ ...ncsCrud.form, trangThaiHoiDong: e.target.value })}
+                >
+                  {TRANG_THAI_HOI_DONG_NCS.map((o) => (
+                    <option key={o.ma} value={o.ma}>{o.ten}</option>
+                  ))}
+                </select>
+              </Field>
+            </div>
+            <Field label="Tên đề tài luận án Tiến sĩ" required>
+              <textarea
+                className={cn(inputCls, 'min-h-20 resize-y')}
+                required
+                value={ncsCrud.form.tenDeTai}
+                onChange={(e) => ncsCrud.setForm({ ...ncsCrud.form, tenDeTai: e.target.value })}
+                placeholder="VD: Nghiên cứu thiết kế kháng chấn cho nhà cao tầng kết cấu composite..."
+              />
+            </Field>
+            {ncsCrud.actionError && (
+              <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-danger dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
+                {ncsCrud.actionError}
+              </p>
+            )}
+      </form>
+    ),
+  });
 
   return (
     <div>
@@ -177,7 +233,7 @@ export function DaoTaoPage() {
               <Plus size={16} /> Mở lớp / sự kiện
             </button>
           ) : (
-            <button className="btn-primary" onClick={handleOpenNcsCreate}>
+            <button className="btn-primary" onClick={ncsCrud.openCreate}>
               <Plus size={16} /> Thêm Nghiên cứu sinh
             </button>
           )
@@ -312,10 +368,9 @@ export function DaoTaoPage() {
               onChange={(e) => setFilterNcsTrangThai(e.target.value)}
             >
               <option value="">Tất cả trạng thái hội đồng</option>
-              <option value="Chua-thanh-lap">Chưa thành lập HĐ</option>
-              <option value="Bao-ve-co-so">Đã bảo vệ cơ sở</option>
-              <option value="Bao-ve-cap-Vien">Đã bảo vệ cấp Viện</option>
-              <option value="Da-cap-bang">Đã cấp bằng Tiến sĩ</option>
+              {TRANG_THAI_HOI_DONG_NCS.map((o) => (
+                <option key={o.ma} value={o.ma}>{o.ten}</option>
+              ))}
             </select>
           </div>
 
@@ -341,27 +396,21 @@ export function DaoTaoPage() {
                     <td className="td-cell">
                       <span className={cn(
                         'inline-flex items-center px-2 py-0.5 rounded text-xs font-black',
-                        item.trangThaiHoiDong === 'Chua-thanh-lap' && 'bg-subtle text-ink-muted',
-                        item.trangThaiHoiDong === 'Bao-ve-co-so' && 'bg-info/10 text-info',
-                        item.trangThaiHoiDong === 'Bao-ve-cap-Vien' && 'bg-warning/10 text-warning',
-                        item.trangThaiHoiDong === 'Da-cap-bang' && 'bg-success/10 text-success'
+                        NCS_TRANG_THAI_CLS[item.trangThaiHoiDong],
                       )}>
-                        {item.trangThaiHoiDong === 'Chua-thanh-lap' && 'Chưa thành lập'}
-                        {item.trangThaiHoiDong === 'Bao-ve-co-so' && 'Bảo vệ cơ sở'}
-                        {item.trangThaiHoiDong === 'Bao-ve-cap-Vien' && 'Bảo vệ cấp Viện'}
-                        {item.trangThaiHoiDong === 'Da-cap-bang' && 'Đã cấp bằng'}
+                        {TRANG_THAI_HOI_DONG_NCS.find((o) => o.ma === item.trangThaiHoiDong)?.ten ?? item.trangThaiHoiDong}
                       </span>
                     </td>
                     <td className="td-cell">
                       <div className="flex justify-end gap-1">
                         <button
-                          onClick={() => handleOpenNcsEdit(item)}
+                          onClick={() => ncsCrud.openEdit(item)}
                           className="rounded-md p-1.5 text-ink-muted transition-colors hover:bg-muted hover:text-primary-600"
                         >
                           <Pencil size={14} />
                         </button>
                         <button
-                          onClick={() => handleNcsDelete(item.id)}
+                          onClick={() => ncsCrud.removeRow(item)}
                           className="rounded-md p-1.5 text-ink-muted transition-colors hover:bg-red-50 hover:text-danger"
                         >
                           <Trash2 size={14} />
@@ -473,80 +522,6 @@ export function DaoTaoPage() {
         </form>
       </Modal>
 
-      {/* Modal Nghiên Cứu Sinh */}
-      <Modal
-        title={editingNcs ? `Sửa hồ sơ NCS: ${editingNcs.hoTen}` : 'Thêm hồ sơ Nghiên cứu sinh mới'}
-        open={ncsModalOpen}
-        onClose={() => setNcsModalOpen(false)}
-        wide
-      >
-        <form onSubmit={handleNcsSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Họ và tên NCS" required>
-              <input
-                className={inputCls}
-                required
-                value={formNcs.hoTen}
-                onChange={(e) => setFormNcs({ ...formNcs, hoTen: e.target.value })}
-                placeholder="VD: Nguyễn Văn A"
-              />
-            </Field>
-            <Field label="Ngày nhập học" required>
-              <input
-                type="date"
-                className={inputCls}
-                required
-                value={formNcs.ngayNhapHoc}
-                onChange={(e) => setFormNcs({ ...formNcs, ngayNhapHoc: e.target.value })}
-              />
-            </Field>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Người hướng dẫn khoa học" required>
-              <input
-                className={inputCls}
-                required
-                value={formNcs.gvHuongDan}
-                onChange={(e) => setFormNcs({ ...formNcs, gvHuongDan: e.target.value })}
-                placeholder="VD: GS.TS. Nguyễn Văn B"
-              />
-            </Field>
-            <Field label="Trạng thái hội đồng luận án" required>
-              <select
-                className={inputCls}
-                value={formNcs.trangThaiHoiDong}
-                onChange={(e) => setFormNcs({ ...formNcs, trangThaiHoiDong: e.target.value as any })}
-              >
-                <option value="Chua-thanh-lap">Chưa thành lập</option>
-                <option value="Bao-ve-co-so">Đã bảo vệ cơ sở</option>
-                <option value="Bao-ve-cap-Vien">Đã bảo vệ cấp Viện</option>
-                <option value="Da-cap-bang">Đã cấp bằng</option>
-              </select>
-            </Field>
-          </div>
-          <Field label="Tên đề tài luận án Tiến sĩ" required>
-            <textarea
-              className={cn(inputCls, 'min-h-20 resize-y')}
-              required
-              value={formNcs.tenDeTai}
-              onChange={(e) => setFormNcs({ ...formNcs, tenDeTai: e.target.value })}
-              placeholder="VD: Nghiên cứu thiết kế kháng chấn cho nhà cao tầng kết cấu composite..."
-            />
-          </Field>
-          <div className="flex justify-end gap-2 border-t border-border-subtle pt-4">
-            <button
-              type="button"
-              onClick={() => setNcsModalOpen(false)}
-              className="rounded-xl border border-border px-4 py-2.5 text-[13px] font-bold text-ink-secondary transition-colors hover:bg-muted"
-            >
-              Hủy
-            </button>
-            <button type="submit" className="btn-primary">
-              {editingNcs ? 'Lưu thay đổi' : 'Thêm NCS'}
-            </button>
-          </div>
-        </form>
-      </Modal>
     </div>
   );
 }

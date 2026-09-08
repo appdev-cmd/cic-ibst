@@ -71,7 +71,7 @@ function PanelLayer({
   isTop: boolean;
   onClose: () => void;
   onBringToFront: () => void;
-  onStartResize: (e: React.MouseEvent) => void;
+  onStartResize: (e: React.PointerEvent) => void;
 }) {
   const title = typeof panel.title === 'string' ? panel.title : '';
   const tabTop = TAB_TOP_START + index * (TAB_LENGTH + TAB_GAP);
@@ -79,13 +79,16 @@ function PanelLayer({
   return (
     <div className="absolute inset-0 flex justify-end" style={{ zIndex: 50 + index }}>
       {isTop && (
+        // `pointer-events-auto` là BẮT BUỘC: container ngoài cùng của ngăn xếp đặt
+        // `pointer-events-none` (để không chặn thao tác khi panel đang đóng), nên tay kéo
+        // không tự nhận được chuột nếu thiếu dòng này — trước đây kéo giãn không hoạt động.
         <div
-          onMouseDown={onStartResize}
-          title="Kéo để thay đổi chiều rộng"
-          className="absolute top-0 bottom-0 z-20 w-3 cursor-col-resize touch-none select-none"
-          style={{ right: width - 6 }}
+          onPointerDown={onStartResize}
+          title="Kéo sang trái/phải để thay đổi chiều rộng"
+          className="group pointer-events-auto absolute top-0 bottom-0 z-20 w-4 cursor-col-resize touch-none select-none"
+          style={{ right: width - 8 }}
         >
-          <div className="mx-auto h-full w-px bg-border-subtle transition-colors hover:w-1 hover:bg-primary/60" />
+          <div className="mx-auto h-full w-px bg-border-subtle transition-all group-hover:w-1 group-hover:bg-primary/60" />
         </div>
       )}
       <div
@@ -220,7 +223,8 @@ export function SlidePanelStack({ sidebarWidth = 0 }: { sidebarWidth?: number })
         ? window.innerWidth - sidebarWidth - (window.innerWidth < 640 ? 0 : BASE_GAP)
         : widths[topIndex - 1] - STACKING_OFFSET;
     const minW = stack[topIndex]?.minWidth ?? MIN_PANEL_WIDTH;
-    const onMove = (e: MouseEvent) => {
+    // Dùng Pointer Events (không phải Mouse Events) để kéo được cả bằng chuột, cảm ứng và bút.
+    const onMove = (e: PointerEvent) => {
       const w = Math.min(ceiling, Math.max(minW, window.innerWidth - e.clientX));
       setDragWidth(w);
     };
@@ -231,15 +235,17 @@ export function SlidePanelStack({ sidebarWidth = 0 }: { sidebarWidth?: number })
         window.localStorage.setItem(key, String(dragWidthRef.current));
       }
     };
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
     const prevCursor = document.body.style.cursor;
     const prevSelect = document.body.style.userSelect;
     document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
     return () => {
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
       document.body.style.cursor = prevCursor;
       document.body.style.userSelect = prevSelect;
     };
