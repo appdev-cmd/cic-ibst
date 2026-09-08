@@ -7,28 +7,61 @@ function throwIf(error: { message: string } | null) {
 
 // ─── ĐỢT THANH TOÁN HỢP ĐỒNG ───
 
+/** Trạng thái đợt thanh toán — suy ra từ mốc ngày, không lưu cột riêng để khỏi lệch. */
+export type TrangThaiDotThanhToan = 'ke-hoach' | 'qua-han' | 'da-xuat-hoa-don' | 'da-thu';
+
 export interface DotThanhToan {
   id: string;
   tenDot: string;
   soTien: number; // triệu đồng
   ngayDuKien: string;
   ngayThucThu: string; // '' = chưa thu
+  soHoaDon: string;
+  ngayXuatHoaDon: string; // '' = chưa xuất hóa đơn
+  trangThai: TrangThaiDotThanhToan;
+}
+
+/**
+ * Đ.11.1 + Đ.14 mục 2 dòng 7: đã xuất hóa đơn mà chưa thu = công nợ, chạy đồng hồ VAT 1 năm.
+ * Coi là "đã xuất" khi có số hóa đơn HOẶC ngày xuất — nhập thiếu một trong hai vẫn phải
+ * hiện đúng trạng thái, không được báo "quá hạn thu" trong khi dòng đã có số hóa đơn.
+ * (Đồng hồ VAT 1 năm ở Đợt 2 vẫn tính theo ngayXuatHoaDon, nên thiếu ngày thì phải nhắc bổ sung.)
+ */
+function trangThaiDot(
+  ngayThucThu: string,
+  ngayXuatHoaDon: string,
+  soHoaDon: string,
+  ngayDuKien: string,
+): TrangThaiDotThanhToan {
+  if (ngayThucThu) return 'da-thu';
+  if (ngayXuatHoaDon || soHoaDon) return 'da-xuat-hoa-don';
+  if (ngayDuKien && new Date(ngayDuKien).getTime() < Date.now()) return 'qua-han';
+  return 'ke-hoach';
 }
 
 export async function fetchDotThanhToan(hopDongId: string): Promise<DotThanhToan[]> {
   const { data, error } = await supabase
     .from('dot_thanh_toan')
-    .select('id, ten_dot, so_tien, ngay_du_kien, ngay_thuc_thu')
+    .select('id, ten_dot, so_tien, ngay_du_kien, ngay_thuc_thu, so_hoa_don, ngay_xuat_hoa_don')
     .eq('hop_dong_id', Number(hopDongId))
     .order('ngay_du_kien');
   throwIf(error);
-  return (data ?? []).map((r) => ({
-    id: String(r.id),
-    tenDot: r.ten_dot,
-    soTien: Number(r.so_tien),
-    ngayDuKien: r.ngay_du_kien ?? '',
-    ngayThucThu: r.ngay_thuc_thu ?? '',
-  }));
+  return (data ?? []).map((r) => {
+    const ngayThucThu = r.ngay_thuc_thu ?? '';
+    const ngayXuatHoaDon = r.ngay_xuat_hoa_don ?? '';
+    const ngayDuKien = r.ngay_du_kien ?? '';
+    const soHoaDon = r.so_hoa_don ?? '';
+    return {
+      id: String(r.id),
+      tenDot: r.ten_dot,
+      soTien: Number(r.so_tien),
+      ngayDuKien,
+      ngayThucThu,
+      soHoaDon,
+      ngayXuatHoaDon,
+      trangThai: trangThaiDot(ngayThucThu, ngayXuatHoaDon, soHoaDon, ngayDuKien),
+    };
+  });
 }
 
 export interface DotThanhToanInput {
@@ -36,6 +69,8 @@ export interface DotThanhToanInput {
   soTien: string;
   ngayDuKien: string;
   ngayThucThu: string;
+  soHoaDon: string;
+  ngayXuatHoaDon: string;
 }
 
 function dotRow(i: DotThanhToanInput) {
@@ -44,35 +79,27 @@ function dotRow(i: DotThanhToanInput) {
     so_tien: Number(i.soTien) || 0,
     ngay_du_kien: i.ngayDuKien || null,
     ngay_thuc_thu: i.ngayThucThu || null,
+    so_hoa_don: i.soHoaDon || null,
+    ngay_xuat_hoa_don: i.ngayXuatHoaDon || null,
   };
 }
 
-/** Đồng bộ hop_dong.da_thanh_toan = tổng các đợt đã thu. */
-async function syncDaThanhToan(hopDongId: string) {
-  const list = await fetchDotThanhToan(hopDongId);
-  const daThu = list.filter((d) => d.ngayThucThu).reduce((s, d) => s + d.soTien, 0);
-  throwIf(
-    (await supabase.from('hop_dong').update({ da_thanh_toan: daThu }).eq('id', Number(hopDongId)))
-      .error,
-  );
-}
+// hop_dong.da_thanh_toan do trigger trg_dot_thanh_toan_dong_bo (migration 0034) giữ —
+// tầng ứng dụng không tự cộng lại nữa để chỉ còn một nguồn sự thật.
 
 export async function createDotThanhToan(hopDongId: string, i: DotThanhToanInput) {
   throwIf(
     (await supabase.from('dot_thanh_toan').insert({ ...dotRow(i), hop_dong_id: Number(hopDongId) }))
       .error,
   );
-  await syncDaThanhToan(hopDongId);
 }
 
-export async function updateDotThanhToan(hopDongId: string, id: string, i: DotThanhToanInput) {
+export async function updateDotThanhToan(_hopDongId: string, id: string, i: DotThanhToanInput) {
   throwIf((await supabase.from('dot_thanh_toan').update(dotRow(i)).eq('id', Number(id))).error);
-  await syncDaThanhToan(hopDongId);
 }
 
-export async function deleteDotThanhToan(hopDongId: string, id: string) {
+export async function deleteDotThanhToan(_hopDongId: string, id: string) {
   throwIf((await supabase.from('dot_thanh_toan').delete().eq('id', Number(id))).error);
-  await syncDaThanhToan(hopDongId);
 }
 
 // ─── PHIẾU GIAO VIỆC (Điều 7 Quy chế 2815) ───
@@ -528,6 +555,14 @@ export async function deleteThuongPhat(id: string) {
 
 // ─── KIỂM TRA NỘI BỘ (Điều 10 Quy chế 2815) ───
 
+/** Đ.10 — kiểm tra nội bộ 2 cấp: đơn vị tự kiểm (10.1) và Viện kiểm tra định kỳ/đột xuất (10.2). */
+export type CapKiemTra = 'don-vi' | 'vien';
+
+export const CAP_KIEM_TRA_OPTIONS: { value: CapKiemTra; label: string; canCu: string }[] = [
+  { value: 'don-vi', label: 'Đơn vị tự kiểm tra', canCu: 'Đ.10.1 — đơn vị kiểm soát HĐKT do đơn vị được phân cấp, ủy quyền ký' },
+  { value: 'vien', label: 'Viện kiểm tra', canCu: 'Đ.10.2 — thành phần: LĐV phụ trách, TCKT, KHKT, TCHC và chuyên gia (nếu cần)' },
+];
+
 export interface KiemTraNoiBo {
   id: string;
   ngayKiemTra: string;
@@ -535,12 +570,15 @@ export interface KiemTraNoiBo {
   noiDung: string;
   ketLuan: string;
   kienNghi: string;
+  capKiemTra: CapKiemTra;
+  theoKeHoach: boolean;
+  namKeHoach: number | null;
 }
 
 export async function fetchKiemTraNoiBo(hopDongId: string): Promise<KiemTraNoiBo[]> {
   const { data, error } = await supabase
     .from('kiem_tra_noi_bo')
-    .select('id, ngay_kiem_tra, noi_dung, ket_luan, kien_nghi, nhan_su(ho_va_ten)')
+    .select('id, ngay_kiem_tra, noi_dung, ket_luan, kien_nghi, cap_kiem_tra, theo_ke_hoach, nam_ke_hoach, nhan_su(ho_va_ten)')
     .eq('hop_dong_id', Number(hopDongId))
     .order('ngay_kiem_tra', { ascending: false });
   throwIf(error);
@@ -551,6 +589,9 @@ export async function fetchKiemTraNoiBo(hopDongId: string): Promise<KiemTraNoiBo
     noiDung: r.noi_dung ?? '',
     ketLuan: r.ket_luan ?? '',
     kienNghi: r.kien_nghi ?? '',
+    capKiemTra: (r.cap_kiem_tra as CapKiemTra) ?? 'don-vi',
+    theoKeHoach: r.theo_ke_hoach !== false,
+    namKeHoach: r.nam_ke_hoach != null ? Number(r.nam_ke_hoach) : null,
   }));
 }
 
@@ -560,6 +601,8 @@ export interface KiemTraNoiBoInput {
   noiDung: string;
   ketLuan: string;
   kienNghi: string;
+  capKiemTra: CapKiemTra;
+  theoKeHoach: boolean;
 }
 
 export async function createKiemTraNoiBo(hopDongId: string, i: KiemTraNoiBoInput) {
@@ -572,6 +615,10 @@ export async function createKiemTraNoiBo(hopDongId: string, i: KiemTraNoiBoInput
         noi_dung: i.noiDung || null,
         ket_luan: i.ketLuan || null,
         kien_nghi: i.kienNghi || null,
+        cap_kiem_tra: i.capKiemTra,
+        theo_ke_hoach: i.theoKeHoach,
+        // Kế hoạch kiểm tra năm (Đ.10.2) lấy theo năm của ngày kiểm tra.
+        nam_ke_hoach: i.ngayKiemTra ? Number(i.ngayKiemTra.slice(0, 4)) : new Date().getFullYear(),
       })
     ).error,
   );
@@ -815,15 +862,37 @@ export interface TepHopDong {
   createdAt: string;
 }
 
-export const LOAI_HO_SO_OPTIONS = [
-  { value: 'ho-so-du-thau', label: 'Hồ sơ dự thầu' },
-  { value: 'hop-dong', label: 'Hợp đồng' },
-  { value: 'phieu-giao-viec', label: 'Phiếu giao việc' },
-  { value: 'bien-ban-nghiem-thu', label: 'Biên bản nghiệm thu' },
-  { value: 'bien-ban-thanh-ly', label: 'Biên bản thanh lý' },
-  { value: 'quyet-toan', label: 'Hồ sơ quyết toán' },
-  { value: 'khac', label: 'Khác' },
+/**
+ * Đ.8.4 — hồ sơ hợp đồng chia 3 nhóm, chế độ lưu trữ khác nhau:
+ *   • pháp lý + kỹ thuật: đơn vị giữ trong quá trình thực hiện, **nộp lưu trữ Viện (P.TCHC)
+ *     định kỳ hàng năm sau khi thanh lý hợp đồng**;
+ *   • tài chính: **lưu tại đơn vị** (không nộp Viện).
+ * Riêng đơn vị ngoài trụ sở chính (PVMN, PVMT, TTTK...) được phân cấp lưu tại đơn vị.
+ */
+export type NhomHoSo = 'phap-ly' | 'ky-thuat' | 'tai-chinh';
+
+export const NHOM_HO_SO: Record<NhomHoSo, { ten: string; noiLuu: string }> = {
+  'phap-ly': { ten: 'Pháp lý', noiLuu: 'Nộp lưu trữ Viện (P.TCHC) hàng năm sau thanh lý' },
+  'ky-thuat': { ten: 'Kỹ thuật', noiLuu: 'Nộp lưu trữ Viện (P.TCHC) hàng năm sau thanh lý' },
+  'tai-chinh': { ten: 'Tài chính', noiLuu: 'Lưu tại đơn vị' },
+};
+
+export const LOAI_HO_SO_OPTIONS: { value: string; label: string; nhom: NhomHoSo }[] = [
+  { value: 'ho-so-du-thau', label: 'Hồ sơ dự thầu', nhom: 'phap-ly' },
+  { value: 'hop-dong', label: 'Hợp đồng', nhom: 'phap-ly' },
+  { value: 'phieu-giao-viec', label: 'Phiếu giao việc', nhom: 'phap-ly' },
+  { value: 'bien-ban-nghiem-thu', label: 'Biên bản nghiệm thu', nhom: 'phap-ly' },
+  { value: 'bien-ban-thanh-ly', label: 'Biên bản thanh lý', nhom: 'phap-ly' },
+  { value: 'ho-so-ky-thuat', label: 'Hồ sơ kỹ thuật / sản phẩm', nhom: 'ky-thuat' },
+  { value: 'quyet-toan', label: 'Hồ sơ quyết toán', nhom: 'tai-chinh' },
+  { value: 'chung-tu-tai-chinh', label: 'Chứng từ tài chính', nhom: 'tai-chinh' },
+  { value: 'khac', label: 'Khác', nhom: 'ky-thuat' },
 ];
+
+/** Nhóm Đ.8.4 của một loại hồ sơ; loại lạ (dữ liệu cũ) quy về 'ky-thuat'. */
+export function nhomCuaLoaiHoSo(loaiHoSo: string): NhomHoSo {
+  return LOAI_HO_SO_OPTIONS.find((o) => o.value === loaiHoSo)?.nhom ?? 'ky-thuat';
+}
 
 export async function fetchTepHopDong(hopDongId: string): Promise<TepHopDong[]> {
   const { data, error } = await supabase

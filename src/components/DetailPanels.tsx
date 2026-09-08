@@ -27,6 +27,8 @@ import {
   createThuongPhat,
   deleteThuongPhat,
   fetchKiemTraNoiBo,
+  CAP_KIEM_TRA_OPTIONS,
+  type CapKiemTra,
   createKiemTraNoiBo,
   deleteKiemTraNoiBo,
   fetchQuyetToanGiaiDoan,
@@ -44,6 +46,9 @@ import {
   deleteDonViGiaoViec,
   type DonViGiaoViecInput,
   LOAI_HO_SO_OPTIONS,
+  NHOM_HO_SO,
+  nhomCuaLoaiHoSo,
+  type NhomHoSo,
   type DotThanhToanInput,
   type KetQuaInput,
   type MocInput,
@@ -67,6 +72,13 @@ const HANG_OPTIONS = [
 
 const miniInput =
   'w-full rounded border border-border bg-subtle px-2 py-1 text-xs text-ink outline-none focus:border-primary-500';
+
+/** Màu nhóm hồ sơ Đ.8.4 — tài chính lưu tại đơn vị, pháp lý/kỹ thuật nộp lưu trữ Viện. */
+const NHOM_HO_SO_CLS: Record<NhomHoSo, string> = {
+  'phap-ly': 'bg-primary-subtle text-primary dark:bg-primary-900/30 dark:text-primary-300',
+  'ky-thuat': 'bg-blue-50 text-info dark:bg-blue-900/20 dark:text-blue-400',
+  'tai-chinh': 'bg-amber-50 text-warning dark:bg-amber-900/20 dark:text-amber-400',
+};
 
 function PanelShell({
   title,
@@ -154,7 +166,17 @@ function EditDeleteBtns({ onEdit, onDelete }: { onEdit: () => void; onDelete: ()
 
 // ═══ ĐỢT THANH TOÁN ═══
 
-const EMPTY_DOT: DotThanhToanInput = { tenDot: '', soTien: '', ngayDuKien: '', ngayThucThu: '' };
+const EMPTY_DOT: DotThanhToanInput = {
+  tenDot: '', soTien: '', ngayDuKien: '', ngayThucThu: '', soHoaDon: '', ngayXuatHoaDon: '',
+};
+
+/** Nhãn + màu trạng thái đợt — Đ.11.1; "đã xuất HĐ, chưa thu" là công nợ chạy đồng hồ VAT (Đ.14 TT7). */
+const TRANG_THAI_DOT: Record<string, { nhan: string; cls: string }> = {
+  'ke-hoach': { nhan: 'Kế hoạch', cls: 'bg-subtle text-ink-muted' },
+  'qua-han': { nhan: 'Quá hạn thu', cls: 'bg-red-50 text-danger dark:bg-red-900/20 dark:text-red-400' },
+  'da-xuat-hoa-don': { nhan: 'Đã xuất HĐ — chờ thu', cls: 'bg-amber-50 text-warning dark:bg-amber-900/20 dark:text-amber-400' },
+  'da-thu': { nhan: 'Đã thu', cls: 'bg-emerald-50 text-success dark:bg-emerald-900/20 dark:text-emerald-400' },
+};
 
 export function DotThanhToanPanel({
   hopDongId,
@@ -202,9 +224,15 @@ export function DotThanhToanPanel({
   };
 
   const daThu = rows.filter((r) => r.ngayThucThu).reduce((s, r) => s + r.soTien, 0);
+  /** Đã xuất hóa đơn nhưng bên A chưa trả — công nợ chạy nghĩa vụ VAT 1 năm (Đ.14 mục 2 dòng 7). */
+  const daXuatChuaThu = rows
+    .filter((r) => r.trangThai === 'da-xuat-hoa-don')
+    .reduce((s, r) => s + r.soTien, 0);
+  /** Có số hóa đơn nhưng thiếu ngày xuất → không tính được mốc VAT 1 năm, phải nhắc bổ sung. */
+  const thieuNgayXuat = rows.filter((r) => r.soHoaDon && !r.ngayXuatHoaDon).length;
 
-  const editorRow = (
-    <tr className="bg-subtle">
+  const editorRow = (key: string) => (
+    <tr key={key} className="bg-subtle">
       <td className="px-3 py-1.5">
         <input className={miniInput} placeholder="Tên đợt" value={form.tenDot}
           onChange={(e) => setForm({ ...form, tenDot: e.target.value })} />
@@ -216,6 +244,14 @@ export function DotThanhToanPanel({
       <td className="px-3 py-1.5">
         <input className={miniInput} type="date" value={form.ngayDuKien}
           onChange={(e) => setForm({ ...form, ngayDuKien: e.target.value })} />
+      </td>
+      <td className="px-3 py-1.5">
+        <input className={miniInput} placeholder="Số HĐ GTGT" value={form.soHoaDon}
+          onChange={(e) => setForm({ ...form, soHoaDon: e.target.value })} />
+      </td>
+      <td className="px-3 py-1.5">
+        <input className={miniInput} type="date" value={form.ngayXuatHoaDon}
+          onChange={(e) => setForm({ ...form, ngayXuatHoaDon: e.target.value })} />
       </td>
       <td className="px-3 py-1.5">
         <input className={miniInput} type="date" value={form.ngayThucThu}
@@ -238,17 +274,29 @@ export function DotThanhToanPanel({
       footer={
         <div className="flex flex-wrap justify-end gap-4 border-t border-border-subtle px-3 py-2 text-xs">
           <span>Đã thu: <b className="font-mono text-success">{daThu.toLocaleString('vi-VN')} tr</b></span>
+          {daXuatChuaThu > 0 && (
+            <span title="Đã xuất hóa đơn nhưng chưa thu — nghĩa vụ VAT 1 năm theo Đ.14 mục 2 dòng 7">
+              Đã xuất HĐ chưa thu: <b className="font-mono text-warning">{daXuatChuaThu.toLocaleString('vi-VN')} tr</b>
+            </span>
+          )}
           <span>Còn phải thu: <b className="font-mono text-warning">{Math.max(0, giaTri - daThu).toLocaleString('vi-VN')} tr</b></span>
         </div>
       }
     >
       {err && <p className="px-3 py-1.5 text-2xs font-semibold text-danger">{err}</p>}
-      <table className="w-full min-w-[520px]">
+      {thieuNgayXuat > 0 && (
+        <p className="px-3 py-1.5 text-2xs font-semibold text-warning">
+          {thieuNgayXuat} đợt có số hóa đơn nhưng thiếu ngày xuất — chưa tính được mốc nghĩa vụ VAT 1 năm (Đ.14 mục 2 dòng 7).
+        </p>
+      )}
+      <table className="w-full min-w-[720px]">
         <thead>
           <tr>
             <th className="th-cell">Đợt</th>
             <th className="th-cell">Số tiền (tr.đ)</th>
             <th className="th-cell">Dự kiến</th>
+            <th className="th-cell">Số hóa đơn</th>
+            <th className="th-cell">Ngày xuất HĐ</th>
             <th className="th-cell">Thực thu</th>
             <th className="th-cell text-right">Thao tác</th>
           </tr>
@@ -256,18 +304,19 @@ export function DotThanhToanPanel({
         <tbody>
           {rows.map((r) =>
             editingId === r.id ? (
-              <tr key={r.id} className="bg-subtle">
-                <td className="px-3 py-1.5"><input className={miniInput} value={form.tenDot} onChange={(e) => setForm({ ...form, tenDot: e.target.value })} /></td>
-                <td className="px-3 py-1.5"><input className={miniInput} type="number" value={form.soTien} onChange={(e) => setForm({ ...form, soTien: e.target.value })} /></td>
-                <td className="px-3 py-1.5"><input className={miniInput} type="date" value={form.ngayDuKien} onChange={(e) => setForm({ ...form, ngayDuKien: e.target.value })} /></td>
-                <td className="px-3 py-1.5"><input className={miniInput} type="date" value={form.ngayThucThu} onChange={(e) => setForm({ ...form, ngayThucThu: e.target.value })} /></td>
-                <td className="px-3 py-1.5"><RowBtns onSave={save} onCancel={() => setEditingId(null)} saving={saving} /></td>
-              </tr>
+              editorRow(r.id)
             ) : (
               <tr key={r.id} className="tr-hover">
-                <td className="td-cell text-xs font-medium">{r.tenDot}</td>
+                <td className="td-cell text-xs font-medium">
+                  {r.tenDot}
+                  <span className={cn('ml-1.5 rounded-full px-1.5 py-0.5 text-2xs font-bold', TRANG_THAI_DOT[r.trangThai]?.cls)}>
+                    {TRANG_THAI_DOT[r.trangThai]?.nhan ?? r.trangThai}
+                  </span>
+                </td>
                 <td className="td-cell font-mono text-xs">{r.soTien.toLocaleString('vi-VN')}</td>
                 <td className="td-cell font-mono text-xs">{r.ngayDuKien ? formatNgay(r.ngayDuKien) : '—'}</td>
+                <td className="td-cell font-mono text-xs">{r.soHoaDon || '—'}</td>
+                <td className="td-cell font-mono text-xs">{r.ngayXuatHoaDon ? formatNgay(r.ngayXuatHoaDon) : '—'}</td>
                 <td className="td-cell font-mono text-xs">
                   {r.ngayThucThu ? (
                     <span className="text-success">{formatNgay(r.ngayThucThu)}</span>
@@ -278,7 +327,14 @@ export function DotThanhToanPanel({
                 <td className="td-cell">
                   <EditDeleteBtns
                     onEdit={() => {
-                      setForm({ tenDot: r.tenDot, soTien: String(r.soTien), ngayDuKien: r.ngayDuKien, ngayThucThu: r.ngayThucThu });
+                      setForm({
+                        tenDot: r.tenDot,
+                        soTien: String(r.soTien),
+                        ngayDuKien: r.ngayDuKien,
+                        ngayThucThu: r.ngayThucThu,
+                        soHoaDon: r.soHoaDon,
+                        ngayXuatHoaDon: r.ngayXuatHoaDon,
+                      });
                       setEditingId(r.id);
                     }}
                     onDelete={() => remove(r.id)}
@@ -287,7 +343,7 @@ export function DotThanhToanPanel({
               </tr>
             ),
           )}
-          {editingId === 'new' && editorRow}
+          {editingId === 'new' && editorRow('new')}
         </tbody>
       </table>
     </PanelShell>
@@ -1028,7 +1084,10 @@ export function ThuongPhatPanel({
 
 // ═══ KIỂM TRA NỘI BỘ (Điều 10) ═══
 
-const EMPTY_KT: KiemTraNoiBoInput = { ngayKiemTra: '', nguoiKiemTraId: '', noiDung: '', ketLuan: '', kienNghi: '' };
+const EMPTY_KT: KiemTraNoiBoInput = {
+  ngayKiemTra: '', nguoiKiemTraId: '', noiDung: '', ketLuan: '', kienNghi: '',
+  capKiemTra: 'don-vi', theoKeHoach: true,
+};
 
 export function KiemTraNoiBoPanel({
   hopDongId,
@@ -1084,16 +1143,36 @@ export function KiemTraNoiBoPanel({
               {nhanSuOptions.map((n) => <option key={n.id} value={n.id}>{n.ten}</option>)}
             </select>
           </div>
+          {/* Đ.10 — phân biệt đơn vị tự kiểm (10.1) với Viện kiểm tra định kỳ/đột xuất (10.2) */}
+          <div className="grid grid-cols-2 gap-2">
+            <select
+              className={miniInput}
+              value={form.capKiemTra}
+              onChange={(e) => setForm({ ...form, capKiemTra: e.target.value as CapKiemTra })}
+              title={CAP_KIEM_TRA_OPTIONS.find((o) => o.value === form.capKiemTra)?.canCu}
+            >
+              {CAP_KIEM_TRA_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+            <select
+              className={miniInput}
+              value={form.theoKeHoach ? 'ke-hoach' : 'dot-xuat'}
+              onChange={(e) => setForm({ ...form, theoKeHoach: e.target.value === 'ke-hoach' })}
+            >
+              <option value="ke-hoach">Định kỳ theo kế hoạch năm</option>
+              <option value="dot-xuat">Đột xuất</option>
+            </select>
+          </div>
           <textarea className={miniInput} placeholder="Nội dung kiểm tra" rows={2} value={form.noiDung} onChange={(e) => setForm({ ...form, noiDung: e.target.value })} />
           <textarea className={miniInput} placeholder="Kết luận" rows={2} value={form.ketLuan} onChange={(e) => setForm({ ...form, ketLuan: e.target.value })} />
           <textarea className={miniInput} placeholder="Kiến nghị" rows={2} value={form.kienNghi} onChange={(e) => setForm({ ...form, kienNghi: e.target.value })} />
           <RowBtns onSave={save} onCancel={() => setAdding(false)} saving={saving} />
         </div>
       )}
-      <table className="w-full min-w-[480px]">
+      <table className="w-full min-w-[560px]">
         <thead>
           <tr>
             <th className="th-cell">Ngày KT</th>
+            <th className="th-cell">Cấp kiểm tra</th>
             <th className="th-cell">Kết luận</th>
             <th className="th-cell text-right">Thao tác</th>
           </tr>
@@ -1102,6 +1181,22 @@ export function KiemTraNoiBoPanel({
           {rows.map((r) => (
             <tr key={r.id} className="tr-hover">
               <td className="td-cell font-mono text-xs">{r.ngayKiemTra ? formatNgay(r.ngayKiemTra) : '—'}</td>
+              <td className="td-cell text-xs">
+                <span
+                  className={cn(
+                    'rounded-full px-1.5 py-0.5 text-2xs font-bold',
+                    r.capKiemTra === 'vien'
+                      ? 'bg-accent-bg text-accent dark:bg-red-900/20 dark:text-red-400'
+                      : 'bg-subtle text-ink-secondary',
+                  )}
+                  title={CAP_KIEM_TRA_OPTIONS.find((o) => o.value === r.capKiemTra)?.canCu}
+                >
+                  {r.capKiemTra === 'vien' ? 'Viện' : 'Đơn vị'}
+                </span>
+                <span className="ml-1 text-2xs text-ink-muted">
+                  {r.theoKeHoach ? `định kỳ${r.namKeHoach ? ` ${r.namKeHoach}` : ''}` : 'đột xuất'}
+                </span>
+              </td>
               <td className="td-cell text-xs" title={r.noiDung}>{r.ketLuan || '—'}</td>
               <td className="td-cell text-right">
                 <button
@@ -1115,7 +1210,7 @@ export function KiemTraNoiBoPanel({
             </tr>
           ))}
           {rows.length === 0 && !adding && (
-            <tr><td colSpan={3} className="td-cell py-3 text-center text-xs italic text-ink-muted">Chưa có biên bản kiểm tra</td></tr>
+            <tr><td colSpan={4} className="td-cell py-3 text-center text-xs italic text-ink-muted">Chưa có biên bản kiểm tra</td></tr>
           )}
         </tbody>
       </table>
@@ -1243,14 +1338,19 @@ export function QuyetToanGiaiDoanPanel({
 
 export function HoSoHopDongPanel({
   hopDongId,
+  trangThaiHopDong,
   onChanged,
 }: {
   hopDongId: string;
+  /** Để nhắc nghĩa vụ nộp lưu trữ Đ.8.4 khi hợp đồng đã thanh lý. */
+  trangThaiHopDong?: string;
   onChanged?: () => void;
 }) {
   const { data: rows, refetch } = useAsyncData(() => fetchTepHopDong(hopDongId), []);
   const inputRef = useRef<HTMLInputElement>(null);
   const [loaiHoSo, setLoaiHoSo] = useState('khac');
+  /** Đ.8.4: chỉ hồ sơ pháp lý + kỹ thuật phải nộp lưu trữ Viện; hồ sơ tài chính lưu tại đơn vị. */
+  const soTepNopVien = rows.filter((r) => nhomCuaLoaiHoSo(r.loaiHoSo) !== 'tai-chinh').length;
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -1323,12 +1423,51 @@ export function HoSoHopDongPanel({
         />
       </div>
       {err && <p className="px-3 py-1.5 text-2xs font-semibold text-danger">{err}</p>}
+
+      {/* Đ.8.4 — thống kê theo 3 nhóm + nhắc nghĩa vụ nộp lưu trữ sau khi thanh lý */}
+      {rows.length > 0 && (
+        <div className="border-b border-border-subtle bg-subtle px-3 py-2">
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-2xs">
+            {(Object.keys(NHOM_HO_SO) as NhomHoSo[]).map((nhom) => {
+              const n = rows.filter((r) => nhomCuaLoaiHoSo(r.loaiHoSo) === nhom).length;
+              return (
+                <span key={nhom} className="text-ink-secondary">
+                  <span className={cn('mr-1 rounded-full px-1.5 py-0.5 font-bold', NHOM_HO_SO_CLS[nhom])}>
+                    {NHOM_HO_SO[nhom].ten}
+                  </span>
+                  {n} tệp — <span className="italic text-ink-muted">{NHOM_HO_SO[nhom].noiLuu}</span>
+                </span>
+              );
+            })}
+          </div>
+          {trangThaiHopDong === 'thanh-ly' && soTepNopVien > 0 && (
+            <p className="mt-1.5 text-2xs font-semibold text-warning">
+              Điều 8.4: hợp đồng đã thanh lý — {soTepNopVien} tệp pháp lý/kỹ thuật thuộc diện nộp lưu trữ
+              Viện (P.TCHC) trong đợt nộp định kỳ hàng năm. Ghi nhận việc bàn giao ở tab “Lưu trữ TCHC”.
+            </p>
+          )}
+        </div>
+      )}
+
       <div className="divide-y divide-border-subtle">
         {rows.map((r) => (
           <div key={r.id} className="flex items-center justify-between gap-2 px-3 py-2">
             <div className="min-w-0 flex-1">
               <p className="truncate text-xs font-medium text-ink">{r.tenTep}</p>
-              <p className="text-2xs text-ink-muted">{LOAI_HO_SO_OPTIONS.find((o) => o.value === r.loaiHoSo)?.label ?? r.loaiHoSo}</p>
+              <p className="flex flex-wrap items-center gap-1.5 text-2xs text-ink-muted">
+                {LOAI_HO_SO_OPTIONS.find((o) => o.value === r.loaiHoSo)?.label ?? r.loaiHoSo}
+                {(() => {
+                  const nhom = nhomCuaLoaiHoSo(r.loaiHoSo);
+                  return (
+                    <span
+                      className={cn('rounded-full px-1.5 py-0.5 font-bold', NHOM_HO_SO_CLS[nhom])}
+                      title={`Đ.8.4 — ${NHOM_HO_SO[nhom].noiLuu}`}
+                    >
+                      {NHOM_HO_SO[nhom].ten}
+                    </span>
+                  );
+                })()}
+              </p>
             </div>
             <div className="flex shrink-0 gap-1">
               <button

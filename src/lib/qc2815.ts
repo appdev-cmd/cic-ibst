@@ -476,3 +476,121 @@ export function timLoaiViPham(id: string | null | undefined): LoaiViPham | undef
   if (!id) return undefined;
   return DANH_MUC_VI_PHAM.find((v) => v.id === id);
 }
+
+// ─── Điều 13 — Danh mục khen thưởng (đối xứng với DANH_MUC_VI_PHAM ở Điều 14) ───
+
+export interface LoaiThuong {
+  id: string;
+  ten: string;
+  canCu: string;
+  /** Mức thưởng cố định (triệu đồng); null nếu do HĐTĐKTV quyết định theo từng trường hợp */
+  mucThuongTrieu: number | null;
+  /** Trần thưởng (triệu đồng) khi mức tính theo % giá trị hợp đồng */
+  tranTrieu?: number;
+  /** % giá trị HĐ trước thuế — chỉ có ở dòng thưởng đồ án thi tuyển */
+  phanTramGiaTriHD?: number;
+}
+
+export const DANH_MUC_THUONG: LoaiThuong[] = [
+  {
+    id: 'do-an-thi-tuyen',
+    ten: 'Đồ án thiết kế dự thi được giải và được chọn ký hợp đồng triển khai',
+    canCu: 'Đ.13.1a — 1% giá trị HĐ trước thuế (theo tiến độ tiền về), tối đa 50 triệu',
+    mucThuongTrieu: null,
+    phanTramGiaTriHD: 1,
+    tranTrieu: 50,
+  },
+  {
+    id: 'cong-trinh-khen-cap-bo',
+    ten: 'Công trình, dự án được khen thưởng cấp Bộ trở lên',
+    canCu: 'Đ.13.1b — Trưởng đơn vị đề xuất, HĐTĐKTV xem xét',
+    mucThuongTrieu: null,
+  },
+  {
+    id: 'qlnn-tap-the-a',
+    ten: 'PVQLNN — Tập thể mức A (kỹ thuật phức tạp công trình trọng điểm / tranh chấp có yếu tố nước ngoài)',
+    canCu: 'Đ.13.2a — 50 đến 100 triệu đồng',
+    mucThuongTrieu: 50,
+  },
+  {
+    id: 'qlnn-tap-the-b',
+    ten: 'PVQLNN — Tập thể mức B (đơn vị hoàn thành ≥ 30 nhiệm vụ)',
+    canCu: 'Đ.13.2a — 30 triệu đồng',
+    mucThuongTrieu: 30,
+  },
+  {
+    id: 'qlnn-tap-the-c',
+    ten: 'PVQLNN — Tập thể mức C (đơn vị hoàn thành ≥ 20 nhiệm vụ)',
+    canCu: 'Đ.13.2a — 20 triệu đồng',
+    mucThuongTrieu: 20,
+  },
+  {
+    id: 'qlnn-ca-nhan-a',
+    ten: 'PVQLNN — Cá nhân mức A (≥ 8 điểm nhiệm vụ)',
+    canCu: 'Đ.13.2b — 30 triệu đồng',
+    mucThuongTrieu: 30,
+  },
+  {
+    id: 'qlnn-ca-nhan-b',
+    ten: 'PVQLNN — Cá nhân mức B (6–7 điểm nhiệm vụ)',
+    canCu: 'Đ.13.2b — 20 triệu đồng',
+    mucThuongTrieu: 20,
+  },
+  {
+    id: 'qlnn-ca-nhan-c',
+    ten: 'PVQLNN — Cá nhân mức C (4–5 điểm nhiệm vụ)',
+    canCu: 'Đ.13.2b — 10 triệu đồng',
+    mucThuongTrieu: 10,
+  },
+  {
+    id: 'chuyen-giao-cong-nghe',
+    ten: 'Chuyển giao công nghệ mới lần đầu áp dụng, hàm lượng chất xám cao',
+    canCu: 'Đ.13.3 — mức do HĐTĐKTV quyết định',
+    mucThuongTrieu: null,
+  },
+  {
+    id: 'hoan-thanh-ke-hoach-nam',
+    ten: 'Đơn vị hoàn thành xuất sắc kế hoạch năm',
+    canCu: 'Đ.13.5 — HĐTĐKTV phối hợp Công đoàn bình chọn',
+    mucThuongTrieu: null,
+  },
+  { id: 'dot-xuat', ten: 'Thưởng đột xuất / thưởng khác', canCu: 'Đ.13.6 — HĐTĐKTV quyết định', mucThuongTrieu: null },
+];
+
+export function timLoaiThuong(id: string | null | undefined): LoaiThuong | undefined {
+  if (!id) return undefined;
+  return DANH_MUC_THUONG.find((t) => t.id === id);
+}
+
+/** Mức thưởng gợi ý (triệu đồng) — dòng tính theo % giá trị HĐ thì áp trần Đ.13.1a. */
+export function mucThuongGoiY(loai: LoaiThuong, giaTriTruocThue: number): number | null {
+  if (loai.phanTramGiaTriHD != null) {
+    const theoTyLe = (giaTriTruocThue * loai.phanTramGiaTriHD) / 100;
+    return loai.tranTrieu != null ? Math.min(theoTyLe, loai.tranTrieu) : theoTyLe;
+  }
+  return loai.mucThuongTrieu;
+}
+
+/**
+ * Đ.13.2b — quy đổi điểm nhiệm vụ PVQLNN sang mức thưởng cá nhân.
+ * Mỗi nhiệm vụ hoàn thành +1 điểm; mỗi nhiệm vụ chậm tiến độ hoặc không có văn bản trả lời −1 điểm.
+ */
+export function xepMucThuongCaNhanPvqlnn(soHoanThanh: number, soChamTre: number): {
+  diem: number;
+  mucId: string | null;
+  soTienTrieu: number;
+} {
+  const diem = soHoanThanh - soChamTre;
+  if (diem >= 8) return { diem, mucId: 'qlnn-ca-nhan-a', soTienTrieu: 30 };
+  if (diem >= 6) return { diem, mucId: 'qlnn-ca-nhan-b', soTienTrieu: 20 };
+  if (diem >= 4) return { diem, mucId: 'qlnn-ca-nhan-c', soTienTrieu: 10 };
+  return { diem, mucId: null, soTienTrieu: 0 };
+}
+
+/**
+ * Đ.14.4 — phạt không hoàn thành nhiệm vụ PVQLNN: chậm quá 07 ngày làm việc hoặc không có
+ * văn bản trả lời từ 5 nhiệm vụ (tập thể) / 4 nhiệm vụ (cá nhân) → hạ một bậc thi đua.
+ */
+export function haBacThiDuaPvqlnn(soNhiemVuChamTre: number, doiTuong: 'tap-the' | 'ca-nhan'): boolean {
+  return soNhiemVuChamTre >= (doiTuong === 'tap-the' ? 5 : 4);
+}

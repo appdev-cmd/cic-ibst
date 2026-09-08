@@ -5,6 +5,7 @@ import type {
   HopDong,
   MauThiNghiem,
   LopDaoTao,
+  NghienCuuSinh,
   TrangThai,
 } from '../types';
 import type { NhomHD } from '../lib/qc2815';
@@ -214,7 +215,7 @@ export async function deleteDeTai(id: string) {
 // ─── HỢP ĐỒNG ───
 
 const COT_HOP_DONG_CO_BAN =
-  'id, so_hop_dong, ten_hop_dong, khach_hang_id, don_vi_id, gia_tri, da_thanh_toan, ngay_ky, han_hoan_thanh, trang_thai, nhom_hd, chu_tri_id, gia_du_thau, ngay_nop_ho_so, trang_thai_phe_duyet, ngay_trinh_duyet, ngay_duyet, nguoi_duyet_id, trang_thai_quyet_toan, ngay_quyet_toan, han_chung_tu_quyet_toan, loai_dac_thu, phan_vien_xa, giam_theo_yeu_cau_don_vi, phuc_tap, cap_ky, nguoi_tao_id, khach_hang(ten_to_chuc), don_vi(ten_don_vi), chu_tri:nhan_su!hop_dong_chu_tri_id_fkey(ho_va_ten), nguoi_duyet:nhan_su!hop_dong_nguoi_duyet_id_fkey(ho_va_ten), nguoi_tao:nhan_su!hop_dong_nguoi_tao_id_fkey(ho_va_ten)';
+  'id, so_hop_dong, ten_hop_dong, khach_hang_id, don_vi_id, gia_tri, da_thanh_toan, ngay_ky, han_hoan_thanh, trang_thai, nhom_hd, chu_tri_id, gia_du_thau, ngay_nop_ho_so, trang_thai_phe_duyet, ngay_trinh_duyet, ngay_duyet, nguoi_duyet_id, trang_thai_quyet_toan, ngay_quyet_toan, han_chung_tu_quyet_toan, loai_dac_thu, phan_vien_xa, giam_theo_yeu_cau_don_vi, phuc_tap, cap_ky, quan_ly_tap_trung, dong_dau_so_bo, ngay_dong_dau_so_bo, so_vb_chap_thuan_dau_so_bo, pho_don_vi_quan_ly_id, nguoi_tao_id, khach_hang(ten_to_chuc), don_vi(ten_don_vi), chu_tri:nhan_su!hop_dong_chu_tri_id_fkey(ho_va_ten), nguoi_duyet:nhan_su!hop_dong_nguoi_duyet_id_fkey(ho_va_ten), nguoi_tao:nhan_su!hop_dong_nguoi_tao_id_fkey(ho_va_ten), pho_don_vi_quan_ly:nhan_su!hop_dong_pho_don_vi_quan_ly_id_fkey(ho_va_ten)';
 
 export async function fetchHopDong(): Promise<HopDong[]> {
   let fetchedData: any[] = [];
@@ -271,6 +272,12 @@ export async function fetchHopDong(): Promise<HopDong[]> {
     giamTheoYeuCauDonVi: !!r.giam_theo_yeu_cau_don_vi,
     phucTap: !!r.phuc_tap,
     capKy: (r.cap_ky as HopDong['capKy']) ?? null,
+    quanLyTapTrung: !!r.quan_ly_tap_trung,
+    dongDauSoBo: !!r.dong_dau_so_bo,
+    ngayDongDauSoBo: r.ngay_dong_dau_so_bo ?? '',
+    soVbChapThuanDauSoBo: r.so_vb_chap_thuan_dau_so_bo ?? '',
+    phoDonViQuanLyId: r.pho_don_vi_quan_ly_id != null ? String(r.pho_don_vi_quan_ly_id) : null,
+    phoDonViQuanLy: (r.pho_don_vi_quan_ly as unknown as { ho_va_ten: string } | null)?.ho_va_ten ?? '',
     buocHienTai: r.buoc_hien_tai ?? 'du-thao',
     fileDuThaoUrl: r.file_du_thao_url ?? r.fileDuThaoUrl ?? '',
     tenFileDuThao: r.ten_file_du_thao ?? r.tenFileDuThao ?? '',
@@ -280,13 +287,20 @@ export async function fetchHopDong(): Promise<HopDong[]> {
 }
 
 
+/**
+ * Dữ liệu ghi của hợp đồng.
+ *
+ * KHÔNG có `daThanhToan`: số tiền đã thu là SỐ DẪN XUẤT từ bảng `dot_thanh_toan`
+ * (đợt có ngày thực thu), do trigger `trg_dot_thanh_toan_dong_bo` giữ — migration 0034.
+ * Trước đây form hợp đồng ghi đè cột này bằng ô nhập tay để trống nên toàn bộ 17 hợp
+ * đồng bị về 0 dù chứng từ ghi nhận 32,32 tỷ đã thu.
+ */
 export interface HopDongInput {
   soHD: string;
   ten: string;
   khachHangId: string;
   donViId: string;
   giaTri: string;
-  daThanhToan: string;
   ngayKy: string;
   hanHoanThanh: string;
   trangThai: string;
@@ -303,6 +317,14 @@ export interface HopDongInput {
   giamTheoYeuCauDonVi: boolean;
   phucTap: boolean;
   capKy: string;
+  /** Đ.3.o + Đ.7.1c — mô hình quản lý tập trung tại đơn vị (quyết định nhánh D của luồng giao việc). */
+  quanLyTapTrung: boolean;
+  /** Đ.8.2 — đóng dấu sơ bộ; trigger fn_kiem_soat_dau_so_bo kiểm tra thẩm quyền theo cấp ký. */
+  dongDauSoBo: boolean;
+  ngayDongDauSoBo?: string;
+  soVbChapThuanDauSoBo?: string;
+  /** Đ.8.3 — phó đơn vị quản lý khi Trưởng đơn vị là chủ trì. */
+  phoDonViQuanLyId?: string;
   fileDuThaoUrl?: string;
   tenFileDuThao?: string;
   dauThauId?: string;
@@ -315,7 +337,7 @@ function hopDongRow(i: HopDongInput) {
     khach_hang_id: num(i.khachHangId),
     don_vi_id: num(i.donViId),
     gia_tri: Number(i.giaTri) || 0,
-    da_thanh_toan: Number(i.daThanhToan) || 0,
+    // da_thanh_toan: KHÔNG ghi ở đây — trigger CSDL giữ theo chứng từ đợt thanh toán (0034).
     ngay_ky: str(i.ngayKy),
     han_hoan_thanh: str(i.hanHoanThanh),
     trang_thai: i.trangThai,
@@ -331,6 +353,11 @@ function hopDongRow(i: HopDongInput) {
     giam_theo_yeu_cau_don_vi: i.giamTheoYeuCauDonVi,
     phuc_tap: i.phucTap,
     cap_ky: i.capKy || null,
+    quan_ly_tap_trung: i.quanLyTapTrung,
+    dong_dau_so_bo: i.dongDauSoBo,
+    ngay_dong_dau_so_bo: str(i.ngayDongDauSoBo ?? ''),
+    so_vb_chap_thuan_dau_so_bo: str(i.soVbChapThuanDauSoBo ?? ''),
+    pho_don_vi_quan_ly_id: num(i.phoDonViQuanLyId ?? ''),
     ngay_duyet: str(i.ngayDuyet ?? ''),
     buoc_hien_tai: i.trangThai === 'cho-duyet' ? 'cho-duyet' : i.trangThai === 'dang-thuc-hien' ? 'dang-thuc-hien' : 'du-thao',
     file_du_thao_url: str(i.fileDuThaoUrl ?? ''),
@@ -516,4 +543,59 @@ export async function updateLopDaoTao(id: string, i: LopDaoTaoInput) {
 }
 export async function deleteLopDaoTao(id: string) {
   throwIf((await supabase.from('lop_dao_tao').delete().eq('id', Number(id))).error);
+}
+
+// ─── NGHIÊN CỨU SINH (NCS) ───
+
+export async function fetchNghienCuuSinh(): Promise<NghienCuuSinh[]> {
+  const { data, error } = await supabase
+    .from('nghien_cuu_sinh')
+    .select('id, nhan_su_id, ho_ten, ngay_nhap_hoc, giao_vien_huong_dan, ten_de_tai, don_vi_id, trang_thai_hoi_dong, ghi_chu')
+    .order('ngay_nhap_hoc', { ascending: false });
+  throwIf(error);
+  return (data ?? []).map((r) => ({
+    id: String(r.id),
+    nhanSuId: r.nhan_su_id != null ? String(r.nhan_su_id) : null,
+    hoTen: r.ho_ten,
+    ngayNhapHoc: r.ngay_nhap_hoc ?? '',
+    gvHuongDan: r.giao_vien_huong_dan ?? '',
+    tenDeTai: r.ten_de_tai ?? '',
+    donViId: r.don_vi_id != null ? String(r.don_vi_id) : null,
+    trangThaiHoiDong: r.trang_thai_hoi_dong,
+    ghiChu: r.ghi_chu ?? '',
+  }));
+}
+
+export interface NghienCuuSinhInput {
+  nhanSuId: string;
+  hoTen: string;
+  ngayNhapHoc: string;
+  gvHuongDan: string;
+  tenDeTai: string;
+  donViId: string;
+  trangThaiHoiDong: string;
+  ghiChu: string;
+}
+
+function ncsRow(i: NghienCuuSinhInput) {
+  return {
+    nhan_su_id: i.nhanSuId ? Number(i.nhanSuId) : null,
+    ho_ten: i.hoTen,
+    ngay_nhap_hoc: str(i.ngayNhapHoc),
+    giao_vien_huong_dan: str(i.gvHuongDan),
+    ten_de_tai: str(i.tenDeTai),
+    don_vi_id: i.donViId ? Number(i.donViId) : null,
+    trang_thai_hoi_dong: i.trangThaiHoiDong,
+    ghi_chu: str(i.ghiChu),
+  };
+}
+
+export async function createNghienCuuSinh(i: NghienCuuSinhInput) {
+  throwIf((await supabase.from('nghien_cuu_sinh').insert(ncsRow(i))).error);
+}
+export async function updateNghienCuuSinh(id: string, i: NghienCuuSinhInput) {
+  throwIf((await supabase.from('nghien_cuu_sinh').update(ncsRow(i)).eq('id', Number(id))).error);
+}
+export async function deleteNghienCuuSinh(id: string) {
+  throwIf((await supabase.from('nghien_cuu_sinh').delete().eq('id', Number(id))).error);
 }
