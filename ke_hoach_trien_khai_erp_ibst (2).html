@@ -1,0 +1,2426 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kế hoạch Triển khai ERP IBST</title>
+<style>
+  @page { size: A4; margin: 15mm 15mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 13px; line-height: 1.6; color: #1a1a2e;
+    max-width: 1100px; margin: 0 auto; padding: 30px 40px;
+    background: #fff;
+  }
+  h1 {
+    text-align: center; font-size: 22px; color: #0d47a1;
+    border-bottom: 3px solid #0d47a1; padding-bottom: 12px; margin-bottom: 8px;
+    letter-spacing: 1px;
+  }
+  h2 {
+    font-size: 16px; color: #fff; background: #0d47a1;
+    padding: 8px 16px; margin: 30px 0 14px; border-radius: 4px;
+    page-break-after: avoid;
+  }
+  h3 { font-size: 14.5px; color: #1565c0; border-bottom: 2px solid #e3f2fd; padding-bottom: 4px; margin-top: 24px; }
+  h4 { font-size: 13px; color: #333; margin-top: 16px; }
+  p { margin: 6px 0; }
+  strong { color: #1a1a2e; }
+  hr { border: none; border-top: 1px solid #e0e0e0; margin: 20px 0; }
+
+  table {
+    width: 100%; border-collapse: collapse; margin: 10px 0 16px;
+    font-size: 12.5px; page-break-inside: auto;
+  }
+  thead { background: #e3f2fd; }
+  th {
+    padding: 8px 10px; text-align: left; font-weight: 600;
+    border: 1px solid #bbdefb; color: #0d47a1; font-size: 12px;
+    white-space: nowrap;
+  }
+  td { padding: 6px 10px; border: 1px solid #e0e0e0; vertical-align: top; }
+  tr:nth-child(even) { background: #fafafa; }
+  tr:hover { background: #f1f8ff; }
+
+  /* Center align for symbol columns */
+  td:nth-child(3):not(:last-child), td:nth-child(4):not(:last-child) {
+    text-align: center;
+  }
+
+  blockquote {
+    border-left: 4px solid #90caf9; margin: 12px 0; padding: 8px 16px;
+    background: #f8f9fa; color: #555; font-style: italic;
+  }
+
+  .alert {
+    padding: 12px 18px; margin: 14px 0; border-radius: 6px;
+    font-style: normal; font-size: 12.5px; line-height: 1.6;
+  }
+  .alert p { margin: 4px 0; }
+  .alert ul { margin: 6px 0 6px 20px; padding: 0; }
+  .alert li { margin: 3px 0; }
+  .alert h3 { margin: 0 0 6px 0; padding: 0; border: none; font-size: 13.5px; }
+
+  .alert-important { background: #e8f0fe; border-left: 5px solid #1a73e8; color: #174ea6; }
+  .alert-tip { background: #e6f4ea; border-left: 5px solid #137333; color: #0d652d; }
+  .alert-note { background: #fef7e0; border-left: 5px solid #f9ab00; color: #b06000; }
+  .alert-warning { background: #fce8e6; border-left: 5px solid #c5221f; color: #a50e0e; }
+  .alert-caution { background: #fce4ec; border-left: 5px solid #c62828; color: #b71c1c; }
+
+  /* Print styles */
+  @media print {
+    body { padding: 0; font-size: 11px; }
+    h1 { font-size: 18px; }
+    h2 { font-size: 14px; padding: 6px 12px; }
+    h3 { font-size: 13px; }
+    table { font-size: 10.5px; }
+    th, td { padding: 4px 6px; }
+    .alert { padding: 8px 12px; font-size: 11px; }
+    tr { page-break-inside: avoid; }
+    h2, h3 { page-break-after: avoid; }
+    table { page-break-inside: auto; }
+  }
+
+  /* Footer */
+  .footer {
+    text-align: center; margin-top: 40px; padding-top: 16px;
+    border-top: 2px solid #0d47a1; color: #666; font-size: 11px;
+  }
+</style>
+</head>
+<body>
+<h1>KẾ HOẠCH TRIỂN KHAI CHI TIẾT HỆ THỐNG ERP TÍCH HỢP IBST</h1>
+<p><strong>Dự án:</strong> Hệ thống ERP tích hợp Viện Khoa học Công nghệ Xây dựng (IBST)
+<strong>Đơn vị thực hiện:</strong> Công ty Cổ phần Công nghệ và Tư vấn Xây dựng (CIC)
+<strong>Tổng kinh phí phần mềm:</strong> 2.260.000.000 VNĐ
+<strong>Tổng thời gian:</strong> ~8 tháng (10/09/2026 – 30/04/2027)
+<strong>Mục tiêu trọng tâm:</strong> Hoàn thành các phân hệ cơ bản và có Dashboard tổng quan điều hành
+<strong>Ngày lập:</strong> 26/08/2026</p>
+<hr>
+<h2>TỔNG QUAN LỘ TRÌNH</h2>
+<table>
+<thead>
+<tr>
+<th>Phân hệ</th>
+<th align="center">09</th>
+<th align="center">10</th>
+<th align="center">11</th>
+<th align="center">12</th>
+<th align="center">01</th>
+<th align="center">02</th>
+<th align="center">03</th>
+<th align="center">04</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>PH1 – Dashboard BI &amp; Điều hành</strong> <em>(xuyên suốt)</em></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"><strong>▓█</strong></td>
+<td align="center"><strong>██</strong></td>
+<td align="center"><strong>██</strong></td>
+<td align="center"><strong>██</strong></td>
+<td align="center"><strong>██</strong></td>
+<td align="center"><strong>█▓</strong></td>
+</tr>
+<tr>
+<td><strong>GĐ1 – Nền tảng cơ bản</strong></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+</tr>
+<tr>
+<td>Hạ tầng &amp; Thể chế</td>
+<td align="center">▓█</td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+</tr>
+<tr>
+<td>PH2 – Hợp đồng &amp; Triển khai DVKT</td>
+<td align="center">▓█</td>
+<td align="center">██</td>
+<td align="center">█▓</td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+</tr>
+<tr>
+<td>PH4 – Nhân sự, Đào tạo, Tạp chí</td>
+<td align="center"></td>
+<td align="center">▓█</td>
+<td align="center">██</td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+</tr>
+<tr>
+<td><strong>GĐ2 – Tích hợp hệ thống</strong></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+</tr>
+<tr>
+<td>PH6 – Văn phòng số e-Office</td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center">██</td>
+<td align="center">█▓</td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+</tr>
+<tr>
+<td>PH3 – Nhiệm vụ QLNN &amp; KHCN</td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center">▓█</td>
+<td align="center">██</td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+</tr>
+<tr>
+<td><strong>GĐ3 – Chuyên sâu &amp; Hoàn thiện</strong></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+</tr>
+<tr>
+<td>PH5 – LIMS &amp; Thí nghiệm</td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center">▓█</td>
+<td align="center">██</td>
+<td align="center"></td>
+</tr>
+<tr>
+<td>PH7 – CSDL &amp; AI-RAG</td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center">▓█</td>
+<td align="center">█▓</td>
+</tr>
+<tr>
+<td>Tối ưu &amp; Nghiệm thu tổng thể</td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center">██</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><em>██ = triển khai chính · ▓█ / █▓ = khởi động / kết thúc chồng lấn</em></p>
+</blockquote>
+<div class="alert alert-important"><p><strong>Chiến lược phân kỳ:</strong> Ưu tiên hoàn thành các phân hệ quản lý cơ bản (Hợp đồng, Nhân sự, Văn phòng số, QLNN) và Dashboard tổng quan. Dashboard BI là <strong>module xuyên suốt</strong>, được cập nhật dần theo từng phân hệ hoàn thành. Các phân hệ chuyên sâu (LIMS, AI-RAG) triển khai sau khi nền tảng ổn định.</p>
+</div><hr>
+<h2>GIAI ĐOẠN 1: NỀN TẢNG CƠ BẢN</h2>
+<p><strong>Thời gian:</strong> 10/09/2026 – 30/11/2026 (~80 ngày)
+<strong>Kinh phí:</strong> 770.000.000 VNĐ
+<strong>Phân hệ triển khai:</strong> PH2 (510 triệu) + PH4 (260 triệu)</p>
+<div class="alert alert-important"><p>Giai đoạn nền tảng: Thiết lập hạ tầng + triển khai 2 phân hệ quản lý cốt lõi (Hợp đồng – Dòng tiền &amp; Nhân sự – Tổ chức). Đây là dữ liệu đầu vào thiết yếu cho Dashboard BI.</p>
+</div><hr>
+<h3>1.0. Công tác Chuẩn bị &amp; Hạ tầng</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Công việc</th>
+<th>Thời gian</th>
+<th>Người phụ trách</th>
+<th>Deliverable</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1.0.1</td>
+<td>IBST cung cấp quy trình, quy chế, tài liệu, dữ liệu liên quan đến PH2 và PH4</td>
+<td>10-25/09</td>
+<td>Viện IBST + BA (CIC)</td>
+<td>Bộ tài liệu quy trình, biểu mẫu &amp; dữ liệu mẫu PH2 &amp; PH4</td>
+</tr>
+<tr>
+<td>1.0.2</td>
+<td>Thiết lập Cloud Server (8 vCPU, 16GB RAM, 500GB SSD NVMe) trên Viettel Cloud</td>
+<td>15-25/09</td>
+<td>DevOps (CIC)</td>
+<td>Server vận hành, SSL/TLS, Firewall</td>
+</tr>
+<tr>
+<td>1.0.3</td>
+<td>Cấu hình Cloud Storage trên Viettel Cloud (lưu trữ tạm thời GĐ1-2)</td>
+<td>15-25/09</td>
+<td>DevOps (CIC)</td>
+<td>Cloud Storage vận hành, backup policy</td>
+</tr>
+<tr>
+<td>1.0.4</td>
+<td>Cài đặt PostgreSQL/Supabase Self-hosted, cấu hình RLS đa đơn vị</td>
+<td>22-30/09</td>
+<td>Backend Lead (CIC)</td>
+<td>DB vận hành, phân quyền 16 đơn vị</td>
+</tr>
+<tr>
+<td>1.0.5</td>
+<td>Thiết lập CI/CD pipeline, staging &amp; production environment</td>
+<td>22-30/09</td>
+<td>DevOps (CIC)</td>
+<td>Pipeline tự động hóa</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><em>Ghi chú: NAS 150TB (12-bay, RAID 6, 10GbE) sẽ được lắp đặt tại Viện IBST ở Giai đoạn 3, khi triển khai PH7 (Kho CSDL &amp; AI-RAG) cần lưu trữ tài liệu khối lượng lớn. Giai đoạn 1-2 sử dụng Viettel Cloud Storage.</em></p>
+</blockquote>
+<hr>
+<h3>1.1. Phân hệ 2: Quản lý Hợp đồng &amp; Triển khai Dịch vụ Kỹ thuật</h3>
+<p><strong>Kinh phí:</strong> 510.000.000 VNĐ
+<strong>Thời gian:</strong> 25/09/2026 – 05/11/2026 (~42 ngày)
+<strong>Độ ưu tiên:</strong> 🔴 Cao nhất — Lõi dòng tiền</p>
+<h4>Phân rã công việc chi tiết</h4>
+<blockquote>
+<p><em>Ghi chú: Nhân sự trong các bảng sprint là nhân sự CIC, trừ khi ghi rõ &quot;IBST&quot;. Viết tắt: PM – Quản lý dự án, BA – Phân tích nghiệp vụ, BE – Lập trình Backend, FE – Lập trình Frontend, QA – Kiểm thử, UI/UX – Thiết kế giao diện.</em></p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Module / Công việc</th>
+<th>Thời gian</th>
+<th>Nhân sự (CIC)</th>
+<th>Deliverable</th>
+<th>Tiêu chí nghiệm thu</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Sprint 1: Nền tảng</strong></td>
+<td></td>
+<td><strong>25/09 – 08/10</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>2.1.1</td>
+<td>Thiết kế CSDL: bảng Khách hàng, Hợp đồng, Phụ lục, Phiếu giao việc</td>
+<td>25-30/09</td>
+<td>1 BA + 1 BE</td>
+<td>ERD + Migration scripts</td>
+<td>Schema review passed</td>
+</tr>
+<tr>
+<td>2.1.2</td>
+<td>Phát triển CRUD API Khách hàng (thông tin, lịch sử, phân loại)</td>
+<td>28/09-03/10</td>
+<td>1 BE</td>
+<td>API endpoints + Unit tests</td>
+<td>Test coverage ≥ 80%</td>
+</tr>
+<tr>
+<td>2.1.3</td>
+<td>Phát triển CRUD API Hợp đồng (tạo, sửa, đính kèm, trạng thái)</td>
+<td>30/09-05/10</td>
+<td>1 BE</td>
+<td>API endpoints + Unit tests</td>
+<td>CRUD hoạt động đúng</td>
+</tr>
+<tr>
+<td>2.1.4</td>
+<td>Xây dựng giao diện Quản lý Khách hàng</td>
+<td>01-06/10</td>
+<td>1 FE</td>
+<td>UI screens (list, detail, form)</td>
+<td>Responsive, Dark/Light mode</td>
+</tr>
+<tr>
+<td>2.1.5</td>
+<td>Xây dựng giao diện Quản lý Hợp đồng</td>
+<td>03-08/10</td>
+<td>1 FE</td>
+<td>UI screens (list, detail, timeline)</td>
+<td>Filter, search, pagination</td>
+</tr>
+<tr>
+<td><strong>Sprint 2: Dòng tiền &amp; Quy chế</strong></td>
+<td></td>
+<td><strong>09/10 – 24/10</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>2.2.1</td>
+<td>Thuật toán bóc tách tỷ lệ dòng tiền khoán theo Quy chế 2815 (Chủ trì / Đơn vị / Viện)</td>
+<td>09-15/10</td>
+<td>1 BA + 1 BE</td>
+<td>Algorithm + unit tests</td>
+<td>Tính đúng theo công thức QC 2815</td>
+</tr>
+<tr>
+<td>2.2.2</td>
+<td>Module Thu chi: Tạm ứng, Tiền về, Công nợ, Doanh thu thực tế</td>
+<td>12-19/10</td>
+<td>1 BE</td>
+<td>API + Business logic</td>
+<td>Đối soát chính xác ±0 VNĐ</td>
+</tr>
+<tr>
+<td>2.2.3</td>
+<td>Tổng hợp dữ liệu thu chi theo mã định danh Hợp đồng Dịch vụ</td>
+<td>15-20/10</td>
+<td>1 BE</td>
+<td>Aggregation queries + reports</td>
+<td>Báo cáo tổng hợp đúng</td>
+</tr>
+<tr>
+<td>2.2.4</td>
+<td>Giao diện Quản lý Thu chi &amp; Công nợ</td>
+<td>14-20/10</td>
+<td>1 FE</td>
+<td>UI (bảng tổng hợp, biểu đồ dòng tiền)</td>
+<td>Realtime update, export Excel</td>
+</tr>
+<tr>
+<td>2.2.5</td>
+<td>Số hóa Phiếu giao việc điện tử (tạo, duyệt, ký)</td>
+<td>18-24/10</td>
+<td>1 FE + 1 BE</td>
+<td>Workflow phiếu giao việc</td>
+<td>Luồng duyệt đa cấp</td>
+</tr>
+<tr>
+<td><strong>Sprint 3: Tích hợp &amp; UAT</strong></td>
+<td></td>
+<td><strong>25/10 – 05/11</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>2.3.1</td>
+<td>API đồng bộ chứng từ thanh toán với hệ thống kế toán hiện hữu</td>
+<td>25-30/10</td>
+<td>1 BE</td>
+<td>Integration API</td>
+<td>Đồng bộ 2 chiều thành công</td>
+</tr>
+<tr>
+<td>2.3.2</td>
+<td>Hệ thống cảnh báo tự động: công nợ quá hạn, tiến độ hợp đồng</td>
+<td>26-31/10</td>
+<td>1 BE</td>
+<td>Notification service (Email, Zalo ZNS)</td>
+<td>Gửi đúng thời điểm, đúng người</td>
+</tr>
+<tr>
+<td>2.3.3</td>
+<td>Phân quyền RLS theo đơn vị (16 đơn vị trực thuộc)</td>
+<td>27/10-01/11</td>
+<td>1 BE</td>
+<td>RLS policies</td>
+<td>Đơn vị A không thấy dữ liệu đơn vị B</td>
+</tr>
+<tr>
+<td>2.3.4</td>
+<td>Testing tích hợp toàn phân hệ</td>
+<td>29/10-02/11</td>
+<td>1 QA</td>
+<td>Test report</td>
+<td>Không lỗi Critical/Blocker</td>
+</tr>
+<tr>
+<td>2.3.5</td>
+<td>UAT với người dùng thực tế (Phòng Kế hoạch, Tài chính)</td>
+<td>01-04/11</td>
+<td>PM (CIC) + QA (CIC) + IBST</td>
+<td>UAT sign-off</td>
+<td>≥ 90% test case passed</td>
+</tr>
+<tr>
+<td>2.3.6</td>
+<td>Đào tạo nghiệp vụ &amp; bàn giao</td>
+<td>03-05/11</td>
+<td>PM (CIC) + BA (CIC)</td>
+<td>Tài liệu hướng dẫn + Video</td>
+<td>Học viên thao tác độc lập</td>
+</tr>
+</tbody></table>
+<hr>
+<h3>1.2. Phân hệ 4: Quản lý Nhân sự, Đào tạo, Tạp chí &amp; Đảng – Đoàn thể</h3>
+<p><strong>Kinh phí:</strong> 260.000.000 VNĐ
+<strong>Thời gian:</strong> 20/10/2026 – 30/11/2026 (~42 ngày)
+<strong>Độ ưu tiên:</strong> 🔴 Cao — Dữ liệu nhân sự cơ bản cho Dashboard</p>
+<div class="alert alert-note"><p>PH4 khởi động khi hạ tầng đã ổn định và PH2 vào Sprint 3. Dữ liệu nhân sự từ PH4 là đầu vào quan trọng cho Dashboard BI.</p>
+</div><h4>Phân rã công việc chi tiết</h4>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Module / Công việc</th>
+<th>Thời gian</th>
+<th>Nhân sự (CIC)</th>
+<th>Deliverable</th>
+<th>Tiêu chí nghiệm thu</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Sprint 1: Nhân sự</strong></td>
+<td></td>
+<td><strong>20/10 – 05/11</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>4.1.1</td>
+<td>Thiết kế CSDL: CBNV, Chứng chỉ, Đào tạo, Bài báo, Đảng viên</td>
+<td>20-25/10</td>
+<td>1 BA + 1 BE</td>
+<td>ERD + Migration</td>
+<td>Schema review passed</td>
+</tr>
+<tr>
+<td>4.1.2</td>
+<td>Module Hồ sơ CBNV (thông tin cá nhân, quá trình công tác, bổ nhiệm)</td>
+<td>23/10-03/11</td>
+<td>1 BE + 1 FE</td>
+<td>CRUD + Search + Export</td>
+<td>Mã hóa dữ liệu nhạy cảm</td>
+</tr>
+<tr>
+<td>4.1.3</td>
+<td>Module Chứng chỉ hành nghề xây dựng (cấp, gia hạn, hết hạn)</td>
+<td>27/10-05/11</td>
+<td>1 BE + 1 FE</td>
+<td>CRUD + Cảnh báo hết hạn</td>
+<td>Nhắc trước 90/60/30 ngày</td>
+</tr>
+<tr>
+<td>4.1.4</td>
+<td>Phân quyền truy cập đa cấp (RLS cho dữ liệu nhân sự)</td>
+<td>01-05/11</td>
+<td>1 BE</td>
+<td>RLS policies</td>
+<td>Chỉ thấy dữ liệu đúng quyền</td>
+</tr>
+<tr>
+<td><strong>Sprint 2: Đào tạo &amp; Tạp chí</strong></td>
+<td></td>
+<td><strong>06/11 – 20/11</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>4.2.1</td>
+<td>Module Quản lý Đào tạo Tiến sĩ/NCS (hồ sơ, tiến độ, phê duyệt)</td>
+<td>06-13/11</td>
+<td>1 BE + 1 FE</td>
+<td>Workflow đào tạo</td>
+<td>Luồng phê duyệt đa cấp</td>
+</tr>
+<tr>
+<td>4.2.2</td>
+<td>Module Tòa soạn Tạp chí KHCN (nhận bài, phân công phản biện)</td>
+<td>07-15/11</td>
+<td>1 BE + 1 FE</td>
+<td>Submission workflow</td>
+<td>Luồng nhận bài → phản biện → duyệt</td>
+</tr>
+<tr>
+<td>4.2.3</td>
+<td>Module Phản biện khoa học (phân công, đánh giá, kết quả)</td>
+<td>10-17/11</td>
+<td>1 BE + 1 FE</td>
+<td>Review management</td>
+<td>2+ phản biện/bài, blind review</td>
+</tr>
+<tr>
+<td>4.2.4</td>
+<td>Dashboard Tạp chí (thống kê bài, tỷ lệ chấp nhận, thời gian xử lý)</td>
+<td>15-20/11</td>
+<td>1 FE</td>
+<td>Dashboard UI</td>
+<td>Biểu đồ trực quan</td>
+</tr>
+<tr>
+<td><strong>Sprint 3: Đảng – Đoàn thể &amp; UAT</strong></td>
+<td></td>
+<td><strong>21/11 – 30/11</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>4.3.1</td>
+<td>Module Quản lý Đảng vụ (Đảng viên, sinh hoạt Chi bộ, Đảng phí)</td>
+<td>21-25/11</td>
+<td>1 BE + 1 FE</td>
+<td>CRUD + Reports</td>
+<td>Theo dõi sinh hoạt, đóng phí</td>
+</tr>
+<tr>
+<td>4.3.2</td>
+<td>Module Đoàn thanh niên &amp; Công đoàn (đoàn viên, Đoàn phí, phong trào)</td>
+<td>22-26/11</td>
+<td>1 BE + 1 FE</td>
+<td>CRUD + Reports</td>
+<td>Quản lý quỹ, hoạt động</td>
+</tr>
+<tr>
+<td>4.3.3</td>
+<td>Module Thi đua – Khen thưởng</td>
+<td>23-27/11</td>
+<td>1 BE + 1 FE</td>
+<td>Workflow thi đua</td>
+<td>Quy trình xét duyệt đúng quy định</td>
+</tr>
+<tr>
+<td>4.3.4</td>
+<td>Testing tích hợp toàn phân hệ</td>
+<td>25-27/11</td>
+<td>1 QA</td>
+<td>Test report</td>
+<td>Không lỗi Critical/Blocker</td>
+</tr>
+<tr>
+<td>4.3.5</td>
+<td>UAT với Phòng Tổ chức, Ban Biên tập Tạp chí, Đảng ủy</td>
+<td>27-29/11</td>
+<td>PM (CIC) + IBST</td>
+<td>Sign-off</td>
+<td>≥ 90% passed</td>
+</tr>
+<tr>
+<td>4.3.6</td>
+<td>Đào tạo &amp; bàn giao</td>
+<td>29-30/11</td>
+<td>PM (CIC) + BA (CIC)</td>
+<td>Tài liệu + Video</td>
+<td>Vận hành độc lập</td>
+</tr>
+</tbody></table>
+<hr>
+<h3>Mốc bàn giao Giai đoạn 1</h3>
+<table>
+<thead>
+<tr>
+<th>Mốc</th>
+<th>Ngày</th>
+<th>Sản phẩm bàn giao</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>M1.1</td>
+<td>30/09/2026</td>
+<td>Hạ tầng Cloud vận hành; CSDL PostgreSQL/Supabase ready</td>
+</tr>
+<tr>
+<td>M1.2</td>
+<td>05/11/2026</td>
+<td>PH2 nghiệm thu: Hợp đồng + Dòng tiền + Tích hợp kế toán</td>
+</tr>
+<tr>
+<td>M1.3</td>
+<td>30/11/2026</td>
+<td>PH4 nghiệm thu: Nhân sự + Đào tạo + Tạp chí + Đảng – Đoàn thể</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>PHÂN HỆ 1: DASHBOARD BI &amp; ĐIỀU HÀNH <em>(Module xuyên suốt)</em></h2>
+<p><strong>Kinh phí:</strong> 180.000.000 VNĐ
+<strong>Thời gian:</strong> 01/11/2026 – 30/04/2027 (triển khai lũy tiến, cập nhật dần theo từng phân hệ)
+<strong>Độ ưu tiên:</strong> 🔴 Cao — Công cụ điều hành cho Ban Lãnh đạo Viện</p>
+<div class="alert alert-tip"><p><strong>Chiến lược triển khai lũy tiến:</strong> Dashboard không xây một lần mà được <strong>cập nhật dần</strong> theo từng phân hệ hoàn thành. Lãnh đạo Viện có Dashboard sớm nhất từ tháng 11/2026 với dữ liệu Hợp đồng &amp; Dòng tiền, sau đó bổ sung Nhân sự, Văn bản, QLNN/KHCN, và cuối cùng là LIMS + AI-RAG. Dashboard nghiệm thu chính thức cùng nghiệm thu tổng thể cuối dự án.</p>
+</div><h4>Phân rã công việc chi tiết</h4>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Module / Công việc</th>
+<th>Thời gian</th>
+<th>Nhân sự (CIC)</th>
+<th>Deliverable</th>
+<th>Tiêu chí nghiệm thu</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Sprint 1: Dashboard v1 — Dữ liệu PH2 (Hợp đồng &amp; Dòng tiền)</strong></td>
+<td></td>
+<td><strong>01/11 – 20/11</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>1.1.1</td>
+<td>Thiết kế Dashboard UX/UI (wireframe, mockup) với Viện trưởng</td>
+<td>01-05/11</td>
+<td>1 BA + 1 UI/UX</td>
+<td>Figma mockup approved</td>
+<td>Lãnh đạo Viện duyệt</td>
+</tr>
+<tr>
+<td>1.1.2</td>
+<td>Thuật toán tổng hợp dữ liệu đa chiều từ 16 đơn vị (PH2)</td>
+<td>03-12/11</td>
+<td>1 BE Senior</td>
+<td>Aggregation engine</td>
+<td>Query ≤ 2s cho dashboard</td>
+</tr>
+<tr>
+<td>1.1.3</td>
+<td>Dashboard Tổng quan v1: Doanh thu, Công nợ, Dòng tiền theo đơn vị</td>
+<td>08-17/11</td>
+<td>1 FE</td>
+<td>Main dashboard v1</td>
+<td>Cập nhật realtime từ PH2</td>
+</tr>
+<tr>
+<td>1.1.4</td>
+<td>Module Dự báo dòng tiền (Forecasting)</td>
+<td>12-20/11</td>
+<td>1 BE</td>
+<td>Forecasting algorithm</td>
+<td>Sai số ≤ 15% so với thực tế</td>
+</tr>
+<tr>
+<td></td>
+<td>➜ <em>Go-live Dashboard v1 — Lãnh đạo bắt đầu sử dụng</em></td>
+<td><strong>20/11</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><strong>Sprint 2: Dashboard v2 — Tích hợp PH4 (Nhân sự) + PH6 (Văn bản)</strong></td>
+<td></td>
+<td><strong>01/12 – 25/12</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>1.2.1</td>
+<td>Tích hợp dữ liệu Nhân sự từ PH4 vào Dashboard</td>
+<td>01-08/12</td>
+<td>1 BE</td>
+<td>HR data integration</td>
+<td>Hiển thị tổng quan nhân sự</td>
+</tr>
+<tr>
+<td>1.2.2</td>
+<td>Dashboard chi tiết theo Đơn vị (drill-down 16 đơn vị)</td>
+<td>05-15/12</td>
+<td>1 FE</td>
+<td>Unit-level dashboard</td>
+<td>Click vào đơn vị → chi tiết</td>
+</tr>
+<tr>
+<td>1.2.3</td>
+<td>Chỉ số sức khỏe đơn vị (Unit Health Score) — thiết kế công thức</td>
+<td>08-15/12</td>
+<td>1 BA + 1 BE</td>
+<td>KPI formula document</td>
+<td>Công thức được Viện duyệt</td>
+</tr>
+<tr>
+<td>1.2.4</td>
+<td>Tích hợp dữ liệu Văn bản/Giao việc từ PH6 (khi sẵn sàng)</td>
+<td>15-25/12</td>
+<td>1 BE</td>
+<td>e-Office data integration</td>
+<td>Tiến độ giao việc trên Dashboard</td>
+</tr>
+<tr>
+<td></td>
+<td>➜ <em>Cập nhật Dashboard v2 — Thêm Nhân sự + Tiến độ giao việc</em></td>
+<td><strong>25/12</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><strong>Sprint 3: Dashboard v3 — Tích hợp PH3 + Tối ưu</strong></td>
+<td></td>
+<td><strong>10/01 – 10/02</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>1.3.1</td>
+<td>Tích hợp dữ liệu QLNN &amp; KHCN từ PH3 (khi sẵn sàng)</td>
+<td>10-20/01</td>
+<td>1 BE</td>
+<td>QLNN data integration</td>
+<td>Nhiệm vụ + giải ngân trên Dashboard</td>
+</tr>
+<tr>
+<td>1.3.2</td>
+<td>Biểu đồ hợp phần (Composed Chart) — Tài chính, Tiến độ, Nhân lực</td>
+<td>15-25/01</td>
+<td>1 FE</td>
+<td>Interactive charts</td>
+<td>Filter theo thời gian, đơn vị</td>
+</tr>
+<tr>
+<td>1.3.3</td>
+<td>Module Lịch công tác Lãnh đạo (tích hợp từ PH6)</td>
+<td>20-30/01</td>
+<td>1 BE + 1 FE</td>
+<td>Calendar view</td>
+<td>Đồng bộ với e-Office</td>
+</tr>
+<tr>
+<td>1.3.4</td>
+<td>Tối ưu hiệu năng query &amp; caching strategy</td>
+<td>25/01-02/02</td>
+<td>1 BE</td>
+<td>Performance report</td>
+<td>Dashboard load ≤ 3s</td>
+</tr>
+<tr>
+<td>1.3.5</td>
+<td>Responsive design (PC, Tablet, Mobile)</td>
+<td>28/01-04/02</td>
+<td>1 FE</td>
+<td>Responsive UI</td>
+<td>Hiển thị tốt trên 3 loại thiết bị</td>
+</tr>
+<tr>
+<td>1.3.6</td>
+<td>UAT Dashboard v3 với Viện trưởng &amp; Ban Lãnh đạo</td>
+<td>05-08/02</td>
+<td>PM (CIC) + IBST</td>
+<td>UAT sign-off</td>
+<td>Lãnh đạo hài lòng</td>
+</tr>
+<tr>
+<td></td>
+<td>➜ <em>Dashboard v3 — Tích hợp đầy đủ PH2 + PH4 + PH6 + PH3</em></td>
+<td><strong>10/02</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><strong>Sprint 4: Dashboard v4 — Tích hợp PH5 + PH7</strong> <em>(trong GĐ3)</em></td>
+<td></td>
+<td><strong>03/2027 – 04/2027</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>1.4.1</td>
+<td>Tích hợp dữ liệu LIMS &amp; Thí nghiệm từ PH5</td>
+<td>25-31/03</td>
+<td>1 BE</td>
+<td>LIMS data integration</td>
+<td>Dữ liệu thí nghiệm trên Dashboard</td>
+</tr>
+<tr>
+<td>1.4.2</td>
+<td>Tích hợp dữ liệu CSDL &amp; AI-RAG từ PH7</td>
+<td>15-22/04</td>
+<td>1 BE</td>
+<td>AI-RAG data integration</td>
+<td>Thống kê tra cứu trên Dashboard</td>
+</tr>
+<tr>
+<td>1.4.3</td>
+<td>Nghiệm thu Dashboard chính thức (cùng nghiệm thu tổng thể)</td>
+<td>22-25/04</td>
+<td>PM (CIC) + IBST</td>
+<td>UAT final sign-off</td>
+<td>Dashboard đầy đủ 7 phân hệ</td>
+</tr>
+<tr>
+<td></td>
+<td>➜ <em>Dashboard v4 final — Nghiệm thu chính thức cùng toàn hệ thống</em></td>
+<td><strong>25/04</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<h4>Mốc Dashboard BI</h4>
+<table>
+<thead>
+<tr>
+<th>Mốc</th>
+<th>Ngày</th>
+<th>Phiên bản</th>
+<th>Dữ liệu tích hợp</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>D1</td>
+<td>20/11/2026</td>
+<td><strong>Dashboard v1 Go-live</strong></td>
+<td>PH2 (Doanh thu, Công nợ, Dòng tiền)</td>
+</tr>
+<tr>
+<td>D2</td>
+<td>25/12/2026</td>
+<td>Dashboard v2</td>
+<td>+ PH4 (Nhân sự) + PH6 (Văn bản, Giao việc)</td>
+</tr>
+<tr>
+<td>D3</td>
+<td>10/02/2027</td>
+<td>Dashboard v3</td>
+<td>+ PH3 (QLNN, KHCN, Giải ngân)</td>
+</tr>
+<tr>
+<td>D4</td>
+<td>25/04/2027</td>
+<td><strong>Dashboard v4 Final</strong></td>
+<td>+ PH5 (LIMS) + PH7 (CSDL, AI-RAG) — <strong>Nghiệm thu chính thức</strong></td>
+</tr>
+</tbody></table>
+<hr>
+<h2>GIAI ĐOẠN 2: TÍCH HỢP HỆ THỐNG</h2>
+<p><strong>Thời gian:</strong> 01/12/2026 – 31/01/2027 (~60 ngày)
+<strong>Kinh phí:</strong> 700.000.000 VNĐ
+<strong>Phân hệ triển khai:</strong> PH6 (440 triệu) + PH3 (260 triệu)</p>
+<div class="alert alert-important"><p><strong>Mục tiêu:</strong> Hoàn thành Văn phòng số e-Office và Quản lý Nhiệm vụ QLNN/KHCN. Song song với GĐ2, Dashboard BI tiếp tục được cập nhật dữ liệu từ các phân hệ mới (Sprint 2-3 Dashboard).</p>
+</div><hr>
+<h3>2.1. Phân hệ 6: Văn phòng số (e-Office)</h3>
+<p><strong>Kinh phí:</strong> 440.000.000 VNĐ
+<strong>Thời gian:</strong> 01/12/2026 – 20/01/2027 (~50 ngày)
+<strong>Độ ưu tiên:</strong> 🔴 Cao — Nền tảng quy trình số cho toàn Viện</p>
+<h4>Phân rã công việc chi tiết</h4>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Module / Công việc</th>
+<th>Thời gian</th>
+<th>Nhân sự (CIC)</th>
+<th>Deliverable</th>
+<th>Tiêu chí nghiệm thu</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Sprint 1: Quản lý Văn bản</strong></td>
+<td></td>
+<td><strong>01/12 – 18/12</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>6.1.1</td>
+<td>Thiết kế CSDL: Văn bản đến/đi, Sổ công văn, Phân loại, Luồng xử lý</td>
+<td>01-05/12</td>
+<td>1 BA + 1 BE</td>
+<td>ERD + Migration</td>
+<td>Schema review passed</td>
+</tr>
+<tr>
+<td>6.1.2</td>
+<td>Module Văn bản đến (tiếp nhận, phân loại, chuyển xử lý, theo dõi)</td>
+<td>03-12/12</td>
+<td>2 BE</td>
+<td>API + Workflow engine</td>
+<td>Luồng VB đến end-to-end</td>
+</tr>
+<tr>
+<td>6.1.3</td>
+<td>Module Văn bản đi (soạn thảo, trình ký, phát hành, lưu trữ)</td>
+<td>05-14/12</td>
+<td>2 BE</td>
+<td>API + Approval workflow</td>
+<td>Luồng VB đi end-to-end</td>
+</tr>
+<tr>
+<td>6.1.4</td>
+<td>Workflow Engine: luồng phê duyệt động (cấu hình tuyến ký theo loại VB)</td>
+<td>07-16/12</td>
+<td>1 BE Senior</td>
+<td>Configurable workflow</td>
+<td>Tạo được luồng mới không cần code</td>
+</tr>
+<tr>
+<td>6.1.5</td>
+<td>Giao diện Quản lý Văn bản (inbox, outbox, tracking, search)</td>
+<td>09-18/12</td>
+<td>2 FE</td>
+<td>UI screens</td>
+<td>UX mượt, filter đa tiêu chí</td>
+</tr>
+<tr>
+<td><strong>Sprint 2: Tích hợp &amp; Phòng họp</strong></td>
+<td></td>
+<td><strong>19/12 – 05/01</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>6.2.1</td>
+<td>Tích hợp Chữ ký số CA vào luồng trình ký văn bản</td>
+<td>19-27/12</td>
+<td>1 BE</td>
+<td>CA integration</td>
+<td>Ký thành công trên trình duyệt</td>
+</tr>
+<tr>
+<td>6.2.2</td>
+<td>API liên thông Trục văn bản Bộ Xây dựng (giao thức XML)</td>
+<td>20/12-03/01</td>
+<td>1 BE Senior</td>
+<td>Integration API</td>
+<td>Gửi/nhận VB tự động từ Trục</td>
+</tr>
+<tr>
+<td>6.2.3</td>
+<td>Module Quản lý Phòng họp (đăng ký, xếp lịch, xung đột)</td>
+<td>23-30/12</td>
+<td>1 BE + 1 FE</td>
+<td>Booking system</td>
+<td>Tránh trùng lịch, thông báo tự động</td>
+</tr>
+<tr>
+<td>6.2.4</td>
+<td>Module Quản lý Xe công tác (đăng ký, phê duyệt, lịch trình)</td>
+<td>26/12-02/01</td>
+<td>1 BE + 1 FE</td>
+<td>Vehicle management</td>
+<td>Phê duyệt đa cấp</td>
+</tr>
+<tr>
+<td>6.2.5</td>
+<td>Module Quản lý Tài liệu (upload, phân loại, tìm kiếm full-text)</td>
+<td>28/12-05/01</td>
+<td>1 BE + 1 FE</td>
+<td>Document management</td>
+<td>Tìm kiếm nội dung file</td>
+</tr>
+<tr>
+<td><strong>Sprint 3: Giao việc &amp; UAT</strong></td>
+<td></td>
+<td><strong>06/01 – 20/01</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>6.3.1</td>
+<td>Module Lịch công tác &amp; Giao việc (phân công, deadline, tiến độ lũy kế)</td>
+<td>06-12/01</td>
+<td>1 BE + 1 FE</td>
+<td>Task management</td>
+<td>Tính tiến độ lũy kế tự động</td>
+</tr>
+<tr>
+<td>6.3.2</td>
+<td>Thuật toán tự động tính tiến độ công việc lũy kế</td>
+<td>07-12/01</td>
+<td>1 BE</td>
+<td>Progress algorithm</td>
+<td>Công thức tính đúng theo quy định</td>
+</tr>
+<tr>
+<td>6.3.3</td>
+<td>Hệ thống thông báo đa kênh (In-app, Email, Zalo ZNS)</td>
+<td>08-14/01</td>
+<td>1 BE</td>
+<td>Notification hub</td>
+<td>Gửi đúng kênh, đúng người</td>
+</tr>
+<tr>
+<td>6.3.4</td>
+<td>Testing tích hợp toàn phân hệ e-Office</td>
+<td>12-16/01</td>
+<td>1 QA</td>
+<td>Test report</td>
+<td>Không lỗi Critical/Blocker</td>
+</tr>
+<tr>
+<td>6.3.5</td>
+<td>UAT với Văn phòng Viện, Phòng Hành chính</td>
+<td>15-18/01</td>
+<td>PM (CIC) + QA (CIC) + IBST</td>
+<td>UAT sign-off</td>
+<td>≥ 90% test case passed</td>
+</tr>
+<tr>
+<td>6.3.6</td>
+<td>Đào tạo &amp; Go-live e-Office cho toàn Viện</td>
+<td>18-20/01</td>
+<td>PM (CIC) + BA (CIC)</td>
+<td>Tài liệu HD + Video</td>
+<td>Toàn bộ cán bộ sử dụng được</td>
+</tr>
+</tbody></table>
+<hr>
+<h3>2.2. Phân hệ 3: Quản lý Nhiệm vụ QLNN &amp; Nhiệm vụ KHCN</h3>
+<p><strong>Kinh phí:</strong> 260.000.000 VNĐ
+<strong>Thời gian:</strong> 10/12/2026 – 31/01/2027 (~52 ngày)
+<strong>Độ ưu tiên:</strong> 🟠 Trung bình-Cao</p>
+<h4>Phân rã công việc chi tiết</h4>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Module / Công việc</th>
+<th>Thời gian</th>
+<th>Nhân sự (CIC)</th>
+<th>Deliverable</th>
+<th>Tiêu chí nghiệm thu</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Sprint 1: Quản lý Nhiệm vụ</strong></td>
+<td></td>
+<td><strong>10/12 – 28/12</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>3.1.1</td>
+<td>Thiết kế CSDL: Nhiệm vụ QLNN, Nhiệm vụ KHCN, Sản phẩm, Giải ngân</td>
+<td>10-15/12</td>
+<td>1 BA + 1 BE</td>
+<td>ERD + Migration</td>
+<td>Bao phủ đầy đủ loại nhiệm vụ</td>
+</tr>
+<tr>
+<td>3.1.2</td>
+<td>Module Quản lý Nhiệm vụ QLNN (thuyết minh, tiến độ, sản phẩm)</td>
+<td>13-23/12</td>
+<td>1 BE + 1 FE</td>
+<td>CRUD + Workflow</td>
+<td>Theo dõi end-to-end nhiệm vụ</td>
+</tr>
+<tr>
+<td>3.1.3</td>
+<td>Module Quản lý Nhiệm vụ KHCN các cấp (Bộ, Viện, Đề tài)</td>
+<td>19-28/12</td>
+<td>1 BE + 1 FE</td>
+<td>CRUD + tiến độ</td>
+<td>Phân loại theo cấp quản lý</td>
+</tr>
+<tr>
+<td><strong>Sprint 2: Tài chính &amp; Sở hữu trí tuệ</strong></td>
+<td></td>
+<td><strong>29/12 – 15/01</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>3.2.1</td>
+<td>Giám sát song song tiến độ giải ngân &amp; sản phẩm KHCN</td>
+<td>29/12-06/01</td>
+<td>1 BE</td>
+<td>Dashboard giải ngân</td>
+<td>So sánh kế hoạch vs thực tế</td>
+</tr>
+<tr>
+<td>3.2.2</td>
+<td>Kết nối dòng tiền chuyển giao → hệ thống kế toán</td>
+<td>02-10/01</td>
+<td>1 BE</td>
+<td>Integration API</td>
+<td>Đồng bộ chính xác</td>
+</tr>
+<tr>
+<td>3.2.3</td>
+<td>Module Bằng độc quyền sáng chế &amp; Chuyển giao công nghệ</td>
+<td>05-12/01</td>
+<td>1 BE + 1 FE</td>
+<td>CRUD + Document</td>
+<td>Lưu trữ đầy đủ hồ sơ</td>
+</tr>
+<tr>
+<td>3.2.4</td>
+<td>Module Hoa hồng tác giả &amp; Phân chia lợi ích</td>
+<td>10-15/01</td>
+<td>1 BE</td>
+<td>Calculation + Reports</td>
+<td>Tính đúng theo quy định</td>
+</tr>
+<tr>
+<td><strong>Sprint 3: UAT &amp; Go-live</strong></td>
+<td></td>
+<td><strong>16/01 – 31/01</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>3.3.1</td>
+<td>Báo cáo tổng hợp nhiệm vụ QLNN &amp; KHCN (theo kỳ, theo đơn vị)</td>
+<td>16-22/01</td>
+<td>1 BE + 1 FE</td>
+<td>Report module</td>
+<td>Export Excel/PDF</td>
+</tr>
+<tr>
+<td>3.3.2</td>
+<td>Testing tích hợp</td>
+<td>20-25/01</td>
+<td>1 QA</td>
+<td>Test report</td>
+<td>Pass</td>
+</tr>
+<tr>
+<td>3.3.3</td>
+<td>UAT với Phòng KHCN, Phòng Kế hoạch</td>
+<td>24-28/01</td>
+<td>PM (CIC) + IBST</td>
+<td>Sign-off</td>
+<td>≥ 90% passed</td>
+</tr>
+<tr>
+<td>3.3.4</td>
+<td>Đào tạo &amp; bàn giao</td>
+<td>28-31/01</td>
+<td>PM (CIC) + BA (CIC)</td>
+<td>Tài liệu + Video</td>
+<td>Vận hành độc lập</td>
+</tr>
+</tbody></table>
+<hr>
+<h3>Mốc bàn giao Giai đoạn 2</h3>
+<table>
+<thead>
+<tr>
+<th>Mốc</th>
+<th>Ngày</th>
+<th>Sản phẩm bàn giao</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>M2.1</td>
+<td>20/01/2027</td>
+<td>PH6 (e-Office) nghiệm thu; Luồng VB đến/đi + Liên thông Trục BXD</td>
+</tr>
+<tr>
+<td>M2.2</td>
+<td>31/01/2027</td>
+<td>PH3 (QLNN &amp; KHCN) nghiệm thu</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>GIAI ĐOẠN 3: PHÂN HỆ CHUYÊN SÂU &amp; HOÀN THIỆN HỆ SINH THÁI</h2>
+<p><strong>Thời gian:</strong> 01/02/2027 – 30/04/2027 (~90 ngày)
+<strong>Kinh phí:</strong> 610.000.000 VNĐ
+<strong>Phân hệ triển khai:</strong> PH5 (400 triệu) + PH7 (210 triệu)</p>
+<div class="alert alert-note"><p>Giai đoạn này triển khai các phân hệ chuyên sâu: Hệ thống thí nghiệm LIMS cho 11 phòng LAS-XD và Kho CSDL số hóa + Trợ lý AI-RAG. Dữ liệu từ PH5, PH7 sẽ được tích hợp vào Dashboard BI (Sprint 4 Dashboard). Kết thúc giai đoạn: nghiệm thu tổng thể toàn hệ thống.</p>
+</div><hr>
+<h3>3.1. Phân hệ 5: Hệ thống Thử nghiệm (LIMS), Kết quả Thí nghiệm số &amp; Thiết bị</h3>
+<p><strong>Kinh phí:</strong> 400.000.000 VNĐ
+<strong>Thời gian:</strong> 10/02/2027 – 31/03/2027 (~50 ngày)
+<strong>Độ ưu tiên:</strong> 🔴 Cao — 11 phòng LAS-XD toàn quốc</p>
+<h4>Phân rã công việc chi tiết</h4>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Module / Công việc</th>
+<th>Thời gian</th>
+<th>Nhân sự (CIC)</th>
+<th>Deliverable</th>
+<th>Tiêu chí nghiệm thu</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Sprint 1: Nền tảng LIMS</strong></td>
+<td></td>
+<td><strong>10/02 – 27/02</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>5.1.1</td>
+<td>Khảo sát quy trình thí nghiệm 11 phòng LAS-XD</td>
+<td>10-16/02</td>
+<td>1 BA</td>
+<td>Ma trận quy trình x phòng TN</td>
+<td>Phủ 11 phòng LAS-XD</td>
+</tr>
+<tr>
+<td>5.1.2</td>
+<td>Thiết kế CSDL: Mẫu thí nghiệm, Phép thử, Kết quả, Thiết bị</td>
+<td>12-17/02</td>
+<td>1 BA + 1 BE</td>
+<td>ERD + Migration</td>
+<td>Schema review passed</td>
+</tr>
+<tr>
+<td>5.1.3</td>
+<td>Module Tiếp nhận mẫu (đăng ký, gán mã, phân phòng)</td>
+<td>14-24/02</td>
+<td>1 BE + 1 FE</td>
+<td>API + UI tiếp nhận mẫu</td>
+<td>Mã mẫu duy nhất, truy vết được</td>
+</tr>
+<tr>
+<td>5.1.4</td>
+<td>Module Quản lý Thiết bị (danh mục, trạng thái, phòng sở hữu)</td>
+<td>18-27/02</td>
+<td>1 BE + 1 FE</td>
+<td>CRUD Thiết bị + UI</td>
+<td>Tra cứu theo phòng, loại, trạng thái</td>
+</tr>
+<tr>
+<td><strong>Sprint 2: Tính toán &amp; Kết xuất</strong></td>
+<td></td>
+<td><strong>28/02 – 17/03</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>5.2.1</td>
+<td>Bộ công cụ cấu hình biểu mẫu tính toán tự động (Formula Engine)</td>
+<td>28/02-08/03</td>
+<td>2 BE</td>
+<td>Config engine + test suite</td>
+<td>Cấu hình được công thức cơ lý</td>
+</tr>
+<tr>
+<td>5.2.2</td>
+<td>Tính toán kết quả thí nghiệm cơ lý theo ISO/IEC 17025</td>
+<td>04-10/03</td>
+<td>1 BE</td>
+<td>Calculation module</td>
+<td>Sai số ≤ ngưỡng ISO</td>
+</tr>
+<tr>
+<td>5.2.3</td>
+<td>Kết xuất Phiếu kết quả thí nghiệm / kiểm nghiệm số (PDF)</td>
+<td>07-14/03</td>
+<td>1 FE + 1 BE</td>
+<td>PDF template engine</td>
+<td>Đúng biểu mẫu IBST</td>
+</tr>
+<tr>
+<td>5.2.4</td>
+<td>Tích hợp chữ ký số CA điện tử lên tệp PDF</td>
+<td>10-17/03</td>
+<td>1 BE</td>
+<td>CA signing module</td>
+<td>Xác thực thành công trên Adobe Reader</td>
+</tr>
+<tr>
+<td><strong>Sprint 3: Cảnh báo, Tích hợp &amp; UAT</strong></td>
+<td></td>
+<td><strong>18/03 – 31/03</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>5.3.1</td>
+<td>Lịch hiệu chuẩn / kiểm định thiết bị + cảnh báo tự động</td>
+<td>18-22/03</td>
+<td>1 BE</td>
+<td>Scheduler + Notification</td>
+<td>Nhắc trước 30/15/7 ngày</td>
+</tr>
+<tr>
+<td>5.3.2</td>
+<td>Module giám sát tiến độ giải ngân vốn đầu tư công</td>
+<td>19-24/03</td>
+<td>1 BE + 1 FE</td>
+<td>Dashboard giải ngân</td>
+<td>Theo dõi % giải ngân realtime</td>
+</tr>
+<tr>
+<td>5.3.3</td>
+<td>Tích hợp dữ liệu LIMS vào Dashboard BI (PH1)</td>
+<td>22-25/03</td>
+<td>1 BE</td>
+<td>Dashboard integration</td>
+<td>Dashboard cập nhật dữ liệu TN</td>
+</tr>
+<tr>
+<td>5.3.4</td>
+<td>Testing tích hợp toàn phân hệ LIMS</td>
+<td>24-27/03</td>
+<td>1 QA</td>
+<td>Test report</td>
+<td>Không lỗi Critical/Blocker</td>
+</tr>
+<tr>
+<td>5.3.5</td>
+<td>UAT với 2-3 phòng LAS-XD đại diện</td>
+<td>26-29/03</td>
+<td>PM (CIC) + QA (CIC) + IBST</td>
+<td>UAT sign-off</td>
+<td>Quy trình end-to-end chạy đúng</td>
+</tr>
+<tr>
+<td>5.3.6</td>
+<td>Đào tạo &amp; triển khai cuốn chiếu 11 phòng LAS-XD</td>
+<td>29-31/03</td>
+<td>PM (CIC) + BA (CIC)</td>
+<td>Kế hoạch rollout + tài liệu</td>
+<td>Phòng pilot vận hành ổn định</td>
+</tr>
+</tbody></table>
+<hr>
+<h3>3.2. Phân hệ 7: Nền tảng CSDL — Số hóa Tài liệu, Lưu trữ Tập trung &amp; Trợ lý AI-RAG</h3>
+<p><strong>Kinh phí:</strong> 210.000.000 VNĐ
+<strong>Thời gian:</strong> 10/03/2027 – 20/04/2027 (~42 ngày)
+<strong>Độ ưu tiên:</strong> 🟡 Trung bình — Nền tảng dữ liệu dài hạn</p>
+<h4>Phân rã công việc chi tiết</h4>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Module / Công việc</th>
+<th>Thời gian</th>
+<th>Nhân sự (CIC)</th>
+<th>Deliverable</th>
+<th>Tiêu chí nghiệm thu</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Sprint 1: Kho dữ liệu số</strong></td>
+<td></td>
+<td><strong>10/03 – 25/03</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>7.0.1</td>
+<td>Lắp đặt &amp; cấu hình NAS 150TB (12-bay, RAID 6, 10GbE) tại Viện IBST</td>
+<td>10-18/03</td>
+<td>DevOps (CIC) + Hạ tầng (IBST)</td>
+<td>NAS hoạt động, backup policy</td>
+<td>RAID 6 + mạng 10GbE ổn định</td>
+</tr>
+<tr>
+<td>7.1.1</td>
+<td>Thiết kế CSDL: Tài liệu, Phân loại, Metadata, Quyền truy cập</td>
+<td>10-14/03</td>
+<td>1 BA + 1 BE</td>
+<td>ERD + Migration</td>
+<td>Granular Access Control</td>
+</tr>
+<tr>
+<td>7.1.2</td>
+<td>Module Upload &amp; Quản lý Tài liệu (CAD/BIM, Báo cáo, Hồ sơ kỹ thuật)</td>
+<td>12-20/03</td>
+<td>1 BE + 1 FE</td>
+<td>File management + NAS integration</td>
+<td>Upload lên NAS, metadata lưu DB</td>
+</tr>
+<tr>
+<td>7.1.3</td>
+<td>Module Phân quyền truy cập tài liệu chi tiết (Granular ACL)</td>
+<td>16-22/03</td>
+<td>1 BE</td>
+<td>Access control engine</td>
+<td>Quyền theo folder/file/user/group</td>
+</tr>
+<tr>
+<td>7.1.4</td>
+<td>Tìm kiếm tài liệu Full-text &amp; Metadata</td>
+<td>20-25/03</td>
+<td>1 BE + 1 FE</td>
+<td>Search engine</td>
+<td>Tìm theo nội dung + thuộc tính</td>
+</tr>
+<tr>
+<td><strong>Sprint 2: Pipeline AI-RAG</strong></td>
+<td></td>
+<td><strong>26/03 – 10/04</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>7.2.1</td>
+<td>Pipeline trích xuất văn bản (Luật, NĐ, TT, QCVN, TCVN)</td>
+<td>26/03-02/04</td>
+<td>1 BE (AI/ML)</td>
+<td>Text extraction pipeline</td>
+<td>Parse đúng cấu trúc VB pháp luật</td>
+</tr>
+<tr>
+<td>7.2.2</td>
+<td>Vector Embeddings &amp; Indexing (chunking, embedding model)</td>
+<td>29/03-05/04</td>
+<td>1 BE (AI/ML)</td>
+<td>Vector store (pgvector)</td>
+<td>Retrieval accuracy ≥ 85%</td>
+</tr>
+<tr>
+<td>7.2.3</td>
+<td>Tích hợp LLM API (FPT AI Cloud MaaS - Qwen 2.5 / DeepSeek-V3)</td>
+<td>01-07/04</td>
+<td>1 BE</td>
+<td>LLM integration</td>
+<td>API call thành công, latency ≤ 5s</td>
+</tr>
+<tr>
+<td>7.2.4</td>
+<td>Giao diện Trợ lý AI-RAG (chat, trích dẫn nguồn, lịch sử tra cứu)</td>
+<td>03-10/04</td>
+<td>1 FE</td>
+<td>Chat UI</td>
+<td>Hiển thị nguồn trích dẫn chính xác</td>
+</tr>
+<tr>
+<td><strong>Sprint 3: Tinh chỉnh &amp; UAT</strong></td>
+<td></td>
+<td><strong>11/04 – 20/04</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>7.3.1</td>
+<td>Tinh chỉnh RAG pipeline (prompt engineering, re-ranking)</td>
+<td>11-15/04</td>
+<td>1 BE (AI/ML)</td>
+<td>Optimized pipeline</td>
+<td>Accuracy ≥ 90% trên test set</td>
+</tr>
+<tr>
+<td>7.3.2</td>
+<td>Module Quản lý trạng thái tài liệu (draft, published, archived)</td>
+<td>11-16/04</td>
+<td>1 BE</td>
+<td>Status workflow</td>
+<td>Chuyển trạng thái đúng quyền</td>
+</tr>
+<tr>
+<td>7.3.3</td>
+<td>Testing &amp; UAT</td>
+<td>14-18/04</td>
+<td>1 QA + IBST</td>
+<td>Test report + Sign-off</td>
+<td>Pass</td>
+</tr>
+<tr>
+<td>7.3.4</td>
+<td>Đào tạo sử dụng AI-RAG &amp; Kho tài liệu</td>
+<td>18-20/04</td>
+<td>PM (CIC) + BA (CIC)</td>
+<td>Tài liệu + Video</td>
+<td>Cán bộ tra cứu được</td>
+</tr>
+</tbody></table>
+<hr>
+<h3>3.3. Tối ưu hóa &amp; Nghiệm thu Tổng thể</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Công việc</th>
+<th>Thời gian</th>
+<th>Nhân sự (CIC)</th>
+<th>Deliverable</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>3.3.1</td>
+<td>Tối ưu toàn diện hệ sinh thái ERP-IBST (performance, UX)</td>
+<td>10-20/04</td>
+<td>Full team (CIC)</td>
+<td>Performance report</td>
+</tr>
+<tr>
+<td>3.3.2</td>
+<td>Tinh chỉnh luồng công việc liên phân hệ</td>
+<td>12-20/04</td>
+<td>1 BA + 1 BE</td>
+<td>Cross-module workflows</td>
+</tr>
+<tr>
+<td>3.3.3</td>
+<td>Security audit &amp; Penetration testing</td>
+<td>15-23/04</td>
+<td>1 Security + DevOps</td>
+<td>Security report</td>
+</tr>
+<tr>
+<td>3.3.4</td>
+<td>Nghiệm thu tổng thể toàn hệ thống (bao gồm Dashboard v4)</td>
+<td>22-25/04</td>
+<td>PM (CIC) + CIC + IBST</td>
+<td>Biên bản nghiệm thu</td>
+</tr>
+<tr>
+<td>3.3.5</td>
+<td>Bàn giao mã nguồn, tài liệu kỹ thuật, license</td>
+<td>25-28/04</td>
+<td>PM (CIC) + Tech Lead (CIC)</td>
+<td>Source code + Docs</td>
+</tr>
+<tr>
+<td>3.3.6</td>
+<td>Kế hoạch vận hành &amp; bảo trì hệ thống</td>
+<td>25-30/04</td>
+<td>PM (CIC) + DevOps (CIC)</td>
+<td>SLA + Support plan</td>
+</tr>
+</tbody></table>
+<hr>
+<h3>Mốc bàn giao Giai đoạn 3</h3>
+<table>
+<thead>
+<tr>
+<th>Mốc</th>
+<th>Ngày</th>
+<th>Sản phẩm bàn giao</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>M3.1</td>
+<td>31/03/2027</td>
+<td>PH5 (LIMS) nghiệm thu; Đào tạo 11 phòng LAS-XD</td>
+</tr>
+<tr>
+<td>M3.2</td>
+<td>20/04/2027</td>
+<td>PH7 (CSDL + AI-RAG) nghiệm thu</td>
+</tr>
+<tr>
+<td>M3.3</td>
+<td>25/04/2027</td>
+<td><strong>Nghiệm thu tổng thể toàn hệ thống ERP-IBST + Dashboard v4 Final</strong></td>
+</tr>
+<tr>
+<td>M3.4</td>
+<td>30/04/2027</td>
+<td>Bàn giao mã nguồn, tài liệu, kế hoạch vận hành bảo trì</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>TỔNG HỢP KINH PHÍ THEO PHÂN HỆ &amp; GIAI ĐOẠN</h2>
+<table>
+<thead>
+<tr>
+<th>Phân hệ</th>
+<th align="center">Kinh phí (triệu VNĐ)</th>
+<th align="center">Tỷ trọng</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>PH2 – Hợp đồng &amp; Triển khai DVKT</td>
+<td align="center">510</td>
+<td align="center">████████████████████████ 22,6%</td>
+</tr>
+<tr>
+<td>PH6 – Văn phòng số</td>
+<td align="center">440</td>
+<td align="center">████████████████████ 19,5%</td>
+</tr>
+<tr>
+<td>PH5 – LIMS &amp; Thí nghiệm</td>
+<td align="center">400</td>
+<td align="center">██████████████████ 17,7%</td>
+</tr>
+<tr>
+<td>PH4 – Nhân sự &amp; Đào tạo</td>
+<td align="center">260</td>
+<td align="center">████████████ 11,5%</td>
+</tr>
+<tr>
+<td>PH3 – QLNN &amp; KHCN</td>
+<td align="center">260</td>
+<td align="center">████████████ 11,5%</td>
+</tr>
+<tr>
+<td>PH7 – CSDL &amp; AI-RAG</td>
+<td align="center">210</td>
+<td align="center">██████████ 9,3%</td>
+</tr>
+<tr>
+<td>PH1 – Dashboard BI</td>
+<td align="center">180</td>
+<td align="center">████████ 8,0%</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>Giai đoạn</th>
+<th>Thời gian</th>
+<th>Phân hệ</th>
+<th>Kinh phí (VNĐ)</th>
+<th>% Tổng</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>GĐ1</strong></td>
+<td>10/09 – 30/11/2026</td>
+<td>PH2 + PH4</td>
+<td><strong>770.000.000</strong></td>
+<td>34,1%</td>
+</tr>
+<tr>
+<td><strong>PH1 Dashboard</strong> <em>(xuyên suốt)</em></td>
+<td>11/2026 – 04/2027</td>
+<td>Dashboard BI</td>
+<td><strong>180.000.000</strong></td>
+<td>8,0%</td>
+</tr>
+<tr>
+<td><strong>GĐ2</strong></td>
+<td>01/12/2026 – 31/01/2027</td>
+<td>PH6 + PH3</td>
+<td><strong>700.000.000</strong></td>
+<td>30,9%</td>
+</tr>
+<tr>
+<td><strong>GĐ3</strong></td>
+<td>01/02 – 30/04/2027</td>
+<td>PH5 + PH7</td>
+<td><strong>610.000.000</strong></td>
+<td>27,0%</td>
+</tr>
+<tr>
+<td><strong>Tổng</strong></td>
+<td><strong>10/09/2026 – 30/04/2027</strong></td>
+<td><strong>7 phân hệ</strong></td>
+<td><strong>2.260.000.000</strong></td>
+<td><strong>100%</strong></td>
+</tr>
+</tbody></table>
+<hr>
+<h2>MA TRẬN TRÁCH NHIỆM CIC – IBST</h2>
+<div class="alert alert-important"><h3>📌 BẢNG GHI CHÚ KÝ HIỆU TRÁCH NHIỆM:</h3>
+<ul>
+<li><strong>●</strong> : <strong>Chịu trách nhiệm chính (Thực hiện)</strong> — Đơn vị chủ trì thực hiện trực tiếp công việc, đảm bảo tiến độ và chất lượng sản phẩm bàn giao.</li>
+<li><strong>◐</strong> : <strong>Phối hợp thực hiện</strong> — Đơn vị tham gia phối hợp, hỗ trợ cung cấp nhân sự, tham gia cuộc họp và xử lý vướng mắc cùng đơn vị chủ trì.</li>
+<li><strong>△</strong> : <strong>Cung cấp thông tin / Tài liệu đầu vào</strong> — Đơn vị có trách nhiệm bàn giao đầy đủ hồ sơ, quy trình, biểu mẫu, dữ liệu mẫu, quyền truy cập cần thiết để phục vụ công việc.</li>
+<li><strong>☑</strong> : <strong>Phê duyệt / Nghiệm thu</strong> — Lãnh đạo hoặc bộ phận chức năng có thẩm quyền kiểm tra, đánh giá chất lượng và ký biên bản xác nhận nghiệm thu.</li>
+</ul>
+</div><h3>Giai đoạn 1: Nền tảng cơ bản (09 – 11/2026)</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Nội dung công việc</th>
+<th align="center">CIC</th>
+<th align="center">IBST</th>
+<th>Ghi chú</th>
+</tr>
+</thead>
+<tbody><tr>
+<td></td>
+<td><strong>CÔNG TÁC CHUẨN BỊ &amp; HẠ TẦNG</strong></td>
+<td align="center"></td>
+<td align="center"></td>
+<td></td>
+</tr>
+<tr>
+<td>1</td>
+<td>Cung cấp quy trình, quy chế, tài liệu, dữ liệu liên quan đến PH2 và PH4</td>
+<td align="center">◐</td>
+<td align="center">●</td>
+<td>IBST chủ trì cung cấp hồ sơ, quy chế 2815, dữ liệu mẫu; CIC tiếp nhận &amp; phân tích</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Thiết lập Cloud Server (Viettel Cloud), cấu hình SSL/Firewall</td>
+<td align="center">●</td>
+<td align="center">△</td>
+<td>IBST cung cấp domain, thông tin mạng nội bộ</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Cấu hình Cloud Storage trên Viettel Cloud (GĐ1-2)</td>
+<td align="center">●</td>
+<td align="center">△</td>
+<td>IBST cung cấp thông tin mạng nội bộ</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Cài đặt PostgreSQL/Supabase, cấu hình phân quyền RLS</td>
+<td align="center">●</td>
+<td align="center">△</td>
+<td>IBST cung cấp danh mục đơn vị, cơ cấu tổ chức</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Thiết lập CI/CD pipeline, staging &amp; production</td>
+<td align="center">●</td>
+<td align="center"></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td><strong>PHÂN HỆ 2: HỢP ĐỒNG &amp; TRIỂN KHAI DỊCH VỤ KỸ THUẬT</strong></td>
+<td align="center"></td>
+<td align="center"></td>
+<td></td>
+</tr>
+<tr>
+<td>6</td>
+<td>Thiết kế &amp; phát triển module Quản lý Khách hàng, Hợp đồng</td>
+<td align="center">●</td>
+<td align="center">△</td>
+<td>IBST cung cấp mẫu hợp đồng, danh sách khách hàng</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Xây dựng thuật toán bóc tách dòng tiền theo Quy chế 2815</td>
+<td align="center">●</td>
+<td align="center">△</td>
+<td>IBST cung cấp Quy chế 2815 &amp; tỷ lệ khoán chi tiết</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Phát triển module Thu chi (Tạm ứng, Tiền về, Công nợ, Doanh thu)</td>
+<td align="center">●</td>
+<td align="center">△</td>
+<td>IBST cung cấp mẫu biểu thu chi hiện tại</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Số hóa Phiếu giao việc điện tử &amp; luồng phê duyệt</td>
+<td align="center">●</td>
+<td align="center">☑</td>
+<td>IBST duyệt mẫu phiếu và tuyến ký</td>
+</tr>
+<tr>
+<td>10</td>
+<td>API đồng bộ chứng từ với hệ thống kế toán hiện hữu</td>
+<td align="center">●</td>
+<td align="center">◐</td>
+<td>IBST phối hợp kết nối &amp; cung cấp tài liệu kế toán</td>
+</tr>
+<tr>
+<td>11</td>
+<td>UAT &amp; Nghiệm thu Phân hệ 2</td>
+<td align="center">◐</td>
+<td align="center">☑</td>
+<td>IBST cử Phòng KH, Tài chính kiểm thử &amp; ký nghiệm thu</td>
+</tr>
+<tr>
+<td></td>
+<td><strong>PHÂN HỆ 4: NHÂN SỰ, ĐÀO TẠO, TẠP CHÍ &amp; ĐẢNG – ĐOÀN THỂ</strong></td>
+<td align="center"></td>
+<td align="center"></td>
+<td></td>
+</tr>
+<tr>
+<td>12</td>
+<td>Phát triển module Hồ sơ CBNV &amp; Chứng chỉ hành nghề</td>
+<td align="center">●</td>
+<td align="center">△</td>
+<td>IBST cung cấp mẫu hồ sơ, danh sách CBNV, phân quyền</td>
+</tr>
+<tr>
+<td>13</td>
+<td>Phát triển module Đào tạo Tiến sĩ/NCS</td>
+<td align="center">●</td>
+<td align="center">△</td>
+<td>IBST cung cấp quy trình đào tạo, mẫu hồ sơ NCS</td>
+</tr>
+<tr>
+<td>14</td>
+<td>Phát triển module Tòa soạn Tạp chí KHCN &amp; Phản biện</td>
+<td align="center">●</td>
+<td align="center">△</td>
+<td>IBST cung cấp quy trình tòa soạn, tiêu chí phản biện</td>
+</tr>
+<tr>
+<td>15</td>
+<td>Phát triển module Đảng vụ, Đoàn TN, Công đoàn, Thi đua</td>
+<td align="center">●</td>
+<td align="center">△</td>
+<td>IBST cung cấp mẫu biểu Đảng vụ, quy trình thi đua</td>
+</tr>
+<tr>
+<td>16</td>
+<td>UAT &amp; Nghiệm thu Phân hệ 4</td>
+<td align="center">◐</td>
+<td align="center">☑</td>
+<td>IBST cử Phòng TC, Ban BT Tạp chí, Đảng ủy kiểm thử</td>
+</tr>
+<tr>
+<td></td>
+<td><strong>ĐÀO TẠO GIAI ĐOẠN 1</strong></td>
+<td align="center"></td>
+<td align="center"></td>
+<td></td>
+</tr>
+<tr>
+<td>17</td>
+<td>Biên soạn tài liệu hướng dẫn &amp; video đào tạo</td>
+<td align="center">●</td>
+<td align="center"></td>
+<td></td>
+</tr>
+<tr>
+<td>18</td>
+<td>Tổ chức đào tạo cho cán bộ nghiệp vụ</td>
+<td align="center">●</td>
+<td align="center">◐</td>
+<td>IBST cử học viên &amp; bố trí phòng đào tạo</td>
+</tr>
+</tbody></table>
+<hr>
+<h3>Dashboard BI (xuyên suốt: 11/2026 – 04/2027)</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Nội dung công việc</th>
+<th align="center">CIC</th>
+<th align="center">IBST</th>
+<th>Ghi chú</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>19</td>
+<td>Thiết kế Dashboard UX/UI &amp; xác định KPI</td>
+<td align="center">●</td>
+<td align="center">☑</td>
+<td>Viện trưởng &amp; Ban LĐ duyệt mockup và bộ chỉ số</td>
+</tr>
+<tr>
+<td>20</td>
+<td>Xây dựng thuật toán tổng hợp đa chiều &amp; Dự báo dòng tiền</td>
+<td align="center">●</td>
+<td align="center">△</td>
+<td>IBST cung cấp công thức KPI &amp; dữ liệu tài chính lịch sử</td>
+</tr>
+<tr>
+<td>21</td>
+<td>Phát triển Dashboard Tổng quan &amp; Dashboard theo Đơn vị</td>
+<td align="center">●</td>
+<td align="center"></td>
+<td></td>
+</tr>
+<tr>
+<td>22</td>
+<td>Tích hợp lũy tiến dữ liệu từ PH2 → PH4 → PH6 → PH3 → PH5 → PH7</td>
+<td align="center">●</td>
+<td align="center"></td>
+<td>Cập nhật Dashboard theo từng phân hệ hoàn thành</td>
+</tr>
+<tr>
+<td>23</td>
+<td>Phát triển Lịch công tác Lãnh đạo (tích hợp từ PH6)</td>
+<td align="center">●</td>
+<td align="center">☑</td>
+<td>Viện trưởng duyệt giao diện lịch</td>
+</tr>
+<tr>
+<td>24</td>
+<td>UAT &amp; Nghiệm thu Dashboard (cùng nghiệm thu tổng thể)</td>
+<td align="center">◐</td>
+<td align="center">☑</td>
+<td>Viện trưởng &amp; Ban LĐ kiểm thử &amp; ký nghiệm thu</td>
+</tr>
+</tbody></table>
+<hr>
+<h3>Giai đoạn 2: Tích hợp hệ thống (12/2026 – 01/2027)</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Nội dung công việc</th>
+<th align="center">CIC</th>
+<th align="center">IBST</th>
+<th>Ghi chú</th>
+</tr>
+</thead>
+<tbody><tr>
+<td></td>
+<td><strong>PHÂN HỆ 6: VĂN PHÒNG SỐ (e-Office)</strong></td>
+<td align="center"></td>
+<td align="center"></td>
+<td></td>
+</tr>
+<tr>
+<td>25</td>
+<td>Phát triển module Văn bản đến/đi &amp; Workflow Engine</td>
+<td align="center">●</td>
+<td align="center">△</td>
+<td>IBST cung cấp tuyến luồng văn bản, mẫu sổ công văn</td>
+</tr>
+<tr>
+<td>26</td>
+<td>Tích hợp Chữ ký số CA vào luồng trình ký</td>
+<td align="center">●</td>
+<td align="center">◐</td>
+<td>IBST phối hợp cấu hình chứng thư số</td>
+</tr>
+<tr>
+<td>27</td>
+<td>API liên thông Trục văn bản Bộ Xây dựng (XML)</td>
+<td align="center">●</td>
+<td align="center">◐</td>
+<td>IBST đầu mối xin phê duyệt kết nối Trục VB Bộ XD</td>
+</tr>
+<tr>
+<td>28</td>
+<td>Phát triển module Phòng họp, Xe công tác, Tài liệu</td>
+<td align="center">●</td>
+<td align="center">△</td>
+<td>IBST cung cấp danh mục phòng họp, xe, quy trình</td>
+</tr>
+<tr>
+<td>29</td>
+<td>Phát triển module Lịch công tác &amp; Giao việc</td>
+<td align="center">●</td>
+<td align="center">☑</td>
+<td>IBST duyệt quy trình phân công &amp; theo dõi tiến độ</td>
+</tr>
+<tr>
+<td>30</td>
+<td>UAT &amp; Nghiệm thu Phân hệ 6</td>
+<td align="center">◐</td>
+<td align="center">☑</td>
+<td>IBST cử Văn phòng Viện, Phòng HC kiểm thử</td>
+</tr>
+<tr>
+<td></td>
+<td><strong>PHÂN HỆ 3: NHIỆM VỤ QLNN &amp; KHCN</strong></td>
+<td align="center"></td>
+<td align="center"></td>
+<td></td>
+</tr>
+<tr>
+<td>31</td>
+<td>Phát triển module Quản lý Nhiệm vụ QLNN &amp; KHCN các cấp</td>
+<td align="center">●</td>
+<td align="center">△</td>
+<td>IBST cung cấp danh mục nhiệm vụ, mẫu thuyết minh</td>
+</tr>
+<tr>
+<td>32</td>
+<td>Giám sát tiến độ giải ngân &amp; kết nối hệ thống kế toán</td>
+<td align="center">●</td>
+<td align="center">◐</td>
+<td>IBST phối hợp kết nối kế toán &amp; cung cấp dữ liệu</td>
+</tr>
+<tr>
+<td>33</td>
+<td>Phát triển module Bằng sáng chế, Chuyển giao CN, Hoa hồng</td>
+<td align="center">●</td>
+<td align="center">△</td>
+<td>IBST cung cấp hồ sơ sáng chế, hợp đồng CGCN</td>
+</tr>
+<tr>
+<td>34</td>
+<td>UAT &amp; Nghiệm thu Phân hệ 3</td>
+<td align="center">◐</td>
+<td align="center">☑</td>
+<td>IBST cử Phòng KHCN, Phòng KH kiểm thử</td>
+</tr>
+<tr>
+<td></td>
+<td><strong>ĐÀO TẠO GIAI ĐOẠN 2</strong></td>
+<td align="center"></td>
+<td align="center"></td>
+<td></td>
+</tr>
+<tr>
+<td>35</td>
+<td>Biên soạn tài liệu hướng dẫn &amp; video cho 2 phân hệ</td>
+<td align="center">●</td>
+<td align="center"></td>
+<td></td>
+</tr>
+<tr>
+<td>36</td>
+<td>Tổ chức đào tạo cho cán bộ nghiệp vụ</td>
+<td align="center">●</td>
+<td align="center">◐</td>
+<td>IBST cử học viên &amp; bố trí phòng đào tạo</td>
+</tr>
+</tbody></table>
+<hr>
+<h3>Giai đoạn 3: Chuyên sâu &amp; Hoàn thiện (02 – 04/2027)</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Nội dung công việc</th>
+<th align="center">CIC</th>
+<th align="center">IBST</th>
+<th>Ghi chú</th>
+</tr>
+</thead>
+<tbody><tr>
+<td></td>
+<td><strong>PHÂN HỆ 5: LIMS &amp; THÍ NGHIỆM SỐ</strong></td>
+<td align="center"></td>
+<td align="center"></td>
+<td></td>
+</tr>
+<tr>
+<td>37</td>
+<td>Khảo sát quy trình thí nghiệm 11 phòng LAS-XD</td>
+<td align="center">●</td>
+<td align="center">◐</td>
+<td>IBST bố trí cán bộ 11 phòng TN tham gia</td>
+</tr>
+<tr>
+<td>38</td>
+<td>Phát triển module Tiếp nhận mẫu, Tính toán, Kết xuất PDF</td>
+<td align="center">●</td>
+<td align="center">△</td>
+<td>IBST cung cấp biểu mẫu tính toán, mẫu phiếu kết quả</td>
+</tr>
+<tr>
+<td>39</td>
+<td>Xây dựng Formula Engine &amp; tính toán theo ISO/IEC 17025</td>
+<td align="center">●</td>
+<td align="center">△</td>
+<td>IBST cung cấp công thức tính toán cơ lý</td>
+</tr>
+<tr>
+<td>40</td>
+<td>Tích hợp Chữ ký số CA lên phiếu kết quả</td>
+<td align="center">●</td>
+<td align="center">◐</td>
+<td>IBST cung cấp Chứng thư số CA cơ quan</td>
+</tr>
+<tr>
+<td>41</td>
+<td>Quản lý Thiết bị &amp; cảnh báo hiệu chuẩn</td>
+<td align="center">●</td>
+<td align="center">△</td>
+<td>IBST cung cấp danh mục thiết bị, lịch hiệu chuẩn</td>
+</tr>
+<tr>
+<td>42</td>
+<td>UAT &amp; Nghiệm thu Phân hệ 5</td>
+<td align="center">◐</td>
+<td align="center">☑</td>
+<td>IBST cử 2-3 phòng LAS-XD đại diện kiểm thử</td>
+</tr>
+<tr>
+<td></td>
+<td><strong>PHÂN HỆ 7: CSDL &amp; AI-RAG</strong></td>
+<td align="center"></td>
+<td align="center"></td>
+<td></td>
+</tr>
+<tr>
+<td>43</td>
+<td>Lắp đặt &amp; cấu hình NAS 150TB (12-bay, RAID 6, 10GbE) tại Viện IBST</td>
+<td align="center">●</td>
+<td align="center">◐</td>
+<td>IBST chuẩn bị phòng máy, nguồn điện, mạng 10GbE</td>
+</tr>
+<tr>
+<td>44</td>
+<td>Phát triển Kho tài liệu số &amp; phân quyền Granular ACL</td>
+<td align="center">●</td>
+<td align="center">△</td>
+<td>IBST cung cấp cấu trúc phân loại, quy định bảo mật</td>
+</tr>
+<tr>
+<td>45</td>
+<td>Số hóa &amp; upload tài liệu kỹ thuật (CAD/BIM, báo cáo)</td>
+<td align="center">◐</td>
+<td align="center">●</td>
+<td>IBST chủ trì cung cấp tài liệu; CIC hỗ trợ upload</td>
+</tr>
+<tr>
+<td>46</td>
+<td>Xây dựng Pipeline AI-RAG &amp; tích hợp LLM API</td>
+<td align="center">●</td>
+<td align="center">△</td>
+<td>IBST cung cấp kho Luật, NĐ, TT, QCVN, TCVN</td>
+</tr>
+<tr>
+<td>47</td>
+<td>UAT &amp; Nghiệm thu Phân hệ 7</td>
+<td align="center">◐</td>
+<td align="center">☑</td>
+<td>IBST kiểm thử độ chính xác tra cứu AI-RAG</td>
+</tr>
+<tr>
+<td></td>
+<td><strong>TỐI ƯU HÓA &amp; NGHIỆM THU TỔNG THỂ</strong></td>
+<td align="center"></td>
+<td align="center"></td>
+<td></td>
+</tr>
+<tr>
+<td>48</td>
+<td>Tối ưu hiệu năng &amp; tinh chỉnh luồng liên phân hệ</td>
+<td align="center">●</td>
+<td align="center">◐</td>
+<td>IBST phản hồi trải nghiệm người dùng thực tế</td>
+</tr>
+<tr>
+<td>49</td>
+<td>Security audit &amp; Penetration testing</td>
+<td align="center">●</td>
+<td align="center"></td>
+<td></td>
+</tr>
+<tr>
+<td>50</td>
+<td>Nghiệm thu tổng thể toàn hệ thống (bao gồm Dashboard v4)</td>
+<td align="center">◐</td>
+<td align="center">☑</td>
+<td><strong>Hai bên ký Biên bản nghiệm thu chính thức</strong></td>
+</tr>
+<tr>
+<td>51</td>
+<td>Bàn giao mã nguồn, tài liệu kỹ thuật, license</td>
+<td align="center">●</td>
+<td align="center">☑</td>
+<td>IBST xác nhận tiếp nhận đầy đủ</td>
+</tr>
+<tr>
+<td>52</td>
+<td>Lập kế hoạch vận hành &amp; bảo trì (SLA)</td>
+<td align="center">●</td>
+<td align="center">☑</td>
+<td>Hai bên thống nhất SLA &amp; quy trình hỗ trợ</td>
+</tr>
+<tr>
+<td>53</td>
+<td>Đào tạo tổng thể &amp; bàn giao vận hành</td>
+<td align="center">●</td>
+<td align="center">◐</td>
+<td>IBST cử cán bộ quản trị hệ thống tiếp nhận</td>
+</tr>
+</tbody></table>
+<hr>
+<h3>Tổng hợp Trách nhiệm theo Nhóm công việc</h3>
+<table>
+<thead>
+<tr>
+<th>Nhóm công việc</th>
+<th>CIC</th>
+<th>IBST</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Phân tích yêu cầu &amp; Thiết kế</strong></td>
+<td>Chủ trì khảo sát, phân tích, thiết kế giải pháp</td>
+<td>Cung cấp tài liệu nghiệp vụ, quy chế, biểu mẫu; cử đầu mối</td>
+</tr>
+<tr>
+<td><strong>Phát triển phần mềm</strong></td>
+<td>Chủ trì toàn bộ (CSDL, Backend, Frontend, API)</td>
+<td>Không tham gia trực tiếp</td>
+</tr>
+<tr>
+<td><strong>Thiết lập hạ tầng</strong></td>
+<td>Cài đặt Cloud Server, Cloud Storage, NAS (GĐ3), CSDL, CI/CD</td>
+<td>Chuẩn bị phòng máy NAS (GĐ3), mạng nội bộ</td>
+</tr>
+<tr>
+<td><strong>Tích hợp hệ thống</strong></td>
+<td>Tích hợp CA, Trục VB Bộ XD, Kế toán, LLM API</td>
+<td>Xin phê duyệt kết nối Trục VB; phối hợp kế toán; cung cấp CA</td>
+</tr>
+<tr>
+<td><strong>Số hóa tài liệu</strong></td>
+<td>Hỗ trợ upload hàng loạt &amp; pipeline trích xuất</td>
+<td>Chủ trì cung cấp tài liệu (CAD/BIM, QCVN, TCVN, Luật…)</td>
+</tr>
+<tr>
+<td><strong>Hoàn thiện thể chế</strong></td>
+<td>Tư vấn chuẩn hóa quy trình</td>
+<td>Chủ trì hoàn thiện quy chế, quy trình nội bộ</td>
+</tr>
+<tr>
+<td><strong>Kiểm thử (UAT)</strong></td>
+<td>Chuẩn bị kịch bản test, hỗ trợ kỹ thuật</td>
+<td>Chủ trì kiểm thử nghiệp vụ; phê duyệt &amp; ký nghiệm thu</td>
+</tr>
+<tr>
+<td><strong>Đào tạo</strong></td>
+<td>Biên soạn tài liệu, video, tổ chức đào tạo</td>
+<td>Cử học viên; bố trí phòng đào tạo</td>
+</tr>
+<tr>
+<td><strong>Nghiệm thu &amp; Bàn giao</strong></td>
+<td>Lập hồ sơ bàn giao, mã nguồn, tài liệu</td>
+<td>Phê duyệt, ký biên bản nghiệm thu chính thức</td>
+</tr>
+<tr>
+<td><strong>Vận hành &amp; Bảo trì</strong></td>
+<td>Hỗ trợ kỹ thuật theo SLA sau bàn giao</td>
+<td>Chủ trì vận hành hàng ngày; cử cán bộ quản trị hệ thống</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>RỦI RO VÀ BIỆN PHÁP GIẢM THIỂU</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Rủi ro</th>
+<th>Mức độ</th>
+<th>Biện pháp giảm thiểu</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>R1</td>
+<td>Thay đổi yêu cầu nghiệp vụ giữa chừng</td>
+<td>🔴 Cao</td>
+<td>Ký xác nhận SRS từng phân hệ trước khi phát triển; quy trình Change Request</td>
+</tr>
+<tr>
+<td>R2</td>
+<td>Dữ liệu cũ không chuẩn hóa, khó migrate</td>
+<td>🟠 Cao</td>
+<td>Data audit sớm trong GĐ1; lập kế hoạch migration riêng</td>
+</tr>
+<tr>
+<td>R3</td>
+<td>Tích hợp Trục văn bản Bộ XD chậm trễ (phụ thuộc bên thứ 3)</td>
+<td>🟠 Cao</td>
+<td>IBST sớm làm việc với Bộ XD; CIC chuẩn bị mock API</td>
+</tr>
+<tr>
+<td>R4</td>
+<td>Nhân sự IBST chưa sẵn sàng tiếp nhận (training gap)</td>
+<td>🟡 TB</td>
+<td>Đào tạo theo nhóm nhỏ, có tài liệu video; cử cán bộ Admin</td>
+</tr>
+<tr>
+<td>R5</td>
+<td>Hiệu năng hệ thống khi 16 đơn vị truy cập đồng thời</td>
+<td>🟡 TB</td>
+<td>Load testing sớm; caching strategy; CDN</td>
+</tr>
+<tr>
+<td>R6</td>
+<td>Bảo mật dữ liệu nhân sự, tài chính nhạy cảm</td>
+<td>🔴 Cao</td>
+<td>Mã hóa dữ liệu nhạy cảm; audit log; RLS strict mode</td>
+</tr>
+<tr>
+<td>R7</td>
+<td>Chậm cung cấp tài liệu đầu vào từ IBST</td>
+<td>🟠 Cao</td>
+<td>Lập danh mục tài liệu cần thiết theo từng giai đoạn; cam kết mốc</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>ĐIỀU KIỆN TIÊN QUYẾT TỪ PHÍA VIỆN IBST</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Hạng mục</th>
+<th>Thời điểm cần hoàn thành</th>
+<th>Đơn vị phối hợp tại IBST</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td><strong>Cử đầu mối phối hợp</strong> (tối thiểu 1 người/phân hệ)</td>
+<td>Trước 01/09/2026</td>
+<td>Văn phòng Viện</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>Cung cấp Quy chế 2815</strong> và các tỷ lệ khoán dòng tiền</td>
+<td>Trước 20/09/2026</td>
+<td>Phòng KH – Tài chính</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>Chuẩn bị hạ tầng mạng</strong> nội bộ kết nối Cloud</td>
+<td>Trước 15/09/2026</td>
+<td>Phòng CNTT / Quản trị</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>Cung cấp hồ sơ nhân sự mẫu</strong>, cơ cấu tổ chức, quy trình đào tạo</td>
+<td>Trước 10/10/2026</td>
+<td>Phòng Tổ chức</td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>Xin phê duyệt kết nối</strong> Trục văn bản Bộ Xây dựng</td>
+<td>Trước 15/11/2026</td>
+<td>Văn phòng Viện</td>
+</tr>
+<tr>
+<td>6</td>
+<td><strong>Cung cấp Chứng thư số CA</strong> cơ quan</td>
+<td>Trước 01/12/2026</td>
+<td>Văn phòng Viện</td>
+</tr>
+<tr>
+<td>7</td>
+<td><strong>Cung cấp biểu mẫu LIMS</strong>, công thức cơ lý, mẫu phiếu KQ</td>
+<td>Trước 01/02/2027</td>
+<td>11 Phòng LAS-XD</td>
+</tr>
+<tr>
+<td>8</td>
+<td><strong>Chuẩn bị phòng máy &amp; mạng 10GbE</strong> cho lắp đặt NAS 150TB</td>
+<td>Trước 01/03/2027</td>
+<td>Phòng CNTT / Quản trị</td>
+</tr>
+<tr>
+<td>9</td>
+<td><strong>Cung cấp kho tài liệu kỹ thuật</strong> (QCVN, TCVN, Luật…) cho AI-RAG</td>
+<td>Trước 01/03/2027</td>
+<td>Phòng KHCN</td>
+</tr>
+<tr>
+<td>10</td>
+<td><strong>Cử cán bộ quản trị hệ thống</strong> tiếp nhận vận hành</td>
+<td>Trước 15/04/2027</td>
+<td>Phòng CNTT / Quản trị</td>
+</tr>
+</tbody></table>
+<hr>
+<div class="alert alert-note"><p>Tài liệu này được lập nhằm trình Quý Viện xem xét, góp ý và thống nhất phương án triển khai. Các mốc thời gian cụ thể có thể được điều chỉnh trên cơ sở thỏa thuận giữa hai bên trong quá trình phối hợp thực hiện.</p>
+<p><strong>Kính đề nghị Quý Viện xem xét và cho ý kiến phản hồi để CIC hoàn thiện Kế hoạch triển khai chính thức.</strong></p>
+</div>
+<div class="footer">
+  <p><strong>CÔNG TY CỔ PHẦN CÔNG NGHỆ VÀ TƯ VẤN XÂY DỰNG (CIC)</strong></p>
+  <p>Tài liệu trao đổi công tác — Phục vụ xây dựng Kế hoạch triển khai ERP Viện IBST</p>
+</div>
+</body>
+</html>
