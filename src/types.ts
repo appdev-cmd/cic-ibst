@@ -76,6 +76,15 @@ export interface HopDong {
   phucTap: boolean;
   /** Điều 6.1 — cấp ký hợp đồng: Viện ký hay đơn vị ký theo phân cấp/ủy quyền. */
   capKy: CapKy | null;
+  /** Đ.3.o + Đ.7.1c — mô hình quản lý tập trung tại đơn vị (bắt buộc với TVGS, TVQLDA, thi công). */
+  quanLyTapTrung: boolean;
+  /** Đ.8.2 — đóng dấu sơ bộ khi HĐ chưa ký đủ các bên. */
+  dongDauSoBo: boolean;
+  ngayDongDauSoBo: string;
+  soVbChapThuanDauSoBo: string;
+  /** Đ.8.3 — phó đơn vị được giao quản lý khi Trưởng đơn vị chính là chủ trì HĐ. */
+  phoDonViQuanLyId: string | null;
+  phoDonViQuanLy: string;
   buocHienTai: string;
   fileDuThaoUrl?: string | null;
   tenFileDuThao?: string | null;
@@ -289,4 +298,339 @@ export interface WorkflowTrangThai {
   dieuKienThem: string;
   moTa: string;
   thuTu: number;
+}
+
+/* ============================================================
+ * PH5 — Hồ sơ CBVC mở rộng + Đảng - Đoàn thể
+ * (xem docs/ke-hoach-hoan-thien-ph5-nhan-su-dang-doan-the.md)
+ * ============================================================ */
+
+export interface QuaTrinhCongTac {
+  id: string;
+  nhanSuId: string;
+  loai: string;
+  tieuDe: string;
+  soQuyetDinh: string;
+  ngayKy: string;
+  ngayHieuLuc: string;
+  ngayKetThuc: string;
+  donViId: string | null;
+  donVi: string;
+  chucVu: string;
+  moTa: string;
+  tepDinhKem: string;
+}
+
+export const LOAI_QUA_TRINH_CONG_TAC: { ma: string; ten: string }[] = [
+  { ma: 'tuyen-dung', ten: 'Tuyển dụng' },
+  { ma: 'dieu-dong', ten: 'Điều động' },
+  { ma: 'bo-nhiem', ten: 'Bổ nhiệm' },
+  { ma: 'mien-nhiem', ten: 'Miễn nhiệm' },
+  { ma: 'nang-luong', ten: 'Nâng lương' },
+  { ma: 'nang-ngach', ten: 'Nâng ngạch' },
+  { ma: 'biet-phai', ten: 'Biệt phái' },
+  { ma: 'nghi-huu', ten: 'Nghỉ hưu' },
+  { ma: 'thoi-viec', ten: 'Thôi việc' },
+  { ma: 'khac', ten: 'Khác' },
+];
+
+export interface BangCap {
+  id: string;
+  nhanSuId: string;
+  loai: string;
+  ten: string;
+  chuyenNganh: string;
+  coSoDaoTao: string;
+  xepLoai: string;
+  namTotNghiep: number | null;
+  ngayCap: string;
+  ngayHetHan: string;
+}
+
+export const LOAI_BANG_CAP: { ma: string; ten: string }[] = [
+  { ma: 'bang-cap', ten: 'Bằng cấp chuyên môn' },
+  { ma: 'ly-luan-chinh-tri', ten: 'Lý luận chính trị' },
+  { ma: 'quan-ly-nha-nuoc', ten: 'Quản lý nhà nước' },
+  { ma: 'ngoai-ngu', ten: 'Ngoại ngữ' },
+  { ma: 'tin-hoc', ten: 'Tin học' },
+  { ma: 'an-toan-lao-dong', ten: 'An toàn lao động' },
+  { ma: 'khac', ten: 'Khác' },
+];
+
+export interface HopDongLaoDong {
+  id: string;
+  nhanSuId: string;
+  soHopDong: string;
+  loaiHopDong: string;
+  ngayKy: string;
+  tuNgay: string;
+  denNgay: string;
+  luongCoBan: number | null;
+  luongBhxh: number | null;
+  trangThai: string;
+  ghiChu: string;
+}
+
+export const LOAI_HOP_DONG_LAO_DONG: { ma: string; ten: string }[] = [
+  { ma: 'thu-viec', ten: 'Thử việc' },
+  { ma: 'xac-dinh-thoi-han', ten: 'Xác định thời hạn' },
+  { ma: 'khong-xac-dinh', ten: 'Không xác định thời hạn' },
+  { ma: 'vien-chuc-tap-su', ten: 'Viên chức tập sự' },
+  { ma: 'vien-chuc', ten: 'Viên chức' },
+  { ma: 'khoan-viec', ten: 'Khoán việc' },
+];
+
+export interface LuongNgachBac {
+  id: string;
+  nhanSuId: string;
+  ngayHieuLuc: string;
+  ngach: string;
+  maNgach: string;
+  bac: string;
+  heSoLuong: number;
+  phuCapChucVu: number;
+  phuCapTnvk: number;
+  loaiThayDoi: string;
+  soQuyetDinh: string;
+  lyDo: string;
+}
+
+export const LOAI_THAY_DOI_LUONG: { ma: string; ten: string }[] = [
+  { ma: 'xep-lan-dau', ten: 'Xếp lần đầu' },
+  { ma: 'nang-bac-thuong-xuyen', ten: 'Nâng bậc thường xuyên' },
+  { ma: 'nang-bac-truoc-han', ten: 'Nâng bậc trước hạn' },
+  { ma: 'nang-ngach', ten: 'Nâng ngạch' },
+  { ma: 'dieu-chinh', ten: 'Điều chỉnh khác' },
+];
+
+export interface DanhGiaCbvc {
+  id: string;
+  nhanSuId: string;
+  nam: number;
+  ky: string;
+  tuXepLoai: string;
+  xepLoai: string;
+  diem: number | null;
+  nguoiDanhGiaId: string | null;
+  nhanXet: string;
+  trangThai: string;
+}
+
+export const XEP_LOAI_DANH_GIA: { ma: string; ten: string }[] = [
+  { ma: 'htxsnv', ten: 'Hoàn thành xuất sắc nhiệm vụ' },
+  { ma: 'httnv', ten: 'Hoàn thành tốt nhiệm vụ' },
+  { ma: 'htnv', ten: 'Hoàn thành nhiệm vụ' },
+  { ma: 'khtnv', ten: 'Không hoàn thành nhiệm vụ' },
+];
+
+export interface NghienCuuSinh {
+  id: string;
+  nhanSuId: string | null;
+  hoTen: string;
+  ngayNhapHoc: string;
+  gvHuongDan: string;
+  tenDeTai: string;
+  donViId: string | null;
+  trangThaiHoiDong: string;
+  ghiChu: string;
+}
+
+export const TRANG_THAI_HOI_DONG_NCS: { ma: string; ten: string }[] = [
+  { ma: 'chua-thanh-lap', ten: 'Chưa thành lập' },
+  { ma: 'bao-ve-co-so', ten: 'Bảo vệ cơ sở' },
+  { ma: 'bao-ve-cap-vien', ten: 'Bảo vệ cấp Viện' },
+  { ma: 'da-cap-bang', ten: 'Đã cấp bằng' },
+];
+
+/* ─── Đảng - Đoàn thể ─── */
+
+export type LoaiToChucDoanThe = 'dang' | 'doan-tn' | 'cong-doan' | 'ccb' | 'nu-cong';
+
+export const LOAI_TO_CHUC_DOAN_THE: { ma: LoaiToChucDoanThe; ten: string }[] = [
+  { ma: 'dang', ten: 'Tổ chức Đảng' },
+  { ma: 'doan-tn', ten: 'Đoàn Thanh niên' },
+  { ma: 'cong-doan', ten: 'Công đoàn' },
+  { ma: 'ccb', ten: 'Hội Cựu chiến binh' },
+  { ma: 'nu-cong', ten: 'Ban Nữ công' },
+];
+
+export interface ToChucDoanThe {
+  id: string;
+  loai: LoaiToChucDoanThe;
+  cap: string;
+  ten: string;
+  ma: string;
+  toChucChaId: string | null;
+  donViId: string | null;
+  donVi: string;
+  nguoiDungDauId: string | null;
+  nguoiDungDau: string;
+  phoId: string | null;
+  pho: string;
+  ngayThanhLap: string;
+  nhiemKy: string;
+  trangThai: string;
+  thuTu: number;
+  soDangVien: number;
+}
+
+export interface DangVien {
+  id: string;
+  nhanSuId: string;
+  hoTen: string;
+  donVi: string;
+  toChucId: string;
+  toChuc: string;
+  soTheDang: string;
+  ngayVaoDangDuBi: string;
+  ngayVaoDangChinhThuc: string;
+  noiKetNap: string;
+  nguoiGioiThieu1: string;
+  nguoiGioiThieu2: string;
+  chucVuDang: string;
+  trinhDoLyLuan: string;
+  trangThai: string;
+  ghiChu: string;
+}
+
+export const TRANG_THAI_DANG_VIEN: { ma: string; ten: string }[] = [
+  { ma: 'dang-sinh-hoat', ten: 'Đang sinh hoạt' },
+  { ma: 'mien-sinh-hoat', ten: 'Miễn sinh hoạt' },
+  { ma: 'chuyen-di', ten: 'Chuyển sinh hoạt đi' },
+  { ma: 'khai-tru', ten: 'Khai trừ' },
+  { ma: 'xoa-ten', ten: 'Xóa tên' },
+  { ma: 'tu-tran', ten: 'Từ trần' },
+];
+
+export interface DoanVienHoiVien {
+  id: string;
+  nhanSuId: string;
+  hoTen: string;
+  toChucId: string;
+  loai: LoaiToChucDoanThe;
+  soThe: string;
+  ngayKetNap: string;
+  chucVu: string;
+  trangThai: string;
+}
+
+export const BUOC_PHAT_TRIEN_DANG: { ma: string; ten: string }[] = [
+  { ma: 'quan-chung-uu-tu', ten: '1. Quần chúng ưu tú' },
+  { ma: 'hoc-lop-nhan-thuc', ten: '2. Học lớp nhận thức về Đảng' },
+  { ma: 'tham-tra-ly-lich', ten: '3. Thẩm tra lý lịch' },
+  { ma: 'chi-bo-de-nghi', ten: '4. Chi bộ đề nghị kết nạp' },
+  { ma: 'dang-uy-xet', ten: '5. Đảng ủy xét, ra quyết định' },
+  { ma: 'ket-nap-du-bi', ten: '6. Kết nạp đảng viên dự bị' },
+  { ma: 'hoc-lop-dang-vien-moi', ten: '7. Học lớp đảng viên mới' },
+  { ma: 'chuyen-chinh-thuc', ten: '8. Chuyển đảng chính thức' },
+];
+
+export interface PhatTrienDang {
+  id: string;
+  nhanSuId: string;
+  hoTen: string;
+  donVi: string;
+  toChucId: string;
+  toChuc: string;
+  buocHienTai: string;
+  ngayBatDau: string;
+  ngayDuKienKetNap: string;
+  nguoiTheoDoiId: string | null;
+  nguoiTheoDoi: string;
+  ghiChu: string;
+  trangThai: string;
+}
+
+export interface PhatTrienDangBuoc {
+  id: string;
+  phatTrienId: string;
+  buoc: string;
+  ngayHoanThanh: string;
+  soVanBan: string;
+  ghiChu: string;
+}
+
+export interface SinhHoatDinhKy {
+  id: string;
+  toChucId: string;
+  toChuc: string;
+  ky: string;
+  ngayHop: string;
+  diaDiem: string;
+  chuTriId: string | null;
+  chuTri: string;
+  thuKyId: string | null;
+  chuyenDe: string;
+  noiDung: string;
+  nghiQuyet: string;
+  soBienBan: string;
+  trangThai: string;
+  soThamGia: number;
+}
+
+export interface DiemDanhSinhHoat {
+  id: string;
+  sinhHoatId: string;
+  nhanSuId: string;
+  hoTen: string;
+  coMat: string;
+  lyDo: string;
+}
+
+export interface ThuPhiDoanThe {
+  id: string;
+  nhanSuId: string;
+  hoTen: string;
+  toChucId: string;
+  loaiPhi: string;
+  ky: string;
+  mucDong: number;
+  soTienPhaiNop: number;
+  soTienDaNop: number;
+  ngayNop: string;
+  hinhThuc: string;
+  trangThai: string;
+}
+
+export const LOAI_PHI_DOAN_THE: { ma: string; ten: string }[] = [
+  { ma: 'dang-phi', ten: 'Đảng phí' },
+  { ma: 'doan-phi', ten: 'Đoàn phí' },
+  { ma: 'cong-doan-phi', ten: 'Công đoàn phí' },
+];
+
+export interface KhenThuongKyLuat {
+  id: string;
+  doiTuong: string;
+  nhanSuId: string | null;
+  hoTen: string;
+  donViId: string | null;
+  donVi: string;
+  phamVi: string;
+  loai: 'khen-thuong' | 'ky-luat';
+  hinhThuc: string;
+  capQuyetDinh: string;
+  soQuyetDinh: string;
+  ngayQuyetDinh: string;
+  nam: number | null;
+  lyDo: string;
+}
+
+export const PHAM_VI_KHEN_THUONG: { ma: string; ten: string }[] = [
+  { ma: 'chinh-quyen', ten: 'Chính quyền' },
+  { ma: 'dang', ten: 'Đảng' },
+  { ma: 'cong-doan', ten: 'Công đoàn' },
+  { ma: 'doan-tn', ten: 'Đoàn Thanh niên' },
+];
+
+export interface ThiDua {
+  id: string;
+  doiTuong: string;
+  nhanSuId: string | null;
+  hoTen: string;
+  donViId: string | null;
+  donVi: string;
+  nam: number;
+  danhHieuDangKy: string;
+  danhHieuDat: string;
+  trangThai: string;
 }

@@ -1,7 +1,9 @@
 import { useMemo, useState, type FormEvent } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Plus,
   Users,
+  Network,
   GraduationCap,
   ShieldAlert,
   ShieldCheck,
@@ -15,8 +17,10 @@ import { PageHeader } from '../components/PageHeader';
 import { KpiCard } from '../components/KpiCard';
 import { DataState } from '../components/DataState';
 import { Modal, Field, inputCls } from '../components/Modal';
-import { ChungChiPanel } from '../components/DetailPanels';
+import { NhanSuHoSoPanel } from '../components/NhanSuHoSoPanel';
+import { DangDoanTheTab } from '../components/DangDoanTheTab';
 import { DaoTaoPage } from './DaoTaoPage';
+import { DonViPage } from './DonViPage';
 import { useAsyncData } from '../hooks/useAsyncData';
 import {
   fetchNhanSuFull,
@@ -29,7 +33,7 @@ import {
 import type { NhanSu } from '../types';
 import { cn } from '../lib/utils';
 
-type MainTab = 'nhan-su' | 'dao-tao-ncs' | 'dang-doan-the';
+type MainTab = 'co-cau-to-chuc' | 'nhan-su' | 'dao-tao-ncs' | 'dang-doan-the';
 
 const HOC_VI_OPTIONS = [
   'Giáo sư, Tiến sĩ',
@@ -58,15 +62,15 @@ function hanSapHet(iso: string) {
   return d >= 0 && d <= 90;
 }
 
-const MOCK_DANG_DOAN = [
-  { id: 'd-1', hoTen: 'GS. TS. Nguyễn Xuân Khang', loai: 'Đảng viên', chucVu: 'Bí thư Đảng ủy Viện', chiBo: 'Chi bộ Khối Cơ quan Viện', ngayVaoDang: '1995-02-03', dangPhi: '100% Đã nộp Q3/2026' },
-  { id: 'd-2', hoTen: 'PGS. TS. Trần Việt Hùng', loai: 'Đảng viên', chucVu: 'Phó Bí thư Đảng ủy', chiBo: 'Chi bộ Quản lý Khoa học', ngayVaoDang: '2001-05-19', dangPhi: '100% Đã nộp Q3/2026' },
-  { id: 'd-3', hoTen: 'ThS. Lê Hoàng Nam', loai: 'Đoàn viên', chucVu: 'Bí thư Đoàn Thanh niên Viện', chiBo: 'Đoàn Thanh niên IBST', ngayVaoDang: '—', dangPhi: '100% Đã nộp Q3/2026' },
-  { id: 'd-4', hoTen: 'TS. Vũ Thành Trung', loai: 'Đảng viên', chucVu: 'Chi ủy viên', chiBo: 'Chi bộ P.QLKH', ngayVaoDang: '2008-09-02', dangPhi: '100% Đã nộp Q3/2026' },
-];
-
 export function NhanSuPage() {
-  const [mainTab, setMainTab] = useState<MainTab>('nhan-su');
+  const [searchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const [mainTab, setMainTab] = useState<MainTab>(() => {
+    if (tabParam === 'don-vi' || tabParam === 'co-cau-to-chuc') return 'co-cau-to-chuc';
+    if (tabParam === 'dao-tao-ncs') return 'dao-tao-ncs';
+    if (tabParam === 'dang-doan-the') return 'dang-doan-the';
+    return 'nhan-su';
+  });
 
   const { data: list, loading, error, refetch } = useAsyncData(fetchNhanSuFull, []);
   const { data: donViList } = useAsyncData(fetchDonVi, []);
@@ -164,6 +168,17 @@ export function NhanSuPage() {
       {/* Main Tabs Switcher */}
       <div className="mb-6 flex flex-wrap gap-2 rounded-xl bg-muted p-1.5 w-fit border border-border">
         <button
+          onClick={() => setMainTab('co-cau-to-chuc')}
+          className={cn(
+            'flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-bold transition-all',
+            mainTab === 'co-cau-to-chuc'
+              ? 'bg-surface text-primary-600 shadow-card dark:text-primary-300'
+              : 'text-ink-muted hover:text-ink'
+          )}
+        >
+          <Network size={16} /> Sơ đồ Cơ cấu Tổ chức & Đơn vị
+        </button>
+        <button
           onClick={() => setMainTab('nhan-su')}
           className={cn(
             'flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-bold transition-all',
@@ -198,71 +213,10 @@ export function NhanSuPage() {
         </button>
       </div>
 
+      {mainTab === 'co-cau-to-chuc' && <DonViPage hideHeader />}
       {mainTab === 'dao-tao-ncs' && <DaoTaoPage />}
 
-      {mainTab === 'dang-doan-the' && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="card p-4 border-l-4 border-l-red-600">
-              <p className="text-2xs font-bold uppercase text-ink-muted">Tổng số Đảng viên</p>
-              <p className="mt-1 text-xl font-black text-red-600 dark:text-red-400">142 Đảng viên</p>
-              <p className="text-2xs text-ink-muted mt-1">Sinh hoạt tại 12 Chi bộ trực thuộc</p>
-            </div>
-            <div className="card p-4 border-l-4 border-l-blue-600">
-              <p className="text-2xs font-bold uppercase text-ink-muted">Đoàn viên Thanh niên</p>
-              <p className="mt-1 text-xl font-black text-blue-600 dark:text-blue-400">98 Đoàn viên</p>
-              <p className="text-2xs text-ink-muted mt-1">Chi đoàn Khối kỹ thuật & thí nghiệm</p>
-            </div>
-            <div className="card p-4 border-l-4 border-l-emerald-600">
-              <p className="text-2xs font-bold uppercase text-ink-muted">Đảng phí / Đoàn phí Q3/2026</p>
-              <p className="mt-1 text-xl font-black text-emerald-600 dark:text-emerald-400">100% Hoàn tất</p>
-              <p className="text-2xs text-ink-muted mt-1">Số hóa thu chi trực tuyến</p>
-            </div>
-          </div>
-
-          <div className="card overflow-hidden">
-            <div className="border-b border-border bg-subtle p-4 flex items-center justify-between">
-              <h3 className="font-bold text-sm text-ink flex items-center gap-2">
-                <Flag size={16} className="text-red-600" />
-                Danh sách Hồ sơ Đảng viên - Đoàn viên Tiêu biểu
-              </h3>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[650px] text-left text-xs">
-                <thead>
-                  <tr className="border-b border-border bg-muted/50 font-bold text-ink-muted">
-                    <th className="p-3">Họ tên cán bộ</th>
-                    <th className="p-3">Phân loại</th>
-                    <th className="p-3">Chức vụ Đảng/Đoàn</th>
-                    <th className="p-3">Chi bộ / Sinh hoạt</th>
-                    <th className="p-3">Ngày kết nạp</th>
-                    <th className="p-3">Tình trạng Đảng phí</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {MOCK_DANG_DOAN.map((item) => (
-                    <tr key={item.id} className="hover:bg-muted/30 transition-colors">
-                      <td className="p-3 font-semibold text-ink">{item.hoTen}</td>
-                      <td className="p-3">
-                        <span className={cn(
-                          "rounded-full px-2.5 py-0.5 text-2xs font-bold",
-                          item.loai === 'Đảng viên' ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300" : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
-                        )}>
-                          {item.loai}
-                        </span>
-                      </td>
-                      <td className="p-3 text-ink-secondary">{item.chucVu}</td>
-                      <td className="p-3 text-ink-muted">{item.chiBo}</td>
-                      <td className="p-3 text-ink-muted">{item.ngayVaoDang}</td>
-                      <td className="p-3 font-bold text-emerald-600 dark:text-emerald-400">{item.dangPhi}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
+      {mainTab === 'dang-doan-the' && <DangDoanTheTab />}
 
       {mainTab === 'nhan-su' && (
         <>
@@ -397,7 +351,7 @@ export function NhanSuPage() {
             </div>
 
             <div className="lg:col-span-1">
-              <ChungChiPanel nhanSuId={detail?.id ?? ''} onChanged={refetch} />
+              <NhanSuHoSoPanel nhanSuId={detail?.id ?? ''} onChanged={refetch} />
             </div>
           </div>
         </>
