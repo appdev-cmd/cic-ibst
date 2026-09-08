@@ -1,7 +1,9 @@
 import { useState, type ReactNode } from 'react';
-import { Plus, Trash2, LoaderCircle, Check, X, AlertTriangle, Receipt, Split, Landmark } from 'lucide-react';
+import { Plus, Trash2, LoaderCircle, AlertTriangle, Receipt, Split, Landmark } from 'lucide-react';
 import { useAsyncData } from '../hooks/useAsyncData';
+import { useSlidePanelForm } from '../hooks/useSlidePanelCrud';
 import { useAuth } from '../context/AuthContext';
+import { Field, inputCls } from './Modal';
 import {
   fetchDeNghiXuatHoaDon,
   createDeNghiXuatHoaDon,
@@ -17,6 +19,7 @@ import {
   ghiNhanHoanTamUng,
   deleteTamUng,
   tinhLaiQuaHanTamUng,
+  type DeNghiXuatHoaDon,
   type DeNghiXuatHoaDonInput,
   type TamUngInput,
   type TrangThaiDeNghiXuatHd,
@@ -26,9 +29,6 @@ import { phanBoHopDong, tranGiamGiaoChuTri } from '../lib/qc2815';
 import type { HopDong } from '../types';
 import type { Option } from '../services/queries';
 import { formatNgay, cn } from '../lib/utils';
-
-const miniInput =
-  'w-full rounded border border-border bg-subtle px-2 py-1 text-xs text-ink outline-none focus:border-primary-500';
 
 function Khung({ title, icon, onAdd, addLabel, children }: {
   title: string; icon: ReactNode; onAdd?: () => void; addLabel?: string; children: ReactNode;
@@ -85,11 +85,122 @@ export function QuyetToanDieu11Panel({ hd, nhanSuOptions }: { hd: HopDong; nhanS
     try { await fn(); sau(); } catch (e) { setErr(e instanceof Error ? e.message : String(e)); } finally { setBusy(false); }
   };
 
-  // ── Đề nghị xuất hóa đơn ──
-  const [addDn, setAddDn] = useState(false);
+  // ═══ Panel: lập đề nghị xuất hóa đơn ═══
+  const [moFormDn, setMoFormDn] = useState(false);
   const [formDn, setFormDn] = useState<DeNghiXuatHoaDonInput>(EMPTY_DN);
 
-  // ── Tờ phân phối: tính sẵn theo Bảng 1 trên số tiền đã thực về ──
+  useSlidePanelForm({
+    id: 'qt11-form-de-nghi',
+    open: moFormDn,
+    title: 'Lập đề nghị xuất hóa đơn (Đ.11.1)',
+    subtitle: hd.soHD,
+    storageKey: 'slideover-width-qt11-de-nghi',
+    deps: [formDn, busy, err, dots],
+    onDongNgoaiLuong: () => setMoFormDn(false),
+    footer: (
+      <>
+        <button type="button" onClick={() => setMoFormDn(false)} className="btn-ghost">Hủy</button>
+        <button type="submit" form="form-de-nghi-xuat-hd" disabled={busy} className="btn-primary disabled:opacity-60">
+          {busy && <LoaderCircle size={15} className="animate-spin" />} Lập đề nghị
+        </button>
+      </>
+    ),
+    content: (
+      <form
+        id="form-de-nghi-xuat-hd"
+        className="space-y-4 p-5"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void chay(() => createDeNghiXuatHoaDon(hd.id, formDn, nhanSuId), () => { setMoFormDn(false); refetchDn(); });
+        }}
+      >
+        <p className="rounded-lg border border-border bg-subtle px-3 py-2 text-2xs text-ink-secondary">
+          Điều 11.1: chủ trì căn cứ <strong>biên bản nghiệm thu</strong> để đề nghị xuất hóa đơn; phụ trách kế toán
+          đơn vị xác nhận rồi chuyển P.TCKT. P.TCKT giải quyết trong <strong>03 ngày làm việc</strong>.
+        </p>
+        <Field label="Đợt thanh toán tương ứng">
+          <select className={inputCls} value={formDn.dotThanhToanId}
+            onChange={(e) => {
+              const dot = dots.find((d) => d.id === e.target.value);
+              setFormDn({ ...formDn, dotThanhToanId: e.target.value, soTien: dot ? String(dot.soTien) : formDn.soTien });
+            }}>
+            <option value="">-- Không gắn đợt cụ thể --</option>
+            {dots.map((d) => <option key={d.id} value={d.id}>{d.tenDot} ({d.soTien.toLocaleString('vi-VN')} tr)</option>)}
+          </select>
+        </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Số tiền (triệu đồng, trước thuế)" required>
+            <input className={inputCls} required value={formDn.soTien}
+              onChange={(e) => setFormDn({ ...formDn, soTien: e.target.value })} />
+          </Field>
+          <Field label="Ngày đề nghị" required>
+            <input type="date" required className={inputCls} value={formDn.ngayDeNghi}
+              onChange={(e) => setFormDn({ ...formDn, ngayDeNghi: e.target.value })} />
+          </Field>
+        </div>
+        <Field label="Căn cứ nghiệm thu (số / ngày BBNT)">
+          <input className={inputCls} value={formDn.canCuNghiemThu} placeholder="VD: BBNT số 12/NT ngày 20/08/2026"
+            onChange={(e) => setFormDn({ ...formDn, canCuNghiemThu: e.target.value })} />
+        </Field>
+        <Field label="Ghi chú">
+          <textarea className={cn(inputCls, 'min-h-16 resize-y')} value={formDn.ghiChu}
+            onChange={(e) => setFormDn({ ...formDn, ghiChu: e.target.value })} />
+        </Field>
+      </form>
+    ),
+  });
+
+  // ═══ Panel: P.TCKT ghi nhận đã xuất hóa đơn ═══
+  const [dnXuat, setDnXuat] = useState<DeNghiXuatHoaDon | null>(null);
+  const [formXuat, setFormXuat] = useState({ soHoaDon: '', ngayXuatHoaDon: '' });
+
+  useSlidePanelForm({
+    id: 'qt11-form-xuat-hd',
+    open: !!dnXuat,
+    title: 'P.TCKT ghi nhận đã xuất hóa đơn',
+    subtitle: dnXuat ? `${hd.soHD} · ${dnXuat.soTien.toLocaleString('vi-VN')} tr` : undefined,
+    minWidth: 420,
+    storageKey: 'slideover-width-qt11-xuat-hd',
+    deps: [dnXuat, formXuat, busy, err],
+    onDongNgoaiLuong: () => setDnXuat(null),
+    footer: (
+      <>
+        <button type="button" onClick={() => setDnXuat(null)} className="btn-ghost">Hủy</button>
+        <button type="submit" form="form-xuat-hd" disabled={busy} className="btn-primary disabled:opacity-60">
+          {busy && <LoaderCircle size={15} className="animate-spin" />} Ghi nhận đã xuất
+        </button>
+      </>
+    ),
+    content: (
+      <form
+        id="form-xuat-hd"
+        className="space-y-4 p-5"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!dnXuat) return;
+          void chay(
+            () => chuyenBuocDeNghiXuatHd(dnXuat.id, 'da-xuat', { ...formXuat, actorNhanSuId: nhanSuId }),
+            () => { setDnXuat(null); refetchDn(); },
+          );
+        }}
+      >
+        <p className="rounded-lg border border-warning/30 bg-amber-50 px-3 py-2 text-2xs text-warning dark:bg-amber-900/20">
+          Ngày xuất hóa đơn là mốc bắt đầu <strong>nghĩa vụ VAT 1 năm</strong> của chủ trì (Đ.14 mục 2 dòng 7) —
+          nhập đúng ngày trên hóa đơn GTGT, không phải ngày thao tác trên phần mềm.
+        </p>
+        <Field label="Số hóa đơn GTGT" required>
+          <input className={inputCls} required value={formXuat.soHoaDon}
+            onChange={(e) => setFormXuat({ ...formXuat, soHoaDon: e.target.value })} />
+        </Field>
+        <Field label="Ngày xuất hóa đơn" required>
+          <input type="date" required className={inputCls} value={formXuat.ngayXuatHoaDon}
+            onChange={(e) => setFormXuat({ ...formXuat, ngayXuatHoaDon: e.target.value })} />
+        </Field>
+      </form>
+    ),
+  });
+
+  // ═══ Tờ phân phối: tính sẵn theo Bảng 1 trên số tiền đã thực về ═══
   const pb = phanBoHopDong(hd.nhomHD, hd.daThanhToan || 0, {
     loaiDacThu: hd.loaiDacThu,
     phanVienXa: hd.phanVienXa,
@@ -123,9 +234,74 @@ export function QuyetToanDieu11Panel({ hd, nhanSuOptions }: { hd: HopDong; nhanS
       refetchPp,
     );
 
-  // ── Tạm ứng ──
-  const [addTu, setAddTu] = useState(false);
+  // ═══ Panel: ghi tạm ứng ═══
+  const [moFormTu, setMoFormTu] = useState(false);
   const [formTu, setFormTu] = useState<TamUngInput>(EMPTY_TU);
+
+  useSlidePanelForm({
+    id: 'qt11-form-tam-ung',
+    open: moFormTu,
+    title: 'Ghi nhận khoản tạm ứng (Đ.7.7)',
+    subtitle: hd.soHD,
+    storageKey: 'slideover-width-qt11-tam-ung',
+    deps: [formTu, busy, err, nhanSuOptions],
+    onDongNgoaiLuong: () => setMoFormTu(false),
+    footer: (
+      <>
+        <button type="button" onClick={() => setMoFormTu(false)} className="btn-ghost">Hủy</button>
+        <button type="submit" form="form-tam-ung" disabled={busy} className="btn-primary disabled:opacity-60">
+          {busy && <LoaderCircle size={15} className="animate-spin" />} Lưu
+        </button>
+      </>
+    ),
+    content: (
+      <form
+        id="form-tam-ung"
+        className="space-y-4 p-5"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void chay(() => createTamUng(hd.id, formTu), () => { setMoFormTu(false); refetchTu(); });
+        }}
+      >
+        <p className="rounded-lg border border-border bg-subtle px-3 py-2 text-2xs text-ink-secondary">
+          Điều 7.7: khi hợp đồng chưa có kinh phí, chủ trì đề nghị Trưởng đơn vị tạm ứng trước từ Viện theo phê
+          duyệt của Viện trưởng, có lãi suất theo quy định. Quá hạn hoàn thì thu lãi bằng
+          <strong> 130% lãi suất áp dụng</strong> (Đ.14 mục 2 dòng 6) — hệ thống tự tính khi có lãi suất gốc và hạn hoàn.
+        </p>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Người nhận tạm ứng" required>
+            <select className={inputCls} required value={formTu.nhanSuId}
+              onChange={(e) => setFormTu({ ...formTu, nhanSuId: e.target.value })}>
+              <option value="">-- Chọn --</option>
+              {nhanSuOptions.map((n) => <option key={n.id} value={n.id}>{n.ten}</option>)}
+            </select>
+          </Field>
+          <Field label="Số tiền (triệu đồng)" required>
+            <input className={inputCls} required value={formTu.soTien}
+              onChange={(e) => setFormTu({ ...formTu, soTien: e.target.value })} />
+          </Field>
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          <Field label="Ngày tạm ứng" required>
+            <input type="date" required className={inputCls} value={formTu.ngayTamUng}
+              onChange={(e) => setFormTu({ ...formTu, ngayTamUng: e.target.value })} />
+          </Field>
+          <Field label="Hạn hoàn">
+            <input type="date" className={inputCls} value={formTu.hanHoan}
+              onChange={(e) => setFormTu({ ...formTu, hanHoan: e.target.value })} />
+          </Field>
+          <Field label="Lãi suất gốc (%/năm)">
+            <input className={inputCls} value={formTu.laiSuatGoc} placeholder="VD: 6.5"
+              onChange={(e) => setFormTu({ ...formTu, laiSuatGoc: e.target.value })} />
+          </Field>
+        </div>
+        <Field label="Ghi chú">
+          <textarea className={cn(inputCls, 'min-h-16 resize-y')} value={formTu.ghiChu}
+            onChange={(e) => setFormTu({ ...formTu, ghiChu: e.target.value })} />
+        </Field>
+      </form>
+    ),
+  });
 
   return (
     <div className="space-y-3">
@@ -140,37 +316,8 @@ export function QuyetToanDieu11Panel({ hd, nhanSuOptions }: { hd: HopDong; nhanS
         title="Đề nghị xuất hóa đơn (Đ.11.1)"
         icon={<Receipt size={12} />}
         addLabel="Lập đề nghị"
-        onAdd={() => { setFormDn({ ...EMPTY_DN, ngayDeNghi: new Date().toISOString().slice(0, 10) }); setAddDn(true); }}
+        onAdd={() => { setFormDn({ ...EMPTY_DN, ngayDeNghi: new Date().toISOString().slice(0, 10) }); setMoFormDn(true); }}
       >
-        {addDn && (
-          <div className="space-y-2 border-b border-border-subtle bg-subtle p-3">
-            <div className="grid grid-cols-2 gap-2">
-              <select className={miniInput} value={formDn.dotThanhToanId} onChange={(e) => {
-                const dot = dots.find((d) => d.id === e.target.value);
-                setFormDn({ ...formDn, dotThanhToanId: e.target.value, soTien: dot ? String(dot.soTien) : formDn.soTien });
-              }}>
-                <option value="">-- Đợt thanh toán --</option>
-                {dots.map((d) => <option key={d.id} value={d.id}>{d.tenDot} ({d.soTien.toLocaleString('vi-VN')} tr)</option>)}
-              </select>
-              <input className={miniInput} placeholder="Số tiền (triệu đ)" value={formDn.soTien}
-                onChange={(e) => setFormDn({ ...formDn, soTien: e.target.value })} />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <input className={miniInput} type="date" value={formDn.ngayDeNghi}
-                onChange={(e) => setFormDn({ ...formDn, ngayDeNghi: e.target.value })} />
-              <input className={miniInput} placeholder="Căn cứ BBNT (số/ngày)" value={formDn.canCuNghiemThu}
-                onChange={(e) => setFormDn({ ...formDn, canCuNghiemThu: e.target.value })} />
-            </div>
-            <div className="flex justify-end gap-1">
-              <button onClick={() => chay(() => createDeNghiXuatHoaDon(hd.id, formDn, nhanSuId), () => { setAddDn(false); refetchDn(); })}
-                disabled={busy} className="rounded p-1 text-success hover:bg-emerald-50 dark:hover:bg-emerald-900/20">
-                {busy ? <LoaderCircle size={13} className="animate-spin" /> : <Check size={13} />}
-              </button>
-              <button onClick={() => setAddDn(false)} className="rounded p-1 text-ink-muted hover:bg-muted"><X size={13} /></button>
-            </div>
-          </div>
-        )}
-
         <table className="w-full min-w-[640px]">
           <thead>
             <tr>
@@ -203,11 +350,8 @@ export function QuyetToanDieu11Panel({ hd, nhanSuOptions }: { hd: HopDong; nhanS
                           disabled={busy}
                           onClick={() => {
                             if (ke.den === 'da-xuat') {
-                              const so = window.prompt('Số hóa đơn GTGT:');
-                              if (!so) return;
-                              const ngay = window.prompt('Ngày xuất hóa đơn (YYYY-MM-DD):', new Date().toISOString().slice(0, 10));
-                              if (!ngay) return;
-                              void chay(() => chuyenBuocDeNghiXuatHd(d.id, 'da-xuat', { soHoaDon: so, ngayXuatHoaDon: ngay, actorNhanSuId: nhanSuId }), refetchDn);
+                              setFormXuat({ soHoaDon: '', ngayXuatHoaDon: new Date().toISOString().slice(0, 10) });
+                              setDnXuat(d);
                             } else {
                               void chay(() => chuyenBuocDeNghiXuatHd(d.id, ke.den, { actorNhanSuId: nhanSuId }), refetchDn);
                             }
@@ -226,7 +370,7 @@ export function QuyetToanDieu11Panel({ hd, nhanSuOptions }: { hd: HopDong; nhanS
                 </tr>
               );
             })}
-            {deNghis.length === 0 && !addDn && (
+            {deNghis.length === 0 && (
               <tr><td colSpan={5} className="td-cell py-3 text-center text-2xs italic text-ink-muted">Chưa có đề nghị xuất hóa đơn</td></tr>
             )}
           </tbody>
@@ -255,7 +399,8 @@ export function QuyetToanDieu11Panel({ hd, nhanSuOptions }: { hd: HopDong; nhanS
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <label className="text-ink-secondary">Giảm giao chủ trì (Đ.12.4a):</label>
-                <input className={cn(miniInput, 'w-24')} value={giamChuTri} onChange={(e) => setGiamChuTri(e.target.value)} />
+                <input className="w-24 rounded border border-border bg-surface px-2 py-1 text-xs text-ink outline-none focus:border-primary-500"
+                  value={giamChuTri} onChange={(e) => setGiamChuTri(e.target.value)} />
                 {tranSoTien != null && (
                   <span className={cn('font-mono', vuotTran ? 'font-bold text-danger' : 'text-ink-muted')}>
                     trần {tranGiam}% = {tranSoTien.toLocaleString('vi-VN', { maximumFractionDigits: 1 })} tr
@@ -334,36 +479,8 @@ export function QuyetToanDieu11Panel({ hd, nhanSuOptions }: { hd: HopDong; nhanS
         title="Tạm ứng & lãi quá hạn (Đ.7.7, Đ.14 mục 2 dòng 6)"
         icon={<Landmark size={12} />}
         addLabel="Ghi tạm ứng"
-        onAdd={() => { setFormTu({ ...EMPTY_TU, ngayTamUng: new Date().toISOString().slice(0, 10) }); setAddTu(true); }}
+        onAdd={() => { setFormTu({ ...EMPTY_TU, ngayTamUng: new Date().toISOString().slice(0, 10) }); setMoFormTu(true); }}
       >
-        {addTu && (
-          <div className="space-y-2 border-b border-border-subtle bg-subtle p-3">
-            <div className="grid grid-cols-2 gap-2">
-              <select className={miniInput} value={formTu.nhanSuId} onChange={(e) => setFormTu({ ...formTu, nhanSuId: e.target.value })}>
-                <option value="">-- Người nhận tạm ứng --</option>
-                {nhanSuOptions.map((n) => <option key={n.id} value={n.id}>{n.ten}</option>)}
-              </select>
-              <input className={miniInput} placeholder="Số tiền (triệu đ)" value={formTu.soTien}
-                onChange={(e) => setFormTu({ ...formTu, soTien: e.target.value })} />
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              <input className={miniInput} type="date" value={formTu.ngayTamUng}
-                onChange={(e) => setFormTu({ ...formTu, ngayTamUng: e.target.value })} />
-              <input className={miniInput} type="date" title="Hạn hoàn" value={formTu.hanHoan}
-                onChange={(e) => setFormTu({ ...formTu, hanHoan: e.target.value })} />
-              <input className={miniInput} placeholder="Lãi suất gốc %/năm" value={formTu.laiSuatGoc}
-                onChange={(e) => setFormTu({ ...formTu, laiSuatGoc: e.target.value })} />
-            </div>
-            <div className="flex justify-end gap-1">
-              <button onClick={() => chay(() => createTamUng(hd.id, formTu), () => { setAddTu(false); refetchTu(); })}
-                disabled={busy} className="rounded p-1 text-success hover:bg-emerald-50 dark:hover:bg-emerald-900/20">
-                {busy ? <LoaderCircle size={13} className="animate-spin" /> : <Check size={13} />}
-              </button>
-              <button onClick={() => setAddTu(false)} className="rounded p-1 text-ink-muted hover:bg-muted"><X size={13} /></button>
-            </div>
-          </div>
-        )}
-
         <table className="w-full min-w-[640px]">
           <thead>
             <tr>
@@ -412,7 +529,7 @@ export function QuyetToanDieu11Panel({ hd, nhanSuOptions }: { hd: HopDong; nhanS
                 </tr>
               );
             })}
-            {tamUngs.length === 0 && !addTu && (
+            {tamUngs.length === 0 && (
               <tr><td colSpan={5} className="td-cell py-3 text-center text-2xs italic text-ink-muted">Chưa có khoản tạm ứng</td></tr>
             )}
           </tbody>

@@ -16,12 +16,13 @@ import {
 import { PageHeader } from '../components/PageHeader';
 import { KpiCard } from '../components/KpiCard';
 import { DataState } from '../components/DataState';
-import { Modal, Field, inputCls } from '../components/Modal';
+import { Field, inputCls } from '../components/Modal';
 import { NhanSuHoSoPanel } from '../components/NhanSuHoSoPanel';
 import { DangDoanTheTab } from '../components/DangDoanTheTab';
 import { DaoTaoPage } from './DaoTaoPage';
 import { DonViPage } from './DonViPage';
 import { useAsyncData } from '../hooks/useAsyncData';
+import { useSlidePanelForm, useSlidePanelChiTiet } from '../hooks/useSlidePanelCrud';
 import {
   fetchNhanSuFull,
   fetchDonVi,
@@ -98,7 +99,10 @@ export function NhanSuPage() {
 
   const tongCs = list.filter((ns) => Boolean(ns.chungChi)).length;
 
-  const [detail, setDetail] = useState<NhanSu | null>(null);
+  // Chi tiết CBVC mở bằng slide panel (đúng nếp chung của dự án) thay vì cột cố định bên phải,
+  // để hồ sơ có đủ bề ngang cho các bảng con và người dùng tự kéo giãn được.
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const detail = useMemo(() => list.find((n) => n.id === detailId) ?? null, [list, detailId]);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<NhanSu | null>(null);
@@ -151,12 +155,100 @@ export function NhanSuPage() {
     if (!confirm(`Bạn có chắc muốn xóa nhân sự "${item.hoTen}"?`)) return;
     try {
       await deleteNhanSu(item.id);
-      if (detail?.id === item.id) setDetail(null);
+      if (detailId === item.id) setDetailId(null);
       refetch();
     } catch (err) {
       alert(err instanceof Error ? err.message : String(err));
     }
   };
+
+  // ─── Slide panel: biểu mẫu Thêm/Sửa CBVC ───
+  useSlidePanelForm({
+    id: 'nhan-su-form',
+    open: modalOpen,
+    title: editingItem ? 'Chỉnh sửa hồ sơ CBVC' : 'Thêm CBVC mới',
+    subtitle: editingItem?.hoTen,
+    storageKey: 'slideover-width-nhan-su-form',
+    deps: [form, editingItem, saving, formError, donViList],
+    onDongNgoaiLuong: () => setModalOpen(false),
+    footer: (
+      <>
+        <button type="button" onClick={() => setModalOpen(false)} className="btn-ghost">Hủy</button>
+        <button type="submit" form="form-nhan-su" disabled={saving} className="btn-primary disabled:opacity-60">
+          {saving && <LoaderCircle size={15} className="animate-spin" />}
+          {editingItem ? 'Cập nhật' : 'Thêm mới'}
+        </button>
+      </>
+    ),
+    content: (
+      <form id="form-nhan-su" onSubmit={handleSave} className="space-y-4 p-5">
+        {formError && <div className="rounded-lg bg-danger-subtle p-3 text-xs text-danger">{formError}</div>}
+
+        <Field label="Họ và tên" required>
+          <input type="text" required value={form.hoTen} className={inputCls}
+            onChange={(e) => setForm({ ...form, hoTen: e.target.value })} />
+        </Field>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Học vị">
+            <select value={form.hocVi} className={inputCls}
+              onChange={(e) => setForm({ ...form, hocVi: e.target.value })}>
+              <option value="">-- Chọn --</option>
+              {HOC_VI_OPTIONS.map((hv) => <option key={hv} value={hv}>{hv}</option>)}
+            </select>
+          </Field>
+          <Field label="Chức danh">
+            <input type="text" value={form.chucDanh} className={inputCls}
+              onChange={(e) => setForm({ ...form, chucDanh: e.target.value })} />
+          </Field>
+        </div>
+
+        <Field label="Đơn vị công tác">
+          <select value={form.donViId} className={inputCls}
+            onChange={(e) => setForm({ ...form, donViId: e.target.value })}>
+            <option value="">-- Chọn đơn vị --</option>
+            {donViList.map((d) => <option key={d.id} value={d.id}>{d.ten}</option>)}
+          </select>
+        </Field>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Email">
+            <input type="email" value={form.email} className={inputCls}
+              onChange={(e) => setForm({ ...form, email: e.target.value })} />
+          </Field>
+          <Field label="Số điện thoại">
+            <input type="text" value={form.soDienThoai} className={inputCls}
+              onChange={(e) => setForm({ ...form, soDienThoai: e.target.value })} />
+          </Field>
+        </div>
+
+        {editingItem && (
+          <p className="rounded-lg border border-border bg-subtle px-3 py-2 text-2xs text-ink-muted">
+            Hồ sơ mở rộng (quá trình công tác, bằng cấp, HĐLĐ &amp; lương, đánh giá) nhập ở panel chi tiết —
+            bấm vào dòng CBVC trong danh sách.
+          </p>
+        )}
+      </form>
+    ),
+  });
+
+  // ─── Slide panel: hồ sơ chi tiết CBVC (các tab nghiệp vụ) ───
+  useSlidePanelChiTiet({
+    id: 'nhan-su-chi-tiet',
+    active: !!detail,
+    title: detail?.hoTen ?? '',
+    subtitle: detail ? [detail.hocVi, detail.chucDanh, detail.donVi].filter(Boolean).join(' · ') : undefined,
+    storageKey: 'slideover-width-nhan-su-chi-tiet',
+    deps: [detail],
+    onDongNgoaiLuong: () => setDetailId(null),
+    headerExtra: detail ? (
+      <button onClick={() => openEdit(detail)}
+        className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-bold text-ink-secondary hover:bg-muted">
+        <Pencil size={13} /> Sửa
+      </button>
+    ) : undefined,
+    content: detail ? <NhanSuHoSoPanel nhanSuId={detail.id} onChanged={refetch} /> : null,
+  });
 
   return (
     <div>
@@ -278,8 +370,8 @@ export function NhanSuPage() {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <div className="card overflow-x-auto lg:col-span-2">
+          <div>
+            <div className="card overflow-x-auto">
               <table className="w-full min-w-[640px]">
                 <thead>
                   <tr>
@@ -298,7 +390,7 @@ export function NhanSuPage() {
                     return (
                       <tr
                         key={ns.id}
-                        onClick={() => setDetail(ns)}
+                        onClick={() => setDetailId(ns.id)}
                         className={cn(
                           'tr-hover cursor-pointer',
                           active && 'bg-primary-subtle/50 dark:bg-primary-900/20',
@@ -349,107 +441,10 @@ export function NhanSuPage() {
                 </tbody>
               </table>
             </div>
-
-            <div className="lg:col-span-1">
-              <NhanSuHoSoPanel nhanSuId={detail?.id ?? ''} onChanged={refetch} />
-            </div>
           </div>
         </>
       )}
 
-      {/* Modal Thêm/Sửa */}
-      <Modal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        title={editingItem ? 'Chỉnh sửa nhân sự' : 'Thêm nhân sự mới'}
-      >
-        <form onSubmit={handleSave} className="space-y-4">
-          {formError && (
-            <div className="rounded-lg bg-danger-subtle p-3 text-xs text-danger">{formError}</div>
-          )}
-
-          <Field label="Họ và tên" required>
-            <input
-              type="text"
-              required
-              value={form.hoTen}
-              onChange={(e) => setForm({ ...form, hoTen: e.target.value })}
-              className={inputCls}
-            />
-          </Field>
-
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Học vị">
-              <select
-                value={form.hocVi}
-                onChange={(e) => setForm({ ...form, hocVi: e.target.value })}
-                className={inputCls}
-              >
-                <option value="">-- Chọn --</option>
-                {HOC_VI_OPTIONS.map((hv) => (
-                  <option key={hv} value={hv}>
-                    {hv}
-                  </option>
-                ))}
-              </select>
-            </Field>
-
-            <Field label="Chức danh">
-              <input
-                type="text"
-                value={form.chucDanh}
-                onChange={(e) => setForm({ ...form, chucDanh: e.target.value })}
-                className={inputCls}
-              />
-            </Field>
-          </div>
-
-          <Field label="Đơn vị công tác">
-            <select
-              value={form.donViId}
-              onChange={(e) => setForm({ ...form, donViId: e.target.value })}
-              className={inputCls}
-            >
-              <option value="">-- Chọn đơn vị --</option>
-              {donViList.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.ten}
-                </option>
-              ))}
-            </select>
-          </Field>
-
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Email">
-              <input
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                className={inputCls}
-              />
-            </Field>
-
-            <Field label="Số điện thoại">
-              <input
-                type="text"
-                value={form.soDienThoai}
-                onChange={(e) => setForm({ ...form, soDienThoai: e.target.value })}
-                className={inputCls}
-              />
-            </Field>
-          </div>
-
-          <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={() => setModalOpen(false)} className="btn-ghost">
-              Hủy
-            </button>
-            <button type="submit" disabled={saving} className="btn-primary">
-              {saving && <LoaderCircle size={15} className="animate-spin" />}
-              {editingItem ? 'Cập nhật' : 'Thêm mới'}
-            </button>
-          </div>
-        </form>
-      </Modal>
     </div>
   );
 }
