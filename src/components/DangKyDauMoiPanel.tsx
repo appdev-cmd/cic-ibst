@@ -61,7 +61,6 @@ export function DangKyDauMoiPanel({
           onDone={refetch}
         />
       ),
-      defaultWidth: 800,
       storageKey: 'panel-tao-dang-ky-dau-moi',
     });
   };
@@ -73,7 +72,6 @@ export function DangKyDauMoiPanel({
       subtitle: `Đăng ký đầu mối (QC 2815 Đ.5.1c) · ${NHAN_TRANG_THAI_DANG_KY[item.trangThai]}`,
       icon: <FileText size={16} />,
       content: <DangKyDauMoiChiTietPanel item={item} onRefetch={refetch} />,
-      defaultWidth: 800,
       storageKey: 'panel-dang-ky-dau-moi',
     });
   };

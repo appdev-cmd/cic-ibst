@@ -224,7 +224,6 @@ export function KhachHangPage() {
           onCancel={() => closePanel('khach-hang-create')}
         />
       ),
-      defaultWidth: 500,
       storageKey: 'panel-khach-hang-form',
     });
   };
@@ -246,7 +245,6 @@ export function KhachHangPage() {
           onCancel={() => closePanel(panelId)}
         />
       ),
-      defaultWidth: 500,
       storageKey: 'panel-khach-hang-form',
     });
   };
@@ -269,7 +267,6 @@ export function KhachHangPage() {
       subtitle: LOAI_KHACH_HANG_OPTIONS.find((o) => o.value === item.loai)?.label,
       icon: <Building2 size={16} />,
       content: <KhachHangChiTietPanel khachHang={item} />,
-      defaultWidth: 480,
       storageKey: 'panel-khach-hang',
     });
   };

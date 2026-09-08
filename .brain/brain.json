@@ -1,0 +1,59 @@
+{
+  "meta": {
+    "schema_version": "1.1.0",
+    "awf_version": "3.3.0",
+    "project_name": "cic-ibst"
+  },
+  "project": {
+    "name": "IBST ERP - Hệ thống Quản trị Tổng thể Viện Khoa học Công nghệ Xây dựng",
+    "type": "enterprise_management_system",
+    "organization": "Viện Khoa học Công nghệ Xây dựng - Bộ Xây dựng (IBST)",
+    "status": "in_development"
+  },
+  "tech_stack": {
+    "frontend": {
+      "framework": "React 19",
+      "bundler": "Vite",
+      "styling": "Tailwind CSS",
+      "icons": "Lucide React",
+      "components": "Tailwind + Custom Design System"
+    },
+    "backend": {
+      "platform": "Supabase PostgreSQL",
+      "auth": "Supabase Auth",
+      "realtime": "Postgres Changes"
+    }
+  },
+  "theme_system": {
+    "themes": ["nature", "light", "dark"],
+    "primary_colors": ["teal", "red", "blue", "emerald", "amber", "rose", "violet", "cyan", "indigo"],
+    "dark_mode_tokens": {
+      "--bg-app": "#0f1117",
+      "--bg-surface": "#1f2332",
+      "--bg-subtle": "#1a1e2e",
+      "--bg-muted": "#252a3b",
+      "--border-default": "#38425d",
+      "--border-subtle": "#2a3246",
+      "--shadow-card": "0 1px 3px 0 rgb(0 0 0 / 0.45), 0 0 0 1px rgb(255 255 255 / 0.08)"
+    }
+  },
+  "knowledge_items": {
+    "dark_mode_rules": [
+      "Mọi ô ngày trên lịch (Month, Week), bảng dữ liệu (Table), card, popover PHẢI có viền phân định rõ ràng trên nền dark #1f2332. Viền chuẩn tối thiểu là #38425d hoặc class dark:border-slate-700/80.",
+      "Tuyệt đối KHÔNG dùng viền tối tiệp màu nền như #222533 (lỗi từng làm tàng hình viền ngày ở lịch cơ quan).",
+      "Phân biệt ngày ngoài tháng bằng dark:bg-slate-900/50 và text-ink-muted/50 để ngày trong tháng nổi bật rành mạch.",
+      "Mọi hover phải có dark:hover: tương ứng (ví dụ: dark:hover:bg-slate-800/40), không dùng hover nền sáng trong dark mode.",
+      "SlidePanel bám sát mép phải phải có border-l border-border dark:border-slate-700/80."
+    ],
+    "patterns": [
+      "Tất cả view chi tiết và form tạo/sửa dùng useSlidePanelChiTiet / useSlidePanelForm từ hooks/useSlidePanelCrud.ts.",
+      "Toàn bộ format ngày tháng dùng formatLocalDate(d: Date) thay vì toISOString() để tránh lỗi timezone UTC+7.",
+      "Phòng họp cơ quan chuẩn hóa đúng 3 phòng: Phòng họp số 1, Phòng họp số 2, Hội trường lớn."
+    ],
+    "gotchas": [
+      "toISOString().slice(0, 10) bị lệch ngày ở múi giờ GMT+7 khi chạy từ 00:00 đến 06:59 sáng.",
+      "THEME_TOKENS.dark['--border-default'] trước đây là #222533, chênh có 1% so với #1f2332 làm mất toàn bộ viền.",
+      "SlidePanelStack container ngoài cùng có pointer-events-none, tay kéo resize bắt buộc phải có pointer-events-auto."
+    ]
+  }
+}

@@ -14,6 +14,8 @@ import {
   LoaderCircle,
   GitBranch,
   List,
+  Crown,
+  Award,
 } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { KpiCard } from '../components/KpiCard';
@@ -50,6 +52,7 @@ const EMPTY_FORM: DonViInput = {
   dienThoai: '',
   email: '',
   phuTrachId: '',
+  truongDonViId: '',
 };
 
 export function DonViPage({ hideHeader = false }: { hideHeader?: boolean } = {}) {
@@ -70,6 +73,35 @@ export function DonViPage({ hideHeader = false }: { hideHeader?: boolean } = {})
     () => nhanSuList.filter((ns) => selected && ns.donViId === selected.id),
     [nhanSuList, selected],
   );
+
+  // Phân nhóm nhân sự đơn vị: Ban Lãnh đạo vs Cán bộ nghiên cứu/kỹ sư
+  const lanhDaoDonVi = useMemo(
+    () =>
+      nhanSuCuaDonVi.filter((ns) =>
+        /trưởng phòng|phó phòng|giám đốc|phó giám đốc|viện trưởng|phó viện trưởng/i.test(
+          ns.chucDanh || '',
+        ),
+      ),
+    [nhanSuCuaDonVi],
+  );
+
+  const canBoDonVi = useMemo(
+    () =>
+      nhanSuCuaDonVi.filter(
+        (ns) =>
+          !/trưởng phòng|phó phòng|giám đốc|phó giám đốc|viện trưởng|phó viện trưởng/i.test(
+            ns.chucDanh || '',
+          ),
+      ),
+    [nhanSuCuaDonVi],
+  );
+
+  // Danh sách ứng viên cho chức danh Trưởng đơn vị trong modal
+  const candidatesForTruongDonVi = useMemo(() => {
+    if (!editing) return nhanSuList;
+    const inUnit = nhanSuList.filter((ns) => ns.donViId === editing.id);
+    return inUnit.length > 0 ? inUnit : nhanSuList;
+  }, [editing, nhanSuList]);
 
   // Lãnh đạo Viện (Viện trưởng + Phó Viện trưởng) để chọn người phụ trách khối
   const lanhDaoList = useMemo(
@@ -101,6 +133,7 @@ export function DonViPage({ hideHeader = false }: { hideHeader?: boolean } = {})
       dienThoai: dv.dienThoai ?? '',
       email: dv.email ?? '',
       phuTrachId: dv.phuTrachId ?? '',
+      truongDonViId: dv.truongDonViId ?? '',
     });
     setActionError(null);
     setModalOpen(true);
@@ -255,139 +288,215 @@ export function DonViPage({ hideHeader = false }: { hideHeader?: boolean } = {})
       </div>
 
       {/* Chi tiết đơn vị */}
-      <div>
+      <div id="don-vi-detail-section" className="scroll-mt-4">
         {selected ? (
           <div className="card p-5">
-              <div className="mb-4 flex flex-wrap items-start justify-between gap-3 border-b border-border-subtle pb-4">
-                <div>
-                  <div className="mb-1.5 flex flex-wrap items-center gap-2">
-                    <span
-                      className={cn(
-                        'rounded-full px-2 py-0.5 text-2xs font-black uppercase tracking-wider',
-                        LOAI_BADGE[selected.loai],
-                      )}
-                    >
-                      {LOAI_DON_VI.find((l) => l.ma === selected.loai)?.ten}
-                    </span>
-                    {selected.tenVietTat && (
-                      <span className="rounded bg-subtle px-1.5 py-0.5 font-mono text-2xs font-semibold text-ink-secondary">
-                        {selected.tenVietTat}
-                      </span>
+            <div className="mb-4 flex flex-wrap items-start justify-between gap-3 border-b border-border-subtle pb-4">
+              <div className="space-y-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span
+                    className={cn(
+                      'rounded-full px-2.5 py-0.5 text-2xs font-black uppercase tracking-wider',
+                      LOAI_BADGE[selected.loai],
                     )}
-                    {selected.maDinhDanh && (
-                      <span className="font-mono text-2xs text-ink-muted">{selected.maDinhDanh}</span>
-                    )}
-                  </div>
-                  <h2 className="text-lg font-bold text-ink">{selected.ten}</h2>
-                  {selected.truongDonVi && (
-                    <p className="mt-1 text-xs text-ink-muted">
-                      Phụ trách: <span className="font-semibold text-ink-secondary">{selected.truongDonVi}</span>
-                    </p>
-                  )}
-                </div>
-                <div className="flex gap-1.5">
-                  <button
-                    onClick={() => openEdit(selected)}
-                    className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-bold text-ink-secondary transition-colors hover:bg-muted"
                   >
-                    <Pencil size={13} /> Sửa
-                  </button>
-                  <button
-                    onClick={() => handleDelete(selected)}
-                    className="flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-bold text-danger transition-colors hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-900/20"
-                  >
-                    <Trash2 size={13} /> Xóa
-                  </button>
-                </div>
-              </div>
-
-              {/* Chỉ số */}
-              <div className="mb-4 grid grid-cols-3 gap-3">
-                {[
-                  { icon: Users, label: 'Nhân sự', value: selected.soNhanSu },
-                  { icon: FlaskConical, label: 'Đề tài', value: selected.soDeTai },
-                  { icon: Handshake, label: 'Hợp đồng', value: selected.soHopDong },
-                ].map(({ icon: Icon, label, value }) => (
-                  <div key={label} className="rounded-lg border border-border bg-subtle px-3 py-2.5">
-                    <p className="flex items-center gap-1.5 text-2xs font-black uppercase tracking-wider text-ink-muted">
-                      <Icon size={12} /> {label}
-                    </p>
-                    <p className="mt-1 font-mono text-xl font-semibold">{value}</p>
-                  </div>
-                ))}
-              </div>
-
-              {/* Chức năng nhiệm vụ */}
-              <div className="mb-4">
-                <h3 className="mb-1.5 text-2xs font-black uppercase tracking-wider text-ink-muted">
-                  Chức năng nhiệm vụ
-                </h3>
-                <p className="whitespace-pre-line text-[13px] leading-relaxed text-ink-secondary">
-                  {selected.chucNangNhiemVu ?? 'Chưa cập nhật.'}
-                </p>
-              </div>
-
-              {/* Liên hệ */}
-              {(selected.dienThoai || selected.email) && (
-                <div className="mb-4 flex flex-wrap gap-4 text-xs text-ink-secondary">
-                  {selected.dienThoai && (
-                    <span className="flex items-center gap-1.5">
-                      <Phone size={13} className="text-primary-500" />
-                      <span className="font-mono">{selected.dienThoai}</span>
+                    {LOAI_DON_VI.find((l) => l.ma === selected.loai)?.ten}
+                  </span>
+                  {selected.tenVietTat && (
+                    <span className="rounded bg-subtle px-1.5 py-0.5 font-mono text-2xs font-bold text-ink">
+                      {selected.tenVietTat}
                     </span>
                   )}
-                  {selected.email && (
-                    <span className="flex items-center gap-1.5">
-                      <Mail size={13} className="text-primary-500" />
-                      {selected.email}
-                    </span>
+                  {selected.maDinhDanh && (
+                    <span className="font-mono text-2xs text-ink-muted">{selected.maDinhDanh}</span>
                   )}
                 </div>
-              )}
+                <h2 className="text-xl font-black tracking-tight text-ink">{selected.ten}</h2>
 
-              {/* Nhân sự của đơn vị */}
-              <div>
-                <h3 className="mb-2 text-2xs font-black uppercase tracking-wider text-ink-muted">
-                  Nhân sự thuộc đơn vị ({nhanSuCuaDonVi.length})
-                </h3>
-                {nhanSuCuaDonVi.length === 0 ? (
-                  <p className="text-xs text-ink-muted">
-                    Chưa có nhân sự trên hệ thống (dữ liệu cá nhân — cần đăng nhập để xem).
-                  </p>
-                ) : (
-                  <div className="overflow-hidden rounded-lg border border-border">
-                    <table className="w-full">
-                      <thead>
-                        <tr>
-                          <th className="th-cell">Họ tên</th>
-                          <th className="th-cell">Chức danh</th>
-                          <th className="th-cell">Học vị</th>
-                          <th className="th-cell">Chứng chỉ hành nghề</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {nhanSuCuaDonVi.map((ns) => (
-                          <tr key={ns.id} className="tr-hover">
-                            <td className="td-cell font-semibold">{ns.hoTen}</td>
-                            <td className="td-cell text-ink-secondary">{ns.chucDanh}</td>
-                            <td className="td-cell text-ink-secondary">{ns.hocVi || '—'}</td>
-                            <td className="td-cell text-ink-secondary">{ns.chungChi}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-1.5 pt-1 text-xs text-ink-muted">
+                  <div className="flex items-center gap-1.5">
+                    <Crown size={14} className="text-amber-500" />
+                    <span>Trưởng đơn vị:</span>
+                    <span className="font-bold text-ink">
+                      {selected.truongDonVi
+                        ? `${selected.truongDonViHocVi ? `${selected.truongDonViHocVi}. ` : ''}${selected.truongDonVi}`
+                        : 'Chờ kiện toàn'}
+                    </span>
                   </div>
-                )}
+
+                  {selected.phuTrach && (
+                    <div className="flex items-center gap-1.5">
+                      <Award size={14} className="text-primary-500" />
+                      <span>Lãnh đạo Viện phụ trách:</span>
+                      <span className="font-bold text-ink">{selected.phuTrach}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex gap-1.5">
+                <button
+                  onClick={() => openEdit(selected)}
+                  className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-bold text-ink-secondary transition-colors hover:bg-muted"
+                >
+                  <Pencil size={13} /> Sửa
+                </button>
+                <button
+                  onClick={() => handleDelete(selected)}
+                  className="flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-bold text-danger transition-colors hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-900/20"
+                >
+                  <Trash2 size={13} /> Xóa
+                </button>
               </div>
             </div>
-          ) : (
-            !loading && (
-              <div className="card flex h-64 items-center justify-center text-sm text-ink-muted">
-                Chọn một đơn vị để xem chi tiết
+
+            {/* Chỉ số */}
+            <div className="mb-5 grid grid-cols-3 gap-3">
+              {[
+                { icon: Users, label: 'Nhân sự', value: selected.soNhanSu },
+                { icon: FlaskConical, label: 'Đề tài', value: selected.soDeTai },
+                { icon: Handshake, label: 'Hợp đồng', value: selected.soHopDong },
+              ].map(({ icon: Icon, label, value }) => (
+                <div key={label} className="rounded-xl border border-border bg-subtle px-3.5 py-2.5">
+                  <p className="flex items-center gap-1.5 text-2xs font-black uppercase tracking-wider text-ink-muted">
+                    <Icon size={12} /> {label}
+                  </p>
+                  <p className="mt-1 font-mono text-xl font-bold text-ink">{value}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Chức năng nhiệm vụ */}
+            <div className="mb-5">
+              <h3 className="mb-1.5 text-2xs font-black uppercase tracking-wider text-ink-muted">
+                Chức năng nhiệm vụ
+              </h3>
+              <p className="whitespace-pre-line text-[13px] leading-relaxed text-ink-secondary">
+                {selected.chucNangNhiemVu ?? 'Chưa cập nhật.'}
+              </p>
+            </div>
+
+            {/* Liên hệ */}
+            {(selected.dienThoai || selected.email) && (
+              <div className="mb-5 flex flex-wrap gap-4 text-xs text-ink-secondary">
+                {selected.dienThoai && (
+                  <span className="flex items-center gap-1.5 rounded-lg bg-subtle px-2.5 py-1">
+                    <Phone size={13} className="text-primary-500" />
+                    <span className="font-mono font-medium">{selected.dienThoai}</span>
+                  </span>
+                )}
+                {selected.email && (
+                  <span className="flex items-center gap-1.5 rounded-lg bg-subtle px-2.5 py-1">
+                    <Mail size={13} className="text-primary-500" />
+                    <span>{selected.email}</span>
+                  </span>
+                )}
               </div>
-            )
-          )}
-        </div>
+            )}
+
+            {/* Ban Lãnh đạo Đơn vị (nếu có) */}
+            {lanhDaoDonVi.length > 0 && (
+              <div className="mb-6">
+                <h3 className="mb-3 text-2xs font-black uppercase tracking-wider text-ink-muted flex items-center gap-1.5">
+                  <Crown size={13} className="text-amber-500" />
+                  Ban Lãnh đạo Đơn vị ({lanhDaoDonVi.length})
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {lanhDaoDonVi.map((ns) => {
+                    const isHead = ns.hoTen === selected.truongDonVi;
+                    const initial = ns.hoTen.split(' ').pop()?.[0] || 'L';
+                    return (
+                      <div
+                        key={ns.id}
+                        className={cn(
+                          'rounded-xl border p-3 bg-surface flex items-start gap-3 transition-all',
+                          isHead
+                            ? 'border-amber-300 dark:border-amber-700/60 shadow-xs ring-1 ring-amber-400/30'
+                            : 'border-border'
+                        )}
+                      >
+                        <div className="w-9 h-9 rounded-full bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 font-bold flex items-center justify-center text-sm shrink-0">
+                          {initial}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-xs text-ink truncate">{ns.hoTen}</span>
+                            {isHead && (
+                              <span className="text-[9px] font-black uppercase px-1.5 py-0.2 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 shrink-0">
+                                Cấp trưởng
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] font-medium text-ink-secondary mt-0.5 truncate">
+                            {ns.chucDanh} {ns.hocVi ? `• ${ns.hocVi}` : ''}
+                          </p>
+                          {ns.soDienThoai && (
+                            <p className="text-[10px] text-ink-muted mt-1 flex items-center gap-1 font-mono">
+                              <Phone size={10} /> {ns.soDienThoai}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Cán bộ nghiên cứu, Kỹ sư & Chuyên viên */}
+            <div>
+              <h3 className="mb-2 text-2xs font-black uppercase tracking-wider text-ink-muted flex items-center justify-between">
+                <span>
+                  {lanhDaoDonVi.length > 0 ? 'Cán bộ nghiên cứu & Kỹ sư chuyên môn' : 'Nhân sự thuộc đơn vị'} (
+                  {canBoDonVi.length > 0 ? canBoDonVi.length : nhanSuCuaDonVi.length})
+                </span>
+                <span className="font-normal normal-case text-ink-muted">
+                  Tổng số: {nhanSuCuaDonVi.length} người
+                </span>
+              </h3>
+
+              {nhanSuCuaDonVi.length === 0 ? (
+                <p className="text-xs text-ink-muted py-4 text-center">
+                  Chưa có nhân sự trên hệ thống (dữ liệu cá nhân — cần đăng nhập để xem).
+                </p>
+              ) : (
+                <div className="overflow-hidden rounded-xl border border-border">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr>
+                        <th className="th-cell w-12 text-center">STT</th>
+                        <th className="th-cell">Họ và tên</th>
+                        <th className="th-cell">Chức danh / Vị trí</th>
+                        <th className="th-cell">Học vị</th>
+                        <th className="th-cell">Chứng chỉ hành nghề</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(canBoDonVi.length > 0 ? canBoDonVi : nhanSuCuaDonVi).map((ns, idx) => (
+                        <tr key={ns.id} className="tr-hover">
+                          <td className="td-cell text-center font-mono text-2xs text-ink-muted">
+                            {idx + 1}
+                          </td>
+                          <td className="td-cell font-semibold text-ink">{ns.hoTen}</td>
+                          <td className="td-cell text-ink-secondary">{ns.chucDanh}</td>
+                          <td className="td-cell text-ink-secondary">{ns.hocVi || '—'}</td>
+                          <td className="td-cell text-ink-secondary">{ns.chungChi || '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          !loading && (
+            <div className="card flex h-64 items-center justify-center text-sm text-ink-muted">
+              Chọn một đơn vị để xem chi tiết
+            </div>
+          )
+        )}
+      </div>
 
       {/* Modal thêm/sửa */}
       <Modal
@@ -430,20 +539,39 @@ export function DonViPage({ hideHeader = false }: { hideHeader?: boolean } = {})
               </select>
             </Field>
           </div>
-          <Field label="Lãnh đạo Viện phụ trách">
-            <select
-              className={inputCls}
-              value={form.phuTrachId}
-              onChange={(e) => setForm({ ...form, phuTrachId: e.target.value })}
-            >
-              <option value="">— Chưa phân công —</option>
-              {lanhDaoList.map((ns) => (
-                <option key={ns.id} value={ns.id}>
-                  {ns.chucDanh} — {ns.hoTen}
-                </option>
-              ))}
-            </select>
-          </Field>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Lãnh đạo Viện phụ trách">
+              <select
+                className={inputCls}
+                value={form.phuTrachId}
+                onChange={(e) => setForm({ ...form, phuTrachId: e.target.value })}
+              >
+                <option value="">— Chưa phân công —</option>
+                {lanhDaoList.map((ns) => (
+                  <option key={ns.id} value={ns.id}>
+                    {ns.chucDanh} — {ns.hoTen}
+                  </option>
+                ))}
+              </select>
+            </Field>
+
+            <Field label="Trưởng đơn vị (Giám đốc / Trưởng phòng)">
+              <select
+                className={inputCls}
+                value={form.truongDonViId ?? ''}
+                onChange={(e) => setForm({ ...form, truongDonViId: e.target.value })}
+              >
+                <option value="">— Chưa chỉ định / Chờ kiện toàn —</option>
+                {candidatesForTruongDonVi.map((ns) => (
+                  <option key={ns.id} value={ns.id}>
+                    {ns.hocVi ? `${ns.hocVi}. ` : ''}{ns.hoTen} ({ns.chucDanh || 'Cán bộ'})
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </div>
+
           <Field label="Chức năng nhiệm vụ">
             <textarea
               className={cn(inputCls, 'min-h-24 resize-y')}

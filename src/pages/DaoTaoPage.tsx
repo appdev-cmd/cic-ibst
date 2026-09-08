@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Plus, GraduationCap, Users2, CalendarDays, LoaderCircle, Search, Pencil, Trash2 } from 'lucide-react';
+import { Plus, GraduationCap, Users2, CalendarDays, LoaderCircle, Search, Pencil, Trash2, ExternalLink, Users } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { StatusBadge, TRANG_THAI_OPTIONS } from '../components/StatusBadge';
 import { KpiCard } from '../components/KpiCard';
@@ -316,7 +316,7 @@ export function DaoTaoPage() {
               </thead>
               <tbody>
                 {tableLop.pageRows.map((ld) => (
-                  <tr key={ld.id} className="tr-hover">
+                  <tr key={ld.id} className="tr-stripe">
                     <td className="td-cell font-medium">{ld.ten}</td>
                     <td className="td-cell">
                       <span className={cn('rounded-full px-2 py-0.5 text-2xs font-black uppercase', LOAI_CLS[ld.loai])}>
@@ -388,8 +388,21 @@ export function DaoTaoPage() {
               </thead>
               <tbody>
                 {filteredNcs.map((item) => (
-                  <tr key={item.id} className="tr-hover">
-                    <td className="td-cell font-semibold">{item.hoTen}</td>
+                  <tr key={item.id} className="tr-stripe">
+                    <td className="td-cell">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-ink">{item.hoTen}</span>
+                        {item.nhanSuId && (
+                          <a
+                            href={`/nhan-su?tab=nhan-su&detailId=${item.nhanSuId}`}
+                            className="inline-flex items-center gap-1 rounded-md bg-primary-subtle px-1.5 py-0.5 text-[10px] font-bold text-primary hover:underline"
+                            title="Xem hồ sơ CBVC Viện"
+                          >
+                            <Users size={11} /> CBVC Viện
+                          </a>
+                        )}
+                      </div>
+                    </td>
                     <td className="td-cell font-mono text-xs">{item.ngayNhapHoc}</td>
                     <td className="td-cell text-ink-secondary">{item.gvHuongDan}</td>
                     <td className="td-cell text-ink-secondary max-w-sm truncate" title={item.tenDeTai}>{item.tenDeTai}</td>
@@ -402,16 +415,27 @@ export function DaoTaoPage() {
                       </span>
                     </td>
                     <td className="td-cell">
-                      <div className="flex justify-end gap-1">
+                      <div className="flex justify-end items-center gap-1">
+                        {item.nhanSuId && (
+                          <a
+                            href={`/nhan-su?tab=nhan-su&detailId=${item.nhanSuId}`}
+                            className="rounded-md p-1.5 text-ink-muted transition-colors hover:bg-muted hover:text-primary-600"
+                            title="Mở chi tiết hồ sơ CBVC"
+                          >
+                            <ExternalLink size={14} />
+                          </a>
+                        )}
                         <button
                           onClick={() => ncsCrud.openEdit(item)}
                           className="rounded-md p-1.5 text-ink-muted transition-colors hover:bg-muted hover:text-primary-600"
+                          title="Sửa"
                         >
                           <Pencil size={14} />
                         </button>
                         <button
                           onClick={() => ncsCrud.removeRow(item)}
                           className="rounded-md p-1.5 text-ink-muted transition-colors hover:bg-red-50 hover:text-danger"
+                          title="Xóa"
                         >
                           <Trash2 size={14} />
                         </button>

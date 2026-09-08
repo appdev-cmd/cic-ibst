@@ -109,14 +109,20 @@ export interface MauThiNghiem {
 
 export interface NhanSu {
   id: string;
+  maDinhDanh?: string;
   hoTen: string;
   chucDanh: string;
+  chucVu?: string;
   hocVi: string;
   donVi: string;
   donViId: string | null;
+  donViThuTu?: number;
+  donViLoai?: LoaiDonVi | string;
+  phuCapChucVu?: number | null;
   email: string;
   soDienThoai: string;
   trangThaiLamViec: string;
+  heSoLuong?: number | null;
   chungChi: string;
   hanChungChi: string;
 }
@@ -138,7 +144,10 @@ export interface DonVi {
   chucNangNhiemVu: string | null;
   dienThoai: string | null;
   email: string | null;
+  truongDonViId: string | null;
   truongDonVi: string | null;
+  truongDonViHocVi: string | null;
+  truongDonViChucDanh: string | null;
   phuTrachId: string | null;
   phuTrach: string | null;
   soNhanSu: number;
@@ -348,6 +357,9 @@ export interface BangCap {
 }
 
 export const LOAI_BANG_CAP: { ma: string; ten: string }[] = [
+  { ma: 'dai-hoc', ten: 'Đại học' },
+  { ma: 'thac-si', ten: 'Thạc sĩ' },
+  { ma: 'tien-si', ten: 'Tiến sĩ' },
   { ma: 'bang-cap', ten: 'Bằng cấp chuyên môn' },
   { ma: 'ly-luan-chinh-tri', ten: 'Lý luận chính trị' },
   { ma: 'quan-ly-nha-nuoc', ten: 'Quản lý nhà nước' },
@@ -495,6 +507,8 @@ export interface DangVien {
 
 export const TRANG_THAI_DANG_VIEN: { ma: string; ten: string }[] = [
   { ma: 'dang-sinh-hoat', ten: 'Đang sinh hoạt' },
+  { ma: 'chinh-thuc', ten: 'Đảng viên chính thức' },
+  { ma: 'du-bi', ten: 'Đảng viên dự bị' },
   { ma: 'mien-sinh-hoat', ten: 'Miễn sinh hoạt' },
   { ma: 'chuyen-di', ten: 'Chuyển sinh hoạt đi' },
   { ma: 'khai-tru', ten: 'Khai trừ' },

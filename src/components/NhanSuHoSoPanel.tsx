@@ -1,9 +1,11 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
-import { Plus, Pencil, Trash2, LoaderCircle, Award, Briefcase, GraduationCap, Wallet, ClipboardCheck } from 'lucide-react';
+import { Plus, Pencil, Trash2, LoaderCircle, Award, Briefcase, GraduationCap, Wallet, ClipboardCheck, User, CreditCard } from 'lucide-react';
 import { useAsyncData } from '../hooks/useAsyncData';
 import { ChungChiPanel } from './DetailPanels';
 import { SlideOverTabs, type SlideOverTabDef } from './SlideOver';
 import {
+  fetchNhanSuHoSoMoRong,
+  type NhanSuHoSoMoRong,
   fetchQuaTrinhCongTac,
   createQuaTrinhCongTac,
   updateQuaTrinhCongTac,
@@ -81,6 +83,108 @@ function Section({ title, onAdd, addLabel, children }: { title: string; onAdd?: 
         )}
       </div>
       <div className="overflow-x-auto">{children}</div>
+    </div>
+  );
+}
+
+function InfoItem({ label, value, mono }: { label: string; value?: string | number | null; mono?: boolean }) {
+  return (
+    <div className="space-y-0.5">
+      <dt className="text-[10px] font-bold uppercase tracking-wider text-ink-muted">{label}</dt>
+      <dd className={cn('text-xs font-medium text-ink leading-snug break-words', mono && 'font-mono')}>
+        {value || '—'}
+      </dd>
+    </div>
+  );
+}
+
+function ThongTinChungTab({ nhanSuId }: { nhanSuId: string }) {
+  const { data: hs, loading, error } = useAsyncData(() => fetchNhanSuHoSoMoRong(nhanSuId), null);
+
+  if (loading) {
+    return (
+      <div className="flex h-48 items-center justify-center">
+        <LoaderCircle size={22} className="animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error || !hs) {
+    return (
+      <div className="p-6 text-center text-xs text-danger">
+        {error || 'Không thể tải thông tin hồ sơ'}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3.5">
+      {/* Khối 1: Thông tin nhân thân & Pháp lý */}
+      <div className="rounded-lg border border-border bg-surface p-3.5 shadow-xs">
+        <div className="mb-3 flex items-center gap-2 border-b border-border/60 pb-2">
+          <User size={15} className="text-primary" />
+          <h4 className="text-xs font-bold uppercase tracking-wider text-ink">Thông tin Nhân thân & Pháp lý</h4>
+        </div>
+        <dl className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2 md:grid-cols-3">
+          <InfoItem label="Họ và tên" value={hs.hoVaTen} />
+          <InfoItem label="Mã nhân sự" value={hs.maDinhDanh} mono />
+          <InfoItem label="Ngày sinh" value={hs.ngaySinh ? formatNgay(hs.ngaySinh) : '—'} mono />
+          <InfoItem label="Giới tính" value={hs.gioiTinh} />
+          <InfoItem label="Dân tộc" value={hs.danToc} />
+          <InfoItem label="Tôn giáo" value={hs.tonGiao} />
+          <InfoItem label="Tình trạng hôn nhân" value={hs.tinhTrangHonNhan} />
+          <InfoItem label="Số CCCD / Định danh" value={hs.soDinhDanhCaNhan} mono />
+          <InfoItem label="Ngày cấp CCCD" value={hs.ngayCapCccd ? formatNgay(hs.ngayCapCccd) : '—'} mono />
+          <InfoItem label="Nơi cấp CCCD" value={hs.noiCapCccd} />
+          <InfoItem label="Quê quán" value={hs.queQuan} />
+          <div className="sm:col-span-2">
+            <InfoItem label="Địa chỉ thường trú" value={hs.diaChiThuongTru} />
+          </div>
+          <div className="sm:col-span-2">
+            <InfoItem label="Nơi ở hiện nay" value={hs.diaChiHienNay} />
+          </div>
+        </dl>
+      </div>
+
+      {/* Khối 2: Công tác, Trình độ & Tiền lương */}
+      <div className="rounded-lg border border-border bg-surface p-3.5 shadow-xs">
+        <div className="mb-3 flex items-center gap-2 border-b border-border/60 pb-2">
+          <Briefcase size={15} className="text-indigo-600" />
+          <h4 className="text-xs font-bold uppercase tracking-wider text-ink">Công tác, Trình độ & Tiền lương</h4>
+        </div>
+        <dl className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2 md:grid-cols-3">
+          <InfoItem label="Đơn vị công tác" value={hs.tenDonVi} />
+          <InfoItem label="Chức vụ / Chức danh" value={hs.chucDanh} />
+          <InfoItem label="Học vị" value={hs.hocVi} />
+          <InfoItem label="Học hàm" value={hs.hocHam} />
+          <InfoItem label="Chuyên ngành" value={hs.chuyenNganh} />
+          <InfoItem label="Ngày vào làm" value={hs.ngayVaoLam ? formatNgay(hs.ngayVaoLam) : '—'} mono />
+          <InfoItem label="Ngạch viên chức" value={hs.ngach} />
+          <InfoItem label="Hệ số lương cơ bản" value={hs.heSoLuong != null ? Number(hs.heSoLuong).toFixed(2) : '—'} mono />
+          <InfoItem label="Phụ cấp chức vụ" value={hs.phuCapChucVu != null ? Number(hs.phuCapChucVu).toFixed(2) : '—'} mono />
+          <InfoItem label="Lý luận chính trị" value={hs.lyLuanChinhTri} />
+          <InfoItem label="Quản lý nhà nước" value={hs.quanLyNhaNuoc} />
+          <InfoItem label="Trạng thái làm việc" value={hs.trangThai === 'dang-lam-viec' ? 'Đang làm việc' : hs.trangThai} />
+        </dl>
+      </div>
+
+      {/* Khối 3: Liên hệ, Tài chính & Khẩn cấp */}
+      <div className="rounded-lg border border-border bg-surface p-3.5 shadow-xs">
+        <div className="mb-3 flex items-center gap-2 border-b border-border/60 pb-2">
+          <CreditCard size={15} className="text-emerald-600" />
+          <h4 className="text-xs font-bold uppercase tracking-wider text-ink">Liên hệ, Tài chính & Khẩn cấp</h4>
+        </div>
+        <dl className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2 md:grid-cols-3">
+          <InfoItem label="Số điện thoại" value={hs.soDienThoai} mono />
+          <InfoItem label="Email công vụ" value={hs.email} />
+          <InfoItem label="Số sổ BHXH" value={hs.soBhxh} mono />
+          <InfoItem label="Mã số thuế cá nhân" value={hs.maSoThue} mono />
+          <InfoItem label="Số tài khoản ngân hàng" value={hs.soTaiKhoan} mono />
+          <InfoItem label="Ngân hàng" value={hs.nganHang} />
+          <InfoItem label="Người liên hệ khẩn cấp" value={hs.lienHeKhanCap} />
+          <InfoItem label="SĐT khẩn cấp" value={hs.sdtKhanCap} mono />
+        </dl>
+      </div>
     </div>
   );
 }
@@ -415,9 +519,10 @@ function DanhGiaTab({ nhanSuId, onChanged }: { nhanSuId: string; onChanged?: () 
 
 // ═══ Panel tổng (tabs) ═══
 
-type Tab = 'chung-chi' | 'qua-trinh' | 'bang-cap' | 'hd-luong' | 'danh-gia';
+type Tab = 'thong-tin-chung' | 'chung-chi' | 'qua-trinh' | 'bang-cap' | 'hd-luong' | 'danh-gia';
 
 const TABS: SlideOverTabDef<Tab>[] = [
+  { id: 'thong-tin-chung', label: 'Thông tin chung', icon: User },
   { id: 'chung-chi', label: 'Chứng chỉ hành nghề', icon: Award },
   { id: 'qua-trinh', label: 'Quá trình công tác', icon: Briefcase },
   { id: 'bang-cap', label: 'Bằng cấp', icon: GraduationCap },
@@ -426,7 +531,7 @@ const TABS: SlideOverTabDef<Tab>[] = [
 ];
 
 export function NhanSuHoSoPanel({ nhanSuId, onChanged }: { nhanSuId: string; onChanged?: () => void }) {
-  const [tab, setTab] = useState<Tab>('chung-chi');
+  const [tab, setTab] = useState<Tab>('thong-tin-chung');
 
   if (!nhanSuId) {
     return (
@@ -440,6 +545,7 @@ export function NhanSuHoSoPanel({ nhanSuId, onChanged }: { nhanSuId: string; onC
     <div className="card overflow-hidden">
       <SlideOverTabs tabs={TABS} active={tab} onChange={setTab} />
       <div className="p-3">
+        {tab === 'thong-tin-chung' && <ThongTinChungTab nhanSuId={nhanSuId} />}
         {tab === 'chung-chi' && <ChungChiPanel nhanSuId={nhanSuId} onChanged={onChanged} />}
         {tab === 'qua-trinh' && <QuaTrinhCongTacTab nhanSuId={nhanSuId} onChanged={onChanged} />}
         {tab === 'bang-cap' && <BangCapTab nhanSuId={nhanSuId} onChanged={onChanged} />}

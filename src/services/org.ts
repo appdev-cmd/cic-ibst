@@ -28,17 +28,17 @@ export async function fetchDonVi(): Promise<DonVi[]> {
     .from('don_vi')
     .select(
       `id, ma_dinh_danh, ten_don_vi, ten_viet_tat, loai_don_vi, chuc_nang_nhiem_vu,
-       so_dien_thoai, email, thu_tu, phu_trach_id,
-       truong:nhan_su!don_vi_truong_don_vi_id_fkey(ho_va_ten, hoc_vi),
-       phu_trach:nhan_su!don_vi_phu_trach_id_fkey(ho_va_ten),
+       so_dien_thoai, email, thu_tu, phu_trach_id, truong_don_vi_id,
+       truong:nhan_su!don_vi_truong_don_vi_id_fkey(id, ho_va_ten, hoc_vi, chuc_danh),
+       phu_trach:nhan_su!don_vi_phu_trach_id_fkey(id, ho_va_ten),
        nhan_su!nhan_su_don_vi_id_fkey(count),
        de_tai(count), hop_dong(count)`,
     )
     .order('thu_tu');
   throwIf(error);
   return (data ?? []).map((r) => {
-    const truong = r.truong as unknown as { ho_va_ten: string; hoc_vi: string | null } | null;
-    const phuTrach = r.phu_trach as unknown as { ho_va_ten: string } | null;
+    const truong = r.truong as unknown as { id: number; ho_va_ten: string; hoc_vi: string | null; chuc_danh: string | null } | null;
+    const phuTrach = r.phu_trach as unknown as { id: number; ho_va_ten: string } | null;
     const cnt = (x: unknown) => (x as { count: number }[] | null)?.[0]?.count ?? 0;
     return {
       id: String(r.id),
@@ -49,7 +49,10 @@ export async function fetchDonVi(): Promise<DonVi[]> {
       chucNangNhiemVu: r.chuc_nang_nhiem_vu,
       dienThoai: r.so_dien_thoai,
       email: r.email,
+      truongDonViId: r.truong_don_vi_id != null ? String(r.truong_don_vi_id) : null,
       truongDonVi: truong ? truong.ho_va_ten : null,
+      truongDonViHocVi: truong?.hoc_vi ?? null,
+      truongDonViChucDanh: truong?.chuc_danh ?? null,
       phuTrachId: r.phu_trach_id != null ? String(r.phu_trach_id) : null,
       phuTrach: phuTrach ? phuTrach.ho_va_ten : null,
       soNhanSu: cnt(r.nhan_su),
@@ -68,6 +71,7 @@ export interface DonViInput {
   dienThoai: string;
   email: string;
   phuTrachId: string;
+  truongDonViId?: string;
 }
 
 function donViRow(input: DonViInput) {
@@ -79,6 +83,7 @@ function donViRow(input: DonViInput) {
     so_dien_thoai: input.dienThoai || null,
     email: input.email || null,
     phu_trach_id: input.phuTrachId ? Number(input.phuTrachId) : null,
+    truong_don_vi_id: input.truongDonViId ? Number(input.truongDonViId) : null,
   };
 }
 
@@ -103,8 +108,8 @@ export async function fetchNhanSuFull(): Promise<NhanSu[]> {
   const { data, error } = await supabase
     .from('nhan_su')
     .select(
-      `id, ho_va_ten, hoc_vi, chuc_danh, don_vi_id, email, so_dien_thoai, trang_thai,
-       don_vi!nhan_su_don_vi_id_fkey(ten_don_vi),
+      `id, ma_dinh_danh, ho_va_ten, hoc_vi, chuc_danh, don_vi_id, email, so_dien_thoai, trang_thai, he_so_luong, phu_cap_chuc_vu,
+       don_vi!nhan_su_don_vi_id_fkey(ten_don_vi, loai_don_vi, thu_tu),
        chung_chi_hanh_nghe(ten_linh_vuc_hanh_nghe, hang_chung_chi, ngay_het_han)`,
     )
     .order('id');
@@ -116,16 +121,22 @@ export async function fetchNhanSuFull(): Promise<NhanSu[]> {
       ngay_het_han: string | null;
     }[];
     const cc = ccList[0];
+    const dv = r.don_vi as unknown as { ten_don_vi: string; loai_don_vi?: string; thu_tu?: number } | null;
     return {
       id: String(r.id),
+      maDinhDanh: r.ma_dinh_danh ?? undefined,
       hoTen: r.ho_va_ten,
       chucDanh: r.chuc_danh ?? '',
       hocVi: r.hoc_vi ?? '',
-      donVi: (r.don_vi as unknown as { ten_don_vi: string } | null)?.ten_don_vi ?? '',
+      donVi: dv?.ten_don_vi ?? '',
       donViId: r.don_vi_id != null ? String(r.don_vi_id) : null,
+      donViThuTu: dv?.thu_tu ?? 999,
+      donViLoai: dv?.loai_don_vi ?? '',
       email: r.email ?? '',
       soDienThoai: r.so_dien_thoai ?? '',
       trangThaiLamViec: r.trang_thai ?? 'dang-lam-viec',
+      heSoLuong: r.he_so_luong != null ? Number(r.he_so_luong) : null,
+      phuCapChucVu: r.phu_cap_chuc_vu != null ? Number(r.phu_cap_chuc_vu) : null,
       chungChi: cc
         ? `${cc.ten_linh_vuc_hanh_nghe}${cc.hang_chung_chi ? ` (${HANG_CHUNG_CHI[cc.hang_chung_chi] ?? cc.hang_chung_chi})` : ''}`
         : '—',

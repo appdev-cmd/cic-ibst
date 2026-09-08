@@ -58,6 +58,52 @@ const CONFIG: Record<string, { label: string; cls: string }> = {
     label: 'Quá hạn',
     cls: 'bg-red-50 text-danger border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800',
   },
+
+  // ─── Tạp chí ───
+  'tiep-nhan': {
+    label: 'Tiếp nhận',
+    cls: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400',
+  },
+  'phan-cong-bien-tap': {
+    label: 'Phân công BTV',
+    cls: 'bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-900/20 dark:text-cyan-400',
+  },
+  'cho-phan-bien': {
+    label: 'Chờ phản biện',
+    cls: 'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400',
+  },
+  'dang-phan-bien': {
+    label: 'Đang phản biện',
+    cls: 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400',
+  },
+  'chinh-sua': {
+    label: 'Chỉnh sửa',
+    cls: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400',
+  },
+  'chap-nhan': {
+    label: 'Chấp nhận',
+    cls: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400',
+  },
+  'tu-choi': {
+    label: 'Từ chối',
+    cls: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400',
+  },
+  'da-xuat-ban': {
+    label: 'Đã xuất bản',
+    cls: 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-900/20 dark:text-teal-400',
+  },
+  'chuan-bi': {
+    label: 'Chuẩn bị',
+    cls: 'bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300',
+  },
+  'bien-tap': {
+    label: 'Biên tập',
+    cls: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400',
+  },
+  'in-an': {
+    label: 'In ấn',
+    cls: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400',
+  },
 };
 
 /** Danh sách trạng thái cho select lọc/form (thứ tự theo vòng đời). */

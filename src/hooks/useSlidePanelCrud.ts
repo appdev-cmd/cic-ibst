@@ -13,16 +13,17 @@ import { useSlidePanel } from '../context/SlidePanelContext';
  *     không biết — phải trả cờ về false, nếu không lần mở sau sẽ không có tác dụng.
  */
 
-const RONG_MAC_DINH = 2000; // cố ý lớn — computeWidths() tự kẹp về mép sidebar
-
 export interface SlidePanelFormOpts {
   id: string;
   /** Cờ trạng thái của trang: true = đang mở form. */
   open: boolean;
   title: string;
   subtitle?: string;
+  /** Icon nhỏ hiển thị trên tai thỏ — mặc định dùng icon tài liệu chung nếu bỏ trống. */
+  icon?: ReactNode;
   content: ReactNode;
   footer?: ReactNode;
+  defaultWidth?: number;
   minWidth?: number;
   storageKey?: string;
   /** Giá trị khiến nội dung panel phải dựng lại (form, saving, error...). */
@@ -41,7 +42,8 @@ export function useSlidePanelForm(opts: SlidePanelFormOpts) {
         id: opts.id,
         title: opts.title,
         subtitle: opts.subtitle,
-        defaultWidth: RONG_MAC_DINH,
+        icon: opts.icon,
+        defaultWidth: opts.defaultWidth,
         minWidth: opts.minWidth ?? 480,
         storageKey: opts.storageKey,
         content: opts.content,
@@ -65,8 +67,12 @@ export interface SlidePanelChiTietOpts {
   active: boolean;
   title: string;
   subtitle?: string;
+  /** Icon nhỏ hiển thị trên tai thỏ — mặc định dùng icon tài liệu chung nếu bỏ trống. */
+  icon?: ReactNode;
   headerExtra?: ReactNode;
   content: ReactNode;
+  footer?: ReactNode;
+  defaultWidth?: number;
   minWidth?: number;
   storageKey?: string;
   deps: unknown[];
@@ -89,8 +95,10 @@ export function useSlidePanelChiTiet(opts: SlidePanelChiTietOpts) {
     const noiDung = {
       title: opts.title,
       subtitle: opts.subtitle,
+      icon: opts.icon,
       headerExtra: opts.headerExtra,
       content: opts.content,
+      footer: opts.footer,
     };
     if (dangMo) {
       updatePanel(opts.id, noiDung);
@@ -98,7 +106,7 @@ export function useSlidePanelChiTiet(opts: SlidePanelChiTietOpts) {
       openPanel({
         id: opts.id,
         ...noiDung,
-        defaultWidth: RONG_MAC_DINH,
+        defaultWidth: opts.defaultWidth,
         minWidth: opts.minWidth ?? 520,
         storageKey: opts.storageKey,
       });

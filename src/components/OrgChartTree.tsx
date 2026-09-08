@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ReactFlow,
   Background,
@@ -7,134 +7,348 @@ import {
   BackgroundVariant,
   Handle,
   Position,
+  BaseEdge,
   type Node,
   type Edge,
   type NodeProps,
+  type EdgeProps,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { Landmark, Crown, Award, Users } from 'lucide-react';
+import {
+  Crown,
+  Award,
+  Users,
+  X,
+  Search,
+  ArrowDown,
+} from 'lucide-react';
 import { LOAI_DON_VI } from '../services/org';
 import type { DonVi, LoaiDonVi, NhanSu } from '../types';
 import { cn } from '../lib/utils';
 
-// ─── Cấu hình màu theo loại đơn vị (giữ nguyên hệ màu cũ) ───
+// ─── Cấu hình màu theo loại đơn vị (chuẩn hệ thống IBST) ───
 const GROUP_COLOR: Record<LoaiDonVi, string> = {
   'lanh-dao': '#AE1E23',
-  'phong-chuc-nang': '#64748b',
-  'vien-chuyen-nganh': '#00668c',
-  'phan-vien': '#3b82f6',
-  'trung-tam': '#10b981',
-  'cong-ty': '#f59e0b',
+  'phong-chuc-nang': '#475569',
+  'vien-chuyen-nganh': '#0284c7',
+  'phan-vien': '#2563eb',
+  'trung-tam': '#059669',
+  'cong-ty': '#d97706',
 };
 
-type NodeData = {
+const LOAI_SHORT_LABEL: Record<LoaiDonVi, string> = {
+  'lanh-dao': 'Lãnh đạo',
+  'phong-chuc-nang': 'Phòng ban',
+  'vien-chuyen-nganh': 'Viện CN',
+  'phan-vien': 'Phân viện',
+  'trung-tam': 'Trung tâm',
+  'cong-ty': 'Công ty',
+};
+
+// ─── Custom Orthogonal Tree Step Edge (Đường nối phân cấp vuông góc thẳng tắp) ───
+function TreeStepEdge({
+  id,
+  sourceX,
+  sourceY,
+  targetX,
+  targetY,
+  style,
+  data,
+}: EdgeProps) {
+  // Nếu cùng tọa độ X (cùng cột) -> đường thẳng đứng tuyệt đối
+  if (Math.abs(sourceX - targetX) < 1) {
+    const path = `M ${sourceX} ${sourceY} L ${targetX} ${targetY}`;
+    return <BaseEdge id={id} path={path} style={style} />;
+  }
+
+  // Tọa độ Y của thanh ngang (nếu truyền data.midY thì dùng cố định để tạo thanh ngang đồng mức)
+  const midY = (data as { midY?: number })?.midY ?? (sourceY + targetY) / 2;
+  const path = `M ${sourceX} ${sourceY} L ${sourceX} ${midY} L ${targetX} ${midY} L ${targetX} ${targetY}`;
+  return <BaseEdge id={id} path={path} style={style} />;
+}
+
+const edgeTypes = {
+  treeStep: TreeStepEdge,
+};
+
+// ─── Node Data Types ───
+type UnitNodeData = {
+  id: string;
   label: string;
-  subtitle?: string;
-  count?: number;
-  color?: string;
+  tenDayDu: string;
+  truongTen?: string;
+  truongHocVi?: string;
+  truongChucDanh?: string;
+  soNhanSu: number;
+  loai: LoaiDonVi;
+  color: string;
   selected?: boolean;
+  isDimmed?: boolean;
   onSelect?: () => void;
-  kind?: 'director' | 'deputy';
+  employees?: NhanSu[];
+  isPopoverOpen?: boolean;
+  onClosePopover?: () => void;
+  openUpward?: boolean;
 };
 
-// ─── Custom nodes ───
+type LeaderNodeData = {
+  id: string;
+  label: string;
+  hoTen: string;
+  hocVi?: string;
+  moTa?: string;
+  width?: number;
+};
 
+// ─── Custom Nodes ───
+
+/** Node Viện trưởng (Root Tier 1) */
 function RootNode({ data }: NodeProps) {
-  const d = data as NodeData;
+  const d = data as LeaderNodeData;
   return (
-    <div className="relative">
-      <Handle type="source" position={Position.Bottom} className="!bg-primary-400" />
-      <div className="min-w-[240px] rounded-2xl border-2 border-primary-400/30 bg-gradient-to-br from-primary-700 to-primary-900 px-8 py-3 text-center text-white shadow-xl ring-4 ring-primary-700/20">
-        <div className="flex items-center justify-center gap-2">
-          <Landmark className="h-4 w-4 opacity-80" />
-          <span className="text-xs font-black uppercase tracking-wide">{d.label}</span>
+    <div className="relative group">
+      <Handle type="source" position={Position.Bottom} className="!bg-[#AE1E23] !w-2.5 !h-2.5" />
+      <div
+        className="w-[280px] rounded-2xl py-3.5 px-5 text-center text-white shadow-xl transition-transform duration-200 group-hover:scale-[1.02]"
+        style={{
+          background: 'linear-gradient(135deg, #AE1E23 0%, #7d1216 100%)',
+          boxShadow: '0 8px 24px -4px rgba(174, 30, 35, 0.45)',
+        }}
+      >
+        <div className="flex items-center justify-center gap-1.5 mb-1">
+          <Crown size={15} className="text-amber-300" />
+          <span className="text-[11px] font-black uppercase tracking-wider text-amber-200">
+            {d.label}
+          </span>
         </div>
-        {d.subtitle && <p className="mt-0.5 text-[10px] opacity-60">{d.subtitle}</p>}
+        <div className="text-sm font-black tracking-tight text-white">{d.hoTen}</div>
+        <p className="text-[10px] font-medium text-white/80 mt-0.5">
+          {d.moTa || 'Viện Khoa học Công nghệ Xây dựng'}
+        </p>
       </div>
     </div>
   );
 }
 
-function LeaderNode({ data }: NodeProps) {
-  const d = data as NodeData;
-  const isDirector = d.kind === 'director';
+/** Node Phó Viện trưởng (Tier 2) */
+function DeputyNode({ data }: NodeProps) {
+  const d = data as LeaderNodeData;
+  return (
+    <div className="relative group">
+      <Handle type="target" position={Position.Top} className="!bg-amber-500 !w-2.5 !h-2.5" />
+      <Handle type="source" position={Position.Bottom} className="!bg-amber-500 !w-2.5 !h-2.5" />
+      <div
+        className="rounded-xl border border-amber-400/80 bg-surface dark:border-amber-600/70 p-3 shadow-sm transition-transform duration-200 group-hover:scale-[1.02] text-center"
+        style={{ width: d.width || 225 }}
+      >
+        <div className="inline-flex items-center gap-1 rounded-md bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 mb-1">
+          <Award size={12} /> {d.label}
+        </div>
+        <div className="text-[13px] font-bold text-ink truncate mt-0.5">
+          {d.hocVi ? `${d.hocVi} ` : ''}{d.hoTen}
+        </div>
+        {d.moTa && (
+          <p className="text-[10.5px] font-medium text-amber-800 dark:text-amber-300 mt-0.5 truncate">
+            {d.moTa}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Node Đơn vị trực thuộc (Tier 3) */
+function UnitNode({ data }: NodeProps) {
+  const d = data as UnitNodeData;
+  const initial = d.truongTen ? d.truongTen.split(' ').pop()?.[0] || 'T' : '?';
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Chặn sự kiện lăn chuột wheel truyền ra ReactFlow cha (tránh làm zoom sơ đồ)
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el || !d.isPopoverOpen) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      // Ngăn chặn dứt điểm sự kiện wheel bong bóng lên ReactFlow zoom pane
+      e.stopPropagation();
+    };
+
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => {
+      el.removeEventListener('wheel', handleWheel);
+    };
+  }, [d.isPopoverOpen]);
+
   return (
     <div className="relative">
-      <Handle type="target" position={Position.Top} className="!bg-[#AE1E23]" />
-      <Handle type="source" position={Position.Bottom} className="!bg-[#AE1E23]" />
-      {isDirector ? (
-        <div 
-          className="relative min-w-[220px] overflow-hidden rounded-2xl border-2 border-[#AE1E23]/40 px-8 py-4 text-center text-white shadow-xl ring-4 ring-[#AE1E23]/20"
-          style={{ background: 'linear-gradient(135deg, #AE1E23 0%, #881519 100%)', borderColor: '#AE1E23' }}
-        >
-          <div className="mb-1 flex items-center justify-center gap-2">
-            <Crown className="h-4 w-4 opacity-90" />
-            <span className="text-sm font-black uppercase tracking-tight">{d.label}</span>
-          </div>
-          {d.subtitle && <p className="text-[11px] font-medium opacity-90">{d.subtitle}</p>}
-        </div>
-      ) : (
-        <div 
-          className="min-w-[190px] rounded-xl border px-5 py-3 text-center shadow-md transition-all hover:shadow-lg text-white"
-          style={{ backgroundColor: '#f97316', borderColor: '#ea580c', borderWidth: '1.5px' }}
-        >
-          <div className="mb-0.5 flex items-center justify-center gap-1.5">
-            <Award className="h-3.5 w-3.5 text-white/95" />
-            <span className="text-[11px] font-black uppercase tracking-tight text-white whitespace-nowrap">
+      <Handle type="target" position={Position.Top} className="!bg-slate-400 !w-2.5 !h-2.5" />
+      <Handle type="source" position={Position.Bottom} className="!bg-slate-400 !w-2.5 !h-2.5" />
+
+      <div
+        onClick={(e) => {
+          e.stopPropagation();
+          d.onSelect?.();
+        }}
+        className={cn(
+          'w-[225px] h-[98px] rounded-xl bg-surface border transition-all duration-150 p-3 relative cursor-pointer select-none text-left flex flex-col justify-between shadow-xs hover:shadow-md hover:-translate-y-0.5',
+          d.selected
+            ? 'ring-2 ring-primary-500 border-primary-500 shadow-md'
+            : 'border-border hover:border-ink-muted',
+          d.isDimmed && 'opacity-30 grayscale-[60%]'
+        )}
+        style={{
+          borderLeftWidth: '5px',
+          borderLeftColor: d.color,
+        }}
+      >
+        {/* Header: Viết tắt + Loại + Sĩ số */}
+        <div className="flex items-center justify-between gap-1.5">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="text-[13px] font-black text-ink tracking-tight truncate">
               {d.label}
             </span>
+            <span
+              className="text-[9.5px] font-bold px-1.5 py-0.5 rounded-sm shrink-0"
+              style={{
+                backgroundColor: `${d.color}15`,
+                color: d.color,
+              }}
+            >
+              {LOAI_SHORT_LABEL[d.loai] || 'ĐV'}
+            </span>
           </div>
-          {d.subtitle && <p className="text-[11px] font-black text-white">{d.subtitle}</p>}
+          <div className="flex items-center gap-1 shrink-0 bg-subtle px-1.5 py-0.5 rounded text-[10.5px] font-mono font-bold text-ink-muted">
+            <Users size={11} />
+            {d.soNhanSu}
+          </div>
+        </div>
+
+        {/* Tên đầy đủ */}
+        <p
+          className="text-[10.5px] font-medium text-ink-secondary line-clamp-1 leading-snug my-auto"
+          title={d.tenDayDu}
+        >
+          {d.tenDayDu}
+        </p>
+
+        {/* Footer: Trưởng đơn vị */}
+        <div className="pt-1.5 border-t border-border-subtle flex items-center gap-2">
+          <div
+            className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0 shadow-2xs"
+            style={{ backgroundColor: d.color }}
+          >
+            {initial}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-semibold text-ink truncate leading-tight">
+              {d.truongTen
+                ? `${d.truongHocVi ? `${d.truongHocVi}. ` : ''}${d.truongTen}`
+                : 'Chờ kiện toàn'}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Popover xem danh sách nhân sự của đơn vị */}
+      {d.isPopoverOpen && (
+        <div
+          className={cn(
+            'nowheel nodrag nopan absolute left-0 w-[280px] bg-surface border border-border rounded-xl shadow-2xl z-50 overflow-hidden text-left cursor-default animate-in fade-in zoom-in-95 duration-150',
+            d.openUpward ? 'bottom-full mb-2' : 'top-full mt-2'
+          )}
+          onClick={(e) => e.stopPropagation()}
+          onWheelCapture={(e) => e.stopPropagation()}
+          onWheel={(e) => e.stopPropagation()}
+        >
+          <div className="flex justify-between items-center p-2.5 border-b border-border bg-subtle">
+            <div className="min-w-0 pr-2">
+              <p className="text-xs font-bold text-ink truncate">{d.label} - {d.tenDayDu}</p>
+              <p className="text-[10px] text-ink-muted">
+                {d.employees?.length || 0} cán bộ nhân viên
+              </p>
+            </div>
+            <button
+              onClick={d.onClosePopover}
+              className="rounded p-1 text-ink-muted hover:bg-muted hover:text-ink transition-colors"
+            >
+              <X size={14} />
+            </button>
+          </div>
+
+          <div
+            ref={scrollContainerRef}
+            className="nowheel max-h-[260px] overflow-y-auto overscroll-contain p-2 space-y-1 divide-y divide-border-subtle"
+            onWheel={(e) => e.stopPropagation()}
+          >
+            {d.employees && d.employees.length > 0 ? (
+              d.employees.map((emp) => {
+                const isLeader = emp.hoTen === d.truongTen;
+                return (
+                  <div key={emp.id} className="pt-1 first:pt-0 flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className={cn('text-xs truncate', isLeader ? 'font-bold text-primary-600 dark:text-primary-400' : 'font-medium text-ink')}>
+                        {emp.hoTen}
+                        {isLeader && <span className="ml-1 text-[9px] font-bold text-amber-500">★ Trưởng đơn vị</span>}
+                      </p>
+                      <p className="text-[10px] text-ink-muted truncate">
+                        {emp.chucDanh || 'Cán bộ'} {emp.hocVi ? `• ${emp.hocVi}` : ''}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <p className="text-xs text-ink-muted py-3 text-center">Chưa có danh sách nhân sự</p>
+            )}
+          </div>
+
+          <div className="p-2 border-t border-border bg-subtle text-center">
+            <button
+              onClick={() => {
+                d.onClosePopover?.();
+                const detailEl = document.getElementById('don-vi-detail-section');
+                if (detailEl) detailEl.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="text-[11px] font-bold text-primary-600 dark:text-primary-400 hover:underline inline-flex items-center gap-1"
+            >
+              Xem chi tiết bên dưới <ArrowDown size={12} />
+            </button>
+          </div>
         </div>
       )}
     </div>
   );
 }
 
-function UnitNode({ data }: NodeProps) {
-  const d = data as NodeData;
-  return (
-    <div className="relative">
-      <Handle type="target" position={Position.Top} className="!bg-slate-300" />
-      <button
-        onClick={d.onSelect}
-        title={d.label}
-        className={cn(
-          'w-40 cursor-pointer rounded-lg border-2 px-3 py-2.5 text-center shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover text-white',
-          d.selected ? 'ring-2 ring-primary-500 ring-offset-2 ring-offset-page border-white scale-102 shadow-lg' : 'border-transparent',
-        )}
-        style={{ 
-          backgroundColor: d.color || '#64748b',
-        }}
-      >
-        <p className="line-clamp-2 text-[11px] font-black leading-tight text-white">{d.label}</p>
-        {d.subtitle ? (
-          <p className="mt-1 line-clamp-1 text-2xs font-semibold text-white/90">{d.subtitle}</p>
-        ) : (
-          <p className="mt-1 line-clamp-1 text-2xs italic text-white/60">Chưa cập nhật</p>
-        )}
-        <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-white/20 px-2.5 py-0.5 text-2xs font-black text-white backdrop-blur-sm">
-          <Users size={10} className="text-white/95" /> {d.count}
-        </span>
-      </button>
-    </div>
-  );
-}
+const nodeTypes = {
+  root: RootNode,
+  deputy: DeputyNode,
+  unit: UnitNode,
+};
 
-const nodeTypes = { root: RootNode, leader: LeaderNode, unit: UnitNode };
+// ─── Layout Constants ───
+const CARD_W = 225;
+const CARD_H = 98;
+const GAP_X = 28;
+const GAP_Y = 18;
 
-// ─── Layout: sơ đồ báo cáo thật (Viện trưởng → Phó VT → đơn vị phụ trách) ───
-// Các đơn vị dưới cùng một Phó Viện trưởng nằm NGANG HÀNG (cùng cấp), mỗi đơn vị
-// nối thẳng lên Phó VT phụ trách.
+const Y_ROOT = 18;
+const Y_BUS_1 = 122; // Thanh ngang Viện trưởng -> 3 Phó Viện trưởng
+const Y_DEPUTY = 152; // Vị trí 3 Phó Viện trưởng
+const Y_BUS_2 = 254; // Thanh ngang phân phối của Đ/c Cao Duy Khôi sang Cột 3 và Cột 4
+const Y_GRID = 288;  // Điểm bắt đầu của các thẻ đơn vị
 
-const UNIT_W = 168;
-const UNIT_GAP = 16;
-const UNIT_SLOT = UNIT_W + UNIT_GAP; // footprint ngang của mỗi đơn vị
-const BAND_GAP = 48; // khoảng cách giữa các "band" của từng Phó VT
-const Y_ROOT = 0;
-const Y_DIRECTOR = 140;
-const Y_DEPUTY = 300;
-const Y_UNIT = 460;
+// 4 Cột đơn vị chuẩn cơ cấu phân công phụ trách IBST
+const COL_UNIT_IDS: string[][] = [
+  // Cột 1 (Khối Đ/c Đinh Quốc Dân): TCHC (10), VKC (1), TTKCT (13), TTTD (6), TTTB (17)
+  ['10', '1', '13', '6', '17'],
+  // Cột 2 (Khối Đ/c Nguyễn Thanh Bình): KHKT (8), VBT (2), TTAM (5), TTCN (7), TTCNXD (15)
+  ['8', '2', '5', '7', '15'],
+  // Cột 3 (Khối Đ/c Cao Duy Khôi - Chuyên ngành & BIM): TCKT (9), VDKT (3), TTCNHT (16), TTTK (14), TTBIM (19)
+  ['9', '3', '16', '14', '19'],
+  // Cột 4 (Khối Đ/c Cao Duy Khôi - Phân viện & Doanh nghiệp): PVMN (4), PVMT (12), TTQT (18), CTCP (20)
+  ['4', '12', '18', '20'],
+];
 
 interface Props {
   donViList: DonVi[];
@@ -144,184 +358,425 @@ interface Props {
 }
 
 export function OrgChartTree({ donViList, nhanSuList, selectedId, onSelect }: Props) {
+  const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterLoai, setFilterLoai] = useState<string>('all');
+
+  // Khối Lãnh đạo Viện
+  const lanhDao = useMemo(
+    () => nhanSuList.filter((n) => n.donVi === 'Lãnh đạo Viện'),
+    [nhanSuList]
+  );
+  const vienTruong = useMemo(
+    () => lanhDao.find((n) => n.chucDanh === 'Viện trưởng') ?? { hoTen: 'GS.TS. Nguyễn Hồng Hải', hocVi: 'GS.TS' },
+    [lanhDao]
+  );
+  const deputyDan = useMemo(
+    () => lanhDao.find((n) => n.hoTen.includes('Đinh Quốc Dân')) ?? { id: '2', hoTen: 'Đinh Quốc Dân', hocVi: 'TS' },
+    [lanhDao]
+  );
+  const deputyBinh = useMemo(
+    () => lanhDao.find((n) => n.hoTen.includes('Nguyễn Thanh Bình')) ?? { id: '3', hoTen: 'Nguyễn Thanh Bình', hocVi: 'PGS.TS' },
+    [lanhDao]
+  );
+  const deputyKhoi = useMemo(
+    () => lanhDao.find((n) => n.hoTen.includes('Cao Duy Khôi')) ?? { id: '4', hoTen: 'Cao Duy Khôi', hocVi: 'TS' },
+    [lanhDao]
+  );
+
+  // Xây dựng Nodes và Edges cho ReactFlow
   const { nodes, edges, contentWidth, contentHeight } = useMemo(() => {
     const nodes: Node[] = [];
     const edges: Edge[] = [];
 
-    // Chỉ lấy lãnh đạo thuộc khối "Lãnh đạo Viện" (tránh nhầm với Phó Viện trưởng của viện chuyên ngành)
-    const lanhDao = nhanSuList.filter((n) => n.donVi === 'Lãnh đạo Viện');
-    const vienTruong = lanhDao.find((n) => n.chucDanh === 'Viện trưởng');
-    const phoVienTruong = lanhDao.filter((n) => n.chucDanh === 'Phó Viện trưởng');
+    // Tính toán tọa độ 4 Cột
+    const totalGridWidth = 4 * CARD_W + 3 * GAP_X; // 984px
+    const startGridX = -totalGridWidth / 2; // -492px
 
-    const donViThuoc = donViList.filter((d) => d.loai !== 'lanh-dao');
+    const colXPositions = [0, 1, 2, 3].map((c) => startGridX + c * (CARD_W + GAP_X));
+    const colCenters = colXPositions.map((x) => x + CARD_W / 2);
 
-    // Mỗi Phó VT là một "band" ngang; đơn vị chưa phân công → band "trực thuộc Viện trưởng"
-    const bands: { key: string; pv: NhanSu | null; units: DonVi[] }[] = phoVienTruong.map((pv) => ({
-      key: `deputy-${pv.id}`,
-      pv,
-      units: donViThuoc.filter((d) => d.phuTrachId === pv.id),
-    }));
-    const chuaPhanCong = donViThuoc.filter(
-      (d) => !d.phuTrachId || !phoVienTruong.some((pv) => pv.id === d.phuTrachId),
-    );
-    if (chuaPhanCong.length > 0) {
-      bands.push({ key: 'truc-thuoc', pv: null, units: chuaPhanCong });
-    }
-
-    // Trải các band theo chiều ngang; đơn vị trong band nằm cùng một hàng (Y_UNIT)
-    let cursorX = 0;
-    bands.forEach((band) => {
-      const n = Math.max(1, band.units.length);
-      const bandStart = cursorX;
-      const bandWidth = n * UNIT_SLOT - UNIT_GAP;
-      const bandCenter = bandStart + bandWidth / 2;
-
-      // Node Phó Viện trưởng ở giữa band
-      if (band.pv) {
-        nodes.push({
-          id: band.key,
-          type: 'leader',
-          position: { x: bandCenter - 95, y: Y_DEPUTY },
-          width: 190,
-          height: 70,
-          data: { label: 'Phó Viện trưởng', subtitle: band.pv.hoTen, kind: 'deputy' },
-        });
-        edges.push({
-          id: `e-dir-${band.key}`,
-          source: 'director',
-          target: band.key,
-          type: 'smoothstep',
-          style: { stroke: '#AE1E23', strokeWidth: 1.5 },
-        });
-      }
-
-      const parentId = band.pv ? band.key : 'director';
-      band.units.forEach((dv, ui) => {
-        const ux = bandStart + ui * UNIT_SLOT + UNIT_W / 2;
-        nodes.push({
-          id: `unit-${dv.id}`,
-          type: 'unit',
-          position: { x: ux - 80, y: Y_UNIT },
-          width: 160,
-          height: 95,
-          data: {
-            label: dv.tenVietTat || dv.ten,
-            subtitle: dv.truongDonVi ?? undefined,
-            count: dv.soNhanSu,
-            color: GROUP_COLOR[dv.loai],
-            selected: selectedId === dv.id,
-            onSelect: () => onSelect(dv.id),
-          },
-        });
-        edges.push({
-          id: `e-${parentId}-${dv.id}`,
-          source: parentId,
-          target: `unit-${dv.id}`,
-          type: 'smoothstep',
-          style: { stroke: GROUP_COLOR[dv.loai], strokeWidth: 1.5 },
-        });
-      });
-
-      cursorX += bandWidth + BAND_GAP;
-    });
-
-    const totalWidth = Math.max(240, cursorX - BAND_GAP);
-    const centerX = totalWidth / 2;
-
-    // Root
+    // ── Tier 1: VIỆN TRƯỞNG (Root Node) ──
     nodes.push({
       id: 'root',
       type: 'root',
-      position: { x: centerX - 120, y: Y_ROOT },
-      width: 240,
-      height: 80,
-      data: { label: 'Viện Khoa học Công nghệ Xây dựng', subtitle: 'Bộ Xây dựng' },
+      position: { x: -140, y: Y_ROOT },
+      width: 280,
+      height: 76,
+      data: {
+        id: 'root',
+        label: 'VIỆN TRƯỞNG',
+        hoTen: vienTruong.hoTen,
+        moTa: 'Viện Khoa học Công nghệ Xây dựng',
+      },
     });
 
-    // Viện trưởng
-    nodes.push({
-      id: 'director',
-      type: 'leader',
-      position: { x: centerX - 110, y: Y_DIRECTOR },
-      width: 220,
-      height: 90,
-      data: { label: 'Viện trưởng', subtitle: vienTruong?.hoTen ?? 'Đang cập nhật', kind: 'director' },
+    // ── Tier 2: 3 PHÓ VIỆN TRƯỞNG (Được căn thẳng hàng với các Cột phụ trách) ──
+    const deputyConfigs = [
+      {
+        key: 'deputy-2',
+        leader: deputyDan,
+        centerX: colCenters[0], // thẳng hàng tuyệt đối với Cột 1
+        width: CARD_W,
+        moTa: 'Phụ trách Khối Kết cấu & Thiết bị',
+      },
+      {
+        key: 'deputy-3',
+        leader: deputyBinh,
+        centerX: colCenters[1], // thẳng hàng tuyệt đối với Cột 2
+        width: CARD_W,
+        moTa: 'Phụ trách Khối KHKT & Vật liệu',
+      },
+      {
+        key: 'deputy-4',
+        leader: deputyKhoi,
+        centerX: (colCenters[2] + colCenters[3]) / 2, // chính giữa Cột 3 & Cột 4
+        width: 245,
+        moTa: 'Phụ trách Khối ĐKT, Phân viện & BIM',
+      },
+    ];
+
+    deputyConfigs.forEach((dep) => {
+      nodes.push({
+        id: dep.key,
+        type: 'deputy',
+        position: { x: dep.centerX - dep.width / 2, y: Y_DEPUTY },
+        width: dep.width,
+        height: 72,
+        data: {
+          id: dep.key,
+          label: 'PHÓ VIỆN TRƯỞNG',
+          hoTen: dep.leader.hoTen,
+          hocVi: dep.leader.hocVi,
+          moTa: dep.moTa,
+          width: dep.width,
+        },
+      });
+
+      // Edge từ Viện trưởng -> Phó Viện trưởng (vuông góc chuẩn qua thanh ngang Y_BUS_1)
+      edges.push({
+        id: `e-root-${dep.key}`,
+        source: 'root',
+        target: dep.key,
+        type: 'treeStep',
+        data: { midY: Y_BUS_1 },
+        style: { stroke: '#AE1E23', strokeWidth: 1.5 },
+      });
+    });
+
+    // ── Tier 3: 4 Cột Đơn vị trực thuộc ──
+    // Mỗi Phó Viện trưởng chỉ nối xuống đúng Cột đơn vị mình phụ trách:
+    // 1. Đ/c Đinh Quốc Dân -> Đỉnh Cột 1 (thẳng đứng 100%)
+    edges.push({
+      id: 'e-deputy2-col0',
+      source: 'deputy-2',
+      target: `unit-${COL_UNIT_IDS[0][0]}`,
+      type: 'treeStep',
+      style: { stroke: '#64748b', strokeWidth: 1.5 },
+    });
+
+    // 2. Đ/c Nguyễn Thanh Bình -> Đỉnh Cột 2 (thẳng đứng 100%)
+    edges.push({
+      id: 'e-deputy3-col1',
+      source: 'deputy-3',
+      target: `unit-${COL_UNIT_IDS[1][0]}`,
+      type: 'treeStep',
+      style: { stroke: '#64748b', strokeWidth: 1.5 },
+    });
+
+    // 3. Đ/c Cao Duy Khôi -> Đỉnh Cột 3 & Cột 4 (rẽ nhánh đối xứng 2 bên)
+    edges.push({
+      id: 'e-deputy4-col2',
+      source: 'deputy-4',
+      target: `unit-${COL_UNIT_IDS[2][0]}`,
+      type: 'treeStep',
+      data: { midY: Y_BUS_2 },
+      style: { stroke: '#64748b', strokeWidth: 1.5 },
     });
     edges.push({
-      id: 'e-root-director',
-      source: 'root',
-      target: 'director',
-      type: 'smoothstep',
-      style: { stroke: '#AE1E23', strokeWidth: 2 },
+      id: 'e-deputy4-col3',
+      source: 'deputy-4',
+      target: `unit-${COL_UNIT_IDS[3][0]}`,
+      type: 'treeStep',
+      data: { midY: Y_BUS_2 },
+      style: { stroke: '#64748b', strokeWidth: 1.5 },
     });
 
-    const contentWidth = Math.max(totalWidth, 240);
-    const contentHeight = Y_UNIT + 95;
+    // Tạo các Thẻ đơn vị và đường nối dọc trong từng Cột
+    COL_UNIT_IDS.forEach((colIds, colIdx) => {
+      const ux = colXPositions[colIdx];
 
-    return { nodes, edges, contentWidth, contentHeight };
-  }, [donViList, nhanSuList, selectedId, onSelect]);
+      colIds.forEach((dvId, rowIdx) => {
+        const dv = donViList.find((d) => String(d.id) === String(dvId));
+        if (!dv) return;
 
-  // Đo container bằng getBoundingClientRect (không phụ thuộc ResizeObserver) để tự tính viewport ban đầu.
+        const uy = Y_GRID + rowIdx * (CARD_H + GAP_Y);
+        const employees = nhanSuList.filter((n) => String(n.donViId) === String(dv.id));
+
+        // Tìm kiếm nhanh
+        const isMatchSearch = searchQuery.trim() === '' || (
+          dv.ten.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (dv.tenVietTat && dv.tenVietTat.toLowerCase().includes(searchQuery.toLowerCase())) ||
+          (dv.truongDonVi && dv.truongDonVi.toLowerCase().includes(searchQuery.toLowerCase()))
+        );
+
+        // Lọc theo loại
+        const isMatchLoai = filterLoai === 'all' || dv.loai === filterLoai;
+        const isDimmed = !isMatchSearch || !isMatchLoai;
+
+        nodes.push({
+          id: `unit-${dv.id}`,
+          type: 'unit',
+          position: { x: ux, y: uy },
+          width: CARD_W,
+          height: CARD_H,
+          data: {
+            id: dv.id,
+            label: dv.tenVietTat || dv.ten,
+            tenDayDu: dv.ten,
+            truongTen: dv.truongDonVi ?? undefined,
+            truongHocVi: dv.truongDonViHocVi ?? undefined,
+            truongChucDanh: dv.truongDonViChucDanh ?? undefined,
+            soNhanSu: dv.soNhanSu,
+            loai: dv.loai,
+            color: GROUP_COLOR[dv.loai],
+            selected: selectedId === dv.id,
+            isDimmed,
+            employees,
+            isPopoverOpen: openPopoverId === dv.id,
+            openUpward: rowIdx >= 3,
+            onClosePopover: () => setOpenPopoverId(null),
+            onSelect: () => {
+              onSelect(dv.id);
+              setOpenPopoverId((prev) => (prev === dv.id ? null : dv.id));
+            },
+          },
+          style: { zIndex: openPopoverId === dv.id ? 1000 : 0 },
+        });
+
+        // Đường nối dọc thẳng đứng giữa các thẻ trong cùng một cột (rowIdx > 0)
+        if (rowIdx > 0) {
+          const prevDvId = colIds[rowIdx - 1];
+          edges.push({
+            id: `e-spine-${prevDvId}-${dv.id}`,
+            source: `unit-${prevDvId}`,
+            target: `unit-${dv.id}`,
+            type: 'treeStep',
+            style: {
+              stroke: '#cbd5e1',
+              strokeWidth: 1.5,
+              opacity: isDimmed ? 0.3 : 0.9,
+            },
+          });
+        }
+      });
+    });
+
+    const maxRows = Math.max(...COL_UNIT_IDS.map((c) => c.length));
+    const contentHeight = Y_GRID + maxRows * (CARD_H + GAP_Y) + 30;
+
+    return {
+      nodes,
+      edges,
+      contentWidth: totalGridWidth + 80,
+      contentHeight,
+    };
+  }, [
+    donViList,
+    nhanSuList,
+    vienTruong,
+    deputyDan,
+    deputyBinh,
+    deputyKhoi,
+    selectedId,
+    onSelect,
+    openPopoverId,
+    searchQuery,
+    filterLoai,
+  ]);
+
+  // Container viewport sizing
   const [containerSize, setContainerSize] = useState<{ w: number; h: number } | null>(null);
   const measureRef = useCallback((el: HTMLDivElement | null) => {
     if (el) setContainerSize({ w: el.clientWidth, h: el.clientHeight });
   }, []);
 
   const defaultViewport = useMemo(() => {
-    if (!containerSize) return { x: 0, y: 0, zoom: 1 };
-    const PADDING = 0.1;
-    const scaleX = (containerSize.w * (1 - PADDING)) / contentWidth;
-    const scaleY = (containerSize.h * (1 - PADDING)) / contentHeight;
-    const zoom = Math.min(1.2, Math.max(0.2, Math.min(scaleX, scaleY)));
-    const x = (containerSize.w - contentWidth * zoom) / 2;
-    const y = (containerSize.h - contentHeight * zoom) / 2;
+    if (!containerSize) return { x: 0, y: 0, zoom: 0.9 };
+    const PADDING_X = 0.05;
+    const PADDING_Y = 0.04;
+    const scaleX = (containerSize.w * (1 - PADDING_X)) / contentWidth;
+    const scaleY = (containerSize.h * (1 - PADDING_Y)) / contentHeight;
+    const zoom = Math.min(1.05, Math.max(0.65, Math.min(scaleX, scaleY)));
+    const x = containerSize.w / 2;
+    const y = 18;
     return { x, y, zoom };
   }, [containerSize, contentWidth, contentHeight]);
 
-  return (
-    <div ref={measureRef} className="relative h-[640px] overflow-hidden rounded-b-xl bg-page">
-      {containerSize && (
-        <ReactFlow
-          key={nodes.length}
-          nodes={nodes}
-          edges={edges}
-          nodeTypes={nodeTypes}
-          defaultViewport={defaultViewport}
-          minZoom={0.2}
-          maxZoom={1.5}
-          proOptions={{ hideAttribution: true }}
-          nodesDraggable={false}
-          nodesConnectable={false}
-          elementsSelectable={false}
-        >
-        <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="var(--border-default)" />
-        <Controls className="!rounded-xl !border-border !bg-surface !shadow-card" />
-        <MiniMap
-          className="!rounded-xl !border-border !bg-surface"
-          nodeColor={(n) => {
-            const d = n.data as NodeData;
-            if (n.type === 'root') return '#00415a';
-            if (n.type === 'leader') return '#00668c';
-            return d.color ?? '#64748b';
-          }}
-          maskColor="rgba(0,0,0,0.15)"
-        />
-        </ReactFlow>
-      )}
+  // Đếm động số lượng đơn vị theo từng phân loại
+  const countsByLoai = useMemo(() => {
+    const nonLead = donViList.filter((d) => d.loai !== 'lanh-dao');
+    return {
+      all: nonLead.length,
+      'phong-chuc-nang': nonLead.filter((d) => d.loai === 'phong-chuc-nang').length,
+      'vien-chuyen-nganh': nonLead.filter((d) => d.loai === 'vien-chuyen-nganh').length,
+      'phan-vien': nonLead.filter((d) => d.loai === 'phan-vien').length,
+      'trung-tam': nonLead.filter((d) => d.loai === 'trung-tam').length,
+      'cong-ty': nonLead.filter((d) => d.loai === 'cong-ty').length,
+    };
+  }, [donViList]);
 
-      {/* Chú giải */}
-      <div className="pointer-events-none absolute bottom-4 right-4 rounded-xl border border-border bg-surface/90 px-4 py-3 shadow-card backdrop-blur">
-        <p className="mb-2 text-2xs font-black uppercase tracking-widest text-ink-muted">Chú giải</p>
-        {LOAI_DON_VI.map(({ ma, ten }) => (
-          <div key={ma} className="mb-1 flex items-center gap-2">
-            <div className="h-3 w-3 rounded-full" style={{ background: GROUP_COLOR[ma] }} />
-            <span className="text-2xs text-ink-muted">{ten}</span>
+  // Số lượng đơn vị khớp tìm kiếm
+  const matchCount = useMemo(() => {
+    if (!searchQuery.trim()) return null;
+    const q = searchQuery.toLowerCase();
+    return donViList.filter(
+      (d) =>
+        d.loai !== 'lanh-dao' &&
+        (d.ten.toLowerCase().includes(q) ||
+          (d.tenVietTat && d.tenVietTat.toLowerCase().includes(q)) ||
+          (d.truongDonVi && d.truongDonVi.toLowerCase().includes(q)))
+    ).length;
+  }, [donViList, searchQuery]);
+
+  return (
+    <div className="relative">
+      {/* Thanh điều khiển nhanh trên sơ đồ */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-surface px-4 py-2.5">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Ô tìm kiếm */}
+          <div className="relative w-64">
+            <Search
+              size={13}
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-muted pointer-events-none"
+            />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Tìm nhanh đơn vị, lãnh đạo..."
+              className="w-full rounded-lg border border-border bg-page pl-8 pr-7 py-1.5 text-xs text-ink placeholder:text-ink-muted focus:border-primary-500 focus:outline-none"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-ink-muted hover:text-ink p-0.5"
+                title="Xóa tìm kiếm"
+              >
+                <X size={12} />
+              </button>
+            )}
           </div>
-        ))}
-        <p className="mt-2 max-w-[180px] text-2xs italic text-ink-muted">
-          * Cột dưới mỗi Phó Viện trưởng là các đơn vị được phân công phụ trách (đặt tại form Sửa đơn vị).
-        </p>
+
+          {matchCount !== null && (
+            <span className="text-[10.5px] font-semibold text-primary-600 dark:text-primary-400 bg-primary-subtle dark:bg-primary-900/30 px-2 py-0.5 rounded-md whitespace-nowrap">
+              {matchCount} đơn vị khớp
+            </span>
+          )}
+
+          {/* Bộ lọc loại đơn vị */}
+          <div className="flex items-center gap-1 overflow-x-auto rounded-lg bg-muted p-0.5">
+            {[
+              { id: 'all', label: `Tất cả (${countsByLoai.all})` },
+              { id: 'phong-chuc-nang', label: `Phòng ban (${countsByLoai['phong-chuc-nang']})` },
+              { id: 'vien-chuyen-nganh', label: `Viện CN (${countsByLoai['vien-chuyen-nganh']})` },
+              { id: 'phan-vien', label: `Phân viện (${countsByLoai['phan-vien']})` },
+              { id: 'trung-tam', label: `Trung tâm (${countsByLoai['trung-tam']})` },
+              { id: 'cong-ty', label: `Công ty (${countsByLoai['cong-ty']})` },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setFilterLoai(tab.id)}
+                className={cn(
+                  'whitespace-nowrap rounded-md px-2.5 py-1 text-[11px] font-bold transition-all',
+                  filterLoai === tab.id
+                    ? 'bg-surface text-primary-600 shadow-xs dark:text-primary-400'
+                    : 'text-ink-muted hover:text-ink'
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 text-2xs text-ink-muted">
+          <span>* Click vào thẻ để chọn và xem nhân sự chi tiết</span>
+        </div>
+      </div>
+
+      {/* Vùng sơ đồ ReactFlow */}
+      <div
+        ref={measureRef}
+        className="relative h-[900px] w-full overflow-hidden bg-page select-none"
+      >
+        {containerSize && (
+          <ReactFlow
+            key={containerSize ? 'org-chart-tree-ready' : 'org-chart-tree-init'}
+            nodes={nodes}
+            edges={edges}
+            nodeTypes={nodeTypes}
+            edgeTypes={edgeTypes}
+            defaultViewport={defaultViewport}
+            minZoom={0.25}
+            maxZoom={1.5}
+            proOptions={{ hideAttribution: true }}
+            nodesDraggable={false}
+            nodesConnectable={false}
+            elementsSelectable={false}
+            onPaneClick={() => setOpenPopoverId(null)}
+            onNodeClick={(_event, node) => {
+              if (node.type === 'unit') {
+                const uid = (node.data as UnitNodeData).id;
+                onSelect(uid);
+                setOpenPopoverId((prev) => (prev === uid ? null : uid));
+              }
+            }}
+          >
+            <Background
+              variant={BackgroundVariant.Dots}
+              gap={20}
+              size={1}
+              color="var(--border-default)"
+            />
+            <Controls className="!rounded-xl !border-border !bg-surface !shadow-card" />
+            <MiniMap
+              position="top-right"
+              className="!rounded-xl !border-border !bg-surface !shadow-xs"
+              nodeColor={(n) => {
+                const d = n.data as UnitNodeData;
+                if (n.type === 'root') return '#AE1E23';
+                if (n.type === 'deputy') return '#f97316';
+                return d.color ?? '#64748b';
+              }}
+              maskColor="rgba(0,0,0,0.12)"
+            />
+          </ReactFlow>
+        )}
+
+        {/* Chú giải loại đơn vị ở góc phải */}
+        <div className="pointer-events-none absolute bottom-4 right-4 rounded-xl border border-border bg-surface/90 px-3.5 py-2.5 shadow-card backdrop-blur">
+          <p className="mb-1.5 text-2xs font-black uppercase tracking-widest text-ink-muted">
+            Phân loại đơn vị
+          </p>
+          <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+            {LOAI_DON_VI.map(({ ma, ten }) => {
+              if (ma === 'lanh-dao') return null;
+              return (
+                <div key={ma} className="flex items-center gap-1.5">
+                  <div
+                    className="h-2.5 w-2.5 rounded-sm"
+                    style={{ background: GROUP_COLOR[ma] }}
+                  />
+                  <span className="text-[11px] text-ink-secondary">{ten}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );
 }
+
+

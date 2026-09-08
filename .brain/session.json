@@ -1,0 +1,45 @@
+{
+  "updated_at": "2026-09-08T17:15:00+07:00",
+  "working_on": {
+    "feature": "Lịch công tác & Sự kiện cơ quan",
+    "task": "Khắc phục độ tương phản viền phân biệt các ngày ở chế độ tối (Dark Mode) và lưu bộ nhớ dự án",
+    "status": "completed",
+    "files": [
+      "src/context/ThemeContext.tsx",
+      "src/pages/LichCoQuanPage.tsx",
+      "src/components/SlidePanelStack.tsx",
+      "CLAUDE.md"
+    ],
+    "notes": "Đã nâng --border-default lên #38425d, bổ sung dark:border-slate-700/80 cho toàn bộ ô ngày và bảng"
+  },
+  "recent_changes": [
+    {
+      "timestamp": "2026-09-08T17:10:00+07:00",
+      "type": "fix_and_standardization",
+      "description": "Nâng cấp độ tương phản viền trong dark mode cho Month, Week, Day, Agenda, Manage views và SlidePanel",
+      "files": [
+        "src/context/ThemeContext.tsx",
+        "src/pages/LichCoQuanPage.tsx",
+        "src/components/SlidePanelStack.tsx",
+        "CLAUDE.md"
+      ]
+    }
+  ],
+  "errors_encountered": [
+    {
+      "error": "Các ô ngày trên lịch ở giao diện tối bị tàng hình đường viền chia tách",
+      "solution": "Nâng cấp token --border-default từ #222533 lên #38425d, tăng cường dark:border-slate-700/80 trên từng ô ngày",
+      "resolved": true
+    }
+  ],
+  "decisions_made": [
+    {
+      "decision": "Quy chuẩn hóa màu viền dark mode tối thiểu là #38425d trên nền #1f2332",
+      "reason": "Màu #222533 trước đây có tỷ lệ tương phản chỉ 1.05:1, hoàn toàn vô hình với mắt người"
+    },
+    {
+      "decision": "Lưu các quy tắc Dark Mode vào CLAUDE.md và .brain/brain.json",
+      "reason": "Đảm bảo mọi AI Assistant khi xây dựng các module tiếp theo đều tuân thủ và không mắc lỗi tàng hình viền ở Dark mode"
+    }
+  ]
+}

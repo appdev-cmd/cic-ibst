@@ -23,20 +23,27 @@ export function WorkflowStepper({
   buocHienTai,
   onStateChanged,
   readOnly = false,
+  compact = false,
 }: {
   hopDongId?: string;
   buocHienTai: BuocHopDong | string;
   onStateChanged?: () => void;
   readOnly?: boolean;
+  compact?: boolean;
 }) {
   const { vaiTro } = useAuth();
   const [updating, setUpdating] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [localStep, setLocalStep] = useState<BuocHopDong | string>(buocHienTai);
+  const [isExpanded, setIsExpanded] = useState(!compact);
 
   useEffect(() => {
     setLocalStep(buocHienTai);
   }, [buocHienTai]);
+
+  useEffect(() => {
+    setIsExpanded(!compact);
+  }, [compact]);
 
   const rawStep = localStep || buocHienTai || 'du-thao';
   const normCurrentStep: BuocHopDong =
@@ -78,13 +85,48 @@ export function WorkflowStepper({
 
   const currentIdx = getStepIndex(currentStep);
 
+  if (compact && !isExpanded) {
+    return (
+      <div 
+        className="flex items-center gap-3 border-b border-border-subtle bg-surface py-1.5 px-3 cursor-pointer hover:bg-surface-hover transition-colors"
+        onClick={() => setIsExpanded(true)}
+      >
+        <span className={`inline-flex rounded px-1.5 py-0.5 text-[10px] font-bold ${getStateColor(currentStep)}`}>
+          {getStateLabel(currentStep)}
+        </span>
+        <div className="flex items-center gap-1.5">
+          {STEPS.map((step, idx) => {
+            const isDone = currentIdx > idx && currentStep !== 'huy' && currentStep !== 'tam-dung';
+            const isCurrent = currentStep === step.id;
+            return (
+              <div
+                key={step.id}
+                className={`h-2 w-2 rounded-full ${
+                  isCurrent ? 'bg-primary animate-pulse' : isDone ? 'bg-emerald-600' : 'bg-surface-active'
+                }`}
+                title={step.label}
+              />
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-lg border border-border-subtle bg-surface p-3 shadow-2xs space-y-2.5">
       <div className="flex items-center justify-between">
         <div>
           <h4 className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">Quy trình xử lý hợp đồng (Workflow Engine)</h4>
           <p className="text-[11px] text-ink-secondary mt-0.5 flex items-center gap-1.5">
-            Trạng thái hiện tại: <span className={`inline-flex rounded px-1.5 py-0.5 text-[10px] font-bold ${getStateColor(currentStep)}`}>{getStateLabel(currentStep)}</span>
+            Trạng thái hiện tại: 
+            <span 
+              className={`inline-flex rounded px-1.5 py-0.5 text-[10px] font-bold ${compact ? 'cursor-pointer hover:opacity-80' : ''} ${getStateColor(currentStep)}`}
+              onClick={() => compact && setIsExpanded(false)}
+              title={compact ? "Thu gọn" : undefined}
+            >
+              {getStateLabel(currentStep)}
+            </span>
           </p>
         </div>
       </div>

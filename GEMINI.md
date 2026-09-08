@@ -1,4 +1,4 @@
-# IBST ERP — Quy tắc dự án (dùng chung cho Claude Code & các AI Assistant)
+# IBST ERP — Quy tắc dự án (Dành cho Antigravity & AI Pair Programmer)
 
 > ⚠️ **QUY ĐỊNH CHUNG:** Mọi quy tắc trong tài liệu này áp dụng **BẮT BUỘC**.
 > Đồng bộ quy trình với dự án `cic-erp-contract` của CIC.

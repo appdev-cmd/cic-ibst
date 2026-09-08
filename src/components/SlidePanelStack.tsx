@@ -20,7 +20,12 @@ const MIN_PANEL_WIDTH = 360;
 function readSavedWidth(storageKey: string | undefined): number | null {
   if (!storageKey || typeof window === 'undefined') return null;
   const saved = Number(window.localStorage.getItem(storageKey));
-  return Number.isFinite(saved) && saved > 0 ? saved : null;
+  if (!Number.isFinite(saved) || saved <= 0) return null;
+  // Bỏ qua giá trị cũ >= 1800 hoặc gần như chiếm trọn toàn màn hình (legacy full-screen)
+  if (saved >= 1800 || (window.innerWidth > 800 && saved >= window.innerWidth - 60)) {
+    return null;
+  }
+  return saved;
 }
 
 /** Tính chiều rộng thực tế (px) từng panel trong ngăn xếp theo chuỗi ràng buộc trên.
@@ -34,24 +39,32 @@ function computeWidths(
   const viewportWidth = typeof window === 'undefined' ? 1280 : window.innerWidth;
   const innerWidth = viewportWidth - sidebarWidth;
   const widths: number[] = [];
-  let ceiling = innerWidth - (viewportWidth < 640 ? 0 : BASE_GAP);
+  const maxCeiling = innerWidth - (viewportWidth < 640 ? 0 : BASE_GAP);
+  // Mặc định 1/2 màn hình (50% viewport width) cho tất cả các view
+  const defaultHalfWidth = Math.min(maxCeiling, Math.max(MIN_PANEL_WIDTH, Math.round(viewportWidth * 0.5)));
+
   stack.forEach((panel, i) => {
     const isTop = i === stack.length - 1;
     const saved = readSavedWidth(panel.storageKey);
+    const minW = panel.minWidth ?? MIN_PANEL_WIDTH;
+
     let natural: number;
     if (isTop && topDragWidth != null) {
-      natural = topDragWidth; // đang kéo tay panel trên cùng
+      natural = topDragWidth; // Đang kéo tay panel trên cùng
     } else if (saved != null) {
-      natural = saved; // đã từng tự kéo chỉnh riêng panel này trước đó
-    } else if (i === 0) {
-      natural = panel.defaultWidth ?? 880; // panel đầu tiên: dùng kích thước tự nhiên
+      natural = saved; // Đã từng lưu chiều rộng kéo thủ công trước đó
+    } else if (panel.defaultWidth && panel.defaultWidth < 1800) {
+      natural = panel.defaultWidth;
     } else {
-      natural = ceiling; // panel sau: mặc định bám sát mép panel liền trước
+      // Mặc định 1/2 màn hình; nếu là panel xếp chồng phía sau (i > 0)
+      // thì lùi nhẹ STACKING_OFFSET để dải hé lộ tai thỏ lộ ra tinh tế
+      const offset = i * STACKING_OFFSET;
+      natural = Math.max(minW, defaultHalfWidth - offset);
     }
-    const minimum = Math.min(panel.minWidth ?? MIN_PANEL_WIDTH, ceiling);
-    const w = Math.max(minimum, Math.min(natural, ceiling));
+
+    // Cho phép panel mở rộng tự do tới maxCeiling mà không bị giới hạn bởi panel phía dưới
+    const w = Math.max(minW, Math.min(natural, maxCeiling));
     widths.push(w);
-    ceiling = w - STACKING_OFFSET;
   });
   return widths;
 }
@@ -61,6 +74,7 @@ function PanelLayer({
   index,
   width,
   isTop,
+  resizing,
   onClose,
   onBringToFront,
   onStartResize,
@@ -69,6 +83,7 @@ function PanelLayer({
   index: number;
   width: number;
   isTop: boolean;
+  resizing?: boolean;
   onClose: () => void;
   onBringToFront: () => void;
   onStartResize: (e: React.PointerEvent) => void;
@@ -85,16 +100,38 @@ function PanelLayer({
         <div
           onPointerDown={onStartResize}
           title="Kéo sang trái/phải để thay đổi chiều rộng"
-          className="group pointer-events-auto absolute top-0 bottom-0 z-20 w-4 cursor-col-resize touch-none select-none"
-          style={{ right: width - 8 }}
+          className="group pointer-events-auto absolute top-0 bottom-0 z-20 flex w-6 cursor-col-resize items-center justify-center touch-none select-none"
+          style={{ right: width - 12 }}
         >
-          <div className="mx-auto h-full w-px bg-border-subtle transition-all group-hover:w-1 group-hover:bg-primary/60" />
+          {/* Đường viền dọc có hiệu ứng nổi bật khi hover hoặc khi đang kéo */}
+          <div
+            className={cn(
+              'h-full w-0.5 transition-colors',
+              resizing
+                ? 'w-1 bg-primary shadow-sm shadow-primary/40'
+                : 'bg-transparent group-hover:w-1 group-hover:bg-primary/70',
+            )}
+          />
+
+          {/* Viên tay cầm trực quan (Grab Handle Pill) ở giữa cạnh trái */}
+          <div
+            className={cn(
+              'pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex h-12 w-3.5 flex-col items-center justify-center gap-1 rounded-full border shadow-md transition-all',
+              resizing
+                ? 'border-primary bg-primary text-white scale-110 shadow-primary/30 ring-2 ring-primary/30'
+                : 'border-border bg-surface text-ink-muted group-hover:scale-105 group-hover:border-primary group-hover:bg-primary-subtle group-hover:text-primary dark:border-slate-700/80 dark:bg-slate-800',
+            )}
+          >
+            <span className={cn('h-1 w-1 rounded-full transition-colors', resizing ? 'bg-white' : 'bg-ink-muted/70 group-hover:bg-primary')} />
+            <span className={cn('h-1 w-1 rounded-full transition-colors', resizing ? 'bg-white' : 'bg-ink-muted/70 group-hover:bg-primary')} />
+            <span className={cn('h-1 w-1 rounded-full transition-colors', resizing ? 'bg-white' : 'bg-ink-muted/70 group-hover:bg-primary')} />
+          </div>
         </div>
       )}
       <div
         style={{ width }}
         className={cn(
-          'relative flex h-full flex-col bg-surface shadow-2xl pointer-events-auto',
+          'relative flex h-full flex-col bg-surface shadow-2xl pointer-events-auto border-l border-border dark:border-slate-700/80',
           isTop && 'animate-slide-in-right',
           !isTop && 'brightness-[0.97] dark:brightness-90',
         )}
@@ -218,14 +255,14 @@ export function SlidePanelStack({ sidebarWidth = 0 }: { sidebarWidth?: number })
   useEffect(() => {
     if (!resizing) return;
     const topIndex = stack.length - 1;
-    const ceiling =
-      topIndex <= 0
-        ? window.innerWidth - sidebarWidth - (window.innerWidth < 640 ? 0 : BASE_GAP)
-        : widths[topIndex - 1] - STACKING_OFFSET;
+    // Cho phép panel mở rộng tối đa tới mép sidebar (không bị panel bên dưới chặn)
+    const maxCeiling =
+      window.innerWidth - sidebarWidth - (window.innerWidth < 640 ? 0 : BASE_GAP);
     const minW = stack[topIndex]?.minWidth ?? MIN_PANEL_WIDTH;
     // Dùng Pointer Events (không phải Mouse Events) để kéo được cả bằng chuột, cảm ứng và bút.
     const onMove = (e: PointerEvent) => {
-      const w = Math.min(ceiling, Math.max(minW, window.innerWidth - e.clientX));
+      const targetWidth = window.innerWidth - e.clientX;
+      const w = Math.min(maxCeiling, Math.max(minW, targetWidth));
       setDragWidth(w);
     };
     const onUp = () => {
@@ -270,6 +307,7 @@ export function SlidePanelStack({ sidebarWidth = 0 }: { sidebarWidth?: number })
           index={index}
           width={widths[index]}
           isTop={index === stack.length - 1}
+          resizing={resizing && index === stack.length - 1}
           onClose={() => closePanel(panel.id)}
           onBringToFront={() => bringToFront(panel.id)}
           onStartResize={(e) => {

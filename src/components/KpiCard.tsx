@@ -9,6 +9,7 @@ export function KpiCard({
   delta,
   deltaLabel,
   tone = 'primary',
+  subtext,
 }: {
   icon: LucideIcon;
   label: string;
@@ -16,6 +17,7 @@ export function KpiCard({
   delta?: number;
   deltaLabel?: string;
   tone?: 'primary' | 'accent' | 'success' | 'warning';
+  subtext?: string;
 }) {
   const toneCls = {
     primary: 'bg-primary-subtle text-primary dark:bg-primary-900/30 dark:text-primary-300',
@@ -34,6 +36,9 @@ export function KpiCard({
           <Icon size={20} strokeWidth={2.2} />
         </div>
       </div>
+      {subtext && (
+        <p className="mt-2 text-xs text-ink-muted truncate font-medium">{subtext}</p>
+      )}
       {delta !== undefined && (
         <p className="mt-2 flex items-center gap-1 text-xs text-ink-muted">
           {delta >= 0 ? (

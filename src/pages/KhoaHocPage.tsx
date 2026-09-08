@@ -1,11 +1,13 @@
-import { useState } from 'react';
-import { FlaskConical, Award, RefreshCw, Layers, DollarSign, ShieldCheck } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { FlaskConical, Award, RefreshCw, Layers, DollarSign, ShieldCheck, Newspaper } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { DeTaiPage } from './DeTaiPage';
 import { SoHuuTriTuePage } from './SoHuuTriTuePage';
+import { TapChiPage } from './TapChiPage';
 import { cn } from '../lib/utils';
 
-type Tab = 'de-tai' | 'so-huu-tri-tue' | 'chuyen-giao';
+type Tab = 'de-tai' | 'tap-chi' | 'so-huu-tri-tue' | 'chuyen-giao';
 
 const MOCK_CHUYEN_GIAO = [
   {
@@ -41,19 +43,36 @@ const MOCK_CHUYEN_GIAO = [
 ];
 
 export function KhoaHocPage() {
-  const [activeTab, setActiveTab] = useState<Tab>('de-tai');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab') as Tab;
+  const [activeTab, setActiveTab] = useState<Tab>(
+    tabParam && ['de-tai', 'tap-chi', 'so-huu-tri-tue', 'chuyen-giao'].includes(tabParam)
+      ? tabParam
+      : 'de-tai'
+  );
+
+  useEffect(() => {
+    if (tabParam && ['de-tai', 'tap-chi', 'so-huu-tri-tue', 'chuyen-giao'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
+
+  const handleTabChange = (newTab: Tab) => {
+    setActiveTab(newTab);
+    setSearchParams({ tab: newTab });
+  };
 
   return (
     <div>
       <PageHeader
-        title="[Phân hệ 4] Quản lý Khoa học: Đề tài, Sở hữu Trí tuệ & Chuyển giao"
-        subtitle="Quản lý thuyết minh, tiến độ giải ngân Đề tài KHCN, Sáng chế SHTT & Hợp đồng chuyển giao công nghệ phân bổ hoa hồng tác giả (Tuân thủ Khung QĐ 942/QĐ-BXD)"
+        title="[Phân hệ 4] Quản lý Khoa học: Đề tài, Tạp chí KHCN, Sở hữu Trí tuệ & Chuyển giao"
+        subtitle="Quản lý thuyết minh, tiến độ giải ngân Đề tài KHCN, Tòa soạn Tạp chí KHCN Xây dựng, Sáng chế SHTT & Hợp đồng chuyển giao công nghệ phân bổ hoa hồng tác giả (Tuân thủ Khung QĐ 942/QĐ-BXD)"
       />
 
       {/* Tabs Switcher */}
       <div className="mb-6 flex flex-wrap gap-2 rounded-xl bg-muted p-1.5 w-fit border border-border">
         <button
-          onClick={() => setActiveTab('de-tai')}
+          onClick={() => handleTabChange('de-tai')}
           className={cn(
             'flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-bold transition-all',
             activeTab === 'de-tai'
@@ -64,7 +83,18 @@ export function KhoaHocPage() {
           <FlaskConical size={16} /> Đề tài KHCN các cấp
         </button>
         <button
-          onClick={() => setActiveTab('so-huu-tri-tue')}
+          onClick={() => handleTabChange('tap-chi')}
+          className={cn(
+            'flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-bold transition-all',
+            activeTab === 'tap-chi'
+              ? 'bg-surface text-primary-600 shadow-card dark:text-primary-300'
+              : 'text-ink-muted hover:text-ink'
+          )}
+        >
+          <Newspaper size={16} /> Tạp chí KHCN Xây dựng
+        </button>
+        <button
+          onClick={() => handleTabChange('so-huu-tri-tue')}
           className={cn(
             'flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-bold transition-all',
             activeTab === 'so-huu-tri-tue'
@@ -75,7 +105,7 @@ export function KhoaHocPage() {
           <Award size={16} /> Bằng sáng chế & SHTT
         </button>
         <button
-          onClick={() => setActiveTab('chuyen-giao')}
+          onClick={() => handleTabChange('chuyen-giao')}
           className={cn(
             'flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-bold transition-all',
             activeTab === 'chuyen-giao'
@@ -89,6 +119,7 @@ export function KhoaHocPage() {
 
       {/* Tab Contents */}
       {activeTab === 'de-tai' && <DeTaiPage />}
+      {activeTab === 'tap-chi' && <TapChiPage />}
       {activeTab === 'so-huu-tri-tue' && <SoHuuTriTuePage />}
       {activeTab === 'chuyen-giao' && (
         <div className="space-y-6">

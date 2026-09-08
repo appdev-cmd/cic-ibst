@@ -74,28 +74,15 @@ const NAV_MENU: NavItem[] = [
     to: '/hop-dong',
     label: '2. Hợp đồng & CRM',
     icon: Handshake,
-    children: [
-      { to: '/dau-thau', label: 'Đấu thầu & Chào giá', icon: Gavel },
-      { to: '/pvqlnn', label: 'Nhiệm vụ PVQLNN', icon: Landmark },
-      { to: '/uy-quyen', label: 'Quản lý Ủy quyền', icon: ShieldCheck },
-    ],
   },
   { id: 'tai-chinh', to: '/tai-chinh', label: '3. Tài chính & Thu chi', icon: Wallet },
   { id: 'khoa-hoc', to: '/khoa-hoc', label: '4. Quản lý Khoa học & SHTT', icon: FlaskConical },
-  {
-    id: 'nhan-su',
-    to: '/nhan-su',
-    label: '5. Nhân sự & Đảng - Đoàn',
-    icon: Users,
-    children: [
-      { to: '/don-vi', label: 'Sơ đồ Tổ chức & Đơn vị', icon: Network },
-      { to: '/nhan-su', label: 'Hồ sơ CBNV & Đảng - Đoàn', icon: Users },
-    ],
-  },
+  { id: 'nhan-su', to: '/nhan-su', label: '5. Tổ chức & Nhân sự', icon: Users },
   { id: 'thi-nghiem', to: '/thi-nghiem', label: '6. Thử nghiệm LIMS & Lab', icon: Microscope },
   { id: 'e-office', to: '/e-office', label: '7. Văn phòng số e-Office', icon: FileText },
   { id: 'kho-luu-tru', to: '/kho-luu-tru', label: '8. Kho Lưu trữ & AI-RAG', icon: FolderOpen },
-  { id: 'ibst-portal', to: '/ibst-portal', label: 'Cổng thông tin IBST', icon: Globe },
+  { id: 'lich-co-quan', to: '/lich-co-quan', label: 'Lịch cơ quan', icon: Calendar },
+  // { id: 'ibst-portal', to: '/ibst-portal', label: 'Cổng thông tin IBST', icon: Globe }, // Tạm ẩn theo yêu cầu
 ];
 
 export function AppLayout() {
@@ -105,6 +92,8 @@ export function AppLayout() {
   
   // Tự động tìm nhãn menu hiện tại
   let currentLabel = '1. Dashboard Lãnh đạo';
+  if (pathname === '/ibst-portal') currentLabel = 'Cổng thông tin IBST';
+  if (pathname === '/lich-co-quan') currentLabel = 'Lịch cơ quan';
   for (const n of NAV_MENU) {
     if (n.to === pathname) {
       currentLabel = n.label;
@@ -141,16 +130,12 @@ export function AppLayout() {
   // Mặc định mở rộng nhóm nếu trang hiện tại nằm trong nhóm đó
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(() => {
     const isHopDong = ['/hop-dong', '/dau-thau', '/pvqlnn', '/uy-quyen'].includes(pathname);
-    const isNhanSu = ['/nhan-su', '/don-vi'].includes(pathname);
-    return { 'hop-dong-crm': isHopDong, 'nhan-su': isNhanSu };
+    return { 'hop-dong-crm': isHopDong };
   });
 
   useEffect(() => {
     if (['/hop-dong', '/dau-thau', '/pvqlnn', '/uy-quyen'].includes(pathname)) {
       setExpandedGroups((prev) => ({ ...prev, 'hop-dong-crm': true }));
-    }
-    if (['/nhan-su', '/don-vi'].includes(pathname)) {
-      setExpandedGroups((prev) => ({ ...prev, 'nhan-su': true }));
     }
     setMobileMenuOpen(false);
   }, [pathname]);

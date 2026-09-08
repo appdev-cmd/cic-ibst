@@ -17,6 +17,7 @@ import { IbstPortalPage } from './pages/IbstPortalPage';
 import { DauThauPage } from './pages/DauThauPage';
 import { PvqlnnPage } from './pages/PvqlnnPage';
 import { UyQuyenPage } from './pages/UyQuyenPage';
+import { LichCoQuanPage } from './pages/LichCoQuanPage';
 
 const SKIP_AUTH = import.meta.env.DEV && import.meta.env.VITE_SKIP_AUTH === 'true';
 
@@ -56,25 +57,24 @@ export default function App() {
         <Route path="/e-office" element={<EOfficePage />} />
         <Route path="/kho-luu-tru" element={<KhoLuuTruPage />} />
 
-        {/* Các phân hệ mở rộng QC 2815 */}
-        <Route path="/dau-thau" element={<DauThauPage />} />
-        <Route path="/pvqlnn" element={<PvqlnnPage />} />
-        <Route path="/uy-quyen" element={<UyQuyenPage />} />
+        {/* Các route chuyển tiếp về Phân hệ Hợp đồng & CRM */}
+        <Route path="/dau-thau" element={<Navigate to="/hop-dong?tab=dau-thau" replace />} />
+        <Route path="/pvqlnn" element={<Navigate to="/hop-dong?tab=pvqlnn" replace />} />
+        <Route path="/uy-quyen" element={<Navigate to="/hop-dong?tab=bao-cao-khkt" replace />} />
 
         {/* Các trang hỗ trợ & Cổng thông tin */}
-        <Route path="/don-vi" element={<DonViPage />} />
+        <Route path="/don-vi" element={<Navigate to="/nhan-su?tab=so-do-to-chuc" replace />} />
         <Route path="/cai-dat" element={<CaiDatPage />} />
         <Route path="/ibst-portal" element={<IbstPortalPage />} />
 
-        {/* Redirects cho các đường dẫn cũ */}
+        <Route path="/lich-co-quan" element={<LichCoQuanPage />} />
         <Route path="/van-ban" element={<Navigate to="/e-office" replace />} />
-        <Route path="/lich-co-quan" element={<Navigate to="/e-office" replace />} />
         <Route path="/cong-viec" element={<Navigate to="/e-office" replace />} />
         <Route path="/de-tai" element={<Navigate to="/khoa-hoc" replace />} />
         <Route path="/so-huu-tri-tue" element={<Navigate to="/khoa-hoc" replace />} />
         <Route path="/ho-so-tai-lieu" element={<Navigate to="/kho-luu-tru" replace />} />
         <Route path="/dao-tao" element={<Navigate to="/nhan-su" replace />} />
-        <Route path="/khach-hang" element={<Navigate to="/hop-dong" replace />} />
+        <Route path="/khach-hang" element={<Navigate to="/hop-dong?tab=crm-khach-hang" replace />} />
       </Route>
     </Routes>
   );

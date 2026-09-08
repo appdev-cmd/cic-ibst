@@ -69,7 +69,7 @@ const TRANG_THAI_TONE: Record<TrangThaiDauThau, string> = {
   'huy': 'bg-orange-100 text-orange-800',
 };
 
-export function DauThauPage() {
+export function DauThauPage({ showHeader = true }: { showHeader?: boolean } = {}) {
   const [tab, setTab] = useState<Tab>('goi-thau');
   const { openPanel } = useSlidePanel();
   const { data: list, loading, error, refetch } = useAsyncData(fetchDauThau, []);
@@ -121,7 +121,6 @@ export function DauThauPage() {
           onDone={refetch}
         />
       ),
-      defaultWidth: 800,
       storageKey: 'panel-tao-goi-thau-moi',
     });
   };
@@ -160,7 +159,6 @@ export function DauThauPage() {
           onDone={refetch}
         />
       ),
-      defaultWidth: 800,
       storageKey: 'panel-sua-goi-thau',
     });
   };
@@ -172,7 +170,6 @@ export function DauThauPage() {
       subtitle: `Gói thầu dự thầu (QC 2815 Đ.5.1d) · ${TRANG_THAI_LABEL[item.trangThai] || item.trangThai}`,
       icon: <Gavel size={16} />,
       content: <GoiThauChiTietPanel item={item} onEdit={handleOpenEditGoiThau} onDone={refetch} />,
-      defaultWidth: 800,
       storageKey: 'panel-goi-thau',
     });
   };
@@ -185,37 +182,47 @@ export function DauThauPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Quản lý Đấu thầu & Chào giá (Điều 4, 5.1 QC 2815)"
-        subtitle="Đăng ký đầu mối thị trường, theo dõi gói thầu, hồ sơ dự thầu và kết quả lựa chọn nhà thầu của Viện"
-        actions={
-          tab === 'goi-thau' && (
-            <button onClick={handleOpenCreateGoiThau} className="btn-primary flex items-center gap-1.5 text-xs">
-              <Plus size={14} /> Thêm gói thầu mới
-            </button>
-          )
-        }
-      />
+      {showHeader && (
+        <PageHeader
+          title="Quản lý Đấu thầu & Chào giá (Điều 4, 5.1 QC 2815)"
+          subtitle="Đăng ký đầu mối thị trường, theo dõi gói thầu, hồ sơ dự thầu và kết quả lựa chọn nhà thầu của Viện"
+          actions={
+            tab === 'goi-thau' && (
+              <button onClick={handleOpenCreateGoiThau} className="btn-primary flex items-center gap-1.5 text-xs">
+                <Plus size={14} /> Thêm gói thầu mới
+              </button>
+            )
+          }
+        />
+      )}
 
       {/* Tabs Switcher */}
-      <div className="flex gap-1 border-b border-border">
-        <button
-          onClick={() => setTab('goi-thau')}
-          className={`flex items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-bold transition-colors ${
-            tab === 'goi-thau' ? 'border-primary text-primary' : 'border-transparent text-ink-muted hover:text-ink'
-          }`}
-        >
-          <Gavel size={13} /> Gói thầu & Kết quả
-        </button>
-        <button
-          onClick={() => setTab('dang-ky-dau-moi')}
-          className={`flex items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-bold transition-colors ${
-            tab === 'dang-ky-dau-moi' ? 'border-primary text-primary' : 'border-transparent text-ink-muted hover:text-ink'
-          }`}
-        >
-          <Users2 size={13} /> Đăng ký đầu mối (Đ.5.1c)
-        </button>
+      <div className="flex items-center justify-between border-b border-border pb-px">
+        <div className="flex gap-1">
+          <button
+            onClick={() => setTab('goi-thau')}
+            className={`flex items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-bold transition-colors ${
+              tab === 'goi-thau' ? 'border-primary text-primary' : 'border-transparent text-ink-muted hover:text-ink'
+            }`}
+          >
+            <Gavel size={13} /> Gói thầu & Kết quả
+          </button>
+          <button
+            onClick={() => setTab('dang-ky-dau-moi')}
+            className={`flex items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-bold transition-colors ${
+              tab === 'dang-ky-dau-moi' ? 'border-primary text-primary' : 'border-transparent text-ink-muted hover:text-ink'
+            }`}
+          >
+            <Users2 size={13} /> Đăng ký đầu mối tiếp cận
+          </button>
+        </div>
+        {!showHeader && tab === 'goi-thau' && (
+          <button onClick={handleOpenCreateGoiThau} className="btn-primary flex items-center gap-1.5 text-xs">
+            <Plus size={14} /> Thêm gói thầu mới
+          </button>
+        )}
       </div>
+
 
       {tab === 'dang-ky-dau-moi' && (
         <DangKyDauMoiPanel

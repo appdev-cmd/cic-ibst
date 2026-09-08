@@ -19,6 +19,17 @@ const num = (v: string | number | null | undefined) => (v === '' || v == null ? 
 // ─── Hồ sơ mở rộng của 1 CBVC (các trường bổ sung ở 0028) ───
 
 export interface NhanSuHoSoMoRong {
+  id?: string;
+  hoVaTen?: string;
+  maDinhDanh?: string;
+  email?: string;
+  soDienThoai?: string;
+  hocVi?: string;
+  chucDanh?: string;
+  tenDonVi?: string;
+  heSoLuong?: number | null;
+  phuCapChucVu?: number | null;
+  trangThai?: string;
   ngaySinh: string;
   gioiTinh: string;
   queQuan: string;
@@ -49,7 +60,9 @@ export async function fetchNhanSuHoSoMoRong(nhanSuId: string): Promise<NhanSuHoS
   const { data, error } = await supabase
     .from('nhan_su')
     .select(
-      `ngay_sinh, gioi_tinh, que_quan, dia_chi_thuong_tru, dia_chi_hien_nay, dan_toc, ton_giao,
+      `id, ho_va_ten, ma_dinh_danh, email, so_dien_thoai, hoc_vi, chuc_danh, he_so_luong, phu_cap_chuc_vu, trang_thai,
+       don_vi!nhan_su_don_vi_id_fkey(ten_don_vi),
+       ngay_sinh, gioi_tinh, que_quan, dia_chi_thuong_tru, dia_chi_hien_nay, dan_toc, ton_giao,
        so_dinh_danh_ca_nhan, ngay_cap_cccd, noi_cap_cccd, tinh_trang_hon_nhan,
        so_bhxh, ma_so_thue, so_tai_khoan, ngan_hang, lien_he_khan_cap, sdt_khan_cap,
        hoc_ham, chuyen_nganh, ly_luan_chinh_tri, quan_ly_nha_nuoc, ngach, ngay_vao_lam, ngay_nghi_viec`,
@@ -57,8 +70,19 @@ export async function fetchNhanSuHoSoMoRong(nhanSuId: string): Promise<NhanSuHoS
     .eq('id', Number(nhanSuId))
     .single();
   throwIf(error);
-  const r = data as Record<string, string | null>;
+  const r = data as any;
   return {
+    id: String(r?.id ?? ''),
+    hoVaTen: r?.ho_va_ten ?? '',
+    maDinhDanh: r?.ma_dinh_danh ?? '',
+    email: r?.email ?? '',
+    soDienThoai: r?.so_dien_thoai ?? '',
+    hocVi: r?.hoc_vi ?? '',
+    chucDanh: r?.chuc_danh ?? '',
+    tenDonVi: r?.don_vi?.ten_don_vi ?? '',
+    heSoLuong: r?.he_so_luong != null ? Number(r.he_so_luong) : null,
+    phuCapChucVu: r?.phu_cap_chuc_vu != null ? Number(r.phu_cap_chuc_vu) : null,
+    trangThai: r?.trang_thai ?? 'dang-lam-viec',
     ngaySinh: r?.ngay_sinh ?? '',
     gioiTinh: r?.gioi_tinh ?? '',
     queQuan: r?.que_quan ?? '',

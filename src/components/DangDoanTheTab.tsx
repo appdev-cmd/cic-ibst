@@ -97,8 +97,12 @@ export function DangDoanTheTab() {
   const { data: thuPhiKyNay, refetch: refetchThuPhi } = useAsyncData(() => fetchThuPhiDoanThe(ky), []);
 
   const chiBoList = useMemo(() => toChucList.filter((t) => t.loai === 'dang'), [toChucList]);
-  const soDangVienDangSinhHoat = dangVienList.filter((d) => d.trangThai === 'dang-sinh-hoat').length;
-  const soDangVienDuBi = dangVienList.filter((d) => !d.ngayVaoDangChinhThuc && d.trangThai === 'dang-sinh-hoat').length;
+  const soDangVienDangSinhHoat = dangVienList.filter(
+    (d) => d.trangThai === 'dang-sinh-hoat' || d.trangThai === 'chinh-thuc'
+  ).length;
+  const soDangVienDuBi = dangVienList.filter(
+    (d) => (!d.ngayVaoDangChinhThuc && Boolean(d.ngayVaoDangDuBi)) || d.trangThai === 'du-bi'
+  ).length;
   const soQuaHanChuyen = dangVienList.filter((d) => canhBaoChuyenChinhThuc(d)).length;
   const soDangPhiDaNop = thuPhiKyNay.filter((t) => t.loaiPhi === 'dang-phi' && t.trangThai === 'da-nop').length;
   const soDangPhiTong = thuPhiKyNay.filter((t) => t.loaiPhi === 'dang-phi').length;
@@ -753,7 +757,7 @@ export function DangDoanTheTab() {
                 {filteredDv.map((d) => {
                   const canhBao = canhBaoChuyenChinhThuc(d);
                   return (
-                    <tr key={d.id} className="tr-hover cursor-pointer" onClick={() => setChiTiet({ loai: 'dang-vien', id: d.id })}>
+                    <tr key={d.id} className="tr-stripe cursor-pointer" onClick={() => setChiTiet({ loai: 'dang-vien', id: d.id })}>
                       <td className="td-cell font-semibold">{d.hoTen}</td>
                       <td className="td-cell text-ink-secondary">{d.donVi || '—'}</td>
                       <td className="td-cell text-ink-secondary">{d.toChuc}</td>
@@ -811,7 +815,7 @@ export function DangDoanTheTab() {
               </thead>
               <tbody>
                 {phatTrienList.map((p) => (
-                  <tr key={p.id} className="tr-hover cursor-pointer" onClick={() => setChiTiet({ loai: 'phat-trien', id: p.id })}>
+                  <tr key={p.id} className="tr-stripe cursor-pointer" onClick={() => setChiTiet({ loai: 'phat-trien', id: p.id })}>
                     <td className="td-cell font-semibold">{p.hoTen}</td>
                     <td className="td-cell text-ink-secondary">{p.donVi || '—'}</td>
                     <td className="td-cell text-ink-secondary">{p.toChuc}</td>
@@ -862,7 +866,7 @@ export function DangDoanTheTab() {
                 </thead>
                 <tbody>
                   {sinhHoatList.map((s) => (
-                    <tr key={s.id} className="tr-hover cursor-pointer" onClick={() => setChiTiet({ loai: 'sinh-hoat', id: s.id })}>
+                    <tr key={s.id} className="tr-stripe cursor-pointer" onClick={() => setChiTiet({ loai: 'sinh-hoat', id: s.id })}>
                       <td className="td-cell font-semibold">{s.toChuc}</td>
                       <td className="td-cell font-mono text-xs">{s.ky}</td>
                       <td className="td-cell font-mono text-xs">{formatNgay(s.ngayHop)}</td>
@@ -906,7 +910,7 @@ export function DangDoanTheTab() {
                 </thead>
                 <tbody>
                   {thuPhiKyNay.map((t) => (
-                    <tr key={t.id} className="tr-hover">
+                    <tr key={t.id} className="tr-stripe">
                       <td className="td-cell font-semibold">{t.hoTen}</td>
                       <td className="td-cell text-ink-secondary">{LOAI_PHI_DOAN_THE.find((l) => l.ma === t.loaiPhi)?.ten ?? t.loaiPhi}</td>
                       <td className="td-cell text-right font-mono text-xs">{t.soTienPhaiNop.toLocaleString('vi-VN')}</td>

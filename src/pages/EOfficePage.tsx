@@ -67,12 +67,12 @@ export function EOfficePage() {
       </div>
 
       {/* Direct Integration Banner */}
-      <div className="mb-4 rounded-xl border border-primary/20 bg-primary-subtle/40 p-3 text-xs flex items-center justify-between text-ink">
+      <div className="mb-4 rounded-xl border border-primary-200/80 bg-primary-50/70 dark:border-slate-700/80 dark:bg-slate-900/80 p-3 text-xs flex flex-wrap items-center justify-between gap-2 text-ink shadow-2xs">
         <div className="flex items-center gap-2">
-          <ShieldCheck className="text-primary h-4 w-4" />
-          <span><strong>Trục Liên thông Văn bản Bộ Xây dựng:</strong> Trạng thái kết nối SOAP/REST XML mã hóa (Thông tư 02/2017/TT-VPCP) — <strong>HOẠT ĐỘNG 24/7</strong></span>
+          <ShieldCheck className="text-primary-600 dark:text-sky-400 h-4 w-4 shrink-0" />
+          <span><strong>Trục Liên thông Văn bản Bộ Xây dựng:</strong> Trạng thái kết nối SOAP/REST XML mã hóa (Thông tư 02/2017/TT-VPCP) — <strong className="text-success font-bold">HOẠT ĐỘNG 24/7</strong></span>
         </div>
-        <span className="text-2xs bg-primary text-white px-2 py-0.5 rounded font-bold">Chữ ký số CA Ban Cơ yếu</span>
+        <span className="text-2xs bg-primary-600 dark:bg-primary-500 text-white px-2.5 py-0.5 rounded-full font-bold shadow-2xs">Chữ ký số CA Ban Cơ yếu</span>
       </div>
 
       {/* Tab Contents */}
