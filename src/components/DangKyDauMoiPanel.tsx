@@ -152,7 +152,7 @@ export function DangKyDauMoiPanel({
       )}
 
       <div className="rounded-xl border border-border bg-surface shadow-sm divide-y divide-border-subtle overflow-hidden">
-        {list.map((item) => (
+        {list.map((item, idx) => (
           <div
             key={item.id}
             className="flex flex-wrap items-center justify-between gap-3 p-3.5 hover:bg-muted/40 transition-colors group cursor-pointer"
@@ -160,6 +160,7 @@ export function DangKyDauMoiPanel({
           >
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
+                <span className="shrink-0 w-6 h-6 rounded-full bg-subtle text-ink-muted text-[10px] font-bold flex items-center justify-center tabular-nums">{idx + 1}</span>
                 <p className="font-bold text-ink text-sm truncate group-hover:text-primary transition-colors flex items-center gap-1.5">
                   <Eye size={14} className="text-ink-muted group-hover:text-primary shrink-0" />
                   {item.tenCoHoi}

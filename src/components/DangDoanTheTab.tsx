@@ -742,10 +742,11 @@ export function DangDoanTheTab() {
             <p className="px-4 py-2 text-2xs font-semibold text-danger">{crudDangVien.actionError}</p>
           )}
           <DataState loading={loadingDangVien} error={errorDangVien} empty={dangVienList.length === 0} />
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 'calc(100vh - 320px)' }}>
             <table className="w-full min-w-[820px]">
-              <thead>
+              <thead className="sticky top-0 z-10 border-b border-border bg-subtle dark:bg-[#1f2332]">
                 <tr>
+                  <th className="th-cell w-10 text-center">#</th>
                   <th className="th-cell">Họ tên</th>
                   <th className="th-cell">Đơn vị</th>
                   <th className="th-cell">Chi bộ</th>
@@ -756,10 +757,11 @@ export function DangDoanTheTab() {
                 </tr>
               </thead>
               <tbody>
-                {filteredDv.map((d) => {
+                {filteredDv.map((d, idx) => {
                   const canhBao = canhBaoChuyenChinhThuc(d);
                   return (
                     <tr key={d.id} className="tr-stripe cursor-pointer" onClick={() => setChiTiet({ loai: 'dang-vien', id: d.id })}>
+                      <td className="td-cell text-center text-xs text-ink-muted tabular-nums">{idx + 1}</td>
                       <td className="td-cell font-semibold">{d.hoTen}</td>
                       <td className="td-cell text-ink-secondary">{d.donVi || '—'}</td>
                       <td className="td-cell text-ink-secondary">{d.toChuc}</td>
@@ -787,7 +789,7 @@ export function DangDoanTheTab() {
                   );
                 })}
                 {filteredDv.length === 0 && !loadingDangVien && (
-                  <tr><td colSpan={7} className="td-cell py-6 text-center italic text-ink-muted">Chưa có hồ sơ đảng viên phù hợp.</td></tr>
+                  <tr><td colSpan={8} className="td-cell py-6 text-center italic text-ink-muted">Chưa có hồ sơ đảng viên phù hợp.</td></tr>
                 )}
               </tbody>
             </table>
@@ -803,10 +805,11 @@ export function DangDoanTheTab() {
               <Plus size={15} /> Đưa vào diện phát triển
             </button>
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 'calc(100vh - 320px)' }}>
             <table className="w-full min-w-[820px]">
-              <thead>
+              <thead className="sticky top-0 z-10 border-b border-border bg-subtle dark:bg-[#1f2332]">
                 <tr>
+                  <th className="th-cell w-10 text-center">#</th>
                   <th className="th-cell">Quần chúng</th>
                   <th className="th-cell">Đơn vị</th>
                   <th className="th-cell">Chi bộ</th>
@@ -816,8 +819,9 @@ export function DangDoanTheTab() {
                 </tr>
               </thead>
               <tbody>
-                {phatTrienList.map((p) => (
+                {phatTrienList.map((p, idx) => (
                   <tr key={p.id} className="tr-stripe cursor-pointer" onClick={() => setChiTiet({ loai: 'phat-trien', id: p.id })}>
+                    <td className="td-cell text-center text-xs text-ink-muted tabular-nums">{idx + 1}</td>
                     <td className="td-cell font-semibold">{p.hoTen}</td>
                     <td className="td-cell text-ink-secondary">{p.donVi || '—'}</td>
                     <td className="td-cell text-ink-secondary">{p.toChuc}</td>
@@ -836,7 +840,7 @@ export function DangDoanTheTab() {
                   </tr>
                 ))}
                 {phatTrienList.length === 0 && (
-                  <tr><td colSpan={6} className="td-cell py-6 text-center italic text-ink-muted">Chưa có quần chúng nào trong diện phát triển Đảng.</td></tr>
+                  <tr><td colSpan={7} className="td-cell py-6 text-center italic text-ink-muted">Chưa có quần chúng nào trong diện phát triển Đảng.</td></tr>
                 )}
               </tbody>
             </table>
@@ -853,10 +857,11 @@ export function DangDoanTheTab() {
                 <Plus size={15} /> Ghi nhận kỳ sinh hoạt
               </button>
             </div>
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 'calc(100vh - 360px)' }}>
               <table className="w-full min-w-[760px]">
-                <thead>
+                <thead className="sticky top-0 z-10 border-b border-border bg-subtle dark:bg-[#1f2332]">
                   <tr>
+                    <th className="th-cell w-10 text-center">#</th>
                     <th className="th-cell">Tổ chức</th>
                     <th className="th-cell">Kỳ</th>
                     <th className="th-cell">Ngày họp</th>
@@ -867,8 +872,9 @@ export function DangDoanTheTab() {
                   </tr>
                 </thead>
                 <tbody>
-                  {sinhHoatList.map((s) => (
+                  {sinhHoatList.map((s, idx) => (
                     <tr key={s.id} className="tr-stripe cursor-pointer" onClick={() => setChiTiet({ loai: 'sinh-hoat', id: s.id })}>
+                      <td className="td-cell text-center text-xs text-ink-muted tabular-nums">{idx + 1}</td>
                       <td className="td-cell font-semibold">{s.toChuc}</td>
                       <td className="td-cell font-mono text-xs">{s.ky}</td>
                       <td className="td-cell font-mono text-xs">{formatNgay(s.ngayHop)}</td>
@@ -884,7 +890,7 @@ export function DangDoanTheTab() {
                     </tr>
                   ))}
                   {sinhHoatList.length === 0 && (
-                    <tr><td colSpan={7} className="td-cell py-6 text-center italic text-ink-muted">Chưa có kỳ sinh hoạt nào được ghi nhận.</td></tr>
+                    <tr><td colSpan={8} className="td-cell py-6 text-center italic text-ink-muted">Chưa có kỳ sinh hoạt nào được ghi nhận.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -967,10 +973,11 @@ export function DangDoanTheTab() {
                 {tinhPhiThongBao}
               </div>
             )}
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 'calc(100vh - 360px)' }}>
               <table className="w-full min-w-[720px]">
-                <thead>
+                <thead className="sticky top-0 z-10 border-b border-border bg-subtle dark:bg-[#1f2332]">
                   <tr>
+                    <th className="th-cell w-10 text-center">#</th>
                     <th className="th-cell">CBVC</th>
                     <th className="th-cell">Loại phí</th>
                     <th className="th-cell text-right">Phải nộp</th>
@@ -980,8 +987,9 @@ export function DangDoanTheTab() {
                   </tr>
                 </thead>
                 <tbody>
-                  {thuPhiKyNay.map((t) => (
+                  {thuPhiKyNay.map((t, idx) => (
                     <tr key={t.id} className="tr-stripe">
+                      <td className="td-cell text-center text-xs text-ink-muted tabular-nums">{idx + 1}</td>
                       <td className="td-cell font-semibold">{t.hoTen}</td>
                       <td className="td-cell text-ink-secondary">{LOAI_PHI_DOAN_THE.find((l) => l.ma === t.loaiPhi)?.ten ?? t.loaiPhi}</td>
                       <td className="td-cell text-right font-mono text-xs">{t.soTienPhaiNop.toLocaleString('vi-VN')}</td>
@@ -1001,7 +1009,7 @@ export function DangDoanTheTab() {
                     </tr>
                   ))}
                   {thuPhiKyNay.length === 0 && (
-                    <tr><td colSpan={6} className="td-cell py-6 text-center italic text-ink-muted">Kỳ {ky} chưa mở sổ thu.</td></tr>
+                    <tr><td colSpan={7} className="td-cell py-6 text-center italic text-ink-muted">Kỳ {ky} chưa mở sổ thu.</td></tr>
                   )}
                 </tbody>
               </table>

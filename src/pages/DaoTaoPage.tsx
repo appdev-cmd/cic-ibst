@@ -8,7 +8,7 @@ import { StatusBadge, TRANG_THAI_OPTIONS } from '../components/StatusBadge';
 import { KpiCard } from '../components/KpiCard';
 import { DataState } from '../components/DataState';
 import { Field, inputCls } from '../components/Modal';
-import { TableToolbar, FilterSelect, Pagination } from '../components/TableToolbar';
+import { TableToolbar, FilterSelect } from '../components/TableToolbar';
 import { useAsyncData } from '../hooks/useAsyncData';
 import { useTableControls } from '../hooks/useTableControls';
 import { useCrudForm } from '../hooks/useCrudForm';
@@ -514,10 +514,12 @@ export function DaoTaoPage() {
             />
           </TableToolbar>
 
-          <div className="card overflow-x-auto">
+          <div className="card overflow-hidden">
+            <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
             <table className="w-full min-w-[780px]">
-              <thead>
+              <thead className="sticky top-0 z-10 border-b border-border bg-subtle dark:bg-[#1f2332]">
                 <tr>
+                  <th className="th-cell w-10 text-center">#</th>
                   <th className="th-cell">Tên lớp / sự kiện</th>
                   <th className="th-cell">Loại</th>
                   <th className="th-cell text-right">Học viên</th>
@@ -528,12 +530,13 @@ export function DaoTaoPage() {
                 </tr>
               </thead>
               <tbody>
-                {tableLop.pageRows.map((ld) => (
+                {tableLop.filteredRows.map((ld, idx) => (
                   <tr
                     key={ld.id}
                     className="tr-stripe cursor-pointer hover:bg-muted/40 transition-colors"
                     onClick={() => setSelectedLopId(ld.id)}
                   >
+                    <td className="td-cell text-center text-xs text-ink-muted tabular-nums">{idx + 1}</td>
                     <td className="td-cell font-medium text-primary hover:underline">{ld.ten}</td>
                     <td className="td-cell">
                       <span className={cn('rounded-full px-2 py-0.5 text-2xs font-black uppercase', LOAI_CLS[ld.loai])}>
@@ -564,7 +567,7 @@ export function DaoTaoPage() {
                 ))}
               </tbody>
             </table>
-            <Pagination page={tableLop.page} totalPages={tableLop.totalPages} onChange={tableLop.setPage} />
+            </div>
           </div>
         </>
       ) : (
@@ -591,10 +594,12 @@ export function DaoTaoPage() {
             </select>
           </div>
 
-          <div className="card overflow-x-auto">
+          <div className="card overflow-hidden">
+            <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
             <table className="w-full min-w-[860px]">
-              <thead>
+              <thead className="sticky top-0 z-10 border-b border-border bg-subtle dark:bg-[#1f2332]">
                 <tr>
+                  <th className="th-cell w-10 text-center">#</th>
                   <th className="th-cell">Họ và tên NCS</th>
                   <th className="th-cell">Ngày nhập học</th>
                   <th className="th-cell">Người hướng dẫn khoa học</th>
@@ -604,8 +609,9 @@ export function DaoTaoPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredNcs.map((item) => (
+                {filteredNcs.map((item, idx) => (
                   <tr key={item.id} className="tr-stripe">
+                    <td className="td-cell text-center text-xs text-ink-muted tabular-nums">{idx + 1}</td>
                     <td className="td-cell">
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-ink">{item.hoTen}</span>
@@ -662,13 +668,14 @@ export function DaoTaoPage() {
                 ))}
                 {filteredNcs.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="td-cell py-6 text-center text-ink-muted">
+                    <td colSpan={7} className="td-cell py-6 text-center text-ink-muted">
                       Không tìm thấy nghiên cứu sinh phù hợp.
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
+            </div>
           </div>
         </>
       )}

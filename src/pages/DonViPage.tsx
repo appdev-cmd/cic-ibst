@@ -292,6 +292,7 @@ export function DonViPage({ hideHeader = false, mode = 'full' }: { hideHeader?: 
             nhanSuList={nhanSuList}
             selectedId={selected?.id ?? null}
             onSelect={setSelectedId}
+            isPanelOpen={mode === 'orgchart-only' && !!selectedId}
           />
         ) : (
           <div className="max-h-[560px] overflow-y-auto p-3">

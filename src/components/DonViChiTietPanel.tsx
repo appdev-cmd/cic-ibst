@@ -125,7 +125,7 @@ export function DonViChiTietPanel({
   ];
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 px-5 py-4">
       {/* ── Header: Badges + Nút thao tác (tham khảo UnitDetail CIC-ERP) ── */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2 flex-wrap">

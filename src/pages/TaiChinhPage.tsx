@@ -181,7 +181,7 @@ export function TaiChinhPage() {
         </div>
       </div>
 
-      <div className="card overflow-x-auto">
+      <div className="card overflow-hidden">
         <div className="border-b border-border bg-subtle p-4">
           <h3 className="font-bold text-sm text-ink">Bảng Tổng hợp Phân bổ Dòng tiền Hợp đồng theo Bảng 1 Quy chế 2815</h3>
           <p className="mt-1 text-2xs text-ink-muted">
@@ -189,9 +189,11 @@ export function TaiChinhPage() {
             Bản phân phối quyết toán chính thức sẽ lập tại nghiệp vụ Tờ phân phối (Giai đoạn 3 kế hoạch số hóa).
           </p>
         </div>
+        <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 'calc(100vh - 300px)' }}>
         <table className="w-full min-w-[760px] text-left text-xs">
-          <thead>
-            <tr className="border-b border-border bg-muted/50 font-bold text-ink-muted">
+          <thead className="sticky top-0 z-10 border-b border-border bg-subtle dark:bg-[#1f2332]">
+            <tr className="font-bold text-ink-muted">
+              <th className="p-3 w-10 text-center">#</th>
               <th className="p-3">Số Hợp đồng</th>
               <th className="p-3">Tên hợp đồng</th>
               <th className="p-3 text-center">Nhóm HĐ</th>
@@ -203,12 +205,13 @@ export function TaiChinhPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {hopDongList.map((h) => {
+            {hopDongList.map((h, idx) => {
               const pb = phanBoTheoHD.get(h.id) ?? null;
               const sla = slaTcktTheoHD.get(h.id);
               const conLai = sla ? Math.ceil((new Date(sla.hanChot).getTime() - Date.now()) / MS_NGAY) : null;
               return (
                 <tr key={h.id} className="hover:bg-muted/30 transition-colors">
+                  <td className="p-3 text-center text-ink-muted tabular-nums">{idx + 1}</td>
                   <td className="p-3 font-bold text-ink">{h.soHD}</td>
                   <td className="p-3 text-ink-secondary">{h.ten}</td>
                   <td className="p-3 text-center">
@@ -254,6 +257,7 @@ export function TaiChinhPage() {
             })}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

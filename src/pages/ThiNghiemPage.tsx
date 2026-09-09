@@ -5,7 +5,7 @@ import { StatusBadge, TRANG_THAI_OPTIONS } from '../components/StatusBadge';
 import { KpiCard } from '../components/KpiCard';
 import { DataState } from '../components/DataState';
 import { Modal, Field, inputCls } from '../components/Modal';
-import { TableToolbar, FilterSelect, Pagination, RowActions } from '../components/TableToolbar';
+import { TableToolbar, FilterSelect, RowActions } from '../components/TableToolbar';
 import { KetQuaPhepThuPanel } from '../components/DetailPanels';
 import { useAsyncData } from '../hooks/useAsyncData';
 import { useTableControls } from '../hooks/useTableControls';
@@ -234,10 +234,12 @@ export function ThiNghiemPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <div className="card overflow-x-auto lg:col-span-2">
+            <div className="card overflow-hidden lg:col-span-2">
+              <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 'calc(100vh - 300px)' }}>
               <table className="w-full min-w-[640px]">
-                <thead>
+                <thead className="sticky top-0 z-10 border-b border-border bg-subtle dark:bg-[#1f2332]">
                   <tr>
+                    <th className="th-cell w-10 text-center">#</th>
                     <th className="th-cell">Mã phiếu / Tên mẫu</th>
                     <th className="th-cell">Phép thử & Quy chuẩn</th>
                     <th className="th-cell">Phòng LAS-XD</th>
@@ -246,7 +248,7 @@ export function ThiNghiemPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {table.pageRows.map((mauItem) => {
+                  {table.filteredRows.map((mauItem, idx) => {
                     const mau = mauItem as MauThiNghiem;
                     const active = detail?.id === mau.id;
                     const nxt = NEXT_TRANG_THAI[mau.trangThai];
@@ -261,6 +263,7 @@ export function ThiNghiemPage() {
                           active && 'bg-primary-subtle/50 dark:bg-primary-900/20',
                         )}
                       >
+                        <td className="td-cell text-center text-xs text-ink-muted tabular-nums">{idx + 1}</td>
                         <td className="td-cell">
                           <div className="font-semibold text-ink">{mau.maPhieu}</div>
                           <div className="text-2xs text-ink-muted">{mau.tenMau}</div>
@@ -309,12 +312,7 @@ export function ThiNghiemPage() {
                   })}
                 </tbody>
               </table>
-
-              <Pagination
-                page={table.page}
-                totalPages={table.totalPages}
-                onChange={table.setPage}
-              />
+              </div>
             </div>
 
             <div className="lg:col-span-1">

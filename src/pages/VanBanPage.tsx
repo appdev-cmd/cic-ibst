@@ -5,7 +5,7 @@ import { StatusBadge, TRANG_THAI_OPTIONS } from '../components/StatusBadge';
 import { KpiCard } from '../components/KpiCard';
 import { DataState } from '../components/DataState';
 import { Modal, Field, inputCls } from '../components/Modal';
-import { TableToolbar, FilterSelect, Pagination, RowActions } from '../components/TableToolbar';
+import { TableToolbar, FilterSelect, RowActions } from '../components/TableToolbar';
 import { FileAttachment } from '../components/FileAttachment';
 import { useAsyncData } from '../hooks/useAsyncData';
 import { useTableControls } from '../hooks/useTableControls';
@@ -132,10 +132,12 @@ export function VanBanPage() {
         />
       </TableToolbar>
 
-      <div className="card overflow-x-auto">
+      <div className="card overflow-hidden">
+        <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
         <table className="w-full min-w-[820px]">
-          <thead>
+          <thead className="sticky top-0 z-10 border-b border-border bg-subtle dark:bg-[#1f2332]">
             <tr>
+              <th className="th-cell w-10 text-center">#</th>
               <th className="th-cell">Số hiệu</th>
               <th className="th-cell">Trích yếu</th>
               <th className="th-cell">Loại</th>
@@ -146,8 +148,9 @@ export function VanBanPage() {
             </tr>
           </thead>
           <tbody>
-            {table.pageRows.map((vb) => (
+            {table.filteredRows.map((vb, idx) => (
               <tr key={vb.id} className="tr-hover cursor-pointer" onClick={() => setDetail(vb)}>
+                <td className="td-cell text-center text-xs text-ink-muted tabular-nums">{idx + 1}</td>
                 <td className="td-cell font-mono text-xs font-semibold text-primary">
                   <span className="inline-flex items-center gap-1.5">
                     {vb.soHieu}
@@ -170,8 +173,9 @@ export function VanBanPage() {
             ))}
           </tbody>
         </table>
-        <Pagination page={table.page} totalPages={table.totalPages} onChange={table.setPage} />
+        </div>
       </div>
+
 
       {/* Modal thêm/sửa */}
       <Modal

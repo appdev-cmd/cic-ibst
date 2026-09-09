@@ -148,10 +148,12 @@ export function CongViecPage() {
       </div>
 
       {/* Table */}
-      <div className="card overflow-x-auto">
+      <div className="card overflow-hidden">
+        <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
         <table className="w-full min-w-[960px]">
-          <thead>
+          <thead className="sticky top-0 z-10 border-b border-border bg-subtle dark:bg-[#1f2332]">
             <tr>
+              <th className="th-cell w-10 text-center">#</th>
               <th className="th-cell">Nhiệm vụ / Công việc giao</th>
               <th className="th-cell">Người giao</th>
               <th className="th-cell">Người thực hiện</th>
@@ -163,8 +165,9 @@ export function CongViecPage() {
             </tr>
           </thead>
           <tbody>
-            {filteredList.map((item) => (
+            {filteredList.map((item, idx) => (
               <tr key={item.id} className="tr-hover">
+                <td className="td-cell text-center text-xs text-ink-muted tabular-nums">{idx + 1}</td>
                 <td className="td-cell font-semibold max-w-sm truncate" title={item.tenCongViec}>{item.tenCongViec}</td>
                 <td className="td-cell text-ink-secondary text-xs">{item.nguoiGiao}</td>
                 <td className="td-cell text-ink-secondary text-xs">{item.nguoiThucHien}</td>
@@ -221,6 +224,7 @@ export function CongViecPage() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Modal Add/Edit */}

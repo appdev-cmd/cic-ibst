@@ -806,9 +806,9 @@ export function NhanSuPage() {
 
           {/* ───── TABLE: theo format cic-erp-contract ───── */}
           <div className="overflow-hidden rounded-lg border border-border dark:border-slate-700/70 bg-surface shadow-xs">
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
               <table className="w-full text-left">
-                <thead className="bg-slate-50/80 dark:bg-slate-900/60 border-b border-border-subtle dark:border-slate-700/70">
+                <thead className="sticky top-0 z-10 bg-slate-50/80 dark:bg-[#1f2332] border-b border-border-subtle dark:border-slate-700/70">
                   <tr>
                     <th className="px-3 py-2.5 w-10 text-center text-[11px] font-bold text-ink-secondary uppercase tracking-wider">#</th>
                     <th className="px-3 py-2.5 w-28 text-left text-[11px] font-bold text-ink-secondary uppercase tracking-wider">Mã NV</th>
@@ -823,9 +823,8 @@ export function NhanSuPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border-subtle dark:divide-slate-700/60">
-                  {paged.map((ns, idx) => {
+                  {filtered.map((ns, idx) => {
                     const active = detail?.id === ns.id;
-                    const globalIdx = (currentPage - 1) * PAGE_SIZE + idx + 1;
 
                     return (
                       <tr
@@ -842,7 +841,7 @@ export function NhanSuPage() {
                         )}
                       >
                         {/* STT */}
-                        <td className="px-3 py-2.5 text-center text-xs text-ink-muted tabular-nums">{globalIdx}</td>
+                        <td className="px-3 py-2.5 text-center text-xs text-ink-muted tabular-nums">{idx + 1}</td>
 
                         {/* Mã NV */}
                         <td className="px-3 py-2.5 text-left whitespace-nowrap">
@@ -979,7 +978,7 @@ export function NhanSuPage() {
                   })}
 
                   {/* Empty state */}
-                  {paged.length === 0 && !loading && (
+                  {filtered.length === 0 && !loading && (
                     <tr>
                       <td colSpan={10} className="px-4 py-12 text-center text-sm text-ink-muted">
                         <div className="flex flex-col items-center justify-center gap-2">
@@ -1000,64 +999,6 @@ export function NhanSuPage() {
                 </tbody>
               </table>
             </div>
-
-            {/* Pagination footer — cic-erp-contract style */}
-            {filtered.length > 0 && (
-              <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 border-t border-border bg-slate-50/60 dark:bg-slate-800/40">
-                <p className="text-xs text-ink-muted">
-                  Hiển thị <span className="font-semibold text-ink">{Math.min((currentPage - 1) * PAGE_SIZE + 1, filtered.length)}–{Math.min(currentPage * PAGE_SIZE, filtered.length)}</span> trong tổng số <span className="font-semibold text-ink">{filtered.length}</span> nhân sự
-                </p>
-
-                {totalPages > 1 && (
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                      disabled={currentPage <= 1}
-                      className="p-1.5 rounded-md hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                      title="Trang trước"
-                    >
-                      <ChevronLeft size={14} className="text-ink-secondary" />
-                    </button>
-
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      let pageNum: number;
-                      if (totalPages <= 5) {
-                        pageNum = i + 1;
-                      } else if (currentPage <= 3) {
-                        pageNum = i + 1;
-                      } else if (currentPage >= totalPages - 2) {
-                        pageNum = totalPages - 4 + i;
-                      } else {
-                        pageNum = currentPage - 2 + i;
-                      }
-                      return (
-                        <button
-                          key={pageNum}
-                          onClick={() => setCurrentPage(pageNum)}
-                          className={cn(
-                            'w-7 h-7 rounded-md text-xs font-semibold transition-colors',
-                            currentPage === pageNum
-                              ? 'bg-primary text-white shadow-xs'
-                              : 'text-ink-secondary hover:bg-muted',
-                          )}
-                        >
-                          {pageNum}
-                        </button>
-                      );
-                    })}
-
-                    <button
-                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                      disabled={currentPage >= totalPages}
-                      className="p-1.5 rounded-md hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                      title="Trang tiếp theo"
-                    >
-                      <ChevronRight size={14} className="text-ink-secondary" />
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         </>
       )}

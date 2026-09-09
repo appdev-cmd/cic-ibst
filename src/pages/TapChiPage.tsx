@@ -5,7 +5,7 @@ import { KpiCard } from '../components/KpiCard';
 import { DataState } from '../components/DataState';
 import { StatusBadge } from '../components/StatusBadge';
 import { Modal, Field, inputCls } from '../components/Modal';
-import { TableToolbar, FilterSelect, Pagination } from '../components/TableToolbar';
+import { TableToolbar, FilterSelect } from '../components/TableToolbar';
 import { useAsyncData } from '../hooks/useAsyncData';
 import { useTableControls } from '../hooks/useTableControls';
 import { useCrudForm } from '../hooks/useCrudForm';
@@ -288,10 +288,12 @@ export function TapChiPage() {
             <FilterSelect value={filterTrangThaiBB} onChange={setFilterTrangThaiBB} options={TRANG_THAI_BAI_BAO} allLabel="Tất cả trạng thái" />
           </TableToolbar>
 
-          <div className="card overflow-x-auto">
+          <div className="card overflow-hidden">
+            <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 'calc(100vh - 300px)' }}>
             <table className="w-full min-w-[900px]">
-              <thead>
+              <thead className="sticky top-0 z-10 border-b border-border bg-subtle dark:bg-[#1f2332]">
                 <tr>
+                  <th className="th-cell w-10 text-center">#</th>
                   <th className="th-cell w-[35%]">Tiêu đề</th>
                   <th className="th-cell">Tác giả</th>
                   <th className="th-cell">Cơ quan</th>
@@ -301,8 +303,9 @@ export function TapChiPage() {
                 </tr>
               </thead>
               <tbody>
-                {tableBaiBao.pageRows.map(bb => (
+                {tableBaiBao.filteredRows.map((bb, idx) => (
                   <tr key={bb.id} className="tr-hover cursor-pointer" onClick={() => setChiTietId(bb.id)}>
+                    <td className="td-cell text-center text-xs text-ink-muted tabular-nums">{idx + 1}</td>
                     <td className="td-cell font-medium max-w-sm truncate" title={bb.tieuDe}>{bb.tieuDe}</td>
                     <td className="td-cell text-sm">{bb.tacGia}</td>
                     <td className="td-cell text-sm text-ink-muted truncate max-w-[150px]">{bb.coQuan || '—'}</td>
@@ -313,7 +316,7 @@ export function TapChiPage() {
                 ))}
               </tbody>
             </table>
-            <Pagination page={tableBaiBao.page} totalPages={tableBaiBao.totalPages} onChange={tableBaiBao.setPage} />
+            </div>
           </div>
         </>
       )}

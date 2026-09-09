@@ -162,10 +162,11 @@ export function DonViListTab({
       {/* ── Bảng danh sách đơn vị ── */}
       <div className="bg-surface rounded-xl border border-border dark:border-slate-700/80 overflow-hidden">
         {/* Desktop */}
-        <div className="hidden md:block overflow-x-auto">
+        <div className="hidden md:block overflow-x-auto overflow-y-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
           <table className="w-full">
-            <thead>
-              <tr className="border-b border-border dark:border-slate-700/80 bg-subtle dark:bg-slate-900/60">
+            <thead className="sticky top-0 z-10 border-b border-border dark:border-slate-700/80 bg-subtle dark:bg-[#1f2332]">
+              <tr>
+                <th className="text-left py-3 px-3 text-[11px] font-black text-ink-muted uppercase tracking-wider w-10 text-center">#</th>
                 <th className="text-left py-3 px-5 text-[11px] font-black text-ink-muted uppercase tracking-wider">Đơn vị</th>
                 <th className="text-left py-3 px-3 text-[11px] font-black text-ink-muted uppercase tracking-wider">Trưởng ĐV</th>
                 <th className="text-center py-3 px-3 text-[11px] font-black text-sky-500 uppercase tracking-wider w-20">NS</th>
@@ -175,7 +176,7 @@ export function DonViListTab({
               </tr>
             </thead>
             <tbody className="divide-y divide-border/50 dark:divide-slate-700/40">
-              {filteredList.map(dv => (
+              {filteredList.map((dv, idx) => (
                 <tr
                   key={dv.id}
                   className={cn(
@@ -184,6 +185,8 @@ export function DonViListTab({
                   )}
                   onClick={() => setSelectedId(dv.id)}
                 >
+                  {/* Cell: STT */}
+                  <td className="py-3 px-3 text-center text-xs text-ink-muted tabular-nums">{idx + 1}</td>
                   {/* Cell: Đơn vị */}
                   <td className="py-3 px-5">
                     <div className="flex items-center gap-3">

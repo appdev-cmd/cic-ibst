@@ -144,10 +144,12 @@ export function HoSoTaiLieuPage() {
       </div>
 
       {/* Table */}
-      <div className="card overflow-x-auto">
+      <div className="card overflow-hidden">
+        <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 'calc(100vh - 300px)' }}>
         <table className="w-full min-w-[800px]">
-          <thead>
+          <thead className="sticky top-0 z-10 border-b border-border bg-subtle dark:bg-[#1f2332]">
             <tr>
+              <th className="th-cell w-10 text-center">#</th>
               <th className="th-cell">Tên file tài liệu</th>
               <th className="th-cell">Phân loại hồ sơ</th>
               <th className="th-cell">Người tải lên</th>
@@ -158,8 +160,9 @@ export function HoSoTaiLieuPage() {
             </tr>
           </thead>
           <tbody>
-            {filteredList.map((item) => (
+            {filteredList.map((item, idx) => (
               <tr key={item.id} className="tr-hover">
+                <td className="td-cell text-center text-xs text-ink-muted tabular-nums">{idx + 1}</td>
                 <td className="td-cell font-medium max-w-sm truncate" title={item.tenTaiLieu}>
                   <p className="flex items-center gap-2">
                     <FileText size={15} className="text-primary-500 shrink-0" />
@@ -224,13 +227,14 @@ export function HoSoTaiLieuPage() {
             ))}
             {filteredList.length === 0 && (
               <tr>
-                <td colSpan={7} className="td-cell py-6 text-center text-ink-muted">
+                <td colSpan={8} className="td-cell py-6 text-center text-ink-muted">
                   Không tìm thấy tài liệu phù hợp.
                 </td>
               </tr>
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Modal Add/Edit */}

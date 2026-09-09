@@ -5,7 +5,7 @@ import { StatusBadge, TRANG_THAI_OPTIONS } from '../components/StatusBadge';
 import { KpiCard } from '../components/KpiCard';
 import { DataState } from '../components/DataState';
 import { Modal, Field, inputCls } from '../components/Modal';
-import { TableToolbar, FilterSelect, Pagination, RowActions } from '../components/TableToolbar';
+import { TableToolbar, FilterSelect, RowActions } from '../components/TableToolbar';
 import { MocDeTaiPanel } from '../components/DetailPanels';
 import { useAsyncData } from '../hooks/useAsyncData';
 import { useTableControls } from '../hooks/useTableControls';
@@ -133,10 +133,12 @@ export function DeTaiPage() {
         />
       </TableToolbar>
 
-      <div className="card overflow-x-auto">
+      <div className="card overflow-hidden">
+        <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
         <table className="w-full min-w-[960px]">
-          <thead>
+          <thead className="sticky top-0 z-10 border-b border-border bg-subtle dark:bg-[#1f2332]">
             <tr>
+              <th className="th-cell w-10 text-center">#</th>
               <th className="th-cell">Mã số</th>
               <th className="th-cell">Tên đề tài</th>
               <th className="th-cell">Cấp</th>
@@ -149,8 +151,9 @@ export function DeTaiPage() {
             </tr>
           </thead>
           <tbody>
-            {table.pageRows.map((dt) => (
+            {table.filteredRows.map((dt, idx) => (
               <tr key={dt.id} className="tr-hover cursor-pointer" onClick={() => setDetail(dt)}>
+                <td className="td-cell text-center text-xs text-ink-muted tabular-nums">{idx + 1}</td>
                 <td className="td-cell font-mono text-xs font-semibold text-primary">{dt.maSo}</td>
                 <td className="td-cell max-w-sm">
                   <p className="truncate font-medium">{dt.ten}</p>
@@ -185,8 +188,9 @@ export function DeTaiPage() {
             ))}
           </tbody>
         </table>
-        <Pagination page={table.page} totalPages={table.totalPages} onChange={table.setPage} />
+        </div>
       </div>
+
 
       {/* Modal thêm/sửa */}
       <Modal

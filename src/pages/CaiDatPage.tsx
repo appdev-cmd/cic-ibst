@@ -3,7 +3,7 @@ import { Users, ListTree, ScrollText, ShieldX, LoaderCircle } from 'lucide-react
 import { PageHeader } from '../components/PageHeader';
 import { DataState } from '../components/DataState';
 import { Modal, Field, inputCls } from '../components/Modal';
-import { TableToolbar, Pagination, RowActions } from '../components/TableToolbar';
+import { TableToolbar, RowActions } from '../components/TableToolbar';
 import { useAsyncData } from '../hooks/useAsyncData';
 import { useTableControls } from '../hooks/useTableControls';
 import { useCrudForm } from '../hooks/useCrudForm';
@@ -119,10 +119,12 @@ function NguoiDungTab() {
   return (
     <>
       <DataState loading={loading} error={error} empty={list.length === 0} />
-      <div className="card overflow-x-auto">
+      <div className="card overflow-hidden">
+        <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
         <table className="w-full min-w-[640px]">
-          <thead>
+          <thead className="sticky top-0 z-10 border-b border-border bg-subtle dark:bg-[#1f2332]">
             <tr>
+              <th className="th-cell w-10 text-center">#</th>
               <th className="th-cell">Họ tên</th>
               <th className="th-cell">Vai trò</th>
               <th className="th-cell">Đơn vị</th>
@@ -131,8 +133,9 @@ function NguoiDungTab() {
             </tr>
           </thead>
           <tbody>
-            {list.map((nd) => (
+            {list.map((nd, idx) => (
               <tr key={nd.userId} className="tr-hover">
+                <td className="td-cell text-center text-xs text-ink-muted tabular-nums">{idx + 1}</td>
                 <td className="td-cell font-semibold">{nd.hoTen}</td>
                 <td className="td-cell">
                   <span className="rounded-full bg-primary-subtle px-2 py-0.5 text-2xs font-black uppercase text-primary dark:bg-primary-900/30 dark:text-primary-300">
@@ -161,6 +164,7 @@ function NguoiDungTab() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       <Modal title={editing ? `Phân quyền: ${editing.hoTen}` : ''} open={editing !== null} onClose={() => setEditing(null)}>
@@ -243,10 +247,12 @@ function DanhMucTab() {
           + Thêm mục
         </button>
       </TableToolbar>
-      <div className="card overflow-x-auto">
+      <div className="card overflow-hidden">
+        <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 'calc(100vh - 300px)' }}>
         <table className="w-full min-w-[560px]">
-          <thead>
+          <thead className="sticky top-0 z-10 border-b border-border bg-subtle dark:bg-[#1f2332]">
             <tr>
+              <th className="th-cell w-10 text-center">#</th>
               <th className="th-cell">Nhóm</th>
               <th className="th-cell">Mã mục</th>
               <th className="th-cell">Tên mục</th>
@@ -254,8 +260,9 @@ function DanhMucTab() {
             </tr>
           </thead>
           <tbody>
-            {table.pageRows.map((d) => (
+            {table.filteredRows.map((d, idx) => (
               <tr key={d.id} className="tr-hover">
+                <td className="td-cell text-center text-xs text-ink-muted tabular-nums">{idx + 1}</td>
                 <td className="td-cell font-mono text-xs text-ink-secondary">{d.nhom}</td>
                 <td className="td-cell font-mono text-xs font-semibold text-primary">{d.maMuc}</td>
                 <td className="td-cell font-medium">{d.tenMuc}</td>
@@ -266,7 +273,7 @@ function DanhMucTab() {
             ))}
           </tbody>
         </table>
-        <Pagination page={table.page} totalPages={table.totalPages} onChange={table.setPage} />
+        </div>
       </div>
 
       <Modal
@@ -336,10 +343,12 @@ function NhatKyTab() {
         placeholder="Tìm bảng, người thực hiện..."
         total={table.total}
       />
-      <div className="card overflow-x-auto">
+      <div className="card overflow-hidden">
+        <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 'calc(100vh - 300px)' }}>
         <table className="w-full min-w-[640px]">
-          <thead>
+          <thead className="sticky top-0 z-10 border-b border-border bg-subtle dark:bg-[#1f2332]">
             <tr>
+              <th className="th-cell w-10 text-center">#</th>
               <th className="th-cell">Thời điểm</th>
               <th className="th-cell">Bảng</th>
               <th className="th-cell">Bản ghi</th>
@@ -348,8 +357,9 @@ function NhatKyTab() {
             </tr>
           </thead>
           <tbody>
-            {table.pageRows.map((n) => (
+            {table.filteredRows.map((n, idx) => (
               <tr key={n.id} className="tr-hover">
+                <td className="td-cell text-center text-xs text-ink-muted tabular-nums">{idx + 1}</td>
                 <td className="td-cell font-mono text-xs">
                   {new Date(n.thoiDiem).toLocaleString('vi-VN')}
                 </td>
@@ -365,7 +375,7 @@ function NhatKyTab() {
             ))}
           </tbody>
         </table>
-        <Pagination page={table.page} totalPages={table.totalPages} onChange={table.setPage} />
+        </div>
       </div>
     </>
   );

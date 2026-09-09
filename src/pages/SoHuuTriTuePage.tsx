@@ -3,7 +3,7 @@ import { Plus, Award, Lightbulb, Share2, Shield, Search, Pencil, Trash2, LoaderC
 import { PageHeader } from '../components/PageHeader';
 import { KpiCard } from '../components/KpiCard';
 import { Modal, Field, inputCls } from '../components/Modal';
-import { TableToolbar, FilterSelect, Pagination } from '../components/TableToolbar';
+import { TableToolbar, FilterSelect } from '../components/TableToolbar';
 import { cn } from '../lib/utils';
 
 interface BangSHTT {
@@ -253,11 +253,13 @@ export function SoHuuTriTuePage() {
       </div>
 
       {/* Tables */}
-      <div className="card overflow-x-auto">
+      <div className="card overflow-hidden">
+        <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
         {activeSubTab === 'shtt' ? (
           <table className="w-full min-w-[860px]">
-            <thead>
+            <thead className="sticky top-0 z-10 border-b border-border bg-subtle dark:bg-[#1f2332]">
               <tr>
+                <th className="th-cell w-10 text-center">#</th>
                 <th className="th-cell">Tên tài sản sáng chế / Giải pháp</th>
                 <th className="th-cell">Phân loại</th>
                 <th className="th-cell">Tác giả / Đơn vị sáng lập</th>
@@ -268,8 +270,9 @@ export function SoHuuTriTuePage() {
               </tr>
             </thead>
             <tbody>
-              {filteredShtt.map((item) => (
+              {filteredShtt.map((item, idx) => (
                 <tr key={item.id} className="tr-hover">
+                  <td className="td-cell text-center text-xs text-ink-muted tabular-nums">{idx + 1}</td>
                   <td className="td-cell font-semibold max-w-sm truncate" title={item.ten}>{item.ten}</td>
                   <td className="td-cell text-ink-secondary">
                     {item.loai === 'Sang-che' && 'Bằng Sáng chế'}
@@ -311,7 +314,7 @@ export function SoHuuTriTuePage() {
               ))}
               {filteredShtt.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="td-cell py-6 text-center text-ink-muted">
+                  <td colSpan={8} className="td-cell py-6 text-center text-ink-muted">
                     Không tìm thấy tài sản sở hữu trí tuệ phù hợp.
                   </td>
                 </tr>
@@ -320,8 +323,9 @@ export function SoHuuTriTuePage() {
           </table>
         ) : (
           <table className="w-full min-w-[800px]">
-            <thead>
+            <thead className="sticky top-0 z-10 border-b border-border bg-subtle dark:bg-[#1f2332]">
               <tr>
+                <th className="th-cell w-10 text-center">#</th>
                 <th className="th-cell">Tên công nghệ chuyển giao</th>
                 <th className="th-cell">Bên nhận chuyển giao</th>
                 <th className="th-cell text-right">Giá trị chuyển giao</th>
@@ -331,8 +335,9 @@ export function SoHuuTriTuePage() {
               </tr>
             </thead>
             <tbody>
-              {filteredCgcn.map((item) => (
+              {filteredCgcn.map((item, idx) => (
                 <tr key={item.id} className="tr-hover">
+                  <td className="td-cell text-center text-xs text-ink-muted tabular-nums">{idx + 1}</td>
                   <td className="td-cell font-semibold max-w-sm truncate" title={item.tenCongNghe}>{item.tenCongNghe}</td>
                   <td className="td-cell text-ink-secondary">{item.benNhan}</td>
                   <td className="td-cell text-right font-mono text-xs font-bold text-success">
@@ -369,7 +374,7 @@ export function SoHuuTriTuePage() {
               ))}
               {filteredCgcn.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="td-cell py-6 text-center text-ink-muted">
+                  <td colSpan={7} className="td-cell py-6 text-center text-ink-muted">
                     Không tìm thấy hợp đồng chuyển giao công nghệ phù hợp.
                   </td>
                 </tr>
@@ -377,6 +382,7 @@ export function SoHuuTriTuePage() {
             </tbody>
           </table>
         )}
+        </div>
       </div>
 
       {/* Modal Add/Edit */}

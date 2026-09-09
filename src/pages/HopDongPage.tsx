@@ -49,7 +49,7 @@ import { KpiCard } from '../components/KpiCard';
 import { DataState } from '../components/DataState';
 import { Field, inputCls } from '../components/Modal';
 import { SlideOverTabs, type SlideOverTabDef } from '../components/SlideOver';
-import { TableToolbar, FilterSelect, Pagination, RowActions } from '../components/TableToolbar';
+import { TableToolbar, FilterSelect, RowActions } from '../components/TableToolbar';
 import { ThucHienHopDongPanel } from '../components/ThucHienHopDongPanel';
 import { BaoCaoKhktPanel } from '../components/BaoCaoKhktPanel';
 import { CanhBaoQuyChePanel } from '../components/CanhBaoQuyChePanel';
@@ -1370,10 +1370,12 @@ export function HopDongPage() {
             </button>
           </div>
 
-          <div className="card overflow-x-auto">
+          <div className="card overflow-hidden">
+            <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
               <table className="w-full min-w-[640px]">
-                <thead>
+                <thead className="sticky top-0 z-10 border-b border-border bg-subtle dark:bg-[#1f2332]">
                   <tr>
+                    <th className="th-cell w-10 text-center">#</th>
                     <th className="th-cell">Số HĐ / Tên</th>
                     <th className="th-cell">Khách hàng</th>
                     <th className="th-cell">Đơn vị thực hiện</th>
@@ -1385,7 +1387,7 @@ export function HopDongPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {table.pageRows.map((hdItem) => {
+                  {table.filteredRows.map((hdItem, idx) => {
                     const hd = hdItem as HopDong;
                     const active = stack.some((p) => p.id === panelIdForHopDong(hd.id));
                     const dm = timDinhMuc(hd.nhomHD);
@@ -1402,6 +1404,7 @@ export function HopDongPage() {
                           active && 'bg-primary-subtle/50 dark:bg-primary-900/20',
                         )}
                       >
+                        <td className="td-cell text-center text-xs text-ink-muted tabular-nums">{idx + 1}</td>
                         <td className="td-cell">
                           <div className="flex items-center gap-2">
                             <span className="font-semibold text-ink">{hd.soHD}</span>
@@ -1509,13 +1512,8 @@ export function HopDongPage() {
                   })}
                 </tbody>
               </table>
-
-              <Pagination
-                page={table.page}
-                totalPages={table.totalPages}
-                onChange={table.setPage}
-              />
             </div>
+          </div>
 
         </>
       )}

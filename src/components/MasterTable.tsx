@@ -1,9 +1,8 @@
 import { Search, Pencil, Trash2, Eye } from 'lucide-react';
-import { TableToolbar, Pagination } from './TableToolbar';
 
 export interface Column<T> {
   header: string;
-  accessor: (item: T) => React.ReactNode;
+  accessor: (item: T, index: number) => React.ReactNode;
   className?: string;
 }
 
@@ -18,10 +17,8 @@ export function MasterTable<T extends { id: string }>({
   onEdit,
   onDelete,
   onRowClick,
-  page,
-  totalPages,
-  onPageChange,
   actions,
+  maxHeight,
 }: {
   title?: string;
   searchPlaceholder?: string;
@@ -33,13 +30,19 @@ export function MasterTable<T extends { id: string }>({
   onEdit?: (item: T) => void;
   onDelete?: (item: T) => void;
   onRowClick?: (item: T) => void;
+  /** @deprecated không dùng — scroll thay phân trang */
   page?: number;
+  /** @deprecated không dùng */
   totalPages?: number;
+  /** @deprecated không dùng */
   onPageChange?: (p: number) => void;
   actions?: React.ReactNode;
+  /** Ghi đè chiều cao scroll tối đa, mặc định calc(100vh - 280px) */
+  maxHeight?: string;
 }) {
   const hasActions = Boolean(onView || onEdit || onDelete);
   const clickable = Boolean(onRowClick || onView);
+  const scrollH = maxHeight ?? 'calc(100vh - 280px)';
 
   return (
     <div className="rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
@@ -65,10 +68,11 @@ export function MasterTable<T extends { id: string }>({
         </div>
       )}
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: scrollH }}>
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-border bg-subtle text-xs uppercase tracking-wide text-ink-muted font-bold">
+          <thead className="sticky top-0 z-10 border-b border-border bg-subtle text-xs uppercase tracking-wide text-ink-muted font-bold dark:bg-[#1f2332]">
             <tr>
+              <th className="px-3 py-3 font-bold text-center w-10">#</th>
               {columns.map((col, idx) => (
                 <th key={idx} className={`px-4 py-3 font-bold ${col.className || ''}`}>
                   {col.header}
@@ -80,12 +84,12 @@ export function MasterTable<T extends { id: string }>({
           <tbody className="divide-y divide-border-subtle">
             {data.length === 0 && (
               <tr>
-                <td colSpan={columns.length + (hasActions ? 1 : 0)} className="px-4 py-8 text-center text-xs text-ink-muted italic">
+                <td colSpan={columns.length + (hasActions ? 2 : 1)} className="px-4 py-8 text-center text-xs text-ink-muted italic">
                   Không tìm thấy dữ liệu phù hợp
                 </td>
               </tr>
             )}
-            {data.map((item) => (
+            {data.map((item, rowIdx) => (
               <tr
                 key={item.id}
                 className={`hover:bg-hover-row transition-colors ${clickable ? 'cursor-pointer' : ''}`}
@@ -94,9 +98,10 @@ export function MasterTable<T extends { id: string }>({
                   else if (onView) onView(item);
                 }}
               >
+                <td className="px-3 py-3 text-center text-xs text-ink-muted tabular-nums">{rowIdx + 1}</td>
                 {columns.map((col, idx) => (
                   <td key={idx} className={`px-4 py-3 ${col.className || ''}`}>
-                    {col.accessor(item)}
+                    {col.accessor(item, rowIdx)}
                   </td>
                 ))}
                 {hasActions && (
@@ -143,12 +148,6 @@ export function MasterTable<T extends { id: string }>({
           </tbody>
         </table>
       </div>
-
-      {page && totalPages && totalPages > 1 && onPageChange && (
-        <div className="border-t border-border p-3 flex justify-end">
-          <Pagination page={page} totalPages={totalPages} onChange={onPageChange} />
-        </div>
-      )}
     </div>
   );
 }

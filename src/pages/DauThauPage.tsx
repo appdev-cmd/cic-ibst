@@ -332,13 +332,10 @@ export function DauThauPage({ showHeader = true }: { showHeader?: boolean } = {}
             ),
           },
         ]}
-        data={table.pageRows}
+        data={table.filteredRows}
         onView={handleOpenChiTietGoiThau}
         onEdit={handleOpenEditGoiThau}
         onDelete={crud.removeRow}
-        page={table.page}
-        totalPages={table.totalPages}
-        onPageChange={table.setPage}
       />
       </>
       )}

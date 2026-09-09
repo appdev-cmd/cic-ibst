@@ -350,14 +350,21 @@ interface Props {
   nhanSuList: NhanSu[];
   selectedId: string | null;
   onSelect: (id: string) => void;
+  isPanelOpen?: boolean;
 }
 
-export function OrgChartTree({ donViList, nhanSuList, selectedId, onSelect }: Props) {
+export function OrgChartTree({ donViList, nhanSuList, selectedId, onSelect, isPanelOpen }: Props) {
   const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterLoai, setFilterLoai] = useState<string>('all');
 
-  // Khối Lãnh đạo Viện
+  // Tự động đóng popover khi SlidePanel đã mở (tránh hiện cả 2 cùng lúc)
+  useEffect(() => {
+    if (isPanelOpen) {
+      setOpenPopoverId(null);
+    }
+  }, [isPanelOpen]);
+
   const lanhDao = useMemo(
     () => nhanSuList.filter((n) => n.donVi === 'Lãnh đạo Viện' || n.chucDanh?.includes('Viện trưởng')),
     [nhanSuList]
@@ -598,7 +605,10 @@ export function OrgChartTree({ donViList, nhanSuList, selectedId, onSelect }: Pr
             onClosePopover: () => setOpenPopoverId(null),
             onSelect: () => {
               onSelect(dv.id);
-              setOpenPopoverId((prev) => (prev === dv.id ? null : dv.id));
+              // Nếu SlidePanel đang mở → không hiện popover (panel đã đủ thông tin)
+              if (!isPanelOpen) {
+                setOpenPopoverId((prev) => (prev === dv.id ? null : dv.id));
+              }
             },
           },
           style: { zIndex: openPopoverId === dv.id ? 1000 : 0 },
@@ -644,6 +654,7 @@ export function OrgChartTree({ donViList, nhanSuList, selectedId, onSelect }: Pr
     searchQuery,
     filterLoai,
     dynamicCols,
+    isPanelOpen,
   ]);
 
   // Container viewport sizing
