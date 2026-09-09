@@ -8,6 +8,7 @@ import { StatusBadge, TRANG_THAI_OPTIONS } from '../components/StatusBadge';
 import { KpiCard } from '../components/KpiCard';
 import { DataState } from '../components/DataState';
 import { Field, inputCls } from '../components/Modal';
+import { NhanSuAvatar } from '../components/NhanSuAvatar';
 import { TableToolbar, FilterSelect } from '../components/TableToolbar';
 import { useAsyncData } from '../hooks/useAsyncData';
 import { useTableControls } from '../hooks/useTableControls';
@@ -613,7 +614,8 @@ export function DaoTaoPage() {
                   <tr key={item.id} className="tr-stripe">
                     <td className="td-cell text-center text-xs text-ink-muted tabular-nums">{idx + 1}</td>
                     <td className="td-cell">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2.5">
+                        <NhanSuAvatar hoTen={item.hoTen} size="sm" />
                         <span className="font-semibold text-ink">{item.hoTen}</span>
                         {item.nhanSuId && (
                           <a

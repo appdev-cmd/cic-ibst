@@ -5,6 +5,7 @@ import { ChungChiPanel } from './DetailPanels';
 import { SlideOverTabs, type SlideOverTabDef } from './SlideOver';
 import { useSlidePanelForm } from '../hooks/useSlidePanelCrud';
 import { Field, inputCls } from './Modal';
+import { NhanSuAvatar } from './NhanSuAvatar';
 import {
   fetchNhanSuHoSoMoRong,
   updateNhanSuHoSoMoRong,
@@ -224,9 +225,38 @@ function ThongTinChungTab({ nhanSuId }: { nhanSuId: string }) {
   return (
     <>
       <div className="space-y-3.5">
-        <div className="flex justify-end">
-          <button onClick={() => setFormOpen(true)} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-bold text-ink-secondary hover:bg-muted dark:border-slate-700/80 dark:hover:bg-slate-800/40">
-            <Pencil size={13} /> Chỉnh sửa hồ sơ
+        {/* Profile Card Header với Avatar */}
+        <div className="rounded-xl border border-border bg-gradient-to-r from-subtle/70 to-surface p-3.5 shadow-xs flex items-center gap-3.5 dark:from-slate-900/40 dark:to-slate-800/60 dark:border-slate-700/80">
+          <NhanSuAvatar
+            hoTen={hs.hoVaTen}
+            chucDanh={hs.chucDanh}
+            trangThaiLamViec={hs.trangThai}
+            showStatus
+            size="lg"
+          />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="text-base font-bold text-ink leading-tight">{hs.hoVaTen}</h3>
+              {hs.maDinhDanh && (
+                <span className="font-mono text-2xs font-semibold px-2 py-0.5 rounded bg-subtle text-ink-secondary border border-border dark:border-slate-700">
+                  {hs.maDinhDanh}
+                </span>
+              )}
+            </div>
+            <p className="text-xs font-medium text-ink-secondary mt-1">
+              {[hs.hocVi, hs.chucDanh, hs.tenDonVi].filter(Boolean).join(' · ')}
+            </p>
+            <p className="text-2xs text-ink-muted mt-0.5 flex items-center gap-2 flex-wrap">
+              {hs.email && <span>{hs.email}</span>}
+              {hs.email && hs.soDienThoai && <span>•</span>}
+              {hs.soDienThoai && <span>{hs.soDienThoai}</span>}
+            </p>
+          </div>
+          <button
+            onClick={() => setFormOpen(true)}
+            className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-bold text-ink-secondary hover:bg-muted dark:border-slate-700/80 dark:hover:bg-slate-800/40 shrink-0"
+          >
+            <Pencil size={13} /> Sửa hồ sơ
           </button>
         </div>
         

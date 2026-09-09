@@ -27,6 +27,7 @@ import { KpiCard } from '../components/KpiCard';
 import { DataState } from '../components/DataState';
 import { Field, inputCls } from '../components/Modal';
 import { NhanSuHoSoPanel } from '../components/NhanSuHoSoPanel';
+import { NhanSuAvatar } from '../components/NhanSuAvatar';
 import { DangDoanTheTab } from '../components/DangDoanTheTab';
 import { DaoTaoPage } from './DaoTaoPage';
 import { DonViPage } from './DonViPage';
@@ -43,7 +44,7 @@ import {
   type NhanSuInput,
 } from '../services/org';
 import type { NhanSu, DonVi } from '../types';
-import { cn, exportCsv, exportExcel } from '../lib/utils';
+import { cn, exportCsv, exportExcel, formatNgay } from '../lib/utils';
 import { usePhanQuyen } from '../hooks/usePhanQuyen';
 import { tabDuocPhep, type TaiNguyen } from '../lib/phanQuyen';
 
@@ -840,18 +841,20 @@ export function NhanSuPage() {
           <div className="overflow-hidden rounded-lg border border-border dark:border-slate-700/70 bg-surface shadow-xs">
             <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
               <table className="w-full text-left">
-                <thead className="sticky top-0 z-10 bg-slate-50/80 dark:bg-[#1f2332] border-b border-border-subtle dark:border-slate-700/70">
+                <thead className="sticky top-0 z-20 bg-slate-100 dark:bg-[#191d28] border-b border-border dark:border-slate-700/80 shadow-xs">
                   <tr>
-                    <th className="px-3 py-2.5 w-10 text-center text-[11px] font-bold text-ink-secondary uppercase tracking-wider">#</th>
-                    <th className="px-3 py-2.5 w-28 text-left text-[11px] font-bold text-ink-secondary uppercase tracking-wider">Mã NV</th>
-                    <th className="px-3 py-2.5 min-w-[200px] text-left text-[11px] font-bold text-ink-secondary uppercase tracking-wider">Họ và tên</th>
-                    <th className="px-3 py-2.5 min-w-[150px] text-left text-[11px] font-bold text-ink-secondary uppercase tracking-wider">Chức vụ / Chức danh</th>
-                    <th className="px-3 py-2.5 w-28 text-center text-[11px] font-bold text-ink-secondary uppercase tracking-wider">Học vị</th>
-                    <th className="px-3 py-2.5 min-w-[190px] text-left text-[11px] font-bold text-ink-secondary uppercase tracking-wider">Đơn vị</th>
-                    <th className="px-3 py-2.5 w-28 text-left text-[11px] font-bold text-ink-secondary uppercase tracking-wider">Số ĐT</th>
-                    <th className="px-3 py-2.5 w-20 text-right text-[11px] font-bold text-ink-secondary uppercase tracking-wider">Hệ số</th>
-                    <th className="px-3 py-2.5 w-28 text-center text-[11px] font-bold text-ink-secondary uppercase tracking-wider">Trạng thái</th>
-                    <th className="px-3 py-2.5 w-16 text-right text-[11px] font-bold text-ink-secondary uppercase tracking-wider"></th>
+                    <th className="sticky top-0 bg-slate-100 dark:bg-[#191d28] px-3 py-3 w-10 text-center text-[11px] font-bold text-ink-secondary uppercase tracking-wider">#</th>
+                    <th className="sticky top-0 bg-slate-100 dark:bg-[#191d28] px-3 py-3 w-28 text-left text-[11px] font-bold text-ink-secondary uppercase tracking-wider">Mã NV</th>
+                    <th className="sticky top-0 bg-slate-100 dark:bg-[#191d28] px-3 py-3 min-w-[210px] text-left text-[11px] font-bold text-ink-secondary uppercase tracking-wider">Họ và tên</th>
+                    <th className="sticky top-0 bg-slate-100 dark:bg-[#191d28] px-3 py-3 w-28 text-center text-[11px] font-bold text-ink-secondary uppercase tracking-wider">Ngày sinh</th>
+                    <th className="sticky top-0 bg-slate-100 dark:bg-[#191d28] px-3 py-3 min-w-[150px] text-left text-[11px] font-bold text-ink-secondary uppercase tracking-wider">Chức vụ / Chức danh</th>
+                    <th className="sticky top-0 bg-slate-100 dark:bg-[#191d28] px-3 py-3 w-28 text-center text-[11px] font-bold text-ink-secondary uppercase tracking-wider">Học vị</th>
+                    <th className="sticky top-0 bg-slate-100 dark:bg-[#191d28] px-3 py-3 min-w-[190px] text-left text-[11px] font-bold text-ink-secondary uppercase tracking-wider">Đơn vị công tác</th>
+                    <th className="sticky top-0 bg-slate-100 dark:bg-[#191d28] px-3 py-3 min-w-[210px] text-left text-[11px] font-bold text-ink-secondary uppercase tracking-wider">Chứng chỉ hành nghề</th>
+                    <th className="sticky top-0 bg-slate-100 dark:bg-[#191d28] px-3 py-3 w-28 text-left text-[11px] font-bold text-ink-secondary uppercase tracking-wider">Số ĐT</th>
+                    <th className="sticky top-0 bg-slate-100 dark:bg-[#191d28] px-3 py-3 w-24 text-right text-[11px] font-bold text-ink-secondary uppercase tracking-wider">Hệ số &amp; PCCV</th>
+                    <th className="sticky top-0 bg-slate-100 dark:bg-[#191d28] px-3 py-3 w-28 text-center text-[11px] font-bold text-ink-secondary uppercase tracking-wider">Trạng thái</th>
+                    <th className="sticky top-0 bg-slate-100 dark:bg-[#191d28] px-3 py-3 w-16 text-right text-[11px] font-bold text-ink-secondary uppercase tracking-wider"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border-subtle dark:divide-slate-700/60">
@@ -877,15 +880,44 @@ export function NhanSuPage() {
 
                         {/* Mã NV */}
                         <td className="px-3 py-2.5 text-left whitespace-nowrap">
-                          <span className="font-mono text-2xs font-semibold px-1.5 py-0.5 rounded bg-subtle text-ink-secondary whitespace-nowrap">
+                          <span className="font-mono text-2xs font-semibold px-1.5 py-0.5 rounded bg-subtle text-ink-secondary whitespace-nowrap border border-border/50">
                             {ns.maDinhDanh || `NS-${String(ns.id).padStart(4, '0')}`}
                           </span>
                         </td>
 
-                        {/* Họ tên + Email */}
+                        {/* Họ tên + Email + Avatar */}
                         <td className="px-3 py-2.5">
-                          <div className="font-semibold text-sm text-ink leading-tight">{ns.hoTen}</div>
-                          <div className="text-[11px] text-ink-muted mt-0.5 truncate max-w-[220px]">{ns.email || '—'}</div>
+                          <div className="flex items-center gap-3">
+                            <NhanSuAvatar
+                              hoTen={ns.hoTen}
+                              chucDanh={ns.chucDanh}
+                              trangThaiLamViec={ns.trangThaiLamViec}
+                              showStatus
+                              size="md"
+                            />
+                            <div className="min-w-0">
+                              <div className="font-semibold text-sm text-ink leading-tight truncate">{ns.hoTen}</div>
+                              <div className="text-[11px] text-ink-muted mt-0.5 truncate max-w-[190px]">{ns.email || '—'}</div>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Ngày sinh / Giới tính */}
+                        <td className="px-3 py-2.5 text-center whitespace-nowrap">
+                          {ns.ngaySinh ? (
+                            <div className="flex flex-col items-center">
+                              <span className="text-xs font-mono font-medium text-ink">
+                                {formatNgay(ns.ngaySinh)}
+                              </span>
+                              {ns.gioiTinh && (
+                                <span className="text-[10px] text-ink-muted">
+                                  {ns.gioiTinh === 'N?' ? 'Nữ' : ns.gioiTinh}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-ink-muted text-xs">—</span>
+                          )}
                         </td>
 
                         {/* Chức vụ / Chức danh */}
@@ -906,16 +938,11 @@ export function NhanSuPage() {
                                 </span>
                               )}
                             </div>
-                            {ns.phuCapChucVu != null && Number(ns.phuCapChucVu) > 0 && (
-                              <span className="text-[10px] font-mono text-ink-muted">
-                                PCCV: <span className="font-semibold text-ink-secondary">{Number(ns.phuCapChucVu).toFixed(2)}</span>
-                              </span>
-                            )}
                           </div>
                         </td>
 
                         {/* Học vị */}
-                        <td className="px-3 py-2.5 text-center">
+                        <td className="px-3 py-2.5 text-center whitespace-nowrap">
                           {ns.hocVi ? (
                             <span className={cn(
                               'inline-flex items-center px-2 py-0.5 rounded-full text-2xs font-semibold',
@@ -934,7 +961,7 @@ export function NhanSuPage() {
                           )}
                         </td>
 
-                        {/* Đơn vị */}
+                        {/* Đơn vị công tác */}
                         <td className="px-3 py-2.5">
                           {(() => {
                             const dvObj = ns.donViId ? donViObjMap.get(ns.donViId) : undefined;
@@ -958,14 +985,35 @@ export function NhanSuPage() {
                           })()}
                         </td>
 
+                        {/* Chứng chỉ hành nghề */}
+                        <td className="px-3 py-2.5">
+                          {ns.chungChi && ns.chungChi !== '—' ? (
+                            <div className="flex items-center gap-1.5 max-w-[240px]">
+                              <Award size={13} className="text-amber-600 dark:text-amber-400 shrink-0" />
+                              <span className="text-xs font-medium text-ink-secondary truncate" title={ns.chungChi}>
+                                {ns.chungChi}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-2xs text-ink-muted italic">Chưa có CCHN</span>
+                          )}
+                        </td>
+
                         {/* Số ĐT */}
                         <td className="px-3 py-2.5 text-xs text-ink-secondary whitespace-nowrap font-mono">
                           {ns.soDienThoai || '—'}
                         </td>
 
-                        {/* Hệ số lương */}
-                        <td className="px-3 py-2.5 text-right font-mono text-xs font-semibold text-ink tabular-nums">
-                          {ns.heSoLuong != null ? Number(ns.heSoLuong).toFixed(2) : '—'}
+                        {/* Hệ số & PCCV */}
+                        <td className="px-3 py-2.5 text-right font-mono text-xs tabular-nums whitespace-nowrap">
+                          <span className="font-bold text-ink">
+                            {ns.heSoLuong != null ? Number(ns.heSoLuong).toFixed(2) : '—'}
+                          </span>
+                          {ns.phuCapChucVu != null && Number(ns.phuCapChucVu) > 0 && (
+                            <div className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">
+                              +{Number(ns.phuCapChucVu).toFixed(2)} PCCV
+                            </div>
+                          )}
                         </td>
 
                         {/* Trạng thái */}
@@ -1012,7 +1060,7 @@ export function NhanSuPage() {
                   {/* Empty state */}
                   {filtered.length === 0 && !loading && (
                     <tr>
-                      <td colSpan={10} className="px-4 py-12 text-center text-sm text-ink-muted">
+                      <td colSpan={12} className="px-4 py-12 text-center text-sm text-ink-muted">
                         <div className="flex flex-col items-center justify-center gap-2">
                           <Users size={28} className="text-ink-muted/50" />
                           <p className="font-medium text-ink-secondary">Không tìm thấy nhân sự phù hợp</p>

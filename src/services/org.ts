@@ -121,7 +121,7 @@ export async function fetchNhanSuFull(): Promise<NhanSu[]> {
   const { data, error } = await supabase
     .from('nhan_su')
     .select(
-      `id, ma_dinh_danh, ho_va_ten, hoc_vi, chuc_danh, don_vi_id, email, so_dien_thoai, trang_thai, he_so_luong, phu_cap_chuc_vu,
+      `id, ma_dinh_danh, ho_va_ten, ngay_sinh, gioi_tinh, hoc_vi, chuc_danh, don_vi_id, email, so_dien_thoai, trang_thai, he_so_luong, phu_cap_chuc_vu,
        don_vi!nhan_su_don_vi_id_fkey(ten_don_vi, loai_don_vi, thu_tu),
        chung_chi_hanh_nghe(ten_linh_vuc_hanh_nghe, hang_chung_chi, ngay_het_han)`,
     )
@@ -139,6 +139,8 @@ export async function fetchNhanSuFull(): Promise<NhanSu[]> {
       id: String(r.id),
       maDinhDanh: r.ma_dinh_danh ?? undefined,
       hoTen: r.ho_va_ten,
+      ngaySinh: r.ngay_sinh ?? null,
+      gioiTinh: r.gioi_tinh ?? null,
       chucDanh: r.chuc_danh ?? '',
       hocVi: r.hoc_vi ?? '',
       donVi: dv?.ten_don_vi ?? '',

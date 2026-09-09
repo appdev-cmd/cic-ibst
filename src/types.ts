@@ -111,6 +111,8 @@ export interface NhanSu {
   id: string;
   maDinhDanh?: string;
   hoTen: string;
+  ngaySinh?: string | null;
+  gioiTinh?: string | null;
   chucDanh: string;
   chucVu?: string;
   hocVi: string;
