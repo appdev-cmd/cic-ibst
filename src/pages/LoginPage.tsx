@@ -1,9 +1,40 @@
-import { useState, type FormEvent } from 'react';
+import { useState, useRef, useEffect, type FormEvent } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { Lock, User, Eye, EyeOff, LoaderCircle, LayoutDashboard, FlaskConical, Users, FileText, Sun, Moon, Leaf } from 'lucide-react';
+import { Lock, User, Eye, EyeOff, LoaderCircle, LayoutDashboard, FlaskConical, Users, FileText, Sun, Moon, Leaf, ChevronDown } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import logo from '../assets/logo.png';
+
+// ── Danh sách tài khoản thử nghiệm nhanh (Mật khẩu chung: 123456) ──
+const QUICK_ACCOUNTS = [
+  // Lãnh đạo & Quản trị
+  { group: 'Lãnh đạo & Quản trị', email: 'giamdoc@ibst.vn',  label: 'Giám đốc Viện',               icon: '🏛️' },
+  { group: 'Lãnh đạo & Quản trị', email: 'admin@ibst.vn',    label: 'Quản trị hệ thống',            icon: '⚙️' },
+  // Phòng chức năng
+  { group: 'Phòng chức năng', email: 'tonghop@ibst.vn',   label: 'Phòng Tổng hợp',               icon: '🏢' },
+  { group: 'Phòng chức năng', email: 'khkt@ibst.vn',      label: 'Phòng KHKT',                    icon: '📋' },
+  { group: 'Phòng chức năng', email: 'tckt@ibst.vn',      label: 'Phòng TCKT',                    icon: '💰' },
+  { group: 'Phòng chức năng', email: 'tchc@ibst.vn',      label: 'Phòng TCHC',                    icon: '📁' },
+  // Đơn vị chuyên môn & sản xuất
+  { group: 'Đơn vị chuyên môn', email: 'kc@ibst.vn',     label: 'Viện KC – Kết cấu',             icon: '🏗️' },
+  { group: 'Đơn vị chuyên môn', email: 'bt@ibst.vn',     label: 'Viện BT – Bê tông',             icon: '🧱' },
+  { group: 'Đơn vị chuyên môn', email: 'dkt@ibst.vn',    label: 'Viện ĐKT – Địa kỹ thuật',      icon: '⛏️' },
+  { group: 'Đơn vị chuyên môn', email: 'mn@ibst.vn',     label: 'Phân viện Miền Nam',             icon: '🌴' },
+  { group: 'Đơn vị chuyên môn', email: 'mt@ibst.vn',     label: 'Phân viện Miền Trung',           icon: '🌊' },
+  { group: 'Đơn vị chuyên môn', email: 'am@ibst.vn',     label: 'TT Chống ăn mòn (AM)',          icon: '🔬' },
+  { group: 'Đơn vị chuyên môn', email: 'td@ibst.vn',     label: 'TT Thí nghiệm (TD)',            icon: '🧪' },
+  { group: 'Đơn vị chuyên môn', email: 'cn@ibst.vn',     label: 'TT Công nghệ & VL (CN)',        icon: '⚗️' },
+  { group: 'Đơn vị chuyên môn', email: 'kct@ibst.vn',    label: 'TT Kết cấu thép (KCT)',         icon: '🔩' },
+  { group: 'Đơn vị chuyên môn', email: 'tkxd@ibst.vn',   label: 'TT Thiết kế XD (TKXD)',         icon: '📐' },
+  { group: 'Đơn vị chuyên môn', email: 'cnxd@ibst.vn',   label: 'TT Công nghệ XD (CNXD)',        icon: '🏢' },
+  { group: 'Đơn vị chuyên môn', email: 'cnht@ibst.vn',   label: 'TT CN Hạ tầng (CNHT)',          icon: '🛣️' },
+  { group: 'Đơn vị chuyên môn', email: 'tbxd@ibst.vn',   label: 'TT Thiết bị XD (TBXD)',         icon: '🔧' },
+  { group: 'Đơn vị chuyên môn', email: 'qt@ibst.vn',     label: 'TT Dự án Quốc tế (QT)',         icon: '🌐' },
+  { group: 'Đơn vị chuyên môn', email: 'bim@ibst.vn',    label: 'TT BIM',                        icon: '💻' },
+  { group: 'Đơn vị chuyên môn', email: 'ctcp@ibst.vn',   label: 'Công ty CP IBST (CTCP)',        icon: '🏭' },
+  { group: 'Đơn vị chuyên môn', email: 'cic@ibst.vn',    label: 'Trưởng ĐV – IBST.KC',          icon: '👤' },
+];
+const QUICK_GROUPS = [...new Set(QUICK_ACCOUNTS.map(a => a.group))];
 
 export function LoginPage() {
   const { session, signIn } = useAuth();
@@ -15,6 +46,19 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Đóng dropdown khi click ra ngoài
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   if (session) return <Navigate to="/" replace />;
 
@@ -327,47 +371,63 @@ export function LoginPage() {
               )}
             </button>
 
-            {/* Quick Demo Login Chips */}
-            <div className="pt-3 space-y-1.5">
-              <span className="text-[10px] font-bold text-ink-muted uppercase tracking-wider block text-center">
+            {/* ── Quick Login Dropdown ── */}
+            <div className="pt-3" ref={dropdownRef}>
+              <span className="text-[10px] font-bold text-ink-muted uppercase tracking-wider block text-center mb-1.5">
                 Hoặc chọn tài khoản thử nghiệm nhanh (Mật khẩu: 123456)
               </span>
-              <div className="grid grid-cols-2 gap-1.5 text-xs font-semibold">
-                <button
-                  type="button"
-                  onClick={() => { setEmail('tonghop@ibst.vn'); setPassword('123456'); }}
-                  className="rounded-lg border border-sky-300 bg-sky-50 dark:bg-sky-950/40 dark:border-sky-800 p-2 text-sky-900 dark:text-sky-200 hover:bg-sky-100 text-left transition-colors"
-                >
-                  🏢 Phòng Tổng hợp
-                  <span className="block text-[10px] font-normal text-sky-700 dark:text-sky-300">tonghop@ibst.vn</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setEmail('khkt@ibst.vn'); setPassword('123456'); }}
-                  className="rounded-lg border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 dark:border-emerald-800 p-2 text-emerald-900 dark:text-emerald-200 hover:bg-emerald-100 text-left transition-colors"
-                >
-                  📋 Phòng KHKT
-                  <span className="block text-[10px] font-normal text-emerald-700 dark:text-emerald-300">khkt@ibst.vn</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setEmail('tckt@ibst.vn'); setPassword('123456'); }}
-                  className="rounded-lg border border-purple-300 bg-purple-50 dark:bg-purple-950/40 dark:border-purple-800 p-2 text-purple-900 dark:text-purple-200 hover:bg-purple-100 text-left transition-colors"
-                >
-                  💰 Phòng TCKT
-                  <span className="block text-[10px] font-normal text-purple-700 dark:text-purple-300">tckt@ibst.vn</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setEmail('cic@ibst.vn'); setPassword('123456'); }}
-                  className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/40 dark:border-amber-800 p-2 text-amber-900 dark:text-amber-200 hover:bg-amber-100 text-left transition-colors"
-                >
-                  👤 Trưởng ĐV (VKCT)
-                  <span className="block text-[10px] font-normal text-amber-700 dark:text-amber-300">cic@ibst.vn</span>
-                </button>
-              </div>
+
+              {/* Trigger button */}
+              <button
+                type="button"
+                onClick={() => setDropdownOpen(v => !v)}
+                className="w-full flex items-center justify-between gap-2 rounded-xl border border-border bg-subtle px-3 py-2.5 text-sm text-ink hover:bg-surface hover:border-primary-400 transition-all"
+              >
+                <span className="truncate text-ink-muted">
+                  {email ? (QUICK_ACCOUNTS.find(a => a.email === email)?.icon + ' ' + (QUICK_ACCOUNTS.find(a => a.email === email)?.label ?? email)) : '— Chọn tài khoản —'}
+                </span>
+                <ChevronDown size={15} className={`shrink-0 text-ink-muted transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {/* Dropdown panel */}
+              {dropdownOpen && (
+                <div className="relative z-50 mt-1 w-full rounded-xl border border-border bg-surface shadow-dropdown overflow-hidden">
+                  <div className="max-h-64 overflow-y-auto py-1">
+                    {QUICK_GROUPS.map(group => (
+                      <div key={group}>
+                        {/* Group label */}
+                        <div className="px-3 pt-2 pb-0.5 text-[10px] font-black uppercase tracking-wider text-ink-muted bg-subtle/60 dark:bg-slate-900/40">
+                          {group}
+                        </div>
+                        {QUICK_ACCOUNTS.filter(a => a.group === group).map(acc => (
+                          <button
+                            key={acc.email}
+                            type="button"
+                            onClick={() => {
+                              setEmail(acc.email);
+                              setPassword('123456');
+                              setDropdownOpen(false);
+                            }}
+                            className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-primary-50 dark:hover:bg-slate-800/50 transition-colors"
+                          >
+                            <span className="text-base shrink-0">{acc.icon}</span>
+                            <div className="min-w-0">
+                              <div className="text-xs font-semibold text-ink truncate">{acc.label}</div>
+                              <div className="text-[10px] text-ink-muted font-mono truncate">{acc.email}</div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="border-t border-border px-3 py-1.5 text-[10px] text-ink-muted text-center bg-subtle/40 dark:bg-slate-900/20">
+                    Nhấn chọn → điền tự động vào form → bấm Đăng nhập
+                  </div>
+                </div>
+              )}
             </div>
           </form>
+
 
           <div className="mt-12 text-center text-2xs text-ink-muted">
             Phát triển bởi CIC — dữ liệu phân quyền theo QĐ 942/QĐ-BXD
