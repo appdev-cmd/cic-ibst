@@ -1438,7 +1438,7 @@ export function HopDongPage() {
                     <th className="th-cell">Chủ trì HĐ</th>
                     <th className="th-cell">Giá trị (triệu đ)</th>
                     <th className="th-cell">Bước quy trình</th>
-                    <th className="th-cell">Nhóm HĐ / Phê duyệt</th>
+                    <th className="th-cell min-w-[130px] whitespace-nowrap">Nhóm HĐ / Phê duyệt</th>
                     <th className="th-cell text-right">Thao tác</th>
                   </tr>
                 </thead>
@@ -1552,9 +1552,11 @@ export function HopDongPage() {
                               e.stopPropagation();
                               openDetail(hd, 'giao-viec');
                             }}
-                            className="btn-secondary mt-1 py-1 text-2xs font-bold gap-1"
+                            className="btn-secondary inline-flex items-center gap-1.5 mt-1 px-2 py-0.5 text-2xs font-semibold rounded whitespace-nowrap shadow-2xs"
+                            title="Xem chi tiết & lập Phiếu giao việc (Điều 7 QC 2815)"
                           >
-                            <FileText size={12} /> Phiếu giao việc
+                            <FileText size={12} className="shrink-0 text-primary-600 dark:text-primary-400" />
+                            <span>Phiếu giao việc</span>
                           </button>
                         </td>
                         <td className="td-cell text-right">
