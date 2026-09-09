@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { usePhanQuyen } from '../hooks/usePhanQuyen';
 import { useSlidePanel } from '../context/SlidePanelContext';
 import {
@@ -219,7 +219,7 @@ const CustomDebtTooltip = ({ active, payload }: any) => {
 export function DashboardPage() {
   const [activeTab, setActiveTab] = useState('tong-quan');
   const [filterYear, setFilterYear] = useState('2026');
-  const [filterPeriod, setFilterPeriod] = useState('6-thang');
+  const [filterPeriod, setFilterPeriod] = useState('all');
   const [filterDonVi, setFilterDonVi] = useState('all');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
@@ -230,6 +230,7 @@ export function DashboardPage() {
   const [showAllDebts, setShowAllDebts] = useState(false);
   const [debtViewMode, setDebtViewMode] = useState<'cot-dung' | 'ma-tran'>('cot-dung');
   const [tableUnit, setTableUnit] = useState<'ty' | 'nghin'>('ty');
+  const [trendChartMode, setTrendChartMode] = useState<'ky-ket' | 'doanh-thu' | 'dong-tien' | 'so-sanh'>('ky-ket');
 
   const { openPanel } = useSlidePanel();
 
@@ -767,6 +768,38 @@ export function DashboardPage() {
   const noDongData = dashboardData?.noDongData || [];
   const unitHealthData = dashboardData?.unitHealthData || [];
   const taiChinhData = dashboardData?.taiChinhData || [];
+  const luyKeChartData = useMemo(() => {
+    let sumKyMoi = 0;
+    let sumDoanhThu = 0;
+    let sumDongTien = 0;
+    const keHoachNam = 750; // Kế hoạch năm toàn Viện 750 tỷ
+
+    return taiChinhData.map((item, idx) => {
+      const monthNum = idx + 1;
+      const mucTieuTuyenTinh = Math.round(((keHoachNam * monthNum) / 12) * 100) / 100;
+      const hasActual = item.hasData !== false && monthNum <= 9 && (item.kyMoi !== null || item.doanhThu !== null);
+
+      if (hasActual) {
+        sumKyMoi += item.kyMoi || 0;
+        sumDoanhThu += item.doanhThu || 0;
+        sumDongTien += item.dongTien || 0;
+      }
+
+      return {
+        month: `Th.${monthNum}`,
+        monthLabel: `Tháng ${monthNum}/2026`,
+        kyMoiThang: hasActual ? item.kyMoi : null,
+        doanhThuThang: hasActual ? item.doanhThu : null,
+        dongTienThang: hasActual ? item.dongTien : null,
+        kyMoiLuyKe: hasActual ? Math.round(sumKyMoi * 100) / 100 : null,
+        doanhThuLuyKe: hasActual ? Math.round(sumDoanhThu * 100) / 100 : null,
+        dongTienLuyKe: hasActual ? Math.round(sumDongTien * 100) / 100 : null,
+        mucTieu: mucTieuTuyenTinh,
+        keHoachNam,
+        hasActual,
+      };
+    });
+  }, [taiChinhData]);
   const growthComparisonData = dashboardData?.growthComparisonData || [];
   const coCauDoanhThu = dashboardData?.coCauDoanhThu || [];
   const coCauTienVe = dashboardData?.coCauTienVe || [];
@@ -1158,7 +1191,407 @@ export function DashboardPage() {
             </button>
           </div>
 
-          {/* Row 2: Charts */}
+          {/* Row 2: Charts - Tiến độ Kế hoạch Ký kết & Doanh thu Lũy kế vs Mục tiêu (Ảnh 2) */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="card p-6 lg:col-span-2 border border-border dark:border-slate-700/80">
+              {/* Header phong cách Báo cáo Điều hành chuẩn ảnh 2 */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 border-b border-border dark:border-slate-700/80 pb-3.5">
+                <div>
+                  <span className="text-[11px] font-black uppercase tracking-wider text-primary-600 dark:text-primary-400">
+                    TIẾN ĐỘ
+                  </span>
+                  <h3 className="text-[18px] font-black text-ink uppercase tracking-tight mt-0.5">
+                    {trendChartMode === 'ky-ket' && 'GIÁ TRỊ KÝ KẾT LŨY KẾ VS MỤC TIÊU'}
+                    {trendChartMode === 'doanh-thu' && 'DOANH THU THỰC HIỆN LŨY KẾ VS MỤC TIÊU'}
+                    {trendChartMode === 'dong-tien' && 'DÒNG TIỀN VỀ LŨY KẾ VS MỤC TIÊU'}
+                    {trendChartMode === 'so-sanh' && 'SO SÁNH TIẾN ĐỘ KÝ KẾT & DOANH THU LŨY KẾ'}
+                  </h3>
+                  <p className="text-xs text-ink-muted mt-0.5">
+                    Tiến độ tích lũy so với kế hoạch năm (750 tỷ VNĐ)
+                  </p>
+                </div>
+
+                {/* Pill Segmented Controls như ảnh 2 */}
+                <div className="flex items-center gap-1 bg-subtle dark:bg-slate-800/90 p-1 rounded-xl border border-border dark:border-slate-700/80 shrink-0 self-start sm:self-center">
+                  <button
+                    type="button"
+                    onClick={() => setTrendChartMode('ky-ket')}
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      trendChartMode === 'ky-ket'
+                        ? 'bg-amber-500 text-white shadow-xs'
+                        : 'text-ink-secondary hover:text-ink hover:bg-surface'
+                    }`}
+                  >
+                    Ký kết
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTrendChartMode('doanh-thu')}
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      trendChartMode === 'doanh-thu'
+                        ? 'bg-emerald-600 text-white shadow-xs'
+                        : 'text-ink-secondary hover:text-ink hover:bg-surface'
+                    }`}
+                  >
+                    Doanh thu
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTrendChartMode('dong-tien')}
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      trendChartMode === 'dong-tien'
+                        ? 'bg-sky-600 text-white shadow-xs'
+                        : 'text-ink-secondary hover:text-ink hover:bg-surface'
+                    }`}
+                  >
+                    Dòng tiền
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTrendChartMode('so-sanh')}
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      trendChartMode === 'so-sanh'
+                        ? 'bg-primary-600 text-white shadow-xs'
+                        : 'text-ink-secondary hover:text-ink hover:bg-surface'
+                    }`}
+                  >
+                    So sánh
+                  </button>
+                </div>
+              </div>
+
+              {/* Chart container */}
+              <div className="h-[430px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={luyKeChartData} margin={{ top: 20, right: 25, left: 10, bottom: 10 }}>
+                    <defs>
+                      <linearGradient id="colorLuyKeKyKet" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.35} />
+                        <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.02} />
+                      </linearGradient>
+                      <linearGradient id="colorLuyKeDoanhThu" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.35} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0.02} />
+                      </linearGradient>
+                      <linearGradient id="colorLuyKeDongTien" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#0284c7" stopOpacity={0.35} />
+                        <stop offset="95%" stopColor="#0284c7" stopOpacity={0.02} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
+                    <XAxis dataKey="month" stroke="var(--text-muted)" fontSize={12} tickMargin={10} />
+                    <YAxis
+                      stroke="var(--text-muted)"
+                      fontSize={12}
+                      tickFormatter={(val) => `${val} tỷ`}
+                      domain={[0, 'auto']}
+                    />
+                    <ReferenceLine
+                      y={750}
+                      stroke="#94a3b8"
+                      strokeDasharray="3 3"
+                      label={{
+                        value: 'KH năm: 750 tỷ',
+                        position: 'insideTopLeft',
+                        fill: 'var(--text-muted)',
+                        fontSize: 11,
+                        fontWeight: 700,
+                      }}
+                    />
+                    <Tooltip
+                      {...tooltipStyle}
+                      content={({ active, payload }) => {
+                        if (!active || !payload || !payload.length) return null;
+                        const data = payload[0].payload;
+                        return (
+                          <div className="bg-surface/95 dark:bg-slate-900/95 backdrop-blur-md p-3.5 rounded-xl shadow-lg border border-border dark:border-slate-700/80 text-xs min-w-[230px]">
+                            <div className="font-black text-ink pb-1.5 mb-2 border-b border-border dark:border-slate-700/80 flex items-center justify-between">
+                              <span>{data.monthLabel}</span>
+                              <span className="text-2xs text-ink-muted">Mục tiêu năm: 750 tỷ</span>
+                            </div>
+                            {!data.hasActual ? (
+                              <div className="space-y-1.5 py-1">
+                                <div className="text-amber-600 dark:text-amber-400 font-medium italic">
+                                  Chưa phát sinh dữ liệu thực tế
+                                </div>
+                                <div className="flex justify-between items-center text-slate-500 dark:text-slate-400 pt-1 border-t border-border dark:border-slate-700/80">
+                                  <span>Mục tiêu phân kỳ:</span>
+                                  <span className="font-bold text-ink">{data.mucTieu?.toFixed(2)} tỷ VNĐ</span>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="space-y-1.5">
+                                {trendChartMode === 'ky-ket' && (
+                                  <>
+                                    <div className="flex justify-between items-center text-amber-600 dark:text-amber-400 font-bold">
+                                      <span>Ký kết Lũy kế:</span>
+                                      <span>{data.kyMoiLuyKe != null ? data.kyMoiLuyKe.toFixed(2) : '--'} tỷ VNĐ</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-slate-500 dark:text-slate-400">
+                                      <span>Mục tiêu phân kỳ:</span>
+                                      <span>{data.mucTieu?.toFixed(2)} tỷ VNĐ</span>
+                                    </div>
+                                    <div className="pt-1 border-t border-border dark:border-slate-700/80 flex justify-between items-center text-2xs">
+                                      <span className="text-ink-muted">Tỷ lệ hoàn thành:</span>
+                                      <span className="font-bold text-success">
+                                        {Math.round(((data.kyMoiLuyKe || 0) / 750) * 100)}% KH năm
+                                      </span>
+                                    </div>
+                                  </>
+                                )}
+                                {trendChartMode === 'doanh-thu' && (
+                                  <>
+                                    <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400 font-bold">
+                                      <span>Doanh thu Lũy kế:</span>
+                                      <span>{data.doanhThuLuyKe != null ? data.doanhThuLuyKe.toFixed(2) : '--'} tỷ VNĐ</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-slate-500 dark:text-slate-400">
+                                      <span>Mục tiêu phân kỳ:</span>
+                                      <span>{data.mucTieu?.toFixed(2)} tỷ VNĐ</span>
+                                    </div>
+                                    <div className="pt-1 border-t border-border dark:border-slate-700/80 flex justify-between items-center text-2xs">
+                                      <span className="text-ink-muted">Tỷ lệ hoàn thành:</span>
+                                      <span className="font-bold text-success">
+                                        {Math.round(((data.doanhThuLuyKe || 0) / 750) * 100)}% KH năm
+                                      </span>
+                                    </div>
+                                  </>
+                                )}
+                                {trendChartMode === 'dong-tien' && (
+                                  <>
+                                    <div className="flex justify-between items-center text-sky-600 dark:text-sky-400 font-bold">
+                                      <span>Dòng tiền Lũy kế:</span>
+                                      <span>{data.dongTienLuyKe != null ? data.dongTienLuyKe.toFixed(2) : '--'} tỷ VNĐ</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-slate-500 dark:text-slate-400">
+                                      <span>Mục tiêu phân kỳ:</span>
+                                      <span>{data.mucTieu?.toFixed(2)} tỷ VNĐ</span>
+                                    </div>
+                                    <div className="pt-1 border-t border-border dark:border-slate-700/80 flex justify-between items-center text-2xs">
+                                      <span className="text-ink-muted">Tỷ lệ dòng tiền:</span>
+                                      <span className="font-bold text-sky-600">
+                                        {Math.round(((data.dongTienLuyKe || 0) / 750) * 100)}% KH năm
+                                      </span>
+                                    </div>
+                                  </>
+                                )}
+                                {trendChartMode === 'so-sanh' && (
+                                  <>
+                                    <div className="flex justify-between items-center text-amber-600 dark:text-amber-400 font-bold">
+                                      <span>Ký kết Lũy kế:</span>
+                                      <span>{data.kyMoiLuyKe != null ? data.kyMoiLuyKe.toFixed(2) : '--'} tỷ</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400 font-bold">
+                                      <span>Doanh thu Lũy kế:</span>
+                                      <span>{data.doanhThuLuyKe != null ? data.doanhThuLuyKe.toFixed(2) : '--'} tỷ</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-slate-500 dark:text-slate-400">
+                                      <span>Mục tiêu phân kỳ:</span>
+                                      <span>{data.mucTieu?.toFixed(2)} tỷ</span>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      }}
+                    />
+                    <Legend
+                      wrapperStyle={{ fontSize: '13px', fontWeight: '600', paddingTop: '16px' }}
+                      formatter={(value) => <span className="text-xs font-bold text-ink-secondary px-1.5">{value}</span>}
+                    />
+
+                    {/* Render đường theo mode đã chọn chuẩn phong cách ảnh 2 */}
+                    {trendChartMode === 'ky-ket' && (
+                      <>
+                        <Area
+                          type="monotone"
+                          dataKey="kyMoiLuyKe"
+                          name="Lũy kế"
+                          stroke="#f59e0b"
+                          strokeWidth={3}
+                          fillOpacity={1}
+                          fill="url(#colorLuyKeKyKet)"
+                          connectNulls={false}
+                          dot={{ r: 4, fill: '#f59e0b', stroke: 'var(--bg-surface)', strokeWidth: 2 }}
+                          activeDot={{ r: 6, stroke: '#f59e0b', strokeWidth: 2 }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="mucTieu"
+                          name="Mục tiêu"
+                          stroke="#94a3b8"
+                          strokeWidth={2}
+                          strokeDasharray="5 5"
+                          connectNulls={true}
+                          dot={false}
+                        />
+                      </>
+                    )}
+
+                    {trendChartMode === 'doanh-thu' && (
+                      <>
+                        <Area
+                          type="monotone"
+                          dataKey="doanhThuLuyKe"
+                          name="Lũy kế"
+                          stroke="#10b981"
+                          strokeWidth={3}
+                          fillOpacity={1}
+                          fill="url(#colorLuyKeDoanhThu)"
+                          connectNulls={false}
+                          dot={{ r: 4, fill: '#10b981', stroke: 'var(--bg-surface)', strokeWidth: 2 }}
+                          activeDot={{ r: 6, stroke: '#10b981', strokeWidth: 2 }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="mucTieu"
+                          name="Mục tiêu"
+                          stroke="#94a3b8"
+                          strokeWidth={2}
+                          strokeDasharray="5 5"
+                          connectNulls={true}
+                          dot={false}
+                        />
+                      </>
+                    )}
+
+                    {trendChartMode === 'dong-tien' && (
+                      <>
+                        <Area
+                          type="monotone"
+                          dataKey="dongTienLuyKe"
+                          name="Lũy kế"
+                          stroke="#0284c7"
+                          strokeWidth={3}
+                          fillOpacity={1}
+                          fill="url(#colorLuyKeDongTien)"
+                          connectNulls={false}
+                          dot={{ r: 4, fill: '#0284c7', stroke: 'var(--bg-surface)', strokeWidth: 2 }}
+                          activeDot={{ r: 6, stroke: '#0284c7', strokeWidth: 2 }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="mucTieu"
+                          name="Mục tiêu"
+                          stroke="#94a3b8"
+                          strokeWidth={2}
+                          strokeDasharray="5 5"
+                          connectNulls={true}
+                          dot={false}
+                        />
+                      </>
+                    )}
+
+                    {trendChartMode === 'so-sanh' && (
+                      <>
+                        <Area
+                          type="monotone"
+                          dataKey="kyMoiLuyKe"
+                          name="Ký kết Lũy kế"
+                          stroke="#f59e0b"
+                          strokeWidth={3}
+                          fillOpacity={0.4}
+                          fill="url(#colorLuyKeKyKet)"
+                          connectNulls={false}
+                          dot={{ r: 3.5, fill: '#f59e0b', stroke: 'var(--bg-surface)', strokeWidth: 2 }}
+                          activeDot={{ r: 5 }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="doanhThuLuyKe"
+                          name="Doanh thu Lũy kế"
+                          stroke="#10b981"
+                          strokeWidth={3}
+                          connectNulls={false}
+                          dot={{ r: 3.5, fill: '#10b981', stroke: 'var(--bg-surface)', strokeWidth: 2 }}
+                          activeDot={{ r: 5 }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="mucTieu"
+                          name="Mục tiêu"
+                          stroke="#94a3b8"
+                          strokeWidth={2}
+                          strokeDasharray="5 5"
+                          connectNulls={true}
+                          dot={false}
+                        />
+                      </>
+                    )}
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="grid grid-rows-2 gap-6 lg:col-span-1">
+              <div className="card p-6 border border-border dark:border-slate-700/80">
+                <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border dark:border-slate-700/80 pb-3">
+                  Cơ cấu Doanh thu theo Lĩnh vực
+                </h3>
+                <div className="h-[180px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={coCauDoanhThu}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={75}
+                        paddingAngle={2}
+                        dataKey="value"
+                        stroke="none"
+                      >
+                        {coCauDoanhThu.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip {...tooltipStyle} formatter={(value: any) => `${value} tỷ`} />
+                      <Legend
+                        layout="vertical"
+                        verticalAlign="middle"
+                        align="right"
+                        wrapperStyle={{ fontSize: '11.5px', fontWeight: '500' }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              <div className="card p-6 border border-border dark:border-slate-700/80">
+                <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border dark:border-slate-700/80 pb-3">
+                  Hoạt động Quản trị nổi bật
+                </h3>
+                <ul className="space-y-4">
+                  <li className="flex items-start gap-3">
+                    <div className="p-2 bg-info/10 rounded-lg text-info">
+                      <Globe2 className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-ink text-[14px]">Hợp tác Quốc tế & Trong nước</h4>
+                      <p className="text-[12.5px] text-ink-secondary mt-1">
+                        Ký MOU Tập đoàn Trần Đức, làm việc với JICA, ACI, KICT.
+                      </p>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg text-primary-500">
+                      <Building2 className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-ink text-[14px]">Dự án Tòa nhà 10 tầng</h4>
+                      <p className="text-[12.5px] text-ink-secondary mt-1">
+                        Tổng mức đầu tư 562.5 tỷ. Đang lập quy hoạch tổng mặt bằng.
+                      </p>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* Row 3: Biểu đồ Kế hoạch & Doanh thu 16 Đơn vị & Cảnh báo Nợ đọng */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="card p-6 lg:col-span-2 border border-border dark:border-slate-700/80">
               <div className="flex justify-between items-center mb-6 border-b border-border dark:border-slate-700/80 pb-3">
@@ -1237,123 +1670,7 @@ export function DashboardPage() {
               </div>
             </div>
 
-            <div className="grid grid-rows-2 gap-6 lg:col-span-1">
-              <div className="card p-6 border border-border dark:border-slate-700/80">
-                <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border dark:border-slate-700/80 pb-3">
-                  Cơ cấu Doanh thu theo Lĩnh vực
-                </h3>
-                <div className="h-[180px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={coCauDoanhThu}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={50}
-                        outerRadius={75}
-                        paddingAngle={2}
-                        dataKey="value"
-                        stroke="none"
-                      >
-                        {coCauDoanhThu.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip {...tooltipStyle} formatter={(value: any) => `${value} tỷ`} />
-                      <Legend
-                        layout="vertical"
-                        verticalAlign="middle"
-                        align="right"
-                        wrapperStyle={{ fontSize: '11.5px', fontWeight: '500' }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              <div className="card p-6 border border-border dark:border-slate-700/80">
-                <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border dark:border-slate-700/80 pb-3">
-                  Hoạt động Quản trị nổi bật
-                </h3>
-                <ul className="space-y-4">
-                  <li className="flex items-start gap-3">
-                    <div className="p-2 bg-info/10 rounded-lg text-info">
-                      <Globe2 className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-ink text-[14px]">Hợp tác Quốc tế & Trong nước</h4>
-                      <p className="text-[12.5px] text-ink-secondary mt-1">
-                        Ký MOU Tập đoàn Trần Đức, làm việc với JICA, ACI, KICT.
-                      </p>
-                    </div>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg text-primary-500">
-                      <Building2 className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-ink text-[14px]">Dự án Tòa nhà 10 tầng</h4>
-                      <p className="text-[12.5px] text-ink-secondary mt-1">
-                        Tổng mức đầu tư 562.5 tỷ. Đang lập quy hoạch tổng mặt bằng.
-                      </p>
-                    </div>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          {/* Row 3: Dòng tiền & Cảnh báo Nợ đọng */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="card p-6 border border-border dark:border-slate-700/80">
-              <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border dark:border-slate-700/80 pb-3">
-                Ký hợp đồng, Doanh thu & Dòng tiền về trong kỳ (Tỷ VNĐ)
-              </h3>
-              <div className="h-[370px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={taiChinhData} margin={{ top: 10, right: 10, left: 5, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="colorDongTien" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="var(--color-primary, #00668c)" stopOpacity={0.25} />
-                        <stop offset="95%" stopColor="var(--color-primary, #00668c)" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <XAxis dataKey="month" stroke="var(--text-muted)" fontSize={12} />
-                    <YAxis stroke="var(--text-muted)" fontSize={12} />
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
-                    <Tooltip {...tooltipStyle} />
-                    <Legend wrapperStyle={{ fontSize: '13px', fontWeight: '600', paddingTop: '10px' }} />
-                    <Area
-                      type="monotone"
-                      dataKey="dongTien"
-                      name="Dòng tiền về"
-                      stroke="var(--color-primary, #00668c)"
-                      strokeWidth={3}
-                      fillOpacity={1}
-                      fill="url(#colorDongTien)"
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="doanhThu"
-                      name="Doanh thu thực hiện"
-                      stroke="var(--color-success, #10b981)"
-                      strokeWidth={2.5}
-                      dot={{ r: 4, fill: 'var(--bg-surface)' }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="kyMoi"
-                      name="Ký Hợp đồng mới"
-                      stroke="var(--color-warning, #f59e0b)"
-                      strokeWidth={2.5}
-                      dot={{ r: 4, fill: 'var(--bg-surface)' }}
-                    />
-                  </ComposedChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            <div className="card p-6 border border-border dark:border-slate-700/80 flex flex-col justify-between">
+            <div className="card p-6 lg:col-span-1 border border-border dark:border-slate-700/80 flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-4 border-b border-border dark:border-slate-700/80 pb-3">
                   <h3 className="text-[16px] font-black text-ink">Cảnh báo Nợ đọng: TOP Đơn vị nguy cơ cao</h3>
@@ -2452,6 +2769,7 @@ export function DashboardPage() {
                       name="Chi Lương & BH"
                       stroke="var(--color-primary, #00668c)"
                       strokeWidth={3.5}
+                      connectNulls={false}
                       activeDot={{ r: 6 }}
                     />
                     <Line
@@ -2460,6 +2778,7 @@ export function DashboardPage() {
                       name="Nộp Thuế NSNN"
                       stroke="var(--color-danger, #ef4444)"
                       strokeWidth={3}
+                      connectNulls={false}
                     />
                     <Line
                       type="monotone"
@@ -2468,6 +2787,7 @@ export function DashboardPage() {
                       stroke="var(--color-success, #10b981)"
                       strokeWidth={3}
                       strokeDasharray="5 5"
+                      connectNulls={false}
                     />
                   </LineChart>
                 </ResponsiveContainer>

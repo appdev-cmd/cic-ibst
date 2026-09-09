@@ -69,12 +69,13 @@ export interface UnitHealthItem {
 
 export interface TaiChinhThangItem {
   month: string;
-  luong: number;
-  thue: number;
-  nsnn: number;
-  dongTien: number;
-  doanhThu: number;
-  kyMoi: number;
+  luong: number | null;
+  thue: number | null;
+  nsnn: number | null;
+  dongTien: number | null;
+  doanhThu: number | null;
+  kyMoi: number | null;
+  hasData?: boolean;
 }
 
 export interface CanhBaoDashboardSummary {
@@ -844,14 +845,21 @@ export async function fetchDashboardData(filter: DashboardFilter): Promise<Dashb
     })
     .sort((a, b) => b.khProgress - a.khProgress);
 
-  // 6. Phân bổ tiến độ tháng (Tài chính & Dòng tiền)
+  // 6. Phân bổ tiến độ 12 tháng (Tài chính, Doanh thu & Dòng tiền)
+  // Đã phát sinh thực tế đến hết Tháng 9/2026. Tháng 10, 11, 12 chưa phát sinh dữ liệu thực tế.
   const taiChinhData: TaiChinhThangItem[] = [
-    { month: 'T1', luong: 6.5, thue: 2.1, nsnn: 4.5, dongTien: 55, doanhThu: 45, kyMoi: 90 },
-    { month: 'T2', luong: 6.8, thue: 1.5, nsnn: 3.2, dongTien: 42, doanhThu: 40, kyMoi: 70 },
-    { month: 'T3', luong: 7.2, thue: 3.2, nsnn: 5.1, dongTien: 89, doanhThu: 75, kyMoi: 145 },
-    { month: 'T4', luong: 7.0, thue: 2.8, nsnn: 6.0, dongTien: 76, doanhThu: 68, kyMoi: 120 },
-    { month: 'T5', luong: 7.5, thue: 3.5, nsnn: 5.8, dongTien: 91, doanhThu: 82, kyMoi: 155 },
-    { month: 'T6', luong: 8.1, thue: 4.2, nsnn: 5.4, dongTien: 96.67, doanhThu: 86.68, kyMoi: 179.5 },
+    { month: 'T1', luong: 6.5, thue: 2.1, nsnn: 4.5, dongTien: 55.0, doanhThu: 45.0, kyMoi: 90.0, hasData: true },
+    { month: 'T2', luong: 6.8, thue: 1.5, nsnn: 3.2, dongTien: 42.0, doanhThu: 40.0, kyMoi: 70.0, hasData: true },
+    { month: 'T3', luong: 7.2, thue: 3.2, nsnn: 5.1, dongTien: 89.0, doanhThu: 75.0, kyMoi: 145.0, hasData: true },
+    { month: 'T4', luong: 7.0, thue: 2.8, nsnn: 6.0, dongTien: 76.0, doanhThu: 68.0, kyMoi: 120.0, hasData: true },
+    { month: 'T5', luong: 7.5, thue: 3.5, nsnn: 5.8, dongTien: 91.0, doanhThu: 82.0, kyMoi: 155.0, hasData: true },
+    { month: 'T6', luong: 8.1, thue: 4.2, nsnn: 5.4, dongTien: 96.67, doanhThu: 86.68, kyMoi: 179.54, hasData: true },
+    { month: 'T7', luong: 7.8, thue: 3.8, nsnn: 5.2, dongTien: 54.2, doanhThu: 48.5, kyMoi: 58.0, hasData: true },
+    { month: 'T8', luong: 8.0, thue: 4.0, nsnn: 5.5, dongTien: 58.5, doanhThu: 51.8, kyMoi: 62.1, hasData: true },
+    { month: 'T9', luong: 8.2, thue: 4.1, nsnn: 5.6, dongTien: 55.74, doanhThu: 50.02, kyMoi: 62.1, hasData: true },
+    { month: 'T10', luong: null, thue: null, nsnn: null, dongTien: null, doanhThu: null, kyMoi: null, hasData: false },
+    { month: 'T11', luong: null, thue: null, nsnn: null, dongTien: null, doanhThu: null, kyMoi: null, hasData: false },
+    { month: 'T12', luong: null, thue: null, nsnn: null, dongTien: null, doanhThu: null, kyMoi: null, hasData: false },
   ];
 
   // 7. KHCN Bảng 5
