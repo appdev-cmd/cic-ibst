@@ -2164,31 +2164,30 @@ export function DashboardPage() {
                   </div>
                 </div>
 
-                {/* 3 thẻ tóm tắt nhanh KPI công nợ */}
-                <div className="grid grid-cols-3 gap-2.5 mb-4">
-                  <div className="p-2.5 rounded-lg bg-red-500/5 dark:bg-red-950/20 border border-red-500/20">
-                    <p className="text-3xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wider">
-                      Tổng nợ khách hàng
-                    </p>
-                    <p className="text-sm sm:text-base font-black text-red-600 dark:text-red-400 mt-0.5">
+                {/* Tóm tắt nhanh chỉ số công nợ - gọn gàng tinh tế */}
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mb-3 py-1.5 px-3 rounded-lg bg-subtle/40 dark:bg-slate-900/50 border border-border dark:border-slate-700/80 text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-red-500 inline-block" />
+                    <span className="text-ink-muted text-2xs font-medium">Tổng nợ khách hàng:</span>
+                    <span className="font-bold text-red-600 dark:text-red-400 text-xs">
                       {noDongData.reduce((acc, d) => acc + (d.tongNo || 0), 0).toFixed(2)} tỷ
-                    </p>
+                    </span>
                   </div>
-                  <div className="p-2.5 rounded-lg bg-amber-500/5 dark:bg-amber-950/20 border border-amber-500/20">
-                    <p className="text-3xs font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
-                      Nợ Nghĩa vụ Viện
-                    </p>
-                    <p className="text-sm sm:text-base font-black text-amber-600 dark:text-amber-400 mt-0.5">
+                  <div className="h-3 w-px bg-border dark:bg-slate-700 hidden sm:block" />
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 inline-block" />
+                    <span className="text-ink-muted text-2xs font-medium">Nợ Nghĩa vụ Viện:</span>
+                    <span className="font-bold text-amber-600 dark:text-amber-400 text-xs">
                       {noDongData.reduce((acc, d) => acc + (d.noNV || 0), 0).toFixed(2)} tỷ
-                    </p>
+                    </span>
                   </div>
-                  <div className="p-2.5 rounded-lg bg-rose-500/5 dark:bg-rose-950/20 border border-rose-500/20">
-                    <p className="text-3xs font-semibold text-rose-600 dark:text-rose-400 uppercase tracking-wider">
-                      Đơn vị nợ cao (&ge;15 tỷ)
-                    </p>
-                    <p className="text-sm sm:text-base font-black text-rose-600 dark:text-rose-400 mt-0.5">
+                  <div className="h-3 w-px bg-border dark:bg-slate-700 hidden sm:block" />
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-rose-500 inline-block" />
+                    <span className="text-ink-muted text-2xs font-medium">Đơn vị nợ cao (&ge;15 tỷ):</span>
+                    <span className="font-bold text-rose-600 dark:text-rose-400 text-xs">
                       {noDongData.filter((d) => (d.tongNo || 0) >= 15).length} Đơn vị
-                    </p>
+                    </span>
                   </div>
                 </div>
 

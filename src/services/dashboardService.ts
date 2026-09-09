@@ -540,6 +540,25 @@ export function getPeriodDateRange(
   }
 }
 
+export const UNIT_ALIAS_MAP: Record<string, string> = {
+  '1': 'VCNKC', 'VKC': 'VCNKC', 'IBST.KC': 'VCNKC',
+  '2': 'VCNBT', 'VBT': 'VCNBT', 'IBST.BT': 'VCNBT',
+  '3': 'VCNĐKT', 'VDKT': 'VCNĐKT', 'IBST.DKT': 'VCNĐKT',
+  '4': 'PVMN', 'IBST.MN': 'PVMN',
+  '5': 'TVĂM', 'TTAM': 'TVĂM', 'IBST.AM': 'TVĂM', 'TTĂM': 'TVĂM',
+  '6': 'TTTĐ', 'TTTD': 'TTTĐ', 'IBST.TD': 'TTTĐ',
+  '7': 'CNVL', 'TTCN': 'CNVL', 'IBST.CN': 'CNVL',
+  '12': 'PVMT', 'IBST.MT': 'PVMT',
+  '13': 'TTKCT', 'IBST.KCT': 'TTKCT',
+  '14': 'TVTK', 'TTTK': 'TVTK', 'IBST.TKXD': 'TVTK',
+  '15': 'CNXD', 'TTCNXD': 'CNXD', 'IBST.CNXD': 'CNXD',
+  '16': 'CNHT', 'TTCNHT': 'CNHT', 'IBST.CNHT': 'CNHT',
+  '17': 'TBXD', 'TTTB': 'TBXD', 'IBST.TBXD': 'TBXD',
+  '18': 'TTCDAQT&XD', 'TTQT': 'TTCDAQT&XD', 'IBST.QT': 'TTCDAQT&XD',
+  '19': 'TT BIM', 'TTBIM': 'TT BIM', 'IBST.BIM': 'TT BIM',
+  '20': 'IBST COTEC', 'IBST.COTEC': 'IBST COTEC', 'CTCP IBST': 'IBST COTEC', 'IBST.CTCP': 'IBST COTEC',
+};
+
 /** Tải toàn bộ dữ liệu thống kê tổng hợp thời gian thực cho Dashboard Lãnh đạo */
 export async function fetchDashboardData(filter: DashboardFilter): Promise<DashboardData> {
   const { startDate, endDate } = getPeriodDateRange(
@@ -670,24 +689,31 @@ export async function fetchDashboardData(filter: DashboardFilter): Promise<Dashb
   const liveDoanhThuTy = Math.round((liveDoanhThuTrieu / 1000) * 100) / 100;
   const liveTongNoTy = Math.round((liveTongNoTrieu / 1000) * 100) / 100;
 
-  // KIẾN TRÚC LAI (HYBRID ARCHITECTURE):
-  // Nếu DB có dữ liệu thật trong kỳ thì dùng số cộng thực, nếu chưa có (như dữ liệu seed demo chỉ có vài HĐ mẫu)
-  // ta kết hợp chuẩn báo cáo 6 tháng 2026 của Viện IBST và điều chỉnh theo tỷ lệ thời gian của kỳ.
-  const is2026FullOr6M = selectedYear === '2026' && (filter.period === 'all' || filter.period === '6-thang');
-  
-  // Tỷ lệ phân bổ theo kỳ nếu dùng mốc chuẩn:
-  let periodRatio = 1.0;
-  if (filter.period === 'q1') periodRatio = 0.45;
-  else if (filter.period === 'q2') periodRatio = 0.55;
-  else if (filter.period === 'q3') periodRatio = 0.50;
-  else if (filter.period === 'q4') periodRatio = 0.60;
-  else if (filter.period === '6-thang') periodRatio = 1.0;
-  else if (filter.period === '9-thang') periodRatio = 1.45;
-  else if (filter.period === 'all') periodRatio = selectedYear === '2026' ? 1.0 : 0.85;
 
-  const baseGiaTriKy = (liveGiaTriKyTy > 500 ? liveGiaTriKyTy : 941.74) * (is2026FullOr6M ? 1 : periodRatio);
-  const baseDoanhThu = (liveDoanhThuTy > 5 ? liveDoanhThuTy : 396.68) * (is2026FullOr6M ? 1 : periodRatio);
-  const baseTienVe = (liveDoanhThuTy > 5 ? liveDoanhThuTy * 1.13 : 449.67) * (is2026FullOr6M ? 1 : periodRatio);
+
+  // KIẾN TRÚC LAI (HYBRID ARCHITECTURE):
+  // Phản ánh chính xác số liệu Báo cáo sơ kết 6 tháng (396.69 tỷ) và mở rộng đến Tháng 9/2026 (547.00 tỷ)
+  const is6M = filter.period === '6-thang';
+  let defaultDoanhThu = 547.00;
+  let defaultGiaTriKy = 941.74;
+
+  if (is6M) {
+    defaultDoanhThu = 396.69;
+    defaultGiaTriKy = 759.54;
+  } else if (filter.period === 'q1') {
+    defaultDoanhThu = 185.20;
+    defaultGiaTriKy = 345.00;
+  } else if (filter.period === 'q2') {
+    defaultDoanhThu = 211.49;
+    defaultGiaTriKy = 414.54;
+  } else if (filter.period === 'q3') {
+    defaultDoanhThu = 150.31;
+    defaultGiaTriKy = 182.20;
+  }
+
+  const baseGiaTriKy = liveGiaTriKyTy > 50 ? liveGiaTriKyTy : defaultGiaTriKy;
+  const baseDoanhThu = liveDoanhThuTy > 10 ? liveDoanhThuTy : defaultDoanhThu;
+  const baseTienVe = Math.round((baseDoanhThu * 1.13) * 100) / 100;
   const baseTongNo = liveTongNoTy > 10 ? liveTongNoTy : 211.71;
 
   // 2. Tính toán Cảnh báo Điều hành & Tuân thủ QC 2815
@@ -715,19 +741,27 @@ export async function fetchDashboardData(filter: DashboardFilter): Promise<Dashb
       String(c.ngay_het_han) <= in90DaysStr,
   ).length;
 
-  // 3. Xây dựng Doanh thu theo 16 Đơn vị
-  const donViMap = new Map<string, { dtReal: number; kyReal: number; noReal: number }>();
+  // 3. Xây dựng Doanh thu theo 16 Đơn vị (ánh xạ chuẩn qua UNIT_ALIAS_MAP)
+  const donViMap = new Map<string, { dtReal: number; kyReal: number; noReal: number; id?: string }>();
   for (const h of fullHopDongList) {
-    const key = (h.donViThucHien || 'Khác').toUpperCase();
-    const cur = donViMap.get(key) ?? { dtReal: 0, kyReal: 0, noReal: 0 };
+    const unitKey = UNIT_ALIAS_MAP[String(h.donViId)] 
+      || UNIT_ALIAS_MAP[h.donViThucHien?.toUpperCase()] 
+      || (h.donViThucHien || 'Khác').toUpperCase();
+
+    const cur = donViMap.get(unitKey) ?? { dtReal: 0, kyReal: 0, noReal: 0, id: h.donViId || undefined };
     if (h.ngayKy >= startDate && h.ngayKy <= endDate) {
       cur.kyReal += h.giaTri;
     }
-    cur.dtReal += h.daThanhToan;
+
+    // Doanh thu thực thu trong kỳ của hợp đồng từ các đợt thanh toán
+    const dotCuaHd = dotTrongKy.filter((d: any) => String(d.hop_dong_id) === h.id);
+    const dtTrongKyHd = dotCuaHd.reduce((acc: number, d: any) => acc + (Number(d.so_tien) || 0), 0);
+    cur.dtReal += dtTrongKyHd;
+
     if (h.trangThai !== 'hoan-thanh' && h.trangThai !== 'huy') {
       cur.noReal += Math.max(0, h.giaTri - h.daThanhToan);
     }
-    donViMap.set(key, cur);
+    donViMap.set(unitKey, cur);
   }
 
   const doanhThuData: DoanhThuDonViItem[] = DON_VI_16_BENCHMARKS.map((dv) => {
@@ -735,8 +769,9 @@ export async function fetchDashboardData(filter: DashboardFilter): Promise<Dashb
     const realDtTy = fromMap ? fromMap.dtReal / 1000 : 0;
     const realKyTy = fromMap ? fromMap.kyReal / 1000 : 0;
 
-    const doanhThu = Math.round((realDtTy > 0.5 ? realDtTy : dv.baseDT * periodRatio) * 100) / 100;
-    const kyMoi = Math.round((realKyTy > 0.5 ? realKyTy : dv.tongKy * periodRatio) * 100) / 100;
+    const benchmarkDt = is6M ? dv.baseDT : Math.round(dv.baseDT * 1.38 * 100) / 100;
+    const doanhThu = Math.round((realDtTy > 0.05 ? realDtTy : benchmarkDt) * 100) / 100;
+    const kyMoi = Math.round((realKyTy > 0.05 ? realKyTy : (is6M ? dv.tongKy * 0.8 : dv.tongKy)) * 100) / 100;
     const keHoach = dv.keHoach;
 
     return {
@@ -750,8 +785,8 @@ export async function fetchDashboardData(filter: DashboardFilter): Promise<Dashb
       donViKy: dv.donViKy,
       cungKy2025: dv.cungKy2025,
       keHoach: dv.keHoach,
-      kh: dv.pctKH,
-      pctCungKy: dv.pctCungKy,
+      kh: keHoach > 0 ? Math.round((doanhThu / keHoach) * 100) : dv.pctKH,
+      pctCungKy: dv.cungKy2025 > 0 ? Math.round((kyMoi / dv.cungKy2025) * 100) : dv.pctCungKy,
       ghiChu: dv.ghiChu,
     };
   });
