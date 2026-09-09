@@ -24,7 +24,7 @@ import {
 import { KpiCard } from './KpiCard';
 import { DataState } from './DataState';
 import { Field, inputCls } from './Modal';
-import { cn, exportCsv } from '../lib/utils';
+import { cn, exportCsv, exportExcel } from '../lib/utils';
 import type { DonVi, NhanSu } from '../types';
 import * as danhGiaSvc from '../services/danhGia';
 import type { DanhGiaVienChuc, ThongKeDanhGia, KyDanhGia, MucXepLoai, DanhGiaInput } from '../services/danhGia';
@@ -244,7 +244,12 @@ export function DanhGiaVienChucTab({ donViList, nhanSuList }: Props) {
       ];
     });
     const dateStr = new Date().toISOString().split('T')[0];
-    exportCsv(`Bao_cao_danh_gia_xep_loai_vien_chuc_IBST_${selectedNam}_${selectedKy}_${dateStr}.csv`, headers, rows);
+    exportExcel(
+      `Bao_cao_danh_gia_xep_loai_vien_chuc_IBST_${selectedNam}_${selectedKy}_${dateStr}`,
+      `Xếp loại ${selectedNam}`,
+      headers,
+      rows,
+    );
   };
 
   const handleQuickToggleDuyet = async (e: React.MouseEvent, item: DanhGiaVienChuc) => {
@@ -902,10 +907,23 @@ export function DanhGiaVienChucTab({ donViList, nhanSuList }: Props) {
               <Field label="Viên chức được đánh giá *">
                 <select
                   value={formNhanSuId}
-                  onChange={(e) => setFormNhanSuId(e.target.value)}
                   disabled={isEdit}
                   className={inputCls}
                   required
+                  onChange={async (e) => {
+                    const newId = e.target.value;
+                    setFormNhanSuId(newId);
+                    try {
+                      const kl = await danhGiaSvc.kiemTraKyLuatTrongNam(newId, formNam);
+                      if (kl.biKyLuat) {
+                        setFormBiKyLuat(true);
+                        if (kl.hinhThuc) setFormHinhThucKyLuat(kl.hinhThuc);
+                        setFormXepLoai('khong-hoan-thanh');
+                      }
+                    } catch {
+                      // ignore
+                    }
+                  }}
                 >
                   {nhanSuList.map((ns) => (
                     <option key={ns.id} value={ns.id}>
@@ -1035,6 +1053,19 @@ export function DanhGiaVienChucTab({ donViList, nhanSuList }: Props) {
                   <option value="hoan-thanh">Hoàn thành nhiệm vụ (50đ đến &lt; 70đ)</option>
                   <option value="khong-hoan-thanh">Không hoàn thành nhiệm vụ (&lt; 50đ hoặc bị kỷ luật)</option>
                 </select>
+                {formXepLoai === 'hoan-thanh-xuat-sac' && (() => {
+                  const selectedNs = nhanSuList.find((n) => String(n.id) === String(formNhanSuId));
+                  const isLeader = /viện trưởng|giám đốc|trưởng phòng|trưởng ban/i.test(selectedNs?.chucDanh || '');
+                  if (isLeader) {
+                    return (
+                      <div className="rounded-lg bg-amber-50 p-2 text-2xs text-warning border border-amber-200 dark:bg-amber-950/40 dark:border-amber-800 dark:text-amber-300 flex items-start gap-1.5 mt-2">
+                        <AlertTriangle size={13} className="shrink-0 mt-0.5" />
+                        <span><strong>Lưu ý Điều 12 NĐ 233/2026:</strong> Mức xếp loại của người đứng đầu không được cao hơn mức xếp loại của tập thể đơn vị do mình phụ trách.</span>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </Field>
 
               {/* Nhận xét */}

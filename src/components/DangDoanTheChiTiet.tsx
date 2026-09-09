@@ -337,41 +337,85 @@ export function SinhHoatChiTiet({ sh }: { sh: SinhHoatDinhKy }) {
         {thanhVien.length === 0 ? (
           <p className="text-2xs italic text-ink-muted">Chi bộ chưa có đảng viên đang sinh hoạt để điểm danh.</p>
         ) : (
-          <table className="w-full">
-            <thead>
-              <tr>
-                <th className="th-cell">Đảng viên</th>
-                <th className="th-cell">Trạng thái</th>
-              </tr>
-            </thead>
-            <tbody>
-              {thanhVien.map((tv) => {
-                const dd = diemDanh.find((d) => d.nhanSuId === tv.nhanSuId);
-                return (
-                  <tr key={tv.id} className="tr-hover">
-                    <td className="td-cell text-xs font-medium">{tv.hoTen}</td>
-                    <td className="td-cell">
-                      <div className="flex flex-wrap gap-1">
-                        {TRANG_THAI_CO_MAT.map((o) => (
-                          <button
-                            key={o.ma}
-                            disabled={busy}
-                            onClick={() => danh(tv.nhanSuId, o.ma)}
-                            className={cn(
-                              'rounded-full px-2 py-0.5 text-2xs font-bold transition-colors disabled:opacity-50',
-                              dd?.coMat === o.ma ? o.cls : 'bg-subtle text-ink-muted hover:bg-muted',
-                            )}
-                          >
-                            {o.ten}
-                          </button>
-                        ))}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2 border-b border-border pb-2">
+              <span className="text-2xs text-ink-muted font-medium">Tổng số: {thanhVien.length} đảng viên</span>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={async () => {
+                  setBusy(true); setErr(null);
+                  try {
+                    for (const tv of thanhVien) {
+                      await ghiDiemDanh(sh.id, tv.nhanSuId, 'co-mat', '');
+                    }
+                    refetch();
+                  } catch (e) {
+                    setErr(e instanceof Error ? e.message : String(e));
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+                className="inline-flex items-center gap-1 rounded bg-emerald-50 px-2 py-1 text-2xs font-bold text-success hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 disabled:opacity-50"
+              >
+                <Check size={12} /> Tất cả có mặt
+              </button>
+            </div>
+
+            <table className="w-full">
+              <thead>
+                <tr>
+                  <th className="th-cell">Đảng viên</th>
+                  <th className="th-cell">Trạng thái</th>
+                  <th className="th-cell">Lý do (nếu vắng)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {thanhVien.map((tv) => {
+                  const dd = diemDanh.find((d) => d.nhanSuId === tv.nhanSuId);
+                  return (
+                    <tr key={tv.id} className="tr-hover">
+                      <td className="td-cell text-xs font-medium">{tv.hoTen}</td>
+                      <td className="td-cell">
+                        <div className="flex flex-wrap gap-1">
+                          {TRANG_THAI_CO_MAT.map((o) => (
+                            <button
+                              key={o.ma}
+                              disabled={busy}
+                              onClick={() => danh(tv.nhanSuId, o.ma)}
+                              className={cn(
+                                'rounded-full px-2 py-0.5 text-2xs font-bold transition-colors disabled:opacity-50',
+                                dd?.coMat === o.ma ? o.cls : 'bg-subtle text-ink-muted hover:bg-muted',
+                              )}
+                            >
+                              {o.ten}
+                            </button>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="td-cell">
+                        {dd?.coMat && dd.coMat !== 'co-mat' ? (
+                          <input
+                            type="text"
+                            placeholder="Nhập lý do..."
+                            defaultValue={dd.lyDo}
+                            onBlur={(e) => {
+                              if (e.target.value !== dd.lyDo) {
+                                ghiDiemDanh(sh.id, tv.nhanSuId, dd.coMat, e.target.value);
+                              }
+                            }}
+                            className={cn(miniInput, 'h-6 text-2xs')}
+                          />
+                        ) : (
+                          <span className="text-2xs text-ink-muted">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </Khoi>
     </div>

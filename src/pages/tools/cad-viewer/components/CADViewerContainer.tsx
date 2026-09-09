@@ -633,7 +633,7 @@ export const CADViewerContainer: React.FC = () => {
               </div>
               <h3 className="text-txt-primary font-black text-lg mb-2">Trình xem bản vẽ CAD & Quản lý XREF</h3>
               <p className="text-txt-muted text-xs max-w-sm mb-6 leading-relaxed">
-                Tạo dự án bản vẽ mới ở cột bên trái, liên kết với các dự án xây lắp trong phân hệ Quản lý dự án của hệ thống, tải lên file DWG gốc cùng các file XREF tham chiếu phụ để lưu trữ lâu dài.
+                Tạo dự án bản vẽ mới ở cột bên trái, liên kết với các dự án xây lắp trong Quản lý dự án của hệ thống, tải lên file DWG gốc cùng các file XREF tham chiếu phụ để lưu trữ lâu dài.
               </p>
 
               <button
@@ -887,7 +887,7 @@ export const CADViewerContainer: React.FC = () => {
                     ))}
                   </select>
                   <span className="block text-[10px] text-txt-muted mt-1">
-                    Liên kết giúp hiển thị nhanh thông tin tiến độ dự án từ phân hệ quản lý dự án.
+                    Liên kết giúp hiển thị nhanh thông tin tiến độ dự án từ Quản lý dự án.
                   </span>
                 </div>
               </div>

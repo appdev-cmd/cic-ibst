@@ -65,7 +65,7 @@ export function KhoaHocPage() {
   return (
     <div>
       <PageHeader
-        title="[Phân hệ 4] Quản lý Khoa học: Đề tài, Tạp chí KHCN, Sở hữu Trí tuệ & Chuyển giao"
+        title="Quản lý Khoa học: Đề tài, Tạp chí KHCN, Sở hữu Trí tuệ & Chuyển giao"
         subtitle="Quản lý thuyết minh, tiến độ giải ngân Đề tài KHCN, Tòa soạn Tạp chí KHCN Xây dựng, Sáng chế SHTT & Hợp đồng chuyển giao công nghệ phân bổ hoa hồng tác giả (Tuân thủ Khung QĐ 942/QĐ-BXD)"
       />
 
@@ -137,7 +137,7 @@ export function KhoaHocPage() {
             <div className="card p-4 border-l-4 border-l-amber-500">
               <p className="text-2xs font-bold uppercase text-ink-muted">Kết nối dòng tiền Kế toán</p>
               <p className="mt-1 text-xl font-black text-amber-600 dark:text-amber-400">Đồng bộ 100%</p>
-              <p className="text-2xs text-ink-muted mt-1">Hệ thống phân hệ Tài chính 03</p>
+              <p className="text-2xs text-ink-muted mt-1">Hệ thống Tài chính & Thu chi</p>
             </div>
           </div>
 

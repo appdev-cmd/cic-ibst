@@ -33,6 +33,9 @@ import {
   type DonViInput,
 } from '../services/org';
 import type { DonVi, LoaiDonVi } from '../types';
+import { useSlidePanelChiTiet, useSlidePanelForm } from '../hooks/useSlidePanelCrud';
+import { DonViChiTietPanel } from '../components/DonViChiTietPanel';
+import { DonViFormPanel } from '../components/DonViFormPanel';
 import { cn } from '../lib/utils';
 
 const LOAI_BADGE: Record<LoaiDonVi, string> = {
@@ -55,7 +58,7 @@ const EMPTY_FORM: DonViInput = {
   truongDonViId: '',
 };
 
-export function DonViPage({ hideHeader = false }: { hideHeader?: boolean } = {}) {
+export function DonViPage({ hideHeader = false, mode = 'full' }: { hideHeader?: boolean; mode?: 'full' | 'orgchart-only' } = {}) {
   const { data: donViList, loading, error, refetch } = useAsyncData(fetchDonVi, []);
   const { data: nhanSuList } = useAsyncData(fetchNhanSuFull, []);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -115,6 +118,43 @@ export function DonViPage({ hideHeader = false }: { hideHeader?: boolean } = {})
   ).length;
   const soTrungTam = donViList.filter((d) => d.loai === 'trung-tam').length;
   const soDonVi = donViList.filter((d) => d.loai !== 'lanh-dao').length;
+
+  // SlidePanel cho mode orgchart-only: click đơn vị trên sơ đồ → mở SlidePanel
+  useSlidePanelChiTiet({
+    id: 'orgchart-don-vi-chi-tiet',
+    active: mode === 'orgchart-only' && !!selectedId,
+    title: selected?.ten || 'Chi tiết đơn vị',
+    subtitle: selected?.tenVietTat ? `(${selected.tenVietTat})` : undefined,
+    icon: <Building2 className="text-primary" />,
+    storageKey: 'orgchart-dv-chitiet-w',
+    deps: [selected, nhanSuList],
+    onDongNgoaiLuong: () => setSelectedId(null),
+    content: selected ? (
+      <DonViChiTietPanel
+        donVi={selected}
+        nhanSuList={nhanSuList}
+        onEdit={() => openEdit(selected)}
+        onDelete={() => handleDelete(selected)}
+      />
+    ) : null,
+  });
+
+  useSlidePanelForm({
+    id: 'orgchart-don-vi-form',
+    open: mode === 'orgchart-only' && modalOpen,
+    title: editing ? `Sửa đơn vị: ${editing.tenVietTat ?? editing.ten}` : 'Thêm đơn vị trực thuộc',
+    storageKey: 'orgchart-dv-form-w',
+    deps: [editing, nhanSuList, form, saving, actionError],
+    onDongNgoaiLuong: () => setModalOpen(false),
+    content: modalOpen ? (
+      <DonViFormPanel
+        editing={editing}
+        nhanSuList={nhanSuList}
+        onSaved={() => { setModalOpen(false); refetch(); }}
+        onClose={() => setModalOpen(false)}
+      />
+    ) : null,
+  });
 
   const openCreate = () => {
     setEditing(null);
@@ -216,6 +256,7 @@ export function DonViPage({ hideHeader = false }: { hideHeader?: boolean } = {})
       )}
 
       <div className="mb-4 card overflow-hidden">
+        {mode !== 'orgchart-only' && (
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <h3 className="text-sm font-bold">Sơ đồ cơ cấu tổ chức</h3>
           <div className="flex items-center gap-1 rounded-lg bg-muted p-0.5">
@@ -243,8 +284,9 @@ export function DonViPage({ hideHeader = false }: { hideHeader?: boolean } = {})
             </button>
           </div>
         </div>
+        )}
 
-        {view === 'tree' ? (
+        {(mode === 'orgchart-only' || view === 'tree') ? (
           <OrgChartTree
             donViList={donViList}
             nhanSuList={nhanSuList}
@@ -287,7 +329,8 @@ export function DonViPage({ hideHeader = false }: { hideHeader?: boolean } = {})
         )}
       </div>
 
-      {/* Chi tiết đơn vị */}
+      {/* Chi tiết đơn vị (chỉ hiện ở mode full — mode orgchart-only dùng SlidePanel) */}
+      {mode !== 'orgchart-only' && (
       <div id="don-vi-detail-section" className="scroll-mt-4">
         {selected ? (
           <div className="card p-5">
@@ -497,8 +540,10 @@ export function DonViPage({ hideHeader = false }: { hideHeader?: boolean } = {})
           )
         )}
       </div>
+      )}
 
-      {/* Modal thêm/sửa */}
+      {/* Modal thêm/sửa (chỉ hiện ở mode full — mode orgchart-only dùng SlidePanel) */}
+      {mode !== 'orgchart-only' && (
       <Modal
         title={editing ? `Sửa đơn vị: ${editing.tenVietTat ?? editing.ten}` : 'Thêm đơn vị trực thuộc'}
         open={modalOpen}
@@ -619,6 +664,7 @@ export function DonViPage({ hideHeader = false }: { hideHeader?: boolean } = {})
           </div>
         </form>
       </Modal>
+      )}
     </div>
   );
 }

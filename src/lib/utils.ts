@@ -39,6 +39,45 @@ export function exportCsv(filename: string, headers: string[], rows: (string | n
   URL.revokeObjectURL(url);
 }
 
+/** Xuất bảng dữ liệu ra file Excel (.xls) có định dạng màu sắc header Viện IBST, viền kẻ ô và font Unicode */
+export function exportExcel(
+  filename: string,
+  sheetName: string,
+  headers: string[],
+  rows: (string | number)[][],
+) {
+  const tableContent = `
+    <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+    <head>
+      <meta charset="utf-8" />
+      <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>${sheetName}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+      <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11pt; }
+        th { background-color: #1e3a8a; color: #ffffff; font-weight: bold; border: 1px solid #94a3b8; padding: 8px 12px; text-align: left; }
+        td { border: 1px solid #cbd5e1; padding: 6px 10px; }
+      </style>
+    </head>
+    <body>
+      <table>
+        <thead>
+          <tr>${headers.map((h) => `<th>${h}</th>`).join('')}</tr>
+        </thead>
+        <tbody>
+          ${rows.map((row) => `<tr>${row.map((cell) => `<td>${cell ?? ''}</td>`).join('')}</tr>`).join('')}
+        </tbody>
+      </table>
+    </body>
+    </html>
+  `;
+  const blob = new Blob(['\ufeff' + tableContent], { type: 'application/vnd.ms-excel;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename.endsWith('.xls') ? filename : `${filename}.xls`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 /** Format raw or formatted string into Vietnamese number format: 11.111.111,5 (thousand dot, decimal comma). */
 export function formatVNNumber(val: string | number | null | undefined): string {
   if (val === null || val === undefined || val === '') return '';

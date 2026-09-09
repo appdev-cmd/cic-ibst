@@ -2130,7 +2130,7 @@ function UyQuyenKyCanhBao({ donViId }: { donViId: string }) {
   return (
     <div className="rounded-lg border border-amber-500/30 bg-amber-50/60 dark:bg-amber-900/10 p-2.5 text-2xs text-amber-800 dark:text-amber-300">
       <span className="font-bold">⚠ Đ.6.2 — Chưa có ủy quyền ký HĐ còn hiệu lực</span> cho đơn vị thực hiện.
-      Cần ủy quyền chung hàng năm hoặc lập ủy quyền riêng để P.KHKT trình Viện trưởng ký — quản lý tại phân hệ{' '}
+      Cần ủy quyền chung hàng năm hoặc lập ủy quyền riêng để P.KHKT trình Viện trưởng ký — quản lý tại mục{' '}
       <a href="/uy-quyen" className="font-bold underline">Ủy quyền</a>.
     </div>
   );

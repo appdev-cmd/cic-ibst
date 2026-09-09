@@ -307,11 +307,17 @@ function UnitNode({ data }: NodeProps) {
               onClick={() => {
                 d.onClosePopover?.();
                 const detailEl = document.getElementById('don-vi-detail-section');
-                if (detailEl) detailEl.scrollIntoView({ behavior: 'smooth' });
+                if (detailEl) {
+                  detailEl.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                  // mode orgchart-only: section bị ẩn, click vào node đã mở SlidePanel
+                }
               }}
               className="text-[11px] font-bold text-primary-600 dark:text-primary-400 hover:underline inline-flex items-center gap-1"
             >
-              Xem chi tiết bên dưới <ArrowDown size={12} />
+              {document.getElementById('don-vi-detail-section')
+                ? <>Xem chi tiết bên dưới <ArrowDown size={12} /></>
+                : <>Đã mở chi tiết bên phải</>}
             </button>
           </div>
         </div>
@@ -338,18 +344,7 @@ const Y_DEPUTY = 152; // Vị trí 3 Phó Viện trưởng
 const Y_BUS_2 = 254; // Thanh ngang phân phối của Đ/c Cao Duy Khôi sang Cột 3 và Cột 4
 const Y_GRID = 288;  // Điểm bắt đầu của các thẻ đơn vị
 
-// 4 Cột đơn vị chuẩn cơ cấu phân công phụ trách IBST
-const COL_UNIT_IDS: string[][] = [
-  // Cột 1 (Khối Đ/c Đinh Quốc Dân): TCHC (10), VKC (1), TTKCT (13), TTTD (6), TTTB (17)
-  ['10', '1', '13', '6', '17'],
-  // Cột 2 (Khối Đ/c Nguyễn Thanh Bình): KHKT (8), VBT (2), TTAM (5), TTCN (7), TTCNXD (15)
-  ['8', '2', '5', '7', '15'],
-  // Cột 3 (Khối Đ/c Cao Duy Khôi - Chuyên ngành & BIM): TCKT (9), VDKT (3), TTCNHT (16), TTTK (14), TTBIM (19)
-  ['9', '3', '16', '14', '19'],
-  // Cột 4 (Khối Đ/c Cao Duy Khôi - Phân viện & Doanh nghiệp): PVMN (4), PVMT (12), TTQT (18), CTCP (20)
-  ['4', '12', '18', '20'],
-];
-
+// Layout constants giữ nguyên
 interface Props {
   donViList: DonVi[];
   nhanSuList: NhanSu[];
@@ -364,15 +359,15 @@ export function OrgChartTree({ donViList, nhanSuList, selectedId, onSelect }: Pr
 
   // Khối Lãnh đạo Viện
   const lanhDao = useMemo(
-    () => nhanSuList.filter((n) => n.donVi === 'Lãnh đạo Viện'),
+    () => nhanSuList.filter((n) => n.donVi === 'Lãnh đạo Viện' || n.chucDanh?.includes('Viện trưởng')),
     [nhanSuList]
   );
   const vienTruong = useMemo(
-    () => lanhDao.find((n) => n.chucDanh === 'Viện trưởng') ?? { hoTen: 'GS.TS. Nguyễn Hồng Hải', hocVi: 'GS.TS' },
+    () => lanhDao.find((n) => n.chucDanh === 'Viện trưởng') ?? { id: '1', hoTen: 'GS.TS. Nguyễn Hồng Hải', hocVi: 'GS.TS' },
     [lanhDao]
   );
   const deputyDan = useMemo(
-    () => lanhDao.find((n) => n.hoTen.includes('Đinh Quốc Dân')) ?? { id: '2', hoTen: 'Đinh Quốc Dân', hocVi: 'TS' },
+    () => lanhDao.find((n) => n.hoTen.includes('Đinh Quốc Dân') || n.chucDanh?.includes('Phó Viện trưởng')) ?? { id: '2', hoTen: 'Đinh Quốc Dân', hocVi: 'TS' },
     [lanhDao]
   );
   const deputyBinh = useMemo(
@@ -383,6 +378,56 @@ export function OrgChartTree({ donViList, nhanSuList, selectedId, onSelect }: Pr
     () => lanhDao.find((n) => n.hoTen.includes('Cao Duy Khôi')) ?? { id: '4', hoTen: 'Cao Duy Khôi', hocVi: 'TS' },
     [lanhDao]
   );
+
+  // ── Phân bổ động 4 Cột đơn vị theo người phụ trách và cơ cấu Viện ──
+  const dynamicCols: DonVi[][] = useMemo(() => {
+    const list = donViList
+      .filter((d) => d.loai !== 'lanh-dao')
+      .sort((a, b) => (a.thuTu ?? 0) - (b.thuTu ?? 0));
+
+    const col1: DonVi[] = []; // Đ/c Đinh Quốc Dân
+    const col2: DonVi[] = []; // Đ/c Nguyễn Thanh Bình
+    const col3: DonVi[] = []; // Đ/c Cao Duy Khôi (Chuyên ngành & BIM)
+    const col4: DonVi[] = []; // Đ/c Cao Duy Khôi (Phân viện & Doanh nghiệp)
+    const unassigned: DonVi[] = [];
+
+    list.forEach((dv) => {
+      const ptId = String(dv.phuTrachId || '');
+      const ptName = dv.phuTrach || '';
+
+      const isDan = ptId === String(deputyDan.id) || ptName.includes('Dân');
+      const isBinh = ptId === String(deputyBinh.id) || ptName.includes('Bình');
+      const isKhoi = ptId === String(deputyKhoi.id) || ptName.includes('Khôi');
+
+      if (isDan) {
+        col1.push(dv);
+      } else if (isBinh) {
+        col2.push(dv);
+      } else if (isKhoi) {
+        // Phân viện hoặc công ty ưu tiên sang Cột 4, còn lại Cột 3
+        if (dv.loai === 'phan-vien' || dv.loai === 'cong-ty') {
+          col4.push(dv);
+        } else {
+          col3.push(dv);
+        }
+      } else {
+        unassigned.push(dv);
+      }
+    });
+
+    // Cân bằng các đơn vị chưa gán phụ trách vào các cột
+    unassigned.forEach((dv) => {
+      const lens = [col1.length, col2.length, col3.length, col4.length];
+      const minLen = Math.min(...lens);
+      const targetIdx = lens.indexOf(minLen);
+      if (targetIdx === 0) col1.push(dv);
+      else if (targetIdx === 1) col2.push(dv);
+      else if (targetIdx === 2) col3.push(dv);
+      else col4.push(dv);
+    });
+
+    return [col1, col2, col3, col4];
+  }, [donViList, deputyDan, deputyBinh, deputyKhoi]);
 
   // Xây dựng Nodes và Edges cho ReactFlow
   const { nodes, edges, contentWidth, contentHeight } = useMemo(() => {
@@ -466,50 +511,55 @@ export function OrgChartTree({ donViList, nhanSuList, selectedId, onSelect }: Pr
 
     // ── Tier 3: 4 Cột Đơn vị trực thuộc ──
     // Mỗi Phó Viện trưởng chỉ nối xuống đúng Cột đơn vị mình phụ trách:
-    // 1. Đ/c Đinh Quốc Dân -> Đỉnh Cột 1 (thẳng đứng 100%)
-    edges.push({
-      id: 'e-deputy2-col0',
-      source: 'deputy-2',
-      target: `unit-${COL_UNIT_IDS[0][0]}`,
-      type: 'treeStep',
-      style: { stroke: '#64748b', strokeWidth: 1.5 },
-    });
+    // 1. Đ/c Đinh Quốc Dân -> Đỉnh Cột 1
+    if (dynamicCols[0].length > 0) {
+      edges.push({
+        id: 'e-deputy2-col0',
+        source: 'deputy-2',
+        target: `unit-${dynamicCols[0][0].id}`,
+        type: 'treeStep',
+        style: { stroke: '#64748b', strokeWidth: 1.5 },
+      });
+    }
 
-    // 2. Đ/c Nguyễn Thanh Bình -> Đỉnh Cột 2 (thẳng đứng 100%)
-    edges.push({
-      id: 'e-deputy3-col1',
-      source: 'deputy-3',
-      target: `unit-${COL_UNIT_IDS[1][0]}`,
-      type: 'treeStep',
-      style: { stroke: '#64748b', strokeWidth: 1.5 },
-    });
+    // 2. Đ/c Nguyễn Thanh Bình -> Đỉnh Cột 2
+    if (dynamicCols[1].length > 0) {
+      edges.push({
+        id: 'e-deputy3-col1',
+        source: 'deputy-3',
+        target: `unit-${dynamicCols[1][0].id}`,
+        type: 'treeStep',
+        style: { stroke: '#64748b', strokeWidth: 1.5 },
+      });
+    }
 
     // 3. Đ/c Cao Duy Khôi -> Đỉnh Cột 3 & Cột 4 (rẽ nhánh đối xứng 2 bên)
-    edges.push({
-      id: 'e-deputy4-col2',
-      source: 'deputy-4',
-      target: `unit-${COL_UNIT_IDS[2][0]}`,
-      type: 'treeStep',
-      data: { midY: Y_BUS_2 },
-      style: { stroke: '#64748b', strokeWidth: 1.5 },
-    });
-    edges.push({
-      id: 'e-deputy4-col3',
-      source: 'deputy-4',
-      target: `unit-${COL_UNIT_IDS[3][0]}`,
-      type: 'treeStep',
-      data: { midY: Y_BUS_2 },
-      style: { stroke: '#64748b', strokeWidth: 1.5 },
-    });
+    if (dynamicCols[2].length > 0) {
+      edges.push({
+        id: 'e-deputy4-col2',
+        source: 'deputy-4',
+        target: `unit-${dynamicCols[2][0].id}`,
+        type: 'treeStep',
+        data: { midY: Y_BUS_2 },
+        style: { stroke: '#64748b', strokeWidth: 1.5 },
+      });
+    }
+    if (dynamicCols[3].length > 0) {
+      edges.push({
+        id: 'e-deputy4-col3',
+        source: 'deputy-4',
+        target: `unit-${dynamicCols[3][0].id}`,
+        type: 'treeStep',
+        data: { midY: Y_BUS_2 },
+        style: { stroke: '#64748b', strokeWidth: 1.5 },
+      });
+    }
 
     // Tạo các Thẻ đơn vị và đường nối dọc trong từng Cột
-    COL_UNIT_IDS.forEach((colIds, colIdx) => {
+    dynamicCols.forEach((colUnits, colIdx) => {
       const ux = colXPositions[colIdx];
 
-      colIds.forEach((dvId, rowIdx) => {
-        const dv = donViList.find((d) => String(d.id) === String(dvId));
-        if (!dv) return;
-
+      colUnits.forEach((dv, rowIdx) => {
         const uy = Y_GRID + rowIdx * (CARD_H + GAP_Y);
         const employees = nhanSuList.filter((n) => String(n.donViId) === String(dv.id));
 
@@ -556,10 +606,10 @@ export function OrgChartTree({ donViList, nhanSuList, selectedId, onSelect }: Pr
 
         // Đường nối dọc thẳng đứng giữa các thẻ trong cùng một cột (rowIdx > 0)
         if (rowIdx > 0) {
-          const prevDvId = colIds[rowIdx - 1];
+          const prevDv = colUnits[rowIdx - 1];
           edges.push({
-            id: `e-spine-${prevDvId}-${dv.id}`,
-            source: `unit-${prevDvId}`,
+            id: `e-spine-${prevDv.id}-${dv.id}`,
+            source: `unit-${prevDv.id}`,
             target: `unit-${dv.id}`,
             type: 'treeStep',
             style: {
@@ -572,7 +622,7 @@ export function OrgChartTree({ donViList, nhanSuList, selectedId, onSelect }: Pr
       });
     });
 
-    const maxRows = Math.max(...COL_UNIT_IDS.map((c) => c.length));
+    const maxRows = Math.max(1, ...dynamicCols.map((c) => c.length));
     const contentHeight = Y_GRID + maxRows * (CARD_H + GAP_Y) + 30;
 
     return {
@@ -593,6 +643,7 @@ export function OrgChartTree({ donViList, nhanSuList, selectedId, onSelect }: Pr
     openPopoverId,
     searchQuery,
     filterLoai,
+    dynamicCols,
   ]);
 
   // Container viewport sizing

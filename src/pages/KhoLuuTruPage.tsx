@@ -13,7 +13,7 @@ export function KhoLuuTruPage() {
   return (
     <div>
       <PageHeader
-        title="[Phân hệ 8] Kho Lưu trữ Số hóa Hồ sơ Kỹ thuật & Trợ lý AI-RAG"
+        title="Kho Lưu trữ Số hóa Hồ sơ Kỹ thuật & Trợ lý AI-RAG"
         subtitle="Quản lý tập trung bản vẽ CAD/BIM, báo cáo địa kỹ thuật với phân quyền chi tiết (Granular Access Control) & Trợ lý AI-RAG tra cứu Quy chuẩn kỹ thuật QCVN 06:2022/BXD"
       />
 

@@ -159,7 +159,7 @@ export function GoiThauChiTietPanel({
             <p className="font-bold flex items-center gap-1 text-emerald-800 dark:text-emerald-300">
               <Award size={13} /> 🎉 Gói thầu đã TRÚNG THẦU thành công!
             </p>
-            <p className="mt-0.5">Chuyển sang Phân hệ <strong>Hợp đồng & CRM</strong> ➔ Bấm <strong>"+ Tạo Hợp đồng"</strong> để lập HĐKT theo Điều 6.1 QC 2815.</p>
+            <p className="mt-0.5">Chuyển sang <strong>Hợp đồng & CRM</strong> ➔ Bấm <strong>"+ Tạo Hợp đồng"</strong> để lập HĐKT theo Điều 6.1 QC 2815.</p>
           </div>
         )}
       </div>

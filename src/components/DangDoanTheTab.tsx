@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
   Plus, Flag, Users, UserCheck, Wallet, Pencil, Trash2, LoaderCircle, Search,
-  CalendarClock, ListChecks, ExternalLink,
+  CalendarClock, ListChecks, ExternalLink, Zap, CheckCircle2,
 } from 'lucide-react';
 import { KpiCard } from './KpiCard';
 import { Field, inputCls } from './Modal';
@@ -84,6 +84,8 @@ function ChanForm({ dangLuu, nhan, onHuy, formId }: { dangLuu: boolean; nhan: st
 export function DangDoanTheTab() {
   const [subTab, setSubTab] = useState<SubTab>('to-chuc');
   const [chiTiet, setChiTiet] = useState<ChiTiet | null>(null);
+  const [tinhPhiBusy, setTinhPhiBusy] = useState(false);
+  const [tinhPhiThongBao, setTinhPhiThongBao] = useState<string | null>(null);
 
   const { data: toChucList, loading: loadingToChuc, error: errorToChuc, refetch: refetchToChuc } =
     useAsyncData(fetchToChucDoanThe, []);
@@ -890,12 +892,81 @@ export function DangDoanTheTab() {
           </div>
 
           <div className="card overflow-hidden">
-            <div className="flex items-center justify-between border-b border-border px-4 py-3">
-              <h3 className="text-sm font-bold text-ink">Sổ thu đảng phí / đoàn phí — kỳ {ky}</h3>
-              <button onClick={crudThuPhi.openCreate} className="btn-primary" disabled={toChucList.length === 0}>
-                <Plus size={15} /> Ghi khoản thu
-              </button>
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3">
+              <div>
+                <h3 className="text-sm font-bold text-ink">Sổ thu đảng phí / đoàn phí — kỳ {ky}</h3>
+                <p className="text-2xs text-ink-muted mt-0.5">Thu 1% tiền lương ngạch bậc + PCCV theo QĐ 342-QĐ/TW</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={tinhPhiBusy || dangVienList.length === 0}
+                  onClick={async () => {
+                    setTinhPhiBusy(true);
+                    setTinhPhiThongBao(null);
+                    try {
+                      let count = 0;
+                      const LUONG_CO_SO = 2340000; // 2,34 triệu VNĐ (từ 01/07/2024)
+                      for (const dv of dangVienList) {
+                        if (dv.trangThai !== 'dang-sinh-hoat' && dv.trangThai !== 'chinh-thuc' && dv.trangThai !== 'du-bi') continue;
+
+                        const daCo = thuPhiKyNay.some(
+                          (t) => t.nhanSuId === dv.nhanSuId && t.toChucId === dv.toChucId && t.loaiPhi === 'dang-phi'
+                        );
+                        if (daCo) continue;
+
+                        const ns = nhanSuList.find((n) => String(n.id) === String(dv.nhanSuId));
+                        const hsl = ns?.heSoLuong || 2.34;
+                        const pccv = ns?.phuCapChucVu || 0;
+                        const tongHeSo = hsl + pccv;
+                        const tienLuong = tongHeSo * LUONG_CO_SO;
+                        const dangPhi = Math.round(tienLuong * 0.01);
+
+                        await createThuPhiDoanThe({
+                          nhanSuId: dv.nhanSuId,
+                          toChucId: dv.toChucId,
+                          loaiPhi: 'dang-phi',
+                          ky,
+                          mucDong: '1%',
+                          soTienPhaiNop: String(dangPhi),
+                          soTienDaNop: '0',
+                          ngayNop: '',
+                          hinhThuc: 'tru-luong',
+                          trangThai: 'chua-nop',
+                        });
+                        count++;
+                      }
+                      await refetchThuPhi();
+                      setTinhPhiThongBao(
+                        count > 0
+                          ? `Đã tự động tính và lập sổ thu đảng phí kỳ ${ky} cho ${count} đảng viên!`
+                          : `Tất cả đảng viên đã có trong sổ thu kỳ ${ky}.`
+                      );
+                      setTimeout(() => setTinhPhiThongBao(null), 5000);
+                    } catch (e) {
+                      setTinhPhiThongBao(e instanceof Error ? e.message : 'Lỗi khi tự động tính đảng phí');
+                    } finally {
+                      setTinhPhiBusy(false);
+                    }
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary-subtle px-3 py-1.5 text-xs font-bold text-primary transition-colors hover:bg-primary/20 dark:bg-primary-950/40 dark:text-primary-300 disabled:opacity-50"
+                  title="Tự động tính 1% tiền lương (hệ số ngạch bậc + PCCV) theo QĐ 342-QĐ/TW"
+                >
+                  {tinhPhiBusy ? <LoaderCircle size={14} className="animate-spin" /> : <Zap size={14} />}
+                  Tự động tính đảng phí
+                </button>
+                <button onClick={crudThuPhi.openCreate} className="btn-primary" disabled={toChucList.length === 0}>
+                  <Plus size={15} /> Ghi khoản thu
+                </button>
+              </div>
             </div>
+
+            {tinhPhiThongBao && (
+              <div className="flex items-center gap-2 bg-emerald-50 px-4 py-2 text-xs font-semibold text-success dark:bg-emerald-950/40 dark:text-emerald-300 border-b border-emerald-200 dark:border-emerald-800">
+                <CheckCircle2 size={14} />
+                {tinhPhiThongBao}
+              </div>
+            )}
             <div className="overflow-x-auto">
               <table className="w-full min-w-[720px]">
                 <thead>

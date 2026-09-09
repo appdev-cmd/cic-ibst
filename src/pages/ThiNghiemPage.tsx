@@ -147,7 +147,7 @@ export function ThiNghiemPage() {
   return (
     <div>
       <PageHeader
-        title="[Phân hệ 6] Hệ thống Thử nghiệm (LIMS), Thiết bị Lab & Đầu tư"
+        title="Hệ thống Thử nghiệm (LIMS), Thiết bị Lab & Đầu tư"
         subtitle="Tiếp nhận mẫu, tính kết quả cơ lý ISO/IEC 17025, ký số CA pháp lý tệp PDF & Nhắc lịch kiểm định thiết bị 11 phòng LAS-XD trước 30 ngày"
       />
 

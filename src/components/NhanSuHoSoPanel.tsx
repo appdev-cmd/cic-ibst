@@ -1,10 +1,13 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useState, useEffect, type FormEvent, type ReactNode } from 'react';
 import { Plus, Pencil, Trash2, LoaderCircle, Award, Briefcase, GraduationCap, Wallet, ClipboardCheck, User, CreditCard } from 'lucide-react';
 import { useAsyncData } from '../hooks/useAsyncData';
 import { ChungChiPanel } from './DetailPanels';
 import { SlideOverTabs, type SlideOverTabDef } from './SlideOver';
+import { useSlidePanelForm } from '../hooks/useSlidePanelCrud';
+import { Field, inputCls } from './Modal';
 import {
   fetchNhanSuHoSoMoRong,
+  updateNhanSuHoSoMoRong,
   type NhanSuHoSoMoRong,
   fetchQuaTrinhCongTac,
   createQuaTrinhCongTac,
@@ -98,8 +101,109 @@ function InfoItem({ label, value, mono }: { label: string; value?: string | numb
   );
 }
 
+function HoSoMoRongForm({
+  nhanSuId,
+  initial,
+  open,
+  onClose,
+  onSaved,
+}: {
+  nhanSuId: string;
+  initial: NhanSuHoSoMoRong;
+  open: boolean;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [form, setForm] = useState(initial);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (open) setForm(initial);
+  }, [open, initial]);
+
+  const save = async (e: FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setErr(null);
+    try {
+      await updateNhanSuHoSoMoRong(nhanSuId, form);
+      onSaved();
+    } catch (error) {
+      setErr(error instanceof Error ? error.message : String(error));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  useSlidePanelForm({
+    id: 'ho-so-mo-rong-form',
+    open,
+    title: 'Chỉnh sửa hồ sơ mở rộng',
+    icon: <Pencil size={16} />,
+    storageKey: 'hsmr-form-w',
+    deps: [form, saving, err],
+    onDongNgoaiLuong: onClose,
+    content: open ? (
+      <form id="hsmr-form" onSubmit={save} className="space-y-6 p-4 sm:p-5">
+        {err && <div className="rounded-lg bg-danger/10 p-3 text-sm text-danger">{err}</div>}
+        
+        <div>
+          <h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-muted">Nhân thân & Pháp lý</h4>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="Số CCCD / Định danh"><input className={inputCls} value={form.soDinhDanhCaNhan || ''} onChange={(e) => setForm({ ...form, soDinhDanhCaNhan: e.target.value })} /></Field>
+            <Field label="Ngày cấp CCCD"><input type="date" className={inputCls} value={form.ngayCapCccd || ''} onChange={(e) => setForm({ ...form, ngayCapCccd: e.target.value })} /></Field>
+            <Field label="Nơi cấp CCCD"><input className={inputCls} value={form.noiCapCccd || ''} onChange={(e) => setForm({ ...form, noiCapCccd: e.target.value })} /></Field>
+            <Field label="Quê quán"><input className={inputCls} value={form.queQuan || ''} onChange={(e) => setForm({ ...form, queQuan: e.target.value })} /></Field>
+            <Field label="Địa chỉ thường trú"><input className={inputCls} value={form.diaChiThuongTru || ''} onChange={(e) => setForm({ ...form, diaChiThuongTru: e.target.value })} /></Field>
+            <Field label="Nơi ở hiện nay"><input className={inputCls} value={form.diaChiHienNay || ''} onChange={(e) => setForm({ ...form, diaChiHienNay: e.target.value })} /></Field>
+            <Field label="Tình trạng hôn nhân"><input className={inputCls} value={form.tinhTrangHonNhan || ''} onChange={(e) => setForm({ ...form, tinhTrangHonNhan: e.target.value })} /></Field>
+            <Field label="Dân tộc"><input className={inputCls} value={form.danToc || ''} onChange={(e) => setForm({ ...form, danToc: e.target.value })} /></Field>
+            <Field label="Tôn giáo"><input className={inputCls} value={form.tonGiao || ''} onChange={(e) => setForm({ ...form, tonGiao: e.target.value })} /></Field>
+          </div>
+        </div>
+
+        <div>
+          <h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-muted">Trình độ & Ngạch bậc</h4>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="Học hàm"><input className={inputCls} value={form.hocHam || ''} onChange={(e) => setForm({ ...form, hocHam: e.target.value })} /></Field>
+            <Field label="Ngạch viên chức"><input className={inputCls} value={form.ngach || ''} onChange={(e) => setForm({ ...form, ngach: e.target.value })} /></Field>
+            <Field label="Lý luận chính trị"><input className={inputCls} value={form.lyLuanChinhTri || ''} onChange={(e) => setForm({ ...form, lyLuanChinhTri: e.target.value })} /></Field>
+            <Field label="Quản lý nhà nước"><input className={inputCls} value={form.quanLyNhaNuoc || ''} onChange={(e) => setForm({ ...form, quanLyNhaNuoc: e.target.value })} /></Field>
+          </div>
+        </div>
+
+        <div>
+          <h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-muted">Tài chính & Liên hệ</h4>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="Số sổ BHXH"><input className={inputCls} value={form.soBhxh || ''} onChange={(e) => setForm({ ...form, soBhxh: e.target.value })} /></Field>
+            <Field label="Mã số thuế cá nhân"><input className={inputCls} value={form.maSoThue || ''} onChange={(e) => setForm({ ...form, maSoThue: e.target.value })} /></Field>
+            <Field label="Số tài khoản ngân hàng"><input className={inputCls} value={form.soTaiKhoan || ''} onChange={(e) => setForm({ ...form, soTaiKhoan: e.target.value })} /></Field>
+            <Field label="Ngân hàng"><input className={inputCls} value={form.nganHang || ''} onChange={(e) => setForm({ ...form, nganHang: e.target.value })} /></Field>
+            <Field label="Người liên hệ khẩn cấp"><input className={inputCls} value={form.lienHeKhanCap || ''} onChange={(e) => setForm({ ...form, lienHeKhanCap: e.target.value })} /></Field>
+            <Field label="SĐT khẩn cấp"><input className={inputCls} value={form.sdtKhanCap || ''} onChange={(e) => setForm({ ...form, sdtKhanCap: e.target.value })} /></Field>
+          </div>
+        </div>
+      </form>
+    ) : null,
+    footer: open ? (
+      <div className="flex justify-end gap-2 p-4 sm:p-5">
+        <button type="button" onClick={onClose} disabled={saving} className="btn-secondary">
+          Hủy
+        </button>
+        <button type="submit" form="hsmr-form" disabled={saving} className="btn-primary">
+          {saving ? <LoaderCircle size={16} className="animate-spin" /> : 'Lưu thay đổi'}
+        </button>
+      </div>
+    ) : null,
+  });
+
+  return null;
+}
+
 function ThongTinChungTab({ nhanSuId }: { nhanSuId: string }) {
-  const { data: hs, loading, error } = useAsyncData(() => fetchNhanSuHoSoMoRong(nhanSuId), null);
+  const { data: hs, loading, error, refetch } = useAsyncData(() => fetchNhanSuHoSoMoRong(nhanSuId), null);
+  const [formOpen, setFormOpen] = useState(false);
 
   if (loading) {
     return (
@@ -118,33 +222,40 @@ function ThongTinChungTab({ nhanSuId }: { nhanSuId: string }) {
   }
 
   return (
-    <div className="space-y-3.5">
-      {/* Khối 1: Thông tin nhân thân & Pháp lý */}
-      <div className="rounded-lg border border-border bg-surface p-3.5 shadow-xs">
-        <div className="mb-3 flex items-center gap-2 border-b border-border/60 pb-2">
-          <User size={15} className="text-primary" />
-          <h4 className="text-xs font-bold uppercase tracking-wider text-ink">Thông tin Nhân thân & Pháp lý</h4>
+    <>
+      <div className="space-y-3.5">
+        <div className="flex justify-end">
+          <button onClick={() => setFormOpen(true)} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-bold text-ink-secondary hover:bg-muted dark:border-slate-700/80 dark:hover:bg-slate-800/40">
+            <Pencil size={13} /> Chỉnh sửa hồ sơ
+          </button>
         </div>
-        <dl className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2 md:grid-cols-3">
-          <InfoItem label="Họ và tên" value={hs.hoVaTen} />
-          <InfoItem label="Mã nhân sự" value={hs.maDinhDanh} mono />
-          <InfoItem label="Ngày sinh" value={hs.ngaySinh ? formatNgay(hs.ngaySinh) : '—'} mono />
-          <InfoItem label="Giới tính" value={hs.gioiTinh} />
-          <InfoItem label="Dân tộc" value={hs.danToc} />
-          <InfoItem label="Tôn giáo" value={hs.tonGiao} />
-          <InfoItem label="Tình trạng hôn nhân" value={hs.tinhTrangHonNhan} />
-          <InfoItem label="Số CCCD / Định danh" value={hs.soDinhDanhCaNhan} mono />
-          <InfoItem label="Ngày cấp CCCD" value={hs.ngayCapCccd ? formatNgay(hs.ngayCapCccd) : '—'} mono />
-          <InfoItem label="Nơi cấp CCCD" value={hs.noiCapCccd} />
-          <InfoItem label="Quê quán" value={hs.queQuan} />
-          <div className="sm:col-span-2">
-            <InfoItem label="Địa chỉ thường trú" value={hs.diaChiThuongTru} />
+        
+        {/* Khối 1: Thông tin nhân thân & Pháp lý */}
+        <div className="rounded-lg border border-border bg-surface p-3.5 shadow-xs">
+          <div className="mb-3 flex items-center gap-2 border-b border-border/60 pb-2">
+            <User size={15} className="text-primary" />
+            <h4 className="text-xs font-bold uppercase tracking-wider text-ink">Thông tin Nhân thân & Pháp lý</h4>
           </div>
-          <div className="sm:col-span-2">
-            <InfoItem label="Nơi ở hiện nay" value={hs.diaChiHienNay} />
-          </div>
-        </dl>
-      </div>
+          <dl className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2 md:grid-cols-3">
+            <InfoItem label="Họ và tên" value={hs.hoVaTen} />
+            <InfoItem label="Mã nhân sự" value={hs.maDinhDanh} mono />
+            <InfoItem label="Ngày sinh" value={hs.ngaySinh ? formatNgay(hs.ngaySinh) : '—'} mono />
+            <InfoItem label="Giới tính" value={hs.gioiTinh} />
+            <InfoItem label="Dân tộc" value={hs.danToc} />
+            <InfoItem label="Tôn giáo" value={hs.tonGiao} />
+            <InfoItem label="Tình trạng hôn nhân" value={hs.tinhTrangHonNhan} />
+            <InfoItem label="Số CCCD / Định danh" value={hs.soDinhDanhCaNhan} mono />
+            <InfoItem label="Ngày cấp CCCD" value={hs.ngayCapCccd ? formatNgay(hs.ngayCapCccd) : '—'} mono />
+            <InfoItem label="Nơi cấp CCCD" value={hs.noiCapCccd} />
+            <InfoItem label="Quê quán" value={hs.queQuan} />
+            <div className="sm:col-span-2">
+              <InfoItem label="Địa chỉ thường trú" value={hs.diaChiThuongTru} />
+            </div>
+            <div className="sm:col-span-2">
+              <InfoItem label="Nơi ở hiện nay" value={hs.diaChiHienNay} />
+            </div>
+          </dl>
+        </div>
 
       {/* Khối 2: Công tác, Trình độ & Tiền lương */}
       <div className="rounded-lg border border-border bg-surface p-3.5 shadow-xs">
@@ -186,6 +297,16 @@ function ThongTinChungTab({ nhanSuId }: { nhanSuId: string }) {
         </dl>
       </div>
     </div>
+    {hs && (
+      <HoSoMoRongForm
+        nhanSuId={nhanSuId}
+        initial={hs}
+        open={formOpen}
+        onClose={() => setFormOpen(false)}
+        onSaved={() => { setFormOpen(false); refetch(); }}
+      />
+    )}
+  </>
   );
 }
 

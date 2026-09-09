@@ -66,6 +66,7 @@ export async function fetchDonVi(): Promise<DonVi[]> {
 export interface DonViInput {
   ten: string;
   tenVietTat: string;
+  maDinhDanh?: string;
   loai: LoaiDonVi;
   chucNangNhiemVu: string;
   dienThoai: string;
@@ -78,6 +79,7 @@ function donViRow(input: DonViInput) {
   return {
     ten_don_vi: input.ten,
     ten_viet_tat: input.tenVietTat || null,
+    ma_dinh_danh: input.maDinhDanh || null,
     loai_don_vi: input.loai,
     chuc_nang_nhiem_vu: input.chucNangNhiemVu || null,
     so_dien_thoai: input.dienThoai || null,

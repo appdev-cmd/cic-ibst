@@ -648,3 +648,62 @@ export interface ThiDua {
   danhHieuDat: string;
   trangThai: string;
 }
+
+// ─── Đánh giá xếp loại chất lượng viên chức (NĐ 233/2026/NĐ-CP) ───
+export type KyDanhGia = 'ca-nam' | 'quy-1' | 'quy-2' | 'quy-3' | 'quy-4';
+export type MucXepLoai = 'hoan-thanh-xuat-sac' | 'hoan-thanh-tot' | 'hoan-thanh' | 'khong-hoan-thanh';
+
+export interface DanhGiaVienChuc {
+  id: string;
+  nhanSuId: string;
+  hoVaTen: string;
+  hocVi?: string;
+  chucDanh?: string;
+  donViId?: string;
+  donViTen?: string;
+  donViTenVietTat?: string;
+  nam: number;
+  ky: KyDanhGia;
+  diemChung: number;       // Tiêu chí chung (tối đa 30đ)
+  diemNhiemVu: number;     // Kết quả thực hiện nhiệm vụ (tối đa 70đ)
+  tongDiem: number;        // Tổng điểm (thang 100)
+  tuXepLoai: MucXepLoai;
+  xepLoai: MucXepLoai;
+  tiLeHoanThanh: number;   // Tỷ lệ % hoàn thành khối lượng công việc
+  biKyLuat: boolean;       // Bị xử lý kỷ luật theo NĐ 233/2026
+  hinhThucKyLuat?: string; // Hình thức kỷ luật (khiển trách, cảnh cáo...)
+  nhanXet: string;
+  trangThai: 'nhap' | 'cho-duyet' | 'da-duyet';
+  createdAt: string;
+}
+
+export interface ThongKeDanhGia {
+  nam: number;
+  ky: string;
+  tongSo: number;
+  xuatSac: number;
+  xuatSacTiLe: number;       // %
+  vuotTranXuatSac: boolean;  // Cảnh báo nếu > 20%
+  tot: number;
+  totTiLe: number;
+  hoanThanh: number;
+  hoanThanhTiLe: number;
+  khongHoanThanh: number;
+  khongHoanThanhTiLe: number;
+  soBiKyLuat: number;
+  diemTrungBinh: number;
+}
+
+export interface DanhGiaInput {
+  nhanSuId: string | number;
+  nam: number;
+  ky: KyDanhGia;
+  diemChung: number;
+  diemNhiemVu: number;
+  tuXepLoai?: MucXepLoai;
+  xepLoai?: MucXepLoai;
+  biKyLuat?: boolean;
+  hinhThucKyLuat?: string;
+  nhanXet?: string;
+  trangThai?: 'nhap' | 'cho-duyet' | 'da-duyet';
+}

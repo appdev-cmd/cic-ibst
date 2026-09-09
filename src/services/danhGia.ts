@@ -1,62 +1,13 @@
 import { supabase } from '../lib/supabase';
+import type {
+  KyDanhGia,
+  MucXepLoai,
+  DanhGiaVienChuc,
+  ThongKeDanhGia,
+  DanhGiaInput,
+} from '../types';
 
-export type KyDanhGia = 'ca-nam' | 'quy-1' | 'quy-2' | 'quy-3' | 'quy-4';
-export type MucXepLoai = 'hoan-thanh-xuat-sac' | 'hoan-thanh-tot' | 'hoan-thanh' | 'khong-hoan-thanh';
-
-export interface DanhGiaVienChuc {
-  id: string;
-  nhanSuId: string;
-  hoVaTen: string;
-  hocVi?: string;
-  chucDanh?: string;
-  donViId?: string;
-  donViTen?: string;
-  donViTenVietTat?: string;
-  nam: number;
-  ky: KyDanhGia;
-  diemChung: number;       // Tiêu chí chung (tối đa 30đ)
-  diemNhiemVu: number;     // Kết quả thực hiện nhiệm vụ (tối đa 70đ)
-  tongDiem: number;        // Tổng điểm (thang 100)
-  tuXepLoai: MucXepLoai;
-  xepLoai: MucXepLoai;
-  tiLeHoanThanh: number;   // Tỷ lệ % hoàn thành khối lượng công việc
-  biKyLuat: boolean;       // Bị xử lý kỷ luật theo NĐ 233/2026
-  hinhThucKyLuat?: string; // Hình thức kỷ luật (khiển trách, cảnh cáo...)
-  nhanXet: string;
-  trangThai: 'nhap' | 'cho-duyet' | 'da-duyet';
-  createdAt: string;
-}
-
-export interface ThongKeDanhGia {
-  nam: number;
-  ky: string;
-  tongSo: number;
-  xuatSac: number;
-  xuatSacTiLe: number;       // %
-  vuotTranXuatSac: boolean;  // Cảnh báo nếu > 20%
-  tot: number;
-  totTiLe: number;
-  hoanThanh: number;
-  hoanThanhTiLe: number;
-  khongHoanThanh: number;
-  khongHoanThanhTiLe: number;
-  soBiKyLuat: number;
-  diemTrungBinh: number;
-}
-
-export interface DanhGiaInput {
-  nhanSuId: string | number;
-  nam: number;
-  ky: KyDanhGia;
-  diemChung: number;
-  diemNhiemVu: number;
-  tuXepLoai?: MucXepLoai;
-  xepLoai?: MucXepLoai;
-  biKyLuat?: boolean;
-  hinhThucKyLuat?: string;
-  nhanXet?: string;
-  trangThai?: 'nhap' | 'cho-duyet' | 'da-duyet';
-}
+export type { KyDanhGia, MucXepLoai, DanhGiaVienChuc, ThongKeDanhGia, DanhGiaInput };
 
 export const MUC_XEP_LOAI_META: Record<MucXepLoai, { label: string; shortLabel: string; color: string; badgeCls: string }> = {
   'hoan-thanh-xuat-sac': {
@@ -302,7 +253,7 @@ export async function saveDanhGiaVienChuc(input: DanhGiaInput): Promise<void> {
     tiLeHoanThanh: Math.min(100, Math.round(tongDiem)),
   };
 
-  const payload = {
+  const payload: Record<string, any> = {
     nhan_su_id: Number(input.nhanSuId),
     nam: input.nam,
     ky: input.ky,
@@ -311,6 +262,10 @@ export async function saveDanhGiaVienChuc(input: DanhGiaInput): Promise<void> {
     diem: tongDiem,
     nhan_xet: JSON.stringify(metaObj),
     trang_thai: input.trangThai || 'da-duyet',
+    diem_chung: Number(input.diemChung),
+    diem_nhiem_vu: Number(input.diemNhiemVu),
+    bi_ky_luat: Boolean(input.biKyLuat),
+    hinh_thuc_ky_luat: input.hinhThucKyLuat || null,
     updated_at: new Date().toISOString(),
   };
 
@@ -332,4 +287,52 @@ export async function updateTrangThaiDanhGia(
     .eq('id', id);
 
   if (error) throw new Error(error.message);
+}
+
+/**
+ * Tự động kiểm tra xem CBVC có quyết định kỷ luật trong năm đánh giá không
+ * (đồng bộ nguồn sự thật từ bảng khen_thuong_ky_luat)
+ */
+export async function kiemTraKyLuatTrongNam(
+  nhanSuId: string,
+  nam: number,
+): Promise<{ biKyLuat: boolean; hinhThuc?: string; lyDo?: string }> {
+  try {
+    const { data } = await supabase
+      .from('khen_thuong_ky_luat')
+      .select('hinh_thuc, ly_do, ngay_quyet_dinh, nam')
+      .eq('nhan_su_id', Number(nhanSuId))
+      .eq('loai', 'ky-luat');
+
+    const match = (data || []).find((r: any) => {
+      if (r.nam && r.nam === nam) return true;
+      if (r.ngay_quyet_dinh && r.ngay_quyet_dinh.startsWith(String(nam))) return true;
+      return false;
+    });
+
+    if (match) {
+      return { biKyLuat: true, hinhThuc: match.hinh_thuc, lyDo: match.ly_do };
+    }
+  } catch {
+    // fallback nếu bảng chưa truy cập được
+  }
+  return { biKyLuat: false };
+}
+
+/**
+ * Điều 12 NĐ 233/2026/NĐ-CP: Mức xếp loại của người đứng đầu không được cao hơn mức xếp loại của tập thể đơn vị.
+ */
+export function canhBaoNguoiDungDau(
+  chucDanh: string | undefined,
+  xepLoai: MucXepLoai,
+  diemTrungBinhDonVi?: number,
+): string | null {
+  if (!chucDanh) return null;
+  const isLeader = /viện trưởng|giám đốc|trưởng phòng|trưởng ban/i.test(chucDanh);
+  if (!isLeader) return null;
+
+  if (xepLoai === 'hoan-thanh-xuat-sac' && diemTrungBinhDonVi != null && diemTrungBinhDonVi < 85) {
+    return 'Cảnh báo Đ.12 NĐ 233/2026: Đơn vị đạt điểm trung bình < 85đ, người đứng đầu không được xếp loại cao hơn tập thể.';
+  }
+  return null;
 }

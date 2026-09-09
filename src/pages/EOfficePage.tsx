@@ -14,7 +14,7 @@ export function EOfficePage() {
   return (
     <div>
       <PageHeader
-        title="[Phân hệ 7] Văn phòng số (e-Office): Văn bản, Lịch biểu & Giao việc"
+        title="Văn phòng số (e-Office): Văn bản, Lịch biểu & Giao việc"
         subtitle="Văn phòng không giấy tờ: Luồng văn bản tích hợp Chữ ký số CA liên thông Trục Bộ Xây dựng, Lịch biểu xe/phòng họp & Thuật toán đếm tiến độ công việc lũy kế"
       />
 

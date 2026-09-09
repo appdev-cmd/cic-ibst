@@ -1,15 +1,18 @@
 import { useMemo, useState } from 'react';
-import { Plus, GraduationCap, Users2, CalendarDays, LoaderCircle, Search, Pencil, Trash2, ExternalLink, Users } from 'lucide-react';
+import {
+  Plus, GraduationCap, Users2, CalendarDays, LoaderCircle, Search,
+  Pencil, Trash2, ExternalLink, Users, BookOpen, Clock, Award, FileText, CheckCircle2,
+} from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { StatusBadge, TRANG_THAI_OPTIONS } from '../components/StatusBadge';
 import { KpiCard } from '../components/KpiCard';
 import { DataState } from '../components/DataState';
-import { Modal, Field, inputCls } from '../components/Modal';
+import { Field, inputCls } from '../components/Modal';
 import { TableToolbar, FilterSelect, Pagination } from '../components/TableToolbar';
 import { useAsyncData } from '../hooks/useAsyncData';
 import { useTableControls } from '../hooks/useTableControls';
 import { useCrudForm } from '../hooks/useCrudForm';
-import { useSlidePanelForm } from '../hooks/useSlidePanelCrud';
+import { useSlidePanelForm, useSlidePanelChiTiet } from '../hooks/useSlidePanelCrud';
 import {
   fetchLopDaoTao,
   createLopDaoTao,
@@ -26,6 +29,13 @@ import {
 import type { LopDaoTao, NghienCuuSinh } from '../types';
 import { TRANG_THAI_HOI_DONG_NCS } from '../types';
 import { formatNgay, cn } from '../lib/utils';
+
+export const CHUYEN_NGANH_NCS = [
+  { ma: '9580201', ten: 'Kỹ thuật XD công trình DD&CN (Mã: 9580201)' },
+  { ma: '9580211', ten: 'Địa kỹ thuật xây dựng (Mã: 9580211)' },
+  { ma: '9580205', ten: 'Vật liệu xây dựng (Mã: 9580205)' },
+  { ma: 'khac', ten: 'Chuyên ngành khác' },
+];
 
 const LOAI_CLS: Record<string, string> = {
   NCS: 'bg-accent-bg text-accent dark:bg-red-900/20 dark:text-red-400',
@@ -142,6 +152,92 @@ export function DaoTaoPage() {
     (ld) => ld.trangThai === 'moi' && ld.batDau && new Date(ld.batDau).getTime() > Date.now(),
   ).length;
 
+  // ─── Chi tiết Lớp đào tạo (SlidePanel) ───
+  const [selectedLopId, setSelectedLopId] = useState<string | null>(null);
+  const selectedLop = useMemo(() => lopList.find((l) => l.id === selectedLopId) ?? null, [lopList, selectedLopId]);
+
+  useSlidePanelChiTiet({
+    id: 'lop-dao-tao-chi-tiet',
+    active: !!selectedLop,
+    title: selectedLop?.ten || 'Chi tiết lớp đào tạo / hội thảo',
+    subtitle: selectedLop ? `${selectedLop.loai} · ${selectedLop.soHocVien} học viên` : undefined,
+    storageKey: 'lop-dt-chitiet-w',
+    deps: [selectedLop],
+    onDongNgoaiLuong: () => setSelectedLopId(null),
+    headerExtra: selectedLop ? (
+      <button
+        onClick={() => {
+          const l = selectedLop;
+          setSelectedLopId(null);
+          crud.openEdit(l);
+        }}
+        className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-bold text-ink hover:bg-muted dark:border-slate-700/80 transition-colors"
+      >
+        <Pencil size={13} /> Sửa
+      </button>
+    ) : null,
+    content: selectedLop ? (
+      <div className="space-y-4 p-5">
+        {/* KPI mini */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-xl border border-border bg-subtle p-3 dark:border-slate-700/80">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-ink-muted">Loại sự kiện</span>
+            <div className="mt-1">
+              <span className={cn('rounded-full px-2.5 py-0.5 text-xs font-black uppercase', LOAI_CLS[selectedLop.loai])}>
+                {selectedLop.loai}
+              </span>
+            </div>
+          </div>
+          <div className="rounded-xl border border-border bg-subtle p-3 dark:border-slate-700/80">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-ink-muted">Trạng thái</span>
+            <div className="mt-1">
+              <StatusBadge value={selectedLop.trangThai} />
+            </div>
+          </div>
+        </div>
+
+        {/* Thông tin thời gian & quy mô */}
+        <div className="rounded-xl border border-border bg-surface p-4 dark:border-slate-700/80 space-y-3">
+          <h4 className="text-xs font-black uppercase tracking-wider text-ink-muted flex items-center gap-1.5">
+            <Clock size={13} /> Thời gian & Quy mô
+          </h4>
+          <div className="grid grid-cols-2 gap-3 text-xs">
+            <div>
+              <span className="text-ink-muted">Ngày bắt đầu:</span>
+              <p className="font-mono font-bold text-ink mt-0.5">{selectedLop.batDau ? formatNgay(selectedLop.batDau) : 'Chưa đặt'}</p>
+            </div>
+            <div>
+              <span className="text-ink-muted">Ngày kết thúc:</span>
+              <p className="font-mono font-bold text-ink mt-0.5">{selectedLop.ketThuc ? formatNgay(selectedLop.ketThuc) : 'Chưa đặt'}</p>
+            </div>
+            <div>
+              <span className="text-ink-muted">Quy mô học viên:</span>
+              <p className="font-bold text-ink mt-0.5">{selectedLop.soHocVien} người tham gia</p>
+            </div>
+            <div>
+              <span className="text-ink-muted">Đơn vị chủ trì:</span>
+              <p className="font-bold text-ink mt-0.5">Viện KHCN Xây dựng (IBST)</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Mục tiêu & Nội dung */}
+        <div className="rounded-xl border border-border bg-surface p-4 dark:border-slate-700/80 space-y-2">
+          <h4 className="text-xs font-black uppercase tracking-wider text-ink-muted flex items-center gap-1.5">
+            <BookOpen size={13} /> Chương trình & Tài liệu
+          </h4>
+          <p className="text-xs text-ink-secondary leading-relaxed">
+            Chương trình đào tạo / hội thảo được thẩm định và cấp chứng chỉ / giấy chứng nhận hoàn thành theo quy định của Bộ Xây dựng và Viện KHCN Xây dựng.
+          </p>
+          <div className="pt-2 flex items-center gap-2 text-2xs text-ink-muted">
+            <CheckCircle2 size={13} className="text-success" />
+            <span>Có lưu hồ sơ giảng viên và danh sách điểm danh học viên</span>
+          </div>
+        </div>
+      </div>
+    ) : null,
+  });
+
   // ─── Slide panel: biểu mẫu Thêm/Sửa hồ sơ Nghiên cứu sinh ───
   useSlidePanelForm({
     id: 'ncs-form',
@@ -213,11 +309,128 @@ export function DaoTaoPage() {
                 placeholder="VD: Nghiên cứu thiết kế kháng chấn cho nhà cao tầng kết cấu composite..."
               />
             </Field>
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Chuyên ngành đào tạo Tiến sĩ">
+                <select
+                  className={inputCls}
+                  value={ncsCrud.form.ghiChu?.includes('[Mã ngành:') ? ncsCrud.form.ghiChu.match(/\[Mã ngành:\s*([^\]]+)\]/)?.[1] ?? '' : ''}
+                  onChange={(e) => {
+                    const maNganh = e.target.value;
+                    const oldGhiChu = (ncsCrud.form.ghiChu || '').replace(/\[Mã ngành:[^\]]*\]\s*/g, '').trim();
+                    const newGhiChu = maNganh ? `[Mã ngành: ${maNganh}] ${oldGhiChu}`.trim() : oldGhiChu;
+                    ncsCrud.setForm({ ...ncsCrud.form, ghiChu: newGhiChu });
+                  }}
+                >
+                  <option value="">-- Chọn chuyên ngành TS chuẩn Viện --</option>
+                  {CHUYEN_NGANH_NCS.map((cn) => (
+                    <option key={cn.ma} value={cn.ma}>{cn.ten}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Số Quyết định / Ghi chú">
+                <input
+                  className={inputCls}
+                  value={ncsCrud.form.ghiChu || ''}
+                  onChange={(e) => ncsCrud.setForm({ ...ncsCrud.form, ghiChu: e.target.value })}
+                  placeholder="VD: QĐ 128/QĐ-VKH ngày 15/03/2024"
+                />
+              </Field>
+            </div>
             {ncsCrud.actionError && (
               <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-danger dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
                 {ncsCrud.actionError}
               </p>
             )}
+      </form>
+    ),
+  });
+
+  // ─── Slide panel: biểu mẫu Thêm/Sửa Lớp đào tạo ───
+  useSlidePanelForm({
+    id: 'lop-dao-tao-form',
+    open: crud.modalOpen,
+    title: crud.editing ? 'Sửa lớp / sự kiện' : 'Mở lớp / sự kiện mới',
+    subtitle: crud.editing?.ten,
+    storageKey: 'lop-dt-form-w',
+    deps: [crud.form, crud.editing, crud.saving, crud.actionError],
+    onDongNgoaiLuong: crud.closeModal,
+    footer: (
+      <>
+        <button type="button" onClick={crud.closeModal} className="btn-ghost">Hủy</button>
+        <button type="submit" form="form-lop-dao-tao" disabled={crud.saving} className="btn-primary disabled:opacity-60">
+          {crud.saving && <LoaderCircle size={15} className="animate-spin" />}
+          {crud.editing ? 'Lưu thay đổi' : 'Mở lớp / sự kiện'}
+        </button>
+      </>
+    ),
+    content: (
+      <form id="form-lop-dao-tao" onSubmit={crud.submit} className="space-y-4 p-5">
+        <Field label="Tên lớp / sự kiện" required>
+          <input
+            className={inputCls}
+            required
+            maxLength={255}
+            value={crud.form.ten}
+            onChange={(e) => crud.setForm({ ...crud.form, ten: e.target.value })}
+            placeholder="VD: Tập huấn TCVN mới về kết cấu thép"
+          />
+        </Field>
+        <div className="grid grid-cols-3 gap-4">
+          <Field label="Loại" required>
+            <select
+              className={inputCls}
+              value={crud.form.loaiMa}
+              onChange={(e) => crud.setForm({ ...crud.form, loaiMa: e.target.value })}
+            >
+              {LOAI_DAO_TAO_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Số học viên">
+            <input
+              type="number"
+              min={0}
+              className={inputCls}
+              value={crud.form.soHocVien}
+              onChange={(e) => crud.setForm({ ...crud.form, soHocVien: e.target.value })}
+            />
+          </Field>
+          <Field label="Trạng thái" required>
+            <select
+              className={inputCls}
+              value={crud.form.trangThai}
+              onChange={(e) => crud.setForm({ ...crud.form, trangThai: e.target.value })}
+            >
+              {TRANG_THAI_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </Field>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Ngày bắt đầu">
+            <input
+              type="date"
+              className={inputCls}
+              value={crud.form.batDau}
+              onChange={(e) => crud.setForm({ ...crud.form, batDau: e.target.value })}
+            />
+          </Field>
+          <Field label="Ngày kết thúc">
+            <input
+              type="date"
+              className={inputCls}
+              value={crud.form.ketThuc}
+              onChange={(e) => crud.setForm({ ...crud.form, ketThuc: e.target.value })}
+            />
+          </Field>
+        </div>
+        {crud.actionError && (
+          <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-danger dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
+            {crud.actionError}
+          </p>
+        )}
       </form>
     ),
   });
@@ -316,8 +529,12 @@ export function DaoTaoPage() {
               </thead>
               <tbody>
                 {tableLop.pageRows.map((ld) => (
-                  <tr key={ld.id} className="tr-stripe">
-                    <td className="td-cell font-medium">{ld.ten}</td>
+                  <tr
+                    key={ld.id}
+                    className="tr-stripe cursor-pointer hover:bg-muted/40 transition-colors"
+                    onClick={() => setSelectedLopId(ld.id)}
+                  >
+                    <td className="td-cell font-medium text-primary hover:underline">{ld.ten}</td>
                     <td className="td-cell">
                       <span className={cn('rounded-full px-2 py-0.5 text-2xs font-black uppercase', LOAI_CLS[ld.loai])}>
                         {ld.loai}
@@ -327,7 +544,7 @@ export function DaoTaoPage() {
                     <td className="td-cell font-mono text-xs">{ld.batDau ? formatNgay(ld.batDau) : '—'}</td>
                     <td className="td-cell font-mono text-xs">{ld.ketThuc ? formatNgay(ld.ketThuc) : '—'}</td>
                     <td className="td-cell"><StatusBadge value={ld.trangThai} /></td>
-                    <td className="td-cell">
+                    <td className="td-cell" onClick={(e) => e.stopPropagation()}>
                       <div className="flex justify-end gap-1">
                         <button
                           onClick={() => crud.openEdit(ld)}
@@ -456,95 +673,6 @@ export function DaoTaoPage() {
         </>
       )}
 
-      {/* Modal Lớp Đào Tạo */}
-      <Modal
-        title={crud.editing ? `Sửa: ${crud.editing.ten}` : 'Mở lớp / sự kiện mới'}
-        open={crud.modalOpen}
-        onClose={crud.closeModal}
-        wide
-      >
-        <form onSubmit={crud.submit} className="space-y-4">
-          <Field label="Tên lớp / sự kiện" required>
-            <input
-              className={inputCls}
-              required
-              maxLength={255}
-              value={crud.form.ten}
-              onChange={(e) => crud.setForm({ ...crud.form, ten: e.target.value })}
-              placeholder="VD: Tập huấn TCVN mới về kết cấu thép"
-            />
-          </Field>
-          <div className="grid grid-cols-3 gap-4">
-            <Field label="Loại" required>
-              <select
-                className={inputCls}
-                value={crud.form.loaiMa}
-                onChange={(e) => crud.setForm({ ...crud.form, loaiMa: e.target.value })}
-              >
-                {LOAI_DAO_TAO_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Số học viên">
-              <input
-                type="number"
-                min={0}
-                className={inputCls}
-                value={crud.form.soHocVien}
-                onChange={(e) => crud.setForm({ ...crud.form, soHocVien: e.target.value })}
-              />
-            </Field>
-            <Field label="Trạng thái" required>
-              <select
-                className={inputCls}
-                value={crud.form.trangThai}
-                onChange={(e) => crud.setForm({ ...crud.form, trangThai: e.target.value })}
-              >
-                {TRANG_THAI_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
-                ))}
-              </select>
-            </Field>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Ngày bắt đầu">
-              <input
-                type="date"
-                className={inputCls}
-                value={crud.form.batDau}
-                onChange={(e) => crud.setForm({ ...crud.form, batDau: e.target.value })}
-              />
-            </Field>
-            <Field label="Ngày kết thúc">
-              <input
-                type="date"
-                className={inputCls}
-                value={crud.form.ketThuc}
-                onChange={(e) => crud.setForm({ ...crud.form, ketThuc: e.target.value })}
-              />
-            </Field>
-          </div>
-          {crud.actionError && (
-            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-danger dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
-              {crud.actionError}
-            </p>
-          )}
-          <div className="flex justify-end gap-2 border-t border-border-subtle pt-4">
-            <button
-              type="button"
-              onClick={crud.closeModal}
-              className="rounded-xl border border-border px-4 py-2.5 text-[13px] font-bold text-ink-secondary transition-colors hover:bg-muted"
-            >
-              Hủy
-            </button>
-            <button type="submit" disabled={crud.saving} className="btn-primary disabled:opacity-60">
-              {crud.saving && <LoaderCircle size={15} className="animate-spin" />}
-              {crud.editing ? 'Lưu thay đổi' : 'Mở lớp / sự kiện'}
-            </button>
-          </div>
-        </form>
-      </Modal>
 
     </div>
   );

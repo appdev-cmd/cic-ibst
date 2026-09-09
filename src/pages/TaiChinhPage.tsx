@@ -98,7 +98,7 @@ export function TaiChinhPage() {
   return (
     <div>
       <PageHeader
-        title="[Phân hệ 3] Quản lý Tài chính & Thu chi Hợp đồng"
+        title="Quản lý Tài chính & Thu chi Hợp đồng"
         subtitle="Quản lý dòng tiền Hợp đồng: Tạm ứng, Tiền về, HĐ VAT, Công nợ & Chế tài Phạt/SLA TCKT (Chương III QC 2815)"
       />
 
@@ -174,7 +174,7 @@ export function TaiChinhPage() {
             )}
             {soHdChuaPhanNhom > 0 && (
               <p className="text-2xs text-amber-600 dark:text-amber-400 font-semibold">
-                ⚠ {soHdChuaPhanNhom} hợp đồng chưa phân nhóm — vào phân hệ Hợp đồng gán "Nhóm HĐ" để tính phân bổ.
+                ⚠ {soHdChuaPhanNhom} hợp đồng chưa phân nhóm — vào mục Hợp đồng gán "Nhóm HĐ" để tính phân bổ.
               </p>
             )}
           </div>

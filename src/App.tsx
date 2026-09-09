@@ -63,7 +63,7 @@ export default function App() {
         <Route path="/uy-quyen" element={<Navigate to="/hop-dong?tab=bao-cao-khkt" replace />} />
 
         {/* Các trang hỗ trợ & Cổng thông tin */}
-        <Route path="/don-vi" element={<Navigate to="/nhan-su?tab=so-do-to-chuc" replace />} />
+        <Route path="/don-vi" element={<Navigate to="/nhan-su?tab=don-vi" replace />} />
         <Route path="/cai-dat" element={<CaiDatPage />} />
         <Route path="/ibst-portal" element={<IbstPortalPage />} />
 

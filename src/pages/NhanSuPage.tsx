@@ -20,6 +20,7 @@ import {
   RotateCcw,
   Filter,
   Download,
+  Building2,
 } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { KpiCard } from '../components/KpiCard';
@@ -29,6 +30,7 @@ import { NhanSuHoSoPanel } from '../components/NhanSuHoSoPanel';
 import { DangDoanTheTab } from '../components/DangDoanTheTab';
 import { DaoTaoPage } from './DaoTaoPage';
 import { DonViPage } from './DonViPage';
+import { DonViListTab } from '../components/DonViListTab';
 import { DanhGiaVienChucTab } from '../components/DanhGiaVienChucTab';
 import { useAsyncData } from '../hooks/useAsyncData';
 import { useSlidePanelForm, useSlidePanelChiTiet } from '../hooks/useSlidePanelCrud';
@@ -40,10 +42,10 @@ import {
   deleteNhanSu,
   type NhanSuInput,
 } from '../services/org';
-import type { NhanSu } from '../types';
-import { cn, exportCsv } from '../lib/utils';
+import type { NhanSu, DonVi } from '../types';
+import { cn, exportCsv, exportExcel } from '../lib/utils';
 
-type MainTab = 'co-cau-to-chuc' | 'nhan-su' | 'dao-tao-ncs' | 'dang-doan-the' | 'danh-gia-xep-loai';
+type MainTab = 'co-cau-to-chuc' | 'don-vi' | 'nhan-su' | 'dao-tao-ncs' | 'dang-doan-the' | 'danh-gia-xep-loai';
 
 const HOC_VI_OPTIONS = [
   'Giáo sư, Tiến sĩ',
@@ -53,6 +55,33 @@ const HOC_VI_OPTIONS = [
   'Kỹ sư',
   'Cử nhân',
 ];
+
+const DON_VI_STYLE: Record<string, { text: string; dot: string }> = {
+  'lanh-dao': {
+    text: 'text-rose-700 dark:text-rose-400 font-semibold',
+    dot: 'bg-rose-500',
+  },
+  'phong-chuc-nang': {
+    text: 'text-indigo-700 dark:text-indigo-400 font-medium',
+    dot: 'bg-indigo-500',
+  },
+  'vien-chuyen-nganh': {
+    text: 'text-sky-700 dark:text-sky-400 font-medium',
+    dot: 'bg-sky-500',
+  },
+  'phan-vien': {
+    text: 'text-blue-700 dark:text-blue-400 font-medium',
+    dot: 'bg-blue-600',
+  },
+  'trung-tam': {
+    text: 'text-emerald-700 dark:text-emerald-400 font-medium',
+    dot: 'bg-emerald-600',
+  },
+  'cong-ty': {
+    text: 'text-amber-700 dark:text-amber-400 font-medium',
+    dot: 'bg-amber-500',
+  },
+};
 
 const EMPTY_FORM: NhanSuInput = {
   hoTen: '',
@@ -196,7 +225,8 @@ export function NhanSuPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
   const [mainTab, setMainTab] = useState<MainTab>(() => {
-    if (tabParam === 'so-do-to-chuc' || tabParam === 'co-cau-to-chuc' || tabParam === 'don-vi') return 'co-cau-to-chuc';
+    if (tabParam === 'so-do-to-chuc' || tabParam === 'co-cau-to-chuc') return 'co-cau-to-chuc';
+    if (tabParam === 'don-vi') return 'don-vi';
     if (tabParam === 'dao-tao-ncs' || tabParam === 'dao-tao') return 'dao-tao-ncs';
     if (tabParam === 'dang-doan-the') return 'dang-doan-the';
     if (tabParam === 'danh-gia-xep-loai' || tabParam === 'danh-gia') return 'danh-gia-xep-loai';
@@ -205,8 +235,10 @@ export function NhanSuPage() {
 
   // Đồng bộ mainTab khi tabParam trên URL thay đổi (browser back/forward, redirect)
   useEffect(() => {
-    if (tabParam === 'so-do-to-chuc' || tabParam === 'co-cau-to-chuc' || tabParam === 'don-vi') {
+    if (tabParam === 'so-do-to-chuc' || tabParam === 'co-cau-to-chuc') {
       setMainTab('co-cau-to-chuc');
+    } else if (tabParam === 'don-vi') {
+      setMainTab('don-vi');
     } else if (tabParam === 'dao-tao-ncs' || tabParam === 'dao-tao') {
       setMainTab('dao-tao-ncs');
     } else if (tabParam === 'dang-doan-the') {
@@ -233,6 +265,12 @@ export function NhanSuPage() {
   const donViMap = useMemo(() => {
     const m = new Map<string, string>();
     donViList.forEach((d) => m.set(d.id, d.ten));
+    return m;
+  }, [donViList]);
+
+  const donViObjMap = useMemo(() => {
+    const m = new Map<string, DonVi>();
+    donViList.forEach((d) => m.set(d.id, d));
     return m;
   }, [donViList]);
 
@@ -333,7 +371,7 @@ export function NhanSuPage() {
       ns.trangThaiLamViec === 'dang-lam-viec' ? 'Đang làm việc' : ns.trangThaiLamViec === 'nghi-viec' ? 'Nghỉ việc' : 'Tạm hoãn',
     ]);
     const dateStr = new Date().toISOString().split('T')[0];
-    exportCsv(`Danh_sach_can_bo_vien_chuc_IBST_${dateStr}.csv`, headers, rows);
+    exportExcel(`Danh_sach_can_bo_vien_chuc_IBST_${dateStr}`, 'Danh sách CBVC', headers, rows);
   };
 
   // Pagination
@@ -502,7 +540,7 @@ export function NhanSuPage() {
   return (
     <div>
       <PageHeader
-        title="[Phân hệ 5] Quản lý Tổ chức & Nhân sự"
+        title="Quản lý Tổ chức & Nhân sự"
         subtitle="Cơ cấu tổ chức viện, hồ sơ cán bộ viên chức, chứng chỉ hành nghề, đào tạo NCS, Đảng - Đoàn thể & Đánh giá xếp loại theo NĐ 233/2026/NĐ-CP"
       />
 
@@ -527,6 +565,27 @@ export function NhanSuPage() {
             )}
           >
             {donViList.length || 20}
+          </span>
+        </button>
+        <button
+          onClick={() => handleTabChange('don-vi')}
+          className={cn(
+            'flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all',
+            mainTab === 'don-vi'
+              ? 'bg-surface text-primary-600 shadow-card dark:text-primary-300'
+              : 'text-ink-muted hover:text-ink'
+          )}
+        >
+          <Building2 size={15} /> Đơn vị
+          <span
+            className={cn(
+              'ml-0.5 rounded-full px-1.5 py-0.2 text-[10px] font-semibold',
+              mainTab === 'don-vi'
+                ? 'bg-primary-subtle text-primary-700 dark:bg-primary-900/40 dark:text-primary-300'
+                : 'bg-subtle text-ink-muted'
+            )}
+          >
+            {donViList.filter(d => d.loai !== 'lanh-dao').length || 19}
           </span>
         </button>
         <button
@@ -595,7 +654,16 @@ export function NhanSuPage() {
         </button>
       </div>
 
-      {mainTab === 'co-cau-to-chuc' && <DonViPage hideHeader />}
+      {mainTab === 'co-cau-to-chuc' && <DonViPage hideHeader mode="orgchart-only" />}
+      {mainTab === 'don-vi' && (
+        <DonViListTab
+          donViList={donViList}
+          nhanSuList={list}
+          loading={loading}
+          error={error}
+          onRefresh={refetch}
+        />
+      )}
       {mainTab === 'dao-tao-ncs' && <DaoTaoPage />}
 
       {mainTab === 'dang-doan-the' && <DangDoanTheTab />}
@@ -837,18 +905,26 @@ export function NhanSuPage() {
 
                         {/* Đơn vị */}
                         <td className="px-3 py-2.5">
-                          <div className="flex items-center gap-1.5">
-                            {ns.donViLoai === 'lanh-dao' ? (
-                              <span className="inline-flex items-center gap-1 font-semibold text-rose-700 dark:text-rose-400 text-xs">
-                                <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                                {ns.donViId ? donViMap.get(ns.donViId) ?? 'Lãnh đạo Viện' : 'Lãnh đạo Viện'}
-                              </span>
-                            ) : (
-                              <span className="text-xs text-ink-secondary truncate max-w-[210px]" title={ns.donViId ? donViMap.get(ns.donViId) : ''}>
-                                {ns.donViId ? donViMap.get(ns.donViId) ?? '—' : '—'}
-                              </span>
-                            )}
-                          </div>
+                          {(() => {
+                            const dvObj = ns.donViId ? donViObjMap.get(ns.donViId) : undefined;
+                            const tenDonVi = dvObj?.ten || (ns.donViId ? donViMap.get(ns.donViId) : undefined) || (ns.donViLoai === 'lanh-dao' ? 'Lãnh đạo Viện' : '—');
+                            if (tenDonVi === '—') {
+                              return <span className="text-xs text-ink-muted">—</span>;
+                            }
+                            const loai = dvObj?.loai || ns.donViLoai || (tenDonVi === 'Lãnh đạo Viện' ? 'lanh-dao' : 'phong-chuc-nang');
+                            const style = DON_VI_STYLE[loai] || {
+                              text: 'text-slate-700 dark:text-slate-300 font-medium',
+                              dot: 'bg-slate-400 dark:bg-slate-500',
+                            };
+                            return (
+                              <div className="flex items-center gap-1.5" title={tenDonVi}>
+                                <span className={cn('inline-flex items-center gap-1.5 text-xs truncate max-w-[210px]', style.text)}>
+                                  <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', style.dot)} />
+                                  <span className="truncate">{tenDonVi}</span>
+                                </span>
+                              </div>
+                            );
+                          })()}
                         </td>
 
                         {/* Số ĐT */}

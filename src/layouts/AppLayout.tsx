@@ -265,14 +265,14 @@ export function AppLayout() {
                             type="button"
                             onClick={(e) => toggleGroup(item.id, e)}
                             className="p-1 hover:bg-black/5 dark:hover:bg-white/10 rounded transition-colors text-ink-muted shrink-0"
-                            title={isExpanded ? 'Ẩn các phân hệ con' : 'Hiện các phân hệ con'}
+                            title={isExpanded ? 'Ẩn menu con' : 'Hiện menu con'}
                           >
                             {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                           </button>
                         )}
                       </div>
 
-                      {/* Render các phân hệ con khi MỞ RỘNG (Expanded) */}
+                      {/* Render các menu con khi MỞ RỘNG (Expanded) */}
                       {isExpanded && !sidebarCollapsed && (
                         <div className="ml-4 pl-2 border-l border-border/60 space-y-1 mt-1 transition-all">
                           {item.children?.map((child) => {
