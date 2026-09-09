@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { throwIfKhongGhiDuoc } from '../lib/rlsGuard';
 
 // ─── TYPES ───
 
@@ -159,7 +160,7 @@ export async function updateSoTapChi(id: string, input: Partial<SoTapChiInput>):
   if (input.trangThai !== undefined) payload.trang_thai = input.trangThai;
   if (input.ghiChu !== undefined) payload.ghi_chu = str(input.ghiChu);
 
-  throwIf((await supabase.from('so_tap_chi').update(payload).eq('id', id)).error);
+  throwIfKhongGhiDuoc(await supabase.from('so_tap_chi').update(payload).eq('id', id).select('id'));
 }
 
 // ─── BÀI BÁO ───
@@ -273,11 +274,11 @@ export async function updateBaiBao(id: string, input: Partial<BaiBaoInput>): Pro
   if (input.ngayXuatBan !== undefined) payload.ngay_xuat_ban = str(input.ngayXuatBan);
   if (input.ghiChu !== undefined) payload.ghi_chu = str(input.ghiChu);
 
-  throwIf((await supabase.from('bai_bao_khoa_hoc').update(payload).eq('id', id)).error);
+  throwIfKhongGhiDuoc(await supabase.from('bai_bao_khoa_hoc').update(payload).eq('id', id).select('id'));
 }
 
 export async function deleteBaiBao(id: string): Promise<void> {
-  throwIf((await supabase.from('bai_bao_khoa_hoc').delete().eq('id', id)).error);
+  throwIfKhongGhiDuoc(await supabase.from('bai_bao_khoa_hoc').delete().eq('id', id).select('id'));
 }
 
 // ─── PHẢN BIỆN ───
@@ -344,7 +345,7 @@ export async function updatePhanBien(id: string, input: Partial<PhanBienInput>):
   if (input.fileNhanXet !== undefined) payload.file_nhan_xet = str(input.fileNhanXet);
   if (input.trangThai !== undefined) payload.trang_thai = input.trangThai;
 
-  throwIf((await supabase.from('phan_bien_khoa_hoc').update(payload).eq('id', id)).error);
+  throwIfKhongGhiDuoc(await supabase.from('phan_bien_khoa_hoc').update(payload).eq('id', id).select('id'));
 }
 
 // ─── THỐNG KÊ ───

@@ -22,6 +22,9 @@ const EMPTY_FORM: DonViInput = {
   email: '',
   phuTrachId: '',
   truongDonViId: '',
+  keHoachNam: null,
+  keHoachNamTruoc: null,
+  ghiChuKeHoach: '',
 };
 
 export function DonViFormPanel({
@@ -46,6 +49,9 @@ export function DonViFormPanel({
         email: editing.email ?? '',
         phuTrachId: editing.phuTrachId ?? '',
         truongDonViId: editing.truongDonViId ?? '',
+        keHoachNam: editing.keHoachNam ?? null,
+        keHoachNamTruoc: editing.keHoachNamTruoc ?? null,
+        ghiChuKeHoach: editing.ghiChuKeHoach ?? '',
       });
     } else {
       setForm(EMPTY_FORM);
@@ -194,6 +200,70 @@ export function DonViFormPanel({
               maxLength={150}
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
+            />
+          </Field>
+        </div>
+
+        {/* Khối Chỉ tiêu Kế hoạch Năm & Giao khoán */}
+        <div className="rounded-xl border border-border dark:border-slate-700/80 p-4 bg-subtle/30 space-y-4">
+          <div className="flex items-center justify-between border-b border-border dark:border-slate-700/80 pb-2">
+            <h4 className="text-[13px] font-black text-ink">Chỉ tiêu Kế hoạch Ký HĐKT & Giao khoán</h4>
+            <span className="text-3xs font-bold text-ink-muted uppercase">Đơn vị: Nghìn đồng</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field label="Đăng ký KH cả năm 2026 (Nghìn đồng)">
+              <div className="space-y-1">
+                <input
+                  type="number"
+                  className={inputCls}
+                  value={form.keHoachNam ?? ''}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      keHoachNam: e.target.value ? Number(e.target.value) : null,
+                    })
+                  }
+                  placeholder="Ví dụ: 70000000"
+                />
+                {form.keHoachNam != null && form.keHoachNam > 0 && (
+                  <p className="text-2xs font-bold text-primary-600 dark:text-primary-400">
+                    ≈ {(form.keHoachNam / 1000000).toLocaleString('vi-VN', { maximumFractionDigits: 3 })} tỷ VNĐ
+                  </p>
+                )}
+              </div>
+            </Field>
+
+            <Field label="Thực hiện cùng kỳ năm 2025 (Nghìn đồng)">
+              <div className="space-y-1">
+                <input
+                  type="number"
+                  className={inputCls}
+                  value={form.keHoachNamTruoc ?? ''}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      keHoachNamTruoc: e.target.value ? Number(e.target.value) : null,
+                    })
+                  }
+                  placeholder="Ví dụ: 67747280"
+                />
+                {form.keHoachNamTruoc != null && form.keHoachNamTruoc > 0 && (
+                  <p className="text-2xs font-bold text-ink-secondary">
+                    ≈ {(form.keHoachNamTruoc / 1000000).toLocaleString('vi-VN', { maximumFractionDigits: 3 })} tỷ VNĐ
+                  </p>
+                )}
+              </div>
+            </Field>
+          </div>
+
+          <Field label="Ghi chú Kế hoạch giao khoán">
+            <input
+              type="text"
+              className={inputCls}
+              value={form.ghiChuKeHoach ?? ''}
+              onChange={(e) => setForm({ ...form, ghiChuKeHoach: e.target.value })}
+              placeholder="Ví dụ: Gộp KH của BIM và TTMTay, hoặc PVMT cũ không giao KH..."
             />
           </Field>
         </div>

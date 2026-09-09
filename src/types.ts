@@ -154,6 +154,9 @@ export interface DonVi {
   soDeTai: number;
   soHopDong: number;
   thuTu: number;
+  keHoachNam?: number | null; // nghìn đồng
+  keHoachNamTruoc?: number | null; // nghìn đồng (cùng kỳ năm trước)
+  ghiChuKeHoach?: string | null;
 }
 
 export interface LopDaoTao {

@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { throwIfKhongGhiDuoc } from '../lib/rlsGuard';
 import type { TrangThaiGiaoViec } from '../lib/kyGiaoViec';
 
 function throwIf(error: { message: string } | null) {
@@ -95,11 +96,11 @@ export async function createDotThanhToan(hopDongId: string, i: DotThanhToanInput
 }
 
 export async function updateDotThanhToan(_hopDongId: string, id: string, i: DotThanhToanInput) {
-  throwIf((await supabase.from('dot_thanh_toan').update(dotRow(i)).eq('id', Number(id))).error);
+  throwIfKhongGhiDuoc(await supabase.from('dot_thanh_toan').update(dotRow(i)).eq('id', Number(id)).select('id'));
 }
 
 export async function deleteDotThanhToan(_hopDongId: string, id: string) {
-  throwIf((await supabase.from('dot_thanh_toan').delete().eq('id', Number(id))).error);
+  throwIfKhongGhiDuoc(await supabase.from('dot_thanh_toan').delete().eq('id', Number(id)).select('id'));
 }
 
 // ─── PHIẾU GIAO VIỆC (Điều 7 Quy chế 2815) ───
@@ -332,16 +333,15 @@ export async function createKetQua(mauId: string, i: KetQuaInput) {
   );
 }
 export async function updateKetQua(id: string, i: KetQuaInput) {
-  throwIf((await supabase.from('ket_qua_phep_thu').update(kqRow(i)).eq('id', Number(id))).error);
+  throwIfKhongGhiDuoc(await supabase.from('ket_qua_phep_thu').update(kqRow(i)).eq('id', Number(id)).select('id'));
 }
 export async function deleteKetQua(id: string) {
-  throwIf((await supabase.from('ket_qua_phep_thu').delete().eq('id', Number(id))).error);
+  throwIfKhongGhiDuoc(await supabase.from('ket_qua_phep_thu').delete().eq('id', Number(id)).select('id'));
 }
 
 export async function updateTrangThaiMau(mauId: string, trangThai: string) {
-  throwIf(
-    (await supabase.from('mau_thi_nghiem').update({ trang_thai: trangThai }).eq('id', Number(mauId)))
-      .error,
+  throwIfKhongGhiDuoc(
+    await supabase.from('mau_thi_nghiem').update({ trang_thai: trangThai }).eq('id', Number(mauId)).select('id'),
   );
 }
 
@@ -389,10 +389,10 @@ export async function createMoc(deTaiId: string, i: MocInput) {
   );
 }
 export async function updateMoc(id: string, i: MocInput) {
-  throwIf((await supabase.from('moc_de_tai').update(mocRow(i)).eq('id', Number(id))).error);
+  throwIfKhongGhiDuoc(await supabase.from('moc_de_tai').update(mocRow(i)).eq('id', Number(id)).select('id'));
 }
 export async function deleteMoc(id: string) {
-  throwIf((await supabase.from('moc_de_tai').delete().eq('id', Number(id))).error);
+  throwIfKhongGhiDuoc(await supabase.from('moc_de_tai').delete().eq('id', Number(id)).select('id'));
 }
 
 // ─── CHỨNG CHỈ HÀNH NGHỀ (theo nhân sự) ───
@@ -452,10 +452,10 @@ export async function createChungChi(nhanSuId: string, i: ChungChiInput) {
   );
 }
 export async function updateChungChi(id: string, i: ChungChiInput) {
-  throwIf((await supabase.from('chung_chi_hanh_nghe').update(ccRow(i)).eq('id', Number(id))).error);
+  throwIfKhongGhiDuoc(await supabase.from('chung_chi_hanh_nghe').update(ccRow(i)).eq('id', Number(id)).select('id'));
 }
 export async function deleteChungChi(id: string) {
-  throwIf((await supabase.from('chung_chi_hanh_nghe').delete().eq('id', Number(id))).error);
+  throwIfKhongGhiDuoc(await supabase.from('chung_chi_hanh_nghe').delete().eq('id', Number(id)).select('id'));
 }
 
 // ─── TỆP ĐÍNH KÈM VĂN BẢN (Supabase Storage) ───
@@ -464,13 +464,12 @@ export async function uploadTepVanBan(vanBanId: string, file: File) {
   const path = `${vanBanId}/${Date.now()}_${file.name}`;
   const { error } = await supabase.storage.from('van-ban').upload(path, file);
   throwIf(error);
-  throwIf(
-    (
-      await supabase
-        .from('van_ban')
-        .update({ tep_dinh_kem: path, ten_tep: file.name })
-        .eq('id', Number(vanBanId))
-    ).error,
+  throwIfKhongGhiDuoc(
+    await supabase
+      .from('van_ban')
+      .update({ tep_dinh_kem: path, ten_tep: file.name })
+      .eq('id', Number(vanBanId))
+      .select('id'),
   );
   return path;
 }
@@ -483,13 +482,12 @@ export async function getTepVanBanUrl(path: string): Promise<string> {
 
 export async function deleteTepVanBan(vanBanId: string, path: string) {
   throwIf((await supabase.storage.from('van-ban').remove([path])).error);
-  throwIf(
-    (
-      await supabase
-        .from('van_ban')
-        .update({ tep_dinh_kem: null, ten_tep: null })
-        .eq('id', Number(vanBanId))
-    ).error,
+  throwIfKhongGhiDuoc(
+    await supabase
+      .from('van_ban')
+      .update({ tep_dinh_kem: null, ten_tep: null })
+      .eq('id', Number(vanBanId))
+      .select('id'),
   );
 }
 
@@ -1123,3 +1121,93 @@ export async function createPhanPhoiHopDong(hopDongId: string, noiNhan: string, 
     ).error,
   );
 }
+
+// ─── TỔNG HỢP THƯỞNG PHẠT & TẠM ỨNG CHO PHÂN HỆ TÀI CHÍNH (Đ.7.7, Đ.13, Đ.14) ───
+
+export interface ThuongPhatToanVien {
+  id: string;
+  hopDongId: string;
+  soHD: string;
+  tenHopDong: string;
+  loai: 'thuong' | 'phat';
+  lyDo: string;
+  soTien: number | null;
+  tyLePhanTram: number | null;
+  ngayQuyetDinh: string;
+  nguoiQuyetDinh: string;
+}
+
+export async function fetchAllThuongPhat(): Promise<ThuongPhatToanVien[]> {
+  const { data, error } = await supabase
+    .from('hop_dong_thuong_phat')
+    .select('id, hop_dong_id, loai, ly_do, so_tien, ty_le_phan_tram, ngay_quyet_dinh, nhan_su(ho_va_ten), hop_dong(so_hop_dong, ten_hop_dong)')
+    .order('ngay_quyet_dinh', { ascending: false });
+  throwIf(error);
+
+  return (data ?? []).map((r: any) => ({
+    id: String(r.id),
+    hopDongId: String(r.hop_dong_id),
+    soHD: r.hop_dong?.so_hop_dong ?? '—',
+    tenHopDong: r.hop_dong?.ten_hop_dong ?? '—',
+    loai: r.loai,
+    lyDo: r.ly_do,
+    soTien: r.so_tien != null ? Number(r.so_tien) : null,
+    tyLePhanTram: r.ty_le_phan_tram != null ? Number(r.ty_le_phan_tram) : null,
+    ngayQuyetDinh: r.ngay_quyet_dinh ?? '',
+    nguoiQuyetDinh: r.nhan_su?.ho_va_ten ?? 'Lãnh đạo Viện',
+  }));
+}
+
+export interface TamUngToanVien {
+  id: string;
+  hopDongId: string;
+  soHD: string;
+  tenHopDong: string;
+  nhanSu: string;
+  soTien: number;
+  ngayTamUng: string;
+  hanHoan: string;
+  soTienDaHoan: number;
+  ngayHoan: string;
+  laiSuatGoc: number;
+  trangThai: 'dang-no' | 'da-hoan' | 'mien';
+  ghiChu: string;
+  quaHanNgay: number;
+}
+
+export async function fetchAllTamUng(): Promise<TamUngToanVien[]> {
+  const { data, error } = await supabase
+    .from('tam_ung')
+    .select('id, hop_dong_id, so_tien, ngay_tam_ung, han_hoan, so_tien_da_hoan, ngay_hoan, lai_suat_goc, trang_thai, ghi_chu, nhan_su(ho_va_ten), hop_dong(so_hop_dong, ten_hop_dong)')
+    .order('ngay_tam_ung', { ascending: false });
+  throwIf(error);
+
+  const today = Date.now();
+  const MS_DAY = 24 * 3600 * 1000;
+
+  return (data ?? []).map((r: any) => {
+    let quaHanNgay = 0;
+    if (r.trang_thai === 'dang-no' && r.han_hoan) {
+      const diff = Math.floor((today - new Date(r.han_hoan).getTime()) / MS_DAY);
+      if (diff > 0) quaHanNgay = diff;
+    }
+
+    return {
+      id: String(r.id),
+      hopDongId: String(r.hop_dong_id),
+      soHD: r.hop_dong?.so_hop_dong ?? '—',
+      tenHopDong: r.hop_dong?.ten_hop_dong ?? '—',
+      nhanSu: r.nhan_su?.ho_va_ten ?? 'Chủ trì hợp đồng',
+      soTien: Number(r.so_tien),
+      ngayTamUng: r.ngay_tam_ung ?? '',
+      hanHoan: r.han_hoan ?? '',
+      soTienDaHoan: Number(r.so_tien_da_hoan || 0),
+      ngayHoan: r.ngay_hoan ?? '',
+      laiSuatGoc: Number(r.lai_suat_goc || 0),
+      trangThai: r.trang_thai,
+      ghiChu: r.ghi_chu ?? '',
+      quaHanNgay,
+    };
+  });
+}
+

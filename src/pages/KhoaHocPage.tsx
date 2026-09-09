@@ -6,8 +6,17 @@ import { DeTaiPage } from './DeTaiPage';
 import { SoHuuTriTuePage } from './SoHuuTriTuePage';
 import { TapChiPage } from './TapChiPage';
 import { cn } from '../lib/utils';
+import { usePhanQuyen } from '../hooks/usePhanQuyen';
+import { tabDuocPhep, type TaiNguyen } from '../lib/phanQuyen';
 
 type Tab = 'de-tai' | 'tap-chi' | 'so-huu-tri-tue' | 'chuyen-giao';
+const TAB_IDS: Tab[] = ['de-tai', 'tap-chi', 'so-huu-tri-tue', 'chuyen-giao'];
+const TAB_TAI_NGUYEN: Record<Tab, TaiNguyen> = {
+  'de-tai': 'de_tai',
+  'tap-chi': 'tap_chi',
+  'so-huu-tri-tue': 'so_huu_tri_tue',
+  'chuyen-giao': 'chuyen_giao',
+};
 
 const MOCK_CHUYEN_GIAO = [
   {
@@ -62,6 +71,15 @@ export function KhoaHocPage() {
     setSearchParams({ tab: newTab });
   };
 
+  const { can: coQuyenTab, dangTai: dangTaiQuyen } = usePhanQuyen();
+  const tabHienDuoc = (t: Tab) => tabDuocPhep(t, TAB_TAI_NGUYEN, coQuyenTab, dangTaiQuyen);
+  useEffect(() => {
+    if (dangTaiQuyen || tabHienDuoc(activeTab)) return;
+    const taiChoPhep = TAB_IDS.find((t) => coQuyenTab(TAB_TAI_NGUYEN[t], 'xem'));
+    if (taiChoPhep) handleTabChange(taiChoPhep);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dangTaiQuyen]);
+
   return (
     <div>
       <PageHeader
@@ -69,59 +87,67 @@ export function KhoaHocPage() {
         subtitle="Quản lý thuyết minh, tiến độ giải ngân Đề tài KHCN, Tòa soạn Tạp chí KHCN Xây dựng, Sáng chế SHTT & Hợp đồng chuyển giao công nghệ phân bổ hoa hồng tác giả (Tuân thủ Khung QĐ 942/QĐ-BXD)"
       />
 
-      {/* Tabs Switcher */}
+      {/* Tabs Switcher — mỗi tab chỉ hiện khi có quyền xem tài nguyên tương ứng (Tầng 3) */}
       <div className="mb-6 flex flex-wrap gap-2 rounded-xl bg-muted p-1.5 w-fit border border-border">
-        <button
-          onClick={() => handleTabChange('de-tai')}
-          className={cn(
-            'flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-bold transition-all',
-            activeTab === 'de-tai'
-              ? 'bg-surface text-primary-600 shadow-card dark:text-primary-300'
-              : 'text-ink-muted hover:text-ink'
-          )}
-        >
-          <FlaskConical size={16} /> Đề tài KHCN các cấp
-        </button>
-        <button
-          onClick={() => handleTabChange('tap-chi')}
-          className={cn(
-            'flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-bold transition-all',
-            activeTab === 'tap-chi'
-              ? 'bg-surface text-primary-600 shadow-card dark:text-primary-300'
-              : 'text-ink-muted hover:text-ink'
-          )}
-        >
-          <Newspaper size={16} /> Tạp chí KHCN Xây dựng
-        </button>
-        <button
-          onClick={() => handleTabChange('so-huu-tri-tue')}
-          className={cn(
-            'flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-bold transition-all',
-            activeTab === 'so-huu-tri-tue'
-              ? 'bg-surface text-primary-600 shadow-card dark:text-primary-300'
-              : 'text-ink-muted hover:text-ink'
-          )}
-        >
-          <Award size={16} /> Bằng sáng chế & SHTT
-        </button>
-        <button
-          onClick={() => handleTabChange('chuyen-giao')}
-          className={cn(
-            'flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-bold transition-all',
-            activeTab === 'chuyen-giao'
-              ? 'bg-surface text-primary-600 shadow-card dark:text-primary-300'
-              : 'text-ink-muted hover:text-ink'
-          )}
-        >
-          <RefreshCw size={16} /> Chuyển giao công nghệ & Hoa hồng
-        </button>
+        {tabHienDuoc('de-tai') && (
+          <button
+            onClick={() => handleTabChange('de-tai')}
+            className={cn(
+              'flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-bold transition-all',
+              activeTab === 'de-tai'
+                ? 'bg-surface text-primary-600 shadow-card dark:text-primary-300'
+                : 'text-ink-muted hover:text-ink'
+            )}
+          >
+            <FlaskConical size={16} /> Đề tài KHCN các cấp
+          </button>
+        )}
+        {tabHienDuoc('tap-chi') && (
+          <button
+            onClick={() => handleTabChange('tap-chi')}
+            className={cn(
+              'flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-bold transition-all',
+              activeTab === 'tap-chi'
+                ? 'bg-surface text-primary-600 shadow-card dark:text-primary-300'
+                : 'text-ink-muted hover:text-ink'
+            )}
+          >
+            <Newspaper size={16} /> Tạp chí KHCN Xây dựng
+          </button>
+        )}
+        {tabHienDuoc('so-huu-tri-tue') && (
+          <button
+            onClick={() => handleTabChange('so-huu-tri-tue')}
+            className={cn(
+              'flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-bold transition-all',
+              activeTab === 'so-huu-tri-tue'
+                ? 'bg-surface text-primary-600 shadow-card dark:text-primary-300'
+                : 'text-ink-muted hover:text-ink'
+            )}
+          >
+            <Award size={16} /> Bằng sáng chế & SHTT
+          </button>
+        )}
+        {tabHienDuoc('chuyen-giao') && (
+          <button
+            onClick={() => handleTabChange('chuyen-giao')}
+            className={cn(
+              'flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-bold transition-all',
+              activeTab === 'chuyen-giao'
+                ? 'bg-surface text-primary-600 shadow-card dark:text-primary-300'
+                : 'text-ink-muted hover:text-ink'
+            )}
+          >
+            <RefreshCw size={16} /> Chuyển giao công nghệ & Hoa hồng
+          </button>
+        )}
       </div>
 
       {/* Tab Contents */}
-      {activeTab === 'de-tai' && <DeTaiPage />}
-      {activeTab === 'tap-chi' && <TapChiPage />}
-      {activeTab === 'so-huu-tri-tue' && <SoHuuTriTuePage />}
-      {activeTab === 'chuyen-giao' && (
+      {activeTab === 'de-tai' && tabHienDuoc('de-tai') && <DeTaiPage />}
+      {activeTab === 'tap-chi' && tabHienDuoc('tap-chi') && <TapChiPage />}
+      {activeTab === 'so-huu-tri-tue' && tabHienDuoc('so-huu-tri-tue') && <SoHuuTriTuePage />}
+      {activeTab === 'chuyen-giao' && tabHienDuoc('chuyen-giao') && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div className="card p-4 border-l-4 border-l-primary">

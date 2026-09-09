@@ -5,7 +5,6 @@ import { useAuth } from './context/AuthContext';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { HopDongPage } from './pages/HopDongPage';
-import { TaiChinhPage } from './pages/TaiChinhPage';
 import { KhoaHocPage } from './pages/KhoaHocPage';
 import { NhanSuPage } from './pages/NhanSuPage';
 import { ThiNghiemPage } from './pages/ThiNghiemPage';
@@ -47,17 +46,17 @@ export default function App() {
           </RequireAuth>
         }
       >
-        {/* 08 Nhóm Phân hệ ERP chuẩn theo bao_gia_pm_erp_ibst.md */}
+        {/* 07 Nhóm Phân hệ ERP chuẩn theo kiến trúc gom cụm */}
         <Route path="/" element={<DashboardPage />} />
         <Route path="/hop-dong" element={<HopDongPage />} />
-        <Route path="/tai-chinh" element={<TaiChinhPage />} />
         <Route path="/khoa-hoc" element={<KhoaHocPage />} />
         <Route path="/nhan-su" element={<NhanSuPage />} />
         <Route path="/thi-nghiem" element={<ThiNghiemPage />} />
         <Route path="/e-office" element={<EOfficePage />} />
         <Route path="/kho-luu-tru" element={<KhoLuuTruPage />} />
 
-        {/* Các route chuyển tiếp về Phân hệ Hợp đồng & CRM */}
+        {/* Các route chuyển tiếp về Phân hệ Hợp đồng, CRM & Tài chính */}
+        <Route path="/tai-chinh" element={<Navigate to="/hop-dong?tab=tai-chinh" replace />} />
         <Route path="/dau-thau" element={<Navigate to="/hop-dong?tab=dau-thau" replace />} />
         <Route path="/pvqlnn" element={<Navigate to="/hop-dong?tab=pvqlnn" replace />} />
         <Route path="/uy-quyen" element={<Navigate to="/hop-dong?tab=bao-cao-khkt" replace />} />

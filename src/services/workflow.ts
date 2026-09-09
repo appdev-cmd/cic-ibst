@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { throwIfKhongGhiDuoc } from '../lib/rlsGuard';
 import type {
   UyQuyen,
   DauThau,
@@ -41,15 +42,19 @@ export async function updateBuocHopDong(hopDongId: string, buocMoi: string): Pro
   const idNum = Number(hopDongId);
   if (Number.isNaN(idNum)) throw new Error(`Mã hợp đồng không hợp lệ: ${hopDongId}`);
 
-  const { error } = await supabase
+  const { error, data } = await supabase
     .from('hop_dong')
     .update({ buoc_hien_tai: buocMoi, trang_thai: buocMoi })
-    .eq('id', idNum);
-  if (!error) return;
+    .eq('id', idNum)
+    .select('id');
+  if (!error) {
+    throwIfKhongGhiDuoc({ error, data });
+    return;
+  }
 
   // CSDL chưa chạy migration thêm cột buoc_hien_tai — vẫn ghi được trang_thai.
   if (!error.message?.includes('buoc_hien_tai')) throw new Error(error.message);
-  throwIf((await supabase.from('hop_dong').update({ trang_thai: buocMoi }).eq('id', idNum)).error);
+  throwIfKhongGhiDuoc(await supabase.from('hop_dong').update({ trang_thai: buocMoi }).eq('id', idNum).select('id'));
 }
 
 // 2. Ủy quyền (Delegation)
@@ -247,19 +252,16 @@ export async function createDauThau(i: DauThauInput): Promise<void> {
 }
 
 export async function updateDauThau(id: string, i: DauThauInput): Promise<void> {
-  const { error } = await supabase
-    .from('dau_thau')
-    .update(dauThauRow(i))
-    .eq('id', num(id));
-  throwIf(error);
+  throwIfKhongGhiDuoc(
+    await supabase.from('dau_thau').update(dauThauRow(i)).eq('id', num(id)).select('id'),
+  );
   if (i.dangKyDauMoiId) {
     await supabase.from('dang_ky_dau_moi').update({ dau_thau_id: num(id) }).eq('id', num(i.dangKyDauMoiId));
   }
 }
 
 export async function deleteDauThau(id: string): Promise<void> {
-  const { error } = await supabase.from('dau_thau').delete().eq('id', num(id));
-  throwIf(error);
+  throwIfKhongGhiDuoc(await supabase.from('dau_thau').delete().eq('id', num(id)).select('id'));
 }
 
 import { recordAuditLog } from './auditLog';
@@ -274,8 +276,7 @@ export async function updateTrangThaiDauThau(
   if (giaTrungThau !== undefined && giaTrungThau !== null) {
     payload.gia_trung_thau = giaTrungThau;
   }
-  const { error } = await supabase.from('dau_thau').update(payload).eq('id', num(id));
-  throwIf(error);
+  throwIfKhongGhiDuoc(await supabase.from('dau_thau').update(payload).eq('id', num(id)).select('id'));
 
   recordAuditLog({
     loaiDoiTuong: 'dau_thau',
@@ -341,13 +342,11 @@ export async function createLienDanh(i: LienDanhInput): Promise<void> {
 }
 
 export async function updateLienDanh(id: string, i: LienDanhInput): Promise<void> {
-  const { error } = await supabase.from('lien_danh').update(lienDanhRow(i)).eq('id', num(id));
-  throwIf(error);
+  throwIfKhongGhiDuoc(await supabase.from('lien_danh').update(lienDanhRow(i)).eq('id', num(id)).select('id'));
 }
 
 export async function deleteLienDanh(id: string): Promise<void> {
-  const { error } = await supabase.from('lien_danh').delete().eq('id', num(id));
-  throwIf(error);
+  throwIfKhongGhiDuoc(await supabase.from('lien_danh').delete().eq('id', num(id)).select('id'));
 }
 
 // 5. Nhiệm vụ PVQLNN
@@ -414,29 +413,30 @@ export async function createNhiemVuPVQLNN(i: NhiemVuPVQLNNInput): Promise<void> 
 }
 
 export async function updateNhiemVuPVQLNN(id: string, i: NhiemVuPVQLNNInput): Promise<void> {
-  const { error } = await supabase
-    .from('nhiem_vu_pvqlnn')
-    .update({
-      ten_nhiem_vu: i.tenNhiemVu || null,
-      co_quan_giao: i.coQuanGiao || null,
-      so_van_ban_giao: i.soVanBanGiao || null,
-      ngay_giao: i.ngayGiao || null,
-      han_hoan_thanh: i.hanHoanThanh || null,
-      don_vi_id: num(i.donViId),
-      nguoi_phu_trach_id: num(i.nguoiPhuTrachId),
-      kinh_phi: num(i.kinhPhi),
-      nguon_kinh_phi: i.nguonKinhPhi || null,
-      trang_thai: i.trangThai || null,
-      ket_qua: i.ketQua || null,
-      ghi_chu: i.ghiChu || null,
-    })
-    .eq('id', num(id));
-  throwIf(error);
+  throwIfKhongGhiDuoc(
+    await supabase
+      .from('nhiem_vu_pvqlnn')
+      .update({
+        ten_nhiem_vu: i.tenNhiemVu || null,
+        co_quan_giao: i.coQuanGiao || null,
+        so_van_ban_giao: i.soVanBanGiao || null,
+        ngay_giao: i.ngayGiao || null,
+        han_hoan_thanh: i.hanHoanThanh || null,
+        don_vi_id: num(i.donViId),
+        nguoi_phu_trach_id: num(i.nguoiPhuTrachId),
+        kinh_phi: num(i.kinhPhi),
+        nguon_kinh_phi: i.nguonKinhPhi || null,
+        trang_thai: i.trangThai || null,
+        ket_qua: i.ketQua || null,
+        ghi_chu: i.ghiChu || null,
+      })
+      .eq('id', num(id))
+      .select('id'),
+  );
 }
 
 export async function deleteNhiemVuPVQLNN(id: string): Promise<void> {
-  const { error } = await supabase.from('nhiem_vu_pvqlnn').delete().eq('id', num(id));
-  throwIf(error);
+  throwIfKhongGhiDuoc(await supabase.from('nhiem_vu_pvqlnn').delete().eq('id', num(id)).select('id'));
 }
 
 // 6. Lưu trữ hồ sơ
@@ -500,26 +500,27 @@ export async function createLuuTruHoSo(i: LuuTruHoSoInput): Promise<void> {
 }
 
 export async function updateLuuTruHoSo(id: string, i: LuuTruHoSoInput): Promise<void> {
-  const { error } = await supabase
-    .from('luu_tru_ho_so')
-    .update({
-      hop_dong_id: num(i.hopDongId),
-      so_ho_so: i.soHoSo || null,
-      vi_tri_luu_tru: i.viTriLuuTru || null,
-      ngay_nhan_luu_tru: i.ngayNhanLuuTru || null,
-      nguoi_ban_giao_id: num(i.nguoiBanGiaoId),
-      nguoi_nhan_id: num(i.nguoiNhanId),
-      trang_thai: i.trangThai || null,
-      thoi_han_luu_tru: i.thoiHanLuuTru || null,
-      ghi_chu: i.ghiChu || null,
-    })
-    .eq('id', num(id));
-  throwIf(error);
+  throwIfKhongGhiDuoc(
+    await supabase
+      .from('luu_tru_ho_so')
+      .update({
+        hop_dong_id: num(i.hopDongId),
+        so_ho_so: i.soHoSo || null,
+        vi_tri_luu_tru: i.viTriLuuTru || null,
+        ngay_nhan_luu_tru: i.ngayNhanLuuTru || null,
+        nguoi_ban_giao_id: num(i.nguoiBanGiaoId),
+        nguoi_nhan_id: num(i.nguoiNhanId),
+        trang_thai: i.trangThai || null,
+        thoi_han_luu_tru: i.thoiHanLuuTru || null,
+        ghi_chu: i.ghiChu || null,
+      })
+      .eq('id', num(id))
+      .select('id'),
+  );
 }
 
 export async function deleteLuuTruHoSo(id: string): Promise<void> {
-  const { error } = await supabase.from('luu_tru_ho_so').delete().eq('id', num(id));
-  throwIf(error);
+  throwIfKhongGhiDuoc(await supabase.from('luu_tru_ho_so').delete().eq('id', num(id)).select('id'));
 }
 
 // 7. SLA Tracking
@@ -618,22 +619,23 @@ export async function createKiemTraKhacPhuc(i: KiemTraKhacPhucInput): Promise<vo
 }
 
 export async function updateKiemTraKhacPhuc(id: string, i: KiemTraKhacPhucInput): Promise<void> {
-  const { error } = await supabase
-    .from('kiem_tra_khac_phuc')
-    .update({
-      kiem_tra_id: num(i.kiemTraId),
-      noi_dung_kien_nghi: i.noiDungKienNghi || null,
-      han_khac_phuc: i.hanKhacPhuc || null,
-      nguoi_phu_trach_id: num(i.nguoiPhuTrachId),
-      trang_thai: i.trangThai || null,
-      ket_qua_khac_phuc: i.ketQuaKhacPhuc || null,
-      ngay_hoan_thanh: i.ngayHoanThanh || null,
-    })
-    .eq('id', num(id));
-  throwIf(error);
+  throwIfKhongGhiDuoc(
+    await supabase
+      .from('kiem_tra_khac_phuc')
+      .update({
+        kiem_tra_id: num(i.kiemTraId),
+        noi_dung_kien_nghi: i.noiDungKienNghi || null,
+        han_khac_phuc: i.hanKhacPhuc || null,
+        nguoi_phu_trach_id: num(i.nguoiPhuTrachId),
+        trang_thai: i.trangThai || null,
+        ket_qua_khac_phuc: i.ketQuaKhacPhuc || null,
+        ngay_hoan_thanh: i.ngayHoanThanh || null,
+      })
+      .eq('id', num(id))
+      .select('id'),
+  );
 }
 
 export async function deleteKiemTraKhacPhuc(id: string): Promise<void> {
-  const { error } = await supabase.from('kiem_tra_khac_phuc').delete().eq('id', num(id));
-  throwIf(error);
+  throwIfKhongGhiDuoc(await supabase.from('kiem_tra_khac_phuc').delete().eq('id', num(id)).select('id'));
 }

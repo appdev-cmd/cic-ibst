@@ -169,9 +169,11 @@ export function DonViListTab({
                 <th className="text-left py-3 px-3 text-[11px] font-black text-ink-muted uppercase tracking-wider w-10 text-center">#</th>
                 <th className="text-left py-3 px-5 text-[11px] font-black text-ink-muted uppercase tracking-wider">Đơn vị</th>
                 <th className="text-left py-3 px-3 text-[11px] font-black text-ink-muted uppercase tracking-wider">Trưởng ĐV</th>
-                <th className="text-center py-3 px-3 text-[11px] font-black text-sky-500 uppercase tracking-wider w-20">NS</th>
-                <th className="text-center py-3 px-3 text-[11px] font-black text-emerald-500 uppercase tracking-wider w-20">ĐT</th>
-                <th className="text-center py-3 px-3 text-[11px] font-black text-blue-500 uppercase tracking-wider w-20">HĐ</th>
+                <th className="text-right py-3 px-3 text-[11px] font-black text-primary uppercase tracking-wider w-28">KH 2026</th>
+                <th className="text-right py-3 px-3 text-[11px] font-black text-slate-500 uppercase tracking-wider w-28">CK 2025</th>
+                <th className="text-center py-3 px-2 text-[11px] font-black text-sky-500 uppercase tracking-wider w-14">NS</th>
+                <th className="text-center py-3 px-2 text-[11px] font-black text-emerald-500 uppercase tracking-wider w-14">ĐT</th>
+                <th className="text-center py-3 px-2 text-[11px] font-black text-blue-500 uppercase tracking-wider w-14">HĐ</th>
                 <th className="py-3 px-4 w-24"></th>
               </tr>
             </thead>
@@ -226,16 +228,36 @@ export function DonViListTab({
                       <span className="text-xs text-ink-muted italic">Chờ kiện toàn</span>
                     )}
                   </td>
+                  {/* Cell: KH 2026 */}
+                  <td className="py-3 px-3 text-right tabular-nums">
+                    {dv.keHoachNam ? (
+                      <span className="text-sm font-bold text-primary">
+                        {(dv.keHoachNam / 1_000_000).toLocaleString('vi-VN', { maximumFractionDigits: 1 })} tỷ
+                      </span>
+                    ) : (
+                      <span className="text-xs text-ink-muted">—</span>
+                    )}
+                  </td>
+                  {/* Cell: Cùng kỳ 2025 */}
+                  <td className="py-3 px-3 text-right tabular-nums">
+                    {dv.keHoachNamTruoc ? (
+                      <span className="text-xs font-semibold text-ink-muted">
+                        {(dv.keHoachNamTruoc / 1_000_000).toLocaleString('vi-VN', { maximumFractionDigits: 1 })} tỷ
+                      </span>
+                    ) : (
+                      <span className="text-xs text-ink-muted">—</span>
+                    )}
+                  </td>
                   {/* Cell: NS */}
-                  <td className="py-3 px-3 text-center">
+                  <td className="py-3 px-2 text-center">
                     <span className="text-sm font-black text-sky-600 dark:text-sky-400">{dv.soNhanSu || '—'}</span>
                   </td>
                   {/* Cell: ĐT */}
-                  <td className="py-3 px-3 text-center">
+                  <td className="py-3 px-2 text-center">
                     <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">{dv.soDeTai || '—'}</span>
                   </td>
                   {/* Cell: HĐ */}
-                  <td className="py-3 px-3 text-center">
+                  <td className="py-3 px-2 text-center">
                     <span className="text-sm font-black text-blue-600 dark:text-blue-400">{dv.soHopDong || '—'}</span>
                   </td>
                   {/* Cell: Thao tác */}
@@ -262,7 +284,7 @@ export function DonViListTab({
               ))}
               {filteredList.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-5 py-12 text-center text-ink-muted text-sm">
+                  <td colSpan={9} className="px-5 py-12 text-center text-ink-muted text-sm">
                     {search ? 'Không tìm thấy đơn vị nào phù hợp.' : 'Chưa có đơn vị nào.'}
                   </td>
                 </tr>
@@ -294,6 +316,9 @@ export function DonViListTab({
                       {LOAI_DON_VI.find(l => l.ma === dv.loai)?.ten}
                     </span>
                     <span>· {dv.soNhanSu} NS · {dv.soHopDong} HĐ</span>
+                    {dv.keHoachNam ? (
+                      <span className="text-primary font-bold">· KH: {(dv.keHoachNam / 1_000_000).toLocaleString('vi-VN', { maximumFractionDigits: 1 })} tỷ</span>
+                    ) : null}
                   </div>
                 </div>
                 <ChevronRight size={16} className="text-ink-muted/40 shrink-0" />

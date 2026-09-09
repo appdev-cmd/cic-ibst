@@ -151,4 +151,6 @@ Trước khi viết mới, dùng lại:
 | `docs/review-module-hop-dong-2026-09.md` | Rà soát & kế hoạch hoàn thiện module Hợp đồng |
 | `docs/ke-hoach-hoan-thien-ph5-nhan-su-dang-doan-the.md` | Kế hoạch phân hệ Nhân sự & Đảng - Đoàn thể |
 | `docs/chuan-du-lieu-theo-BXD.md` | Khung dữ liệu theo QĐ 942/945/946 Bộ Xây dựng |
+| `docs/phan-quyen-he-thong-ibst.md` | **Tài liệu kỹ thuật phân quyền** — vai trò, ma trận tài nguyên × hành động, phạm vi dữ liệu, thẩm quyền 2815 |
+| `docs/ke-hoach-phan-quyen-ibst.md` | Kế hoạch triển khai phân quyền theo 6 giai đoạn |
 | `scripts/README.md` | Cách chạy migration và những sai lầm đã gặp |

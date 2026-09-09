@@ -164,3 +164,25 @@
 .react-flow__controls-button svg {
   fill: var(--text-primary) !important;
 }
+
+/* ─── Header Weekly News Ticker (Continuous Marquee) ─── */
+@keyframes headerTicker {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.ticker-track {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  animation: headerTicker 130s linear infinite;
+  will-change: transform;
+}
+
+.group:hover .ticker-track {
+  animation-play-state: paused;
+}

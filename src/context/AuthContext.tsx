@@ -24,7 +24,12 @@ export type VaiTro =
   | 'phong-tckt'
   | 'phong-tchc'
   | 'phong-th-don-vi'
-  | 'phu-trach-ke-toan-dv';
+  | 'phu-trach-ke-toan-dv'
+  // 2 vai trò dưới đã dùng thật ở RLS từ migration 0033 (lương, HĐLĐ, hồ sơ đảng viên)
+  // nhưng trước migration 0040/phân quyền không có mặt ở tầng TypeScript — không gán
+  // được qua giao diện. Xem docs/phan-quyen-he-thong-ibst.md §3.1.
+  | 'can-bo-to-chuc'
+  | 'van-phong-dang-uy';
 
 interface AuthContextValue {
   session: Session | null;

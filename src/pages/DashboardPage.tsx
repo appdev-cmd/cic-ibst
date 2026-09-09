@@ -1,4 +1,17 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { usePhanQuyen } from '../hooks/usePhanQuyen';
+import { useSlidePanel } from '../context/SlidePanelContext';
+import {
+  fetchDashboardData,
+  DON_VI_16_BENCHMARKS,
+  type DashboardData,
+} from '../services/dashboardService';
+import { ExecutiveWarningBanner } from '../components/ExecutiveWarningBanner';
+import {
+  DashboardDetailSlidePanel,
+  type DashboardDrilldownTab,
+} from '../components/DashboardDetailSlidePanel';
+import { exportExcel } from '../lib/utils';
 import {
   Handshake,
   Microscope,
@@ -25,7 +38,20 @@ import {
   Network,
   Filter,
   Calendar,
-  ChevronDown
+  ChevronDown,
+  Maximize2,
+  Minimize2,
+  Printer,
+  Download,
+  LayoutDashboard,
+  RefreshCw,
+  ArrowUpRight,
+  Clock,
+  FileSpreadsheet,
+  Layers,
+  Percent,
+  BarChart3,
+  Table,
 } from 'lucide-react';
 import {
   LineChart,
@@ -43,7 +69,7 @@ import {
   Cell,
   ComposedChart,
   Area,
-  AreaChart
+  ReferenceLine,
 } from 'recharts';
 
 const tooltipStyle = {
@@ -51,22 +77,22 @@ const tooltipStyle = {
     backgroundColor: 'var(--bg-surface)',
     borderColor: 'var(--border-default)',
     borderRadius: '8px',
-    color: 'var(--text-primary)'
+    color: 'var(--text-primary)',
   },
   labelStyle: {
     color: 'var(--text-primary)',
-    fontWeight: 'bold'
+    fontWeight: 'bold',
   },
   itemStyle: {
-    color: 'var(--text-secondary)'
-  }
+    color: 'var(--text-secondary)',
+  },
 };
 
 const CustomKHCNTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
-      <div className="bg-surface border border-border p-3.5 rounded-lg shadow-lg text-[13px]">
+      <div className="bg-surface border border-border dark:border-slate-700/80 p-3.5 rounded-lg shadow-lg text-[13px]">
         <p className="font-black text-ink mb-2">{data.name}</p>
         <div className="space-y-1">
           <p className="text-ink-secondary">
@@ -75,9 +101,113 @@ const CustomKHCNTooltip = ({ active, payload }: any) => {
           <p className="text-ink-secondary">
             Số lượng nhiệm vụ: <span className="font-black text-success">{data.deTai} nhiệm vụ</span>
           </p>
-          <div className="text-2xs text-ink-muted mt-2 border-t border-border pt-1.5 flex gap-3">
+          <div className="text-2xs text-ink-muted mt-2 border-t border-border dark:border-slate-700/80 pt-1.5 flex gap-3">
             <span>HĐ: {data.contractVal.toFixed(3)} tỷ</span>
             <span>Giải ngân: {data.disbursed.toFixed(3)} tỷ</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
+const CustomComparisonTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0]?.payload;
+    if (!data) return null;
+    return (
+      <div className="bg-surface border border-border dark:border-slate-700/80 p-3.5 rounded-xl shadow-xl text-[12.5px] min-w-[260px]">
+        <div className="border-b border-border dark:border-slate-700/80 pb-2 mb-2">
+          <p className="font-black text-ink">{data.name}</p>
+          <p className="text-2xs text-ink-muted truncate">{data.fullName}</p>
+        </div>
+        <div className="space-y-1.5 text-xs">
+          <div className="flex justify-between items-center text-amber-600 dark:text-amber-400 font-bold">
+            <span>Kế hoạch 2026:</span>
+            <span>{data.keHoach ? `${data.keHoach.toFixed(1)} tỷ` : '—'}</span>
+          </div>
+          <div className="flex justify-between items-center text-slate-500 dark:text-slate-400 font-medium">
+            <span>Cùng kỳ 2025:</span>
+            <span>{data.cungKy2025 ? `${data.cungKy2025.toFixed(2)} tỷ` : '—'}</span>
+          </div>
+          <div className="flex justify-between items-center text-sky-600 dark:text-sky-400 font-semibold">
+            <span>Viện ký:</span>
+            <span>{data.vienKy ? `${data.vienKy.toFixed(2)} tỷ` : '0 tỷ'}</span>
+          </div>
+          <div className="flex justify-between items-center text-teal-600 dark:text-teal-400 font-semibold">
+            <span>Đơn vị ký:</span>
+            <span>{data.donViKy ? `${data.donViKy.toFixed(2)} tỷ` : '0 tỷ'}</span>
+          </div>
+          <div className="border-t border-border dark:border-slate-700/80 pt-1.5 flex justify-between items-center font-black text-ink">
+            <span>Tổng ký 2026:</span>
+            <span className="text-primary-600 dark:text-primary-400">{data.kyMoi.toFixed(2)} tỷ</span>
+          </div>
+          <div className="flex justify-between items-center text-2xs pt-1 border-t border-border/50">
+            <span className="text-ink-muted">Đạt KH: <strong className="text-success">{data.kh}%</strong></span>
+            <span className="text-ink-muted">So cùng kỳ: <strong className={data.pctCungKy >= 100 ? 'text-success' : 'text-danger'}>{data.pctCungKy}%</strong></span>
+          </div>
+          {data.ghiChu && (
+            <p className="text-3xs text-amber-600 dark:text-amber-400 italic pt-1 border-t border-border/50">
+              * {data.ghiChu}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
+const CustomGrowthTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0]?.payload;
+    if (!data) return null;
+    return (
+      <div className="bg-surface border border-border dark:border-slate-700/80 p-3 rounded-xl shadow-lg text-[12.5px] min-w-[200px]">
+        <p className="font-black text-ink mb-1">{data.name}</p>
+        <p className="text-2xs text-ink-muted mb-2 truncate">{data.fullName}</p>
+        <p className="text-xs text-ink-secondary">
+          So cùng kỳ 2025: <span className={`font-black ${data.pctCungKy >= 100 ? 'text-success' : 'text-danger'}`}>{data.pctCungKy}%</span>
+        </p>
+        <div className="text-3xs text-ink-muted mt-1.5 pt-1.5 border-t border-border dark:border-slate-700/80 flex justify-between">
+          <span>Ký 2026: {data.kyMoi.toFixed(1)} tỷ</span>
+          <span>CK 2025: {data.cungKy2025 ? data.cungKy2025.toFixed(1) : '0'} tỷ</span>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
+const CustomDebtTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0]?.payload;
+    if (!data) return null;
+    return (
+      <div className="bg-surface border border-border dark:border-slate-700/80 p-3.5 rounded-xl shadow-xl text-[12.5px] min-w-[260px]">
+        <div className="border-b border-border dark:border-slate-700/80 pb-2 mb-2">
+          <p className="font-black text-ink">{data.name}</p>
+          <p className="text-2xs text-ink-muted truncate">{data.fullName || data.name}</p>
+        </div>
+        <div className="space-y-1.5 text-xs">
+          <div className="flex justify-between items-center text-red-600 dark:text-red-400 font-bold">
+            <span>Tổng nợ (Khách nợ ĐV):</span>
+            <span>{data.tongNo?.toFixed(2)} tỷ VNĐ</span>
+          </div>
+          <div className="flex justify-between items-center text-amber-600 dark:text-amber-400 font-semibold">
+            <span>Nợ Nghĩa vụ Viện:</span>
+            <span>{data.noNV?.toFixed(2)} tỷ VNĐ</span>
+          </div>
+          <div className="flex justify-between items-center text-slate-500 dark:text-slate-400 font-medium">
+            <span>Khách nợ ngoài Viện:</span>
+            <span>{data.noNgoai ? `${data.noNgoai.toFixed(2)} tỷ` : `${Math.max(0, data.tongNo - data.noNV).toFixed(2)} tỷ`}</span>
+          </div>
+          <div className="border-t border-border dark:border-slate-700/80 pt-1.5 flex justify-between items-center text-2xs">
+            <span className="text-ink-muted">Tỷ trọng nghĩa vụ Viện:</span>
+            <span className="font-bold text-amber-600 dark:text-amber-400">
+              {data.tyLeNoNV ?? (data.tongNo > 0 ? Math.round((data.noNV / data.tongNo) * 100) : 0)}%
+            </span>
           </div>
         </div>
       </div>
@@ -90,272 +220,596 @@ export function DashboardPage() {
   const [activeTab, setActiveTab] = useState('tong-quan');
   const [filterYear, setFilterYear] = useState('2026');
   const [filterPeriod, setFilterPeriod] = useState('6-thang');
+  const [filterDonVi, setFilterDonVi] = useState('all');
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
 
-  // --- MOCK DATA TỪ BÁO CÁO ---
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isMeetingMode, setIsMeetingMode] = useState(false);
+  const [showAllDebts, setShowAllDebts] = useState(false);
+  const [debtViewMode, setDebtViewMode] = useState<'cot-dung' | 'ma-tran'>('cot-dung');
+  const [tableUnit, setTableUnit] = useState<'ty' | 'nghin'>('ty');
 
-  const overviewData = {
-    totalNhiemVuKHCN: 70, // 02 QC, 54 TC, 14 Đề tài
-    kinhPhiKHCN2026: 29.568, // tỷ VNĐ
-    giaTriKy: 759.5, // tỷ VNĐ (101% KH)
-    giaTriDoanhThu: 396.68, // tỷ VNĐ (53% KH)
-    tongTienVe: 449.67, // tỷ VNĐ
-    tongNoLuyKe: 211.71, // tỷ VNĐ
-    nopNganSach: 34.64, // tỷ VNĐ
-    nhiemVuQLNN: 119, // lượt
-    baoCaoRaSoat: 48, // lượt
-    quyLuong: 25.46, // tỷ VNĐ
-    tongNhanSu: 523, // người
-    baoLanhNH: 74.5, // tỷ VNĐ
-    dauTuCong: 571.43, // 562.5 + 8.89
+  const { openPanel } = useSlidePanel();
+
+  // Tab "Tài chính & Đầu tư" gộp chỉ số lợi nhuận/dòng tiền — gác riêng bằng tài nguyên `dashboard_tai_chinh`
+  const { can: coQuyenDashboard, dangTai: dangTaiQuyenDashboard } = usePhanQuyen();
+  const coTabTaiChinh = dangTaiQuyenDashboard || coQuyenDashboard('dashboard_tai_chinh', 'xem');
+
+  useEffect(() => {
+    if (dangTaiQuyenDashboard || activeTab !== 'tai-chinh' || coTabTaiChinh) return;
+    setActiveTab('tong-quan');
+  }, [dangTaiQuyenDashboard, activeTab, coTabTaiChinh]);
+
+  // Nạp dữ liệu thống kê tổng hợp thực tế & theo bộ lọc
+  const loadData = () => {
+    setLoading(true);
+    fetchDashboardData({
+      year: filterYear,
+      period: filterPeriod,
+      donViId: filterDonVi,
+      customStart,
+      customEnd,
+    })
+      .then((data) => {
+        setDashboardData(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error('Lỗi nạp dữ liệu Dashboard:', err);
+        setLoading(false);
+      });
   };
 
-  const khcnData = [
-    { name: 'Viện', deTai: 1, contractVal: 2.000, kinhPhi: 1.000, disbursed: 0.8816, pct: 88.16 },
-    { name: 'VCNKC', deTai: 13, contractVal: 11.090, kinhPhi: 9.345, disbursed: 1.1335, pct: 12.13 },
-    { name: 'VCNBT', deTai: 16, contractVal: 11.198, kinhPhi: 3.0409, disbursed: 0.000, pct: 0.0 },
-    { name: 'VCNĐKT', deTai: 16, contractVal: 12.400, kinhPhi: 3.645, disbursed: 0.000, pct: 0.0 },
-    { name: 'TTKCT', deTai: 11, contractVal: 16.400, kinhPhi: 9.982, disbursed: 2.1348, pct: 21.39 },
-    { name: 'TTCDAQT&XD', deTai: 3, contractVal: 3.180, kinhPhi: 0.376, disbursed: 0.000, pct: 0.0 },
-    { name: 'TBXD', deTai: 3, contractVal: 2.500, kinhPhi: 0.345, disbursed: 0.2154, pct: 62.43 },
-    { name: 'TVTK', deTai: 2, contractVal: 1.350, kinhPhi: 1.350, disbursed: 0.000, pct: 0.0 },
-    { name: 'TVĂM', deTai: 1, contractVal: 1.200, kinhPhi: 0.3348, disbursed: 0.000, pct: 0.0 },
-    { name: 'CNVL', deTai: 3, contractVal: 0.800, kinhPhi: 0.000, disbursed: 0.000, pct: 0.0 },
-    { name: 'TTTĐ', deTai: 1, contractVal: 0.650, kinhPhi: 0.150, disbursed: 0.000, pct: 0.0 },
-  ];
+  useEffect(() => {
+    loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterYear, filterPeriod, filterDonVi, customStart, customEnd]);
 
-  // Đầy đủ 16 đơn vị theo Bảng 3
-  const doanhThuData = [
-    { name: 'VCNKC', doanhThu: 31.03, kyMoi: 43.69, keHoach: 70.0, kh: 44 },
-    { name: 'VCNBT', doanhThu: 26.27, kyMoi: 21.81, keHoach: 38.6, kh: 68 },
-    { name: 'VCNĐKT', doanhThu: 14.39, kyMoi: 27.88, keHoach: 22.0, kh: 65 },
-    { name: 'PVMN', doanhThu: 36.29, kyMoi: 50.16, keHoach: 60.5, kh: 60 },
-    { name: 'PVMT', doanhThu: 14.97, kyMoi: 7.93, keHoach: 42.0, kh: 36 },
-    { name: 'TVTK', doanhThu: 16.81, kyMoi: 38.71, keHoach: 25.0, kh: 67 },
-    { name: 'TTKCT', doanhThu: 12.34, kyMoi: 27.68, keHoach: 24.0, kh: 51 },
-    { name: 'TVĂM', doanhThu: 50.37, kyMoi: 89.75, keHoach: 72.2, kh: 70 },
-    { name: 'CNXD', doanhThu: 18.74, kyMoi: 73.25, keHoach: 50.0, kh: 37 },
-    { name: 'TTTĐ', doanhThu: 16.63, kyMoi: 20.28, keHoach: 25.8, kh: 64 },
-    { name: 'CNHT', doanhThu: 19.77, kyMoi: 33.34, keHoach: 28.0, kh: 71 },
-    { name: 'TBXD', doanhThu: 26.02, kyMoi: 55.09, keHoach: 40.0, kh: 65 },
-    { name: 'CNVL', doanhThu: 8.64, kyMoi: 8.72, keHoach: 16.0, kh: 54 },
-    { name: 'TTCDAQT&XD', doanhThu: 51.39, kyMoi: 83.49, keHoach: 45.0, kh: 114 },
-    { name: 'TT BIM', doanhThu: 24.09, kyMoi: 65.16, keHoach: 71.8, kh: 34 },
-    { name: 'IBST COTEC', doanhThu: 28.94, kyMoi: 112.58, keHoach: 58.0, kh: 50 },
-  ];
+  // Mở SlidePanel chi tiết (Drill-down)
+  const handleOpenDrilldown = (tab: DashboardDrilldownTab) => {
+    if (!dashboardData) return;
+    const titles: Record<DashboardDrilldownTab, { title: string; subtitle: string }> = {
+      'hop-dong': {
+        title: 'Chi tiết Hợp đồng Ký kết & Thực hiện',
+        subtitle: `Danh sách hợp đồng trong kỳ ${filterPeriod === 'all' ? 'Cả năm' : filterPeriod} ${filterYear}`,
+      },
+      'cong-no': {
+        title: 'Chi tiết Công nợ Lũy kế theo Hợp đồng',
+        subtitle: 'Các hợp đồng còn nợ lũy kế cần theo dõi và đôn đốc thu hồi',
+      },
+      khcn: {
+        title: 'Chi tiết Nhiệm vụ & Tiêu chuẩn KHCN',
+        subtitle: 'Các đề tài cấp Bộ, cấp Nhà nước và Dự thảo Tiêu chuẩn/Quy chuẩn đang thực hiện',
+      },
+      'canh-bao': {
+        title: 'Rà soát Tuân thủ Quy chế 2815 & Điểm nghẽn',
+        subtitle: 'Các vi phạm quy chế hợp đồng, nợ quá hạn và tiến độ cần chỉ đạo',
+      },
+      'nhan-su': {
+        title: 'Chi tiết Cán bộ & Chứng chỉ Hành nghề',
+        subtitle: 'Hồ sơ nhân sự, chức danh và chứng chỉ LAS-XD theo đơn vị',
+      },
+    };
 
-  // Đầy đủ 16 đơn vị theo Bảng 7
-  const noDongData = [
-    { name: 'PVMN', tongNo: 30.38, noNV: 10.02 },
-    { name: 'TVĂM', tongNo: 26.37, noNV: 4.88 },
-    { name: 'IBST COTEC', tongNo: 23.48, noNV: 0.37 },
-    { name: 'TTCDAQT&XD', tongNo: 19.64, noNV: 1.23 },
-    { name: 'TBXD', tongNo: 15.76, noNV: 2.24 },
-    { name: 'TTTĐ', tongNo: 14.39, noNV: 2.36 },
-    { name: 'VCNKC', tongNo: 13.06, noNV: 4.86 },
-    { name: 'CNHT', tongNo: 13.05, noNV: 3.71 },
-    { name: 'CNXD', tongNo: 11.58, noNV: 1.43 },
-    { name: 'TTKCT', tongNo: 10.78, noNV: 0.75 },
-    { name: 'TVTK', tongNo: 8.73, noNV: 1.52 },
-    { name: 'CNVL', tongNo: 7.54, noNV: 1.30 },
-    { name: 'PVMT', tongNo: 5.19, noNV: 0.47 },
-    { name: 'VCNĐKT', tongNo: 4.85, noNV: 1.26 },
-    { name: 'TT BIM', tongNo: 4.58, noNV: 0.12 },
-    { name: 'VCNBT', tongNo: 2.27, noNV: 6.21 },
-  ];
+    openPanel({
+      id: 'dashboard-chi-tiet-panel',
+      title: titles[tab].title,
+      subtitle: titles[tab].subtitle,
+      icon: <LayoutDashboard size={16} className="text-primary" />,
+      content: <DashboardDetailSlidePanel data={dashboardData} initialTab={tab} />,
+      storageKey: 'slideover-width-dashboard-chi-tiet',
+    });
+  };
 
-  // Trạng thái công trình trọng điểm (Mục IX.1)
-  const majorProjects = [
-    { name: 'Nhà Quốc hội Lào', category: 'Giám sát kỹ thuật xây dựng', status: 'Hoàn thành bàn giao', progress: 100 },
-    { name: 'Sân bay Long Thành', category: 'Tư vấn HĐ nghiệm thu Nhà nước', status: 'Đang triển khai', progress: 75 },
-    { name: 'TT Hội nghị Quốc gia', category: 'Kiểm định chất lượng định kỳ', status: 'Đã hoàn thành báo cáo', progress: 100 },
-    { name: 'Dự án Phân giới cắm mốc', category: 'Đo đạc & Khảo sát địa hình biên giới', status: 'Đang thực hiện', progress: 60 },
-  ];
+  // Xuất file Excel báo cáo giao ban
+  const handleExportExcel = () => {
+    if (!dashboardData) return;
+    const headers = [
+      'Mã Đơn vị',
+      'Tên đầy đủ Đơn vị',
+      'Kế hoạch Doanh thu (Tỷ)',
+      'Ký mới trong kỳ (Tỷ)',
+      'Doanh thu thực hiện (Tỷ)',
+      '% Hoàn thành KH',
+      'Công nợ lũy kế (Tỷ)',
+      'Nợ nghĩa vụ Viện (Tỷ)',
+    ];
 
-  // Danh mục Quy chuẩn & Tiêu chuẩn cốt lõi đang soạn thảo (Phần phụ lục 1.1)
+    const rows = dashboardData.doanhThuData.map((d) => {
+      const debt = dashboardData.noDongData.find((n) => n.name === d.name);
+      return [
+        d.name,
+        d.fullName || d.name,
+        d.keHoach,
+        d.kyMoi,
+        d.doanhThu,
+        `${d.kh}%`,
+        debt ? debt.tongNo : 0,
+        debt ? debt.noNV : 0,
+      ];
+    });
 
-  // Danh mục Quy chuẩn & Tiêu chuẩn cốt lõi đang soạn thảo (Phần phụ lục 1.1)
-  const coreStandards = [
-    { code: 'QCVN 06:2026/BXD', name: 'Sửa đổi Quy chuẩn An toàn cháy', leader: 'Cao Duy Khôi', status: 'Chờ ban hành', progress: 95 },
-    { code: 'QCVN 02:2026/BXD', name: 'Sửa đổi Quy chuẩn Số liệu tự nhiên', leader: 'Nguyễn Hồng Hải', status: 'Đã nghiệm thu Bộ', progress: 100 },
-    { code: 'RD 03-25', name: 'Quy chuẩn Công trình công nghiệp', leader: 'Nguyễn Hồng Hải', status: 'Đã nghiệm thu Bộ', progress: 100 },
-    { code: 'RD 05-25', name: 'Giải pháp kỹ thuật nâng cao an toàn PCCC', leader: 'Cao Duy Khôi', status: 'Tiếp thu ý kiến Bộ', progress: 85 },
-    { code: 'QCVN 04:2021/BXD', name: 'Sửa đổi Quy chuẩn Nhà chung cư (Bổ sung trạm sạc)', leader: 'Lãnh đạo Viện', status: 'Lấy ý kiến rộng rãi', progress: 90 },
-    { code: 'QCVN 04-4:202x/BXD', name: 'Hệ thống điện trong nhà ở và nhà công cộng', leader: 'TT Thiết bị', status: 'Hoàn thiện dự thảo', progress: 80 },
-  ];
+    exportExcel(
+      `Bao_cao_giao_ban_IBST_${filterYear}_${filterPeriod}.xls`,
+      'Báo cáo Giao ban',
+      headers,
+      rows,
+    );
+  };
 
-  // Các dự án đầu tư phát triển cơ sở vật chất (Mục IX.5)
-  const investmentProjects = [
-    { name: 'Nhà làm việc 10 tầng (Trụ sở chính)', scale: '562.5 tỷ VNĐ', period: 'Vốn trung hạn 2026-2030', status: 'Lập quy hoạch tổng mặt bằng', progress: 20 },
-    { name: 'Đầu tư trang thiết bị PTN dùng chung', scale: '8.89 tỷ VNĐ', period: 'Nguồn Quỹ phát triển hoạt động sự nghiệp', status: 'Trình Bộ Xây dựng phê duyệt', progress: 50 },
-    { name: 'Cải tạo mặt đứng nhà N1 & chống thấm', scale: 'Chi thường xuyên', period: 'Nguồn sửa chữa nhỏ', status: 'Hoàn thành bàn giao', progress: 100 },
-    { name: 'Cải tạo Phân viện Miền Trung', scale: 'Chi thường xuyên', period: 'Nguồn sửa chữa nhỏ', status: 'Đang triển khai', progress: 70 },
-  ];
-
-  // Đánh giá Sức khỏe Vận hành Đơn vị (Tỷ lệ hoàn thành kế hoạch)
-  const unitHealthData = [
-    { name: 'TTCDAQT&XD', khProgress: 114, status: 'Xuất sắc', color: 'text-success' },
-    { name: 'CNHT', khProgress: 71, status: 'Tốt', color: 'text-info' },
-    { name: 'TVĂM', khProgress: 70, status: 'Tốt', color: 'text-info' },
-    { name: 'VCNBT', khProgress: 68, status: 'Tốt', color: 'text-info' },
-    { name: 'TVTK', khProgress: 67, status: 'Khá', color: 'text-primary' },
-    { name: 'VCNĐKT', khProgress: 65, status: 'Khá', color: 'text-primary' },
-    { name: 'TBXD', khProgress: 65, status: 'Khá', color: 'text-primary' },
-    { name: 'TTTĐ', khProgress: 64, status: 'Khá', color: 'text-primary' },
-    { name: 'PVMN', khProgress: 60, status: 'Trung bình', color: 'text-warning' },
-    { name: 'CNVL', khProgress: 54, status: 'Trung bình', color: 'text-warning' },
-    { name: 'TTKCT', khProgress: 51, status: 'Trung bình', color: 'text-warning' },
-    { name: 'IBST COTEC', khProgress: 50, status: 'Trung bình', color: 'text-warning' },
-    { name: 'VCNKC', khProgress: 44, status: 'Cảnh báo', color: 'text-danger' },
-    { name: 'CNXD', khProgress: 37, status: 'Cảnh báo', color: 'text-danger' },
-    { name: 'PVMT', khProgress: 36, status: 'Cảnh báo', color: 'text-danger' },
-    { name: 'TT BIM', khProgress: 34, status: 'Cảnh báo', color: 'text-danger' },
-  ];
-
-  const nhanSuBienDongData = [
-    { month: 'T1', tuyen: 8, nghi: 2 },
-    { month: 'T2', tuyen: 12, nghi: 4 },
-    { month: 'T3', tuyen: 15, nghi: 3 },
-    { month: 'T4', tuyen: 10, nghi: 5 },
-    { month: 'T5', tuyen: 8, nghi: 2 },
-    { month: 'T6', tuyen: 10, nghi: 4 },
-  ];
-
-  const lasXdData = [
-    { name: 'LAS-XD 09 (Hà Nội)', desc: 'Phòng thí nghiệm chính tại trụ sở Viện: Kết cấu, Bê tông, Địa kỹ thuật, Ăn mòn...', status: 'Hoạt động tốt' },
-    { name: 'LAS-XD Phân viện Miền Nam (TP.HCM)', desc: 'Kiểm định, thí nghiệm kết cấu và vật liệu tại khu vực phía Nam.', status: 'Hoạt động tốt' },
-    { name: 'LAS-XD Phân viện Miền Trung (Đà Nẵng)', desc: 'Thí nghiệm tổng hợp, phục vụ các tỉnh miền Trung & Tây Nguyên.', status: 'Hoạt động tốt' },
-  ];
-
-  const scientificPapers = [
-    { 
-      title: 'Đánh giá kỹ thuật và đề xuất mô hình mô phỏng nhà máy điện rác PPP đạt chuẩn BAT-IED', 
-      author: 'Phạm Văn Vương', 
-      journal: 'Tạp chí Kinh tế Tài chính Việt Nam, 2026-01',
-      url: 'https://nghiencuu.tapchikinhtetaichinh.vn/danh-gia-ky-thuat-va-de-xuat-mo-hinh-mo-phong-ho-tro-ra-quyet-dinh-dau-tu-xay-dung-nha-may-dien-rac-theo-hinh-thuc-ppp-dat-chuan-bat-ied-tai-viet-nam-143770.html'
+  // Dữ liệu bảng Tổng hợp giá trị ký HĐKT các đơn vị năm 2026 (tính tới 21.8.2026)
+  const BANG_TONG_HOP_ROWS = [
+    { isHeader: true, group: 'I', title: 'I. CÁC VIỆN CHUYÊN NGÀNH' },
+    {
+      stt: '1',
+      code: 'VCNKC',
+      name: 'Viện Chuyên ngành Kết cấu',
+      khNghin: 70000000,
+      khTy: 70.0,
+      ckNghin: 67747280,
+      ckTy: 67.747,
+      vienKyNghin: 2891992,
+      vienKyTy: 2.892,
+      dvKyNghin: 57723448,
+      dvKyTy: 57.723,
+      tongKyNghin: 60615440,
+      tongKyTy: 60.615,
+      pctKH: 87,
+      pctCungKy: 89,
+      ghiChu: '',
     },
-    { 
-      title: 'Đánh giá mức độ tương thích và tác động kinh tế - tài chính của tiêu chuẩn điện rác PPP', 
-      author: 'Phạm Văn Vương', 
-      journal: 'Tạp chí Kinh tế Tài chính Việt Nam, 2026-02',
-      url: 'https://nghiencuu.tapchikinhtetaichinh.vn/danh-gia-muc-do-tuong-thich-va-tac-dong-kinh-te-tai-chinh-cua-he-thong-tieu-chuan-quy-chuan-ky-thuat-doi-voi-cay-du-an-dot-rac-phat-dien-theo-mo-hinh-ppp-tai-viet-nam-theo-tiep-can-bat-ied-149074.html'
+    {
+      stt: '2',
+      code: 'VCNBT',
+      name: 'Viện Chuyên ngành Bê tông',
+      khNghin: 38600000,
+      khTy: 38.6,
+      ckNghin: 20191235,
+      ckTy: 20.191,
+      vienKyNghin: 193671,
+      vienKyTy: 0.194,
+      dvKyNghin: 21686357,
+      dvKyTy: 21.686,
+      tongKyNghin: 21880028,
+      tongKyTy: 21.880,
+      pctKH: 57,
+      pctCungKy: 108,
+      ghiChu: '',
     },
-    { 
-      title: 'Đánh giá tác động pháp lý liên ngành và tính khả thi tài chính dự án điện rác', 
-      author: 'Phạm Văn Vương', 
-      journal: 'Tạp chí Kinh tế Tài chính Việt Nam, 2026-03',
-      url: 'https://nghiencuu.tapchikinhtetaichinh.vn/danh-gia-tac-dong-cua-khung-phap-ly-lien-nganh-va-de-xuat-mo-hinh-tich-hop-nham-nang-cao-tinh-kha-thi-tai-chinh-cua-du-an-dien-rac-theo-hinh-thuc-ppp-tai-viet-nam-152038.html'
+    {
+      stt: '3',
+      code: 'VCNĐKT',
+      name: 'Viện Chuyên ngành Địa kỹ thuật',
+      khNghin: 22000000,
+      khTy: 22.0,
+      ckNghin: 16050776,
+      ckTy: 16.051,
+      vienKyNghin: 72930,
+      vienKyTy: 0.073,
+      dvKyNghin: 38064879,
+      dvKyTy: 38.065,
+      tongKyNghin: 38137809,
+      tongKyTy: 38.138,
+      pctKH: 173,
+      pctCungKy: 238,
+      ghiChu: 'Tăng trưởng đột biến',
     },
-    { 
-      title: 'Ảnh hưởng biến động nguồn rác đến hiệu quả tài chính và cơ chế MGQ trong dự án PPP', 
-      author: 'Phạm Văn Vương', 
-      journal: 'Tạp chí Kinh tế Tài chính Việt Nam, 2026-04',
-      url: 'https://nghiencuu.tapchikinhtetaichinh.vn/anh-huong-cua-bien-dong-nguon-chat-thai-ran-sinh-hoat-den-hieu-qua-tai-chinh-va-co-che-mgq-trong-du-an-dien-rac-theo-hinh-thuc-ppp-tai-viet-nam-154688.html'
+
+    { isHeader: true, group: 'II', title: 'II. CÁC PHÂN VIỆN' },
+    {
+      stt: '4',
+      code: 'PVMN',
+      name: 'Phân viện Miền Nam',
+      khNghin: 60500000,
+      khTy: 60.5,
+      ckNghin: 23789989,
+      ckTy: 23.790,
+      vienKyNghin: 2471387,
+      vienKyTy: 2.471,
+      dvKyNghin: 58202989,
+      dvKyTy: 58.203,
+      tongKyNghin: 60674376,
+      tongKyTy: 60.674,
+      pctKH: 100,
+      pctCungKy: 255,
+      ghiChu: 'Đạt 100% KH sớm',
     },
-    { 
-      title: 'Nghiên cứu phản ứng kiềm Silic của một số loại cốt liệu theo các phương pháp nhanh', 
-      author: 'Hoàng Minh Đức, Nguyễn Văn Thạnh', 
-      journal: 'Tạp chí KHCN Xây dựng số 4, 2025',
-      url: 'https://tapchi.ibst.vn/'
+    {
+      stt: '5',
+      code: 'PVMT',
+      name: 'Phân viện Miền Trung',
+      khNghin: 42000000,
+      khTy: 42.0,
+      ckNghin: 36268364,
+      ckTy: 36.268,
+      vienKyNghin: 7160086,
+      vienKyTy: 7.160,
+      dvKyNghin: 946000,
+      dvKyTy: 0.946,
+      tongKyNghin: 8106086,
+      tongKyTy: 8.106,
+      pctKH: 19,
+      pctCungKy: 22,
+      ghiChu: 'PVMT cũ ko giao KH ký mới',
     },
-    { 
-      title: 'Ảnh hưởng cốt liệu đến cường độ còn lại của bê tông sau nung nhiệt độ cao', 
-      author: 'Đoàn Thị Thu Lương, Nguyễn Kim Thịnh', 
-      journal: 'Tạp chí KHCN Xây dựng số 4, 2025',
-      url: 'https://tapchi.ibst.vn/'
+
+    { isHeader: true, group: 'III', title: 'III. CÁC TRUNG TÂM' },
+    {
+      stt: '6',
+      code: 'TVTK',
+      name: 'Trung tâm Tư vấn Thiết kế & XD',
+      khNghin: 25000000,
+      khTy: 25.0,
+      ckNghin: 34280507,
+      ckTy: 34.281,
+      vienKyNghin: 39615627,
+      vienKyTy: 39.616,
+      dvKyNghin: 23041680,
+      dvKyTy: 23.042,
+      tongKyNghin: 62657307,
+      tongKyTy: 62.657,
+      pctKH: 251,
+      pctCungKy: 183,
+      ghiChu: 'Vượt 151% KH',
     },
-    { 
-      title: 'Thiết lập cơ sở dữ liệu cấu trúc nền địa chất 3D phát triển bền vững ngầm Hà Nội', 
-      author: 'Nguyễn Công Kiên, Đinh Quốc Dân...', 
-      journal: 'Tạp chí KHCN Xây dựng số 4, 2025',
-      url: 'https://tapchi.ibst.vn/'
+    {
+      stt: '7',
+      code: 'TTKCT',
+      name: 'Trung tâm Kết cấu Thép & XD',
+      khNghin: 24000000,
+      khTy: 24.0,
+      ckNghin: 20162107,
+      ckTy: 20.162,
+      vienKyNghin: 14649186,
+      vienKyTy: 14.649,
+      dvKyNghin: 19227284,
+      dvKyTy: 19.227,
+      tongKyNghin: 33876470,
+      tongKyTy: 33.876,
+      pctKH: 141,
+      pctCungKy: 168,
+      ghiChu: '',
     },
-    { 
-      title: 'Phân tích thực trạng nhà hiện hữu không đảm bảo PCCC và giải pháp nâng cao an toàn cháy', 
-      author: 'Cao Duy Khôi, Phạm Anh Tuấn...', 
-      journal: 'Tạp chí KHCN Xây dựng',
-      url: 'https://tapchi.ibst.vn/'
+    {
+      stt: '8',
+      code: 'TVĂM',
+      name: 'Trung tâm Ăn mòn & Bảo vệ',
+      khNghin: 72200000,
+      khTy: 72.2,
+      ckNghin: 74227557,
+      ckTy: 74.228,
+      vienKyNghin: 5312718,
+      vienKyTy: 5.313,
+      dvKyNghin: 92804370,
+      dvKyTy: 92.804,
+      tongKyNghin: 98117088,
+      tongKyTy: 98.117,
+      pctKH: 136,
+      pctCungKy: 132,
+      ghiChu: 'Đơn vị ký đạt >92 tỷ',
+    },
+    {
+      stt: '9',
+      code: 'CNXD',
+      name: 'Viện Chuyên ngành Công nghệ Xây dựng',
+      khNghin: 50000000,
+      khTy: 50.0,
+      ckNghin: 60916109,
+      ckTy: 60.916,
+      vienKyNghin: 57061566,
+      vienKyTy: 57.062,
+      dvKyNghin: 34793862,
+      dvKyTy: 34.794,
+      tongKyNghin: 91855428,
+      tongKyTy: 91.855,
+      pctKH: 184,
+      pctCungKy: 151,
+      ghiChu: 'Viện ký lớn (>57 tỷ)',
+    },
+    {
+      stt: '10',
+      code: 'TTTĐ',
+      name: 'Trung tâm Trắc địa & Địa chính',
+      khNghin: 25800000,
+      khTy: 25.8,
+      ckNghin: 47293696,
+      ckTy: 47.294,
+      vienKyNghin: 2198074,
+      vienKyTy: 2.198,
+      dvKyNghin: 25437230,
+      dvKyTy: 25.437,
+      tongKyNghin: 27635304,
+      tongKyTy: 27.635,
+      pctKH: 107,
+      pctCungKy: 58,
+      ghiChu: '',
+    },
+    {
+      stt: '11',
+      code: 'CNHT',
+      name: 'Trung tâm Hạ tầng Kỹ thuật & XD',
+      khNghin: 28000000,
+      khTy: 28.0,
+      ckNghin: 29923810,
+      ckTy: 29.924,
+      vienKyNghin: 3493210,
+      vienKyTy: 3.493,
+      dvKyNghin: 40136594,
+      dvKyTy: 40.137,
+      tongKyNghin: 43629804,
+      tongKyTy: 43.630,
+      pctKH: 156,
+      pctCungKy: 146,
+      ghiChu: '',
+    },
+    {
+      stt: '12',
+      code: 'TBXD',
+      name: 'Viện Chuyên ngành Thiết bị Xây dựng',
+      khNghin: 40000000,
+      khTy: 40.0,
+      ckNghin: 38561149,
+      ckTy: 38.561,
+      vienKyNghin: 9900678,
+      vienKyTy: 9.901,
+      dvKyNghin: 50825154,
+      dvKyTy: 50.825,
+      tongKyNghin: 60725832,
+      tongKyTy: 60.726,
+      pctKH: 152,
+      pctCungKy: 157,
+      ghiChu: '',
+    },
+    {
+      stt: '13',
+      code: 'CNVL',
+      name: 'Trung tâm Vật liệu Xây dựng',
+      khNghin: 16000000,
+      khTy: 16.0,
+      ckNghin: 13728161,
+      ckTy: 13.728,
+      vienKyNghin: 129000,
+      vienKyTy: 0.129,
+      dvKyNghin: 11283461,
+      dvKyTy: 11.283,
+      tongKyNghin: 11412461,
+      tongKyTy: 11.412,
+      pctKH: 71,
+      pctCungKy: 83,
+      ghiChu: '',
+    },
+    {
+      stt: '14',
+      code: 'TTCDAQT&XD',
+      name: 'Trung tâm Chuyển giao DAQT & XD',
+      khNghin: 45000000,
+      khTy: 45.0,
+      ckNghin: 49437953,
+      ckTy: 49.438,
+      vienKyNghin: 16301057,
+      vienKyTy: 16.301,
+      dvKyNghin: 67303138,
+      dvKyTy: 67.303,
+      tongKyNghin: 83604195,
+      tongKyTy: 83.604,
+      pctKH: 186,
+      pctCungKy: 169,
+      ghiChu: '',
+    },
+    {
+      stt: '15',
+      code: 'TT BIM',
+      name: 'Trung tâm Tư vấn & Ứng dụng BIM',
+      khNghin: 71800000,
+      khTy: 71.8,
+      ckNghin: 91747268,
+      ckTy: 91.747,
+      vienKyNghin: 99774151,
+      vienKyTy: 99.774,
+      dvKyNghin: 2436675,
+      dvKyTy: 2.437,
+      tongKyNghin: 102210826,
+      tongKyTy: 102.211,
+      pctKH: 142,
+      pctCungKy: 111,
+      ghiChu: 'Gộp KH của BIM và TTMTay',
+    },
+
+    // IV. TỔNG KHỐI VIỆN (SUBTOTAL)
+    {
+      isSubtotal: true,
+      stt: 'IV',
+      code: 'TỔNG KHỐI VIỆN',
+      name: 'Tổng cộng 15 đơn vị sự nghiệp thuộc Viện',
+      khNghin: 692000000,
+      khTy: 692.0,
+      ckNghin: 624325961,
+      ckTy: 624.326,
+      vienKyNghin: 261225333,
+      vienKyTy: 261.225,
+      dvKyNghin: 543913121,
+      dvKyTy: 543.913,
+      tongKyNghin: 805138454,
+      tongKyTy: 805.138,
+      pctKH: 116,
+      pctCungKy: 129,
+      ghiChu: 'Khối Viện vượt 16% KH năm',
+    },
+
+    // V. CÔNG TY CỔ PHẦN
+    { isHeader: true, group: 'V', title: 'V. CÔNG TY CỔ PHẦN' },
+    {
+      stt: '16',
+      code: 'IBST.COTEC',
+      name: 'Công ty CP TVĐT & XD IBST COTEC',
+      khNghin: 58000000,
+      khTy: 58.0,
+      ckNghin: 59918682,
+      ckTy: 59.919,
+      vienKyNghin: 0,
+      vienKyTy: 0,
+      dvKyNghin: 136597347,
+      dvKyTy: 136.597,
+      tongKyNghin: 136597347,
+      tongKyTy: 136.597,
+      pctKH: 236,
+      pctCungKy: 228,
+      ghiChu: '100% Đơn vị tự ký',
+    },
+
+    // TỔNG CỘNG TOÀN VIỆN
+    {
+      isGrandTotal: true,
+      stt: '',
+      code: 'TỔNG CỘNG TOÀN VIỆN',
+      name: 'Toàn bộ 16 Đơn vị Trực thuộc Viện IBST',
+      khNghin: 750000000,
+      khTy: 750.0,
+      ckNghin: 684244643,
+      ckTy: 684.245,
+      vienKyNghin: 261225333,
+      vienKyTy: 261.225,
+      dvKyNghin: 680510468,
+      dvKyTy: 680.510,
+      tongKyNghin: 941735801,
+      tongKyTy: 941.736,
+      pctKH: 126,
+      pctCungKy: 138,
+      ghiChu: 'Vượt kế hoạch năm trước 4 tháng',
     },
   ];
 
-  const conferences = [
-    { name: 'Hội thảo lấy ý kiến rộng rãi Sửa đổi 1:2026 QCVN 04:2021/BXD (bổ sung trạm sạc)', date: '06/02/2026', org: 'Viện KHCNXD' },
-    { name: 'Hội thảo lấy ý kiến Sửa đổi QCVN 02:2022/BXD (QC về số liệu điều kiện tự nhiên)', date: '02/04/2026', org: 'Viện KHCNXD' },
-    { name: 'Hội thảo QCVN 04-4:202x/BXD (Hệ thống điện trong nhà ở và nhà công cộng)', date: '09/04/2026', org: 'Viện KHCNXD' },
-    { name: 'Hội thảo quốc tế về nhiên liệu hàng không bền vững (SAF) tại ASEAN', date: '25/06/2026', org: 'Bộ Xây dựng' },
-    { name: 'Hội thảo Quốc tế về công nghệ giao thông & Hạ tầng tiên tiến thông minh (ICATTI)', date: '25-26/06/2026', org: 'Uỷ ban chuyên môn' },
-  ];
+  // Xuất Bảng tổng hợp giá trị ký HĐKT các đơn vị năm 2026 (tính tới 21.8.2026)
+  const handleExportBangTongHopHDKT = () => {
+    const isNghin = tableUnit === 'nghin';
+    const unitLabel = isNghin ? '(Nghìn đồng)' : '(Tỷ VNĐ)';
+    const headers = [
+      'TT',
+      'Đơn vị',
+      `Đăng ký KH cả năm 2026 ${unitLabel}`,
+      `SL Cùng kỳ năm 2025 ${unitLabel}`,
+      `Viện ký ${unitLabel}`,
+      `Đơn vị ký ${unitLabel}`,
+      `Tổng cộng ký 2026 ${unitLabel}`,
+      'So với KH năm (%)',
+      'So với cùng kỳ (%)',
+      'Ghi chú',
+    ];
 
-  const growthComparisonData = [
-    { name: 'Ký hợp đồng', val2025: 564.0, val2026: 759.5 },
-    { name: 'Doanh thu', val2025: 309.43, val2026: 396.68 },
-    { name: 'Tiền về', val2025: 411.71, val2026: 449.67 },
-  ];
+    const fmtVal = (ty: number, nghin: number) => {
+      if (isNghin) return nghin.toLocaleString('vi-VN');
+      return ty > 0 ? ty.toFixed(ty % 1 === 0 ? 1 : 3) : '0';
+    };
 
-  const coCauDoanhThu = [
-    { name: 'TVGS, Thiết kế', value: 182.33 },
-    { name: 'Khảo sát, TN', value: 118.75 },
-    { name: 'Thi công XD', value: 65.70 },
-    { name: 'Cung ứng VT', value: 22.45 },
-  ];
+    const rows: (string | number)[][] = BANG_TONG_HOP_ROWS.map((r) => {
+      if (r.isHeader) {
+        return [r.group || '', r.title || '', '', '', '', '', '', '', '', ''];
+      }
+      return [
+        r.stt || '',
+        r.code || '',
+        fmtVal(r.khTy ?? 0, r.khNghin ?? 0),
+        fmtVal(r.ckTy ?? 0, r.ckNghin ?? 0),
+        fmtVal(r.vienKyTy ?? 0, r.vienKyNghin ?? 0),
+        fmtVal(r.dvKyTy ?? 0, r.dvKyNghin ?? 0),
+        fmtVal(r.tongKyTy ?? 0, r.tongKyNghin ?? 0),
+        `${r.pctKH ?? 0}%`,
+        `${r.pctCungKy ?? 0}%`,
+        r.ghiChu || '',
+      ];
+    });
 
-  const coCauTienVe = [
-    { name: 'Thanh toán mới', value: 265.05 },
-    { name: 'Khách trả nợ cũ', value: 86.21 },
-    { name: 'Khách tạm ứng', value: 98.41 },
-  ];
+    exportExcel(
+      `Bang_Tong_Hop_Gia_Tri_Ky_HDKT_IBST_2026_${tableUnit}.xls`,
+      'HDKT 2026',
+      headers,
+      rows,
+    );
+  };
 
-  const coCauThue = [
-    { name: 'Thuế GTGT', value: 23.15 },
-    { name: 'Thuế TNDN', value: 5.8 },
-    { name: 'Thuế TNCN', value: 5.69 },
-  ];
+  // In báo cáo giao ban
+  const handlePrint = () => {
+    window.print();
+  };
 
-  const taiChinhData = [
-    { month: 'T1', luong: 6.5, thue: 2.1, nsnn: 4.5, dongTien: 55, doanhThu: 45, kyMoi: 90 },
-    { month: 'T2', luong: 6.8, thue: 1.5, nsnn: 3.2, dongTien: 42, doanhThu: 40, kyMoi: 70 },
-    { month: 'T3', luong: 7.2, thue: 3.2, nsnn: 5.1, dongTien: 89, doanhThu: 75, kyMoi: 145 },
-    { month: 'T4', luong: 7.0, thue: 2.8, nsnn: 6.0, dongTien: 76, doanhThu: 68, kyMoi: 120 },
-    { month: 'T5', luong: 7.5, thue: 3.5, nsnn: 5.8, dongTien: 91, doanhThu: 82, kyMoi: 155 },
-    { month: 'T6', luong: 8.1, thue: 4.2, nsnn: 5.4, dongTien: 96.67, doanhThu: 86.68, kyMoi: 179.5 },
-  ];
-
-  // Bảng màu 16 mã màu để phân biệt rõ rệt 16 đơn vị
+  // Bảng màu chuẩn 16 đơn vị
   const COLORS = [
     '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f43f5e',
-    '#84cc16', '#3b82f6', '#a855f7', '#f97316', '#06b6d4', '#e11d48', '#10b981', '#6366f1'
+    '#84cc16', '#3b82f6', '#a855f7', '#f97316', '#06b6d4', '#e11d48', '#10b981', '#6366f1',
   ];
   const DEBT_COLORS = [
     '#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981', '#06b6d4', '#3b82f6', '#8b5cf6',
-    '#ec4899', '#14b8a6', '#f43f5e', '#a855f7', '#6366f1', '#0ea5e9', '#e11d48', '#d97706'
+    '#ec4899', '#14b8a6', '#f43f5e', '#a855f7', '#6366f1', '#0ea5e9', '#e11d48', '#d97706',
   ];
 
-  // --- CÁC COMPONENT GIAO DIỆN ---
+  // Trích xuất dữ liệu an toàn
+  const overviewData = dashboardData?.overview || {
+    totalNhiemVuKHCN: 70,
+    kinhPhiKHCN2026: 29.568,
+    giaTriKy: 941.74,
+    giaTriDoanhThu: 396.68,
+    tongTienVe: 449.67,
+    tongNoLuyKe: 211.71,
+    nopNganSach: 34.64,
+    nhiemVuQLNN: 119,
+    baoCaoRaSoat: 48,
+    quyLuong: 25.46,
+    tongNhanSu: 523,
+    baoLanhNH: 74.5,
+    dauTuCong: 571.43,
+    tyLeDatKyMoi: 126,
+    tyLeDatDoanhThu: 53,
+  };
 
+  const doanhThuData = dashboardData?.doanhThuData || [];
+  const noDongData = dashboardData?.noDongData || [];
+  const unitHealthData = dashboardData?.unitHealthData || [];
+  const taiChinhData = dashboardData?.taiChinhData || [];
+  const growthComparisonData = dashboardData?.growthComparisonData || [];
+  const coCauDoanhThu = dashboardData?.coCauDoanhThu || [];
+  const coCauTienVe = dashboardData?.coCauTienVe || [];
+  const coCauThue = dashboardData?.coCauThue || [];
+  const majorProjects = dashboardData?.majorProjects || [];
+  const coreStandards = dashboardData?.coreStandards || [];
+  const investmentProjects = dashboardData?.investmentProjects || [];
+  const scientificPapers = dashboardData?.scientificPapers || [];
+  const conferences = dashboardData?.conferences || [];
+  const nhanSuBienDongData = dashboardData?.nhanSuBienDongData || [];
+  const lasXdData = dashboardData?.lasXdData || [];
+  const khcnData = dashboardData?.khcnData || [];
+  const canhBaoSummary = dashboardData?.canhBaoSummary;
+
+  // ─── RENDER FILTER BAR ───
   const renderFilterBar = () => (
-    <div className="flex flex-col sm:flex-row gap-2 items-center bg-surface p-1 rounded-xl border border-border shadow-sm w-fit">
-      <div className="flex items-center border-r border-border pl-1.5 pr-2.5">
+    <div className="flex flex-wrap items-center gap-2 bg-surface p-1 rounded-xl border border-border dark:border-slate-700/80 shadow-xs w-fit">
+      <div className="flex items-center border-r border-border dark:border-slate-700/80 pl-1.5 pr-2.5">
         <Filter className="w-4 h-4 text-primary-500" />
       </div>
 
       <div className="flex flex-wrap items-center gap-1.5">
+        {/* Bộ chọn Năm */}
         <div className="relative group">
           <select
             value={filterYear}
             onChange={(e) => setFilterYear(e.target.value)}
-            className="appearance-none bg-subtle text-ink font-medium text-[12.5px] rounded-lg pl-3 pr-8 py-1.5 outline-none border border-border focus:border-primary-500 transition-colors cursor-pointer"
+            className="appearance-none bg-subtle text-ink font-bold text-[12px] rounded-lg pl-2.5 pr-7 py-1.5 outline-none border border-border dark:border-slate-700/80 focus:border-primary-500 transition-colors cursor-pointer"
           >
             <option value="2026">Năm 2026</option>
             <option value="2025">Năm 2025</option>
             <option value="2024">Năm 2024</option>
+            <option value="all">Tất cả năm</option>
           </select>
-          <ChevronDown className="w-3.5 h-3.5 text-ink-muted absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-primary-500 transition-colors" />
+          <ChevronDown className="w-3.5 h-3.5 text-ink-muted absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-primary-500 transition-colors" />
         </div>
 
+        {/* Bộ chọn Kỳ */}
         <div className="relative group">
           <select
             value={filterPeriod}
             onChange={(e) => setFilterPeriod(e.target.value)}
-            className="appearance-none bg-subtle text-ink font-medium text-[12.5px] rounded-lg pl-3 pr-8 py-1.5 outline-none border border-border focus:border-primary-500 transition-colors cursor-pointer"
+            className="appearance-none bg-subtle text-ink font-bold text-[12px] rounded-lg pl-2.5 pr-7 py-1.5 outline-none border border-border dark:border-slate-700/80 focus:border-primary-500 transition-colors cursor-pointer"
           >
             <option value="all">Cả năm</option>
             <option value="q1">Quý I</option>
@@ -364,39 +818,106 @@ export function DashboardPage() {
             <option value="q4">Quý IV</option>
             <option value="6-thang">6 Tháng đầu năm</option>
             <option value="9-thang">9 Tháng</option>
-            <option value="custom">Tùy chọn khoảng thời gian...</option>
+            <option value="custom">Tùy chọn ngày...</option>
           </select>
-          <ChevronDown className="w-3.5 h-3.5 text-ink-muted absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-primary-500 transition-colors" />
+          <ChevronDown className="w-3.5 h-3.5 text-ink-muted absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-primary-500 transition-colors" />
         </div>
 
+        {/* Bộ chọn Đơn vị */}
+        <div className="relative group">
+          <select
+            value={filterDonVi}
+            onChange={(e) => setFilterDonVi(e.target.value)}
+            className="appearance-none bg-subtle text-ink font-bold text-[12px] rounded-lg pl-2.5 pr-7 py-1.5 outline-none border border-border dark:border-slate-700/80 focus:border-primary-500 transition-colors cursor-pointer max-w-[160px] truncate"
+            title="Lọc theo đơn vị"
+          >
+            <option value="all">Toàn Viện (16 đơn vị)</option>
+            {DON_VI_16_BENCHMARKS.map((dv) => (
+              <option key={dv.code} value={dv.code}>
+                {dv.code} - {dv.name}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="w-3.5 h-3.5 text-ink-muted absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-primary-500 transition-colors" />
+        </div>
+
+        {/* Tùy chọn ngày */}
         {filterPeriod === 'custom' && (
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Calendar className="w-4 h-4 text-ink-muted absolute left-3 top-1/2 -translate-y-1/2" />
-              <input type="date" className="bg-subtle text-ink font-medium text-[12.5px] rounded-lg pl-9 pr-4 py-1.5 outline-none border border-border focus:border-primary-500" />
-            </div>
-            <span className="text-ink-muted">-</span>
-            <div className="relative">
-              <Calendar className="w-4 h-4 text-ink-muted absolute left-3 top-1/2 -translate-y-1/2" />
-              <input type="date" className="bg-subtle text-ink font-medium text-[12.5px] rounded-lg pl-9 pr-4 py-1.5 outline-none border border-border focus:border-primary-500" />
-            </div>
+          <div className="flex items-center gap-1.5">
+            <input
+              type="date"
+              value={customStart}
+              onChange={(e) => setCustomStart(e.target.value)}
+              className="bg-subtle text-ink font-medium text-[11.5px] rounded-lg px-2 py-1 outline-none border border-border dark:border-slate-700/80 focus:border-primary-500"
+            />
+            <span className="text-ink-muted text-xs">-</span>
+            <input
+              type="date"
+              value={customEnd}
+              onChange={(e) => setCustomEnd(e.target.value)}
+              className="bg-subtle text-ink font-medium text-[11.5px] rounded-lg px-2 py-1 outline-none border border-border dark:border-slate-700/80 focus:border-primary-500"
+            />
           </div>
         )}
+
+        {/* Nút Làm mới */}
+        <button
+          onClick={loadData}
+          title="Tải lại dữ liệu"
+          className="p-1.5 rounded-lg border border-border dark:border-slate-700/80 hover:bg-subtle text-ink-secondary transition-colors cursor-pointer"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-primary' : ''}`} />
+        </button>
+
+        {/* Nút Xuất Excel */}
+        <button
+          onClick={handleExportExcel}
+          title="Xuất bảng số liệu Excel"
+          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-border dark:border-slate-700/80 hover:bg-subtle text-ink-secondary text-[11.5px] font-bold transition-colors cursor-pointer"
+        >
+          <Download className="w-3.5 h-3.5 text-success" />
+          <span className="hidden xl:inline">Xuất Excel</span>
+        </button>
+
+        {/* Nút In Báo cáo */}
+        <button
+          onClick={handlePrint}
+          title="In báo cáo giao ban"
+          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-border dark:border-slate-700/80 hover:bg-subtle text-ink-secondary text-[11.5px] font-bold transition-colors cursor-pointer"
+        >
+          <Printer className="w-3.5 h-3.5 text-ink-muted" />
+          <span className="hidden xl:inline">In báo cáo</span>
+        </button>
+
+        {/* Nút Trình chiếu Giao ban */}
+        <button
+          onClick={() => setIsMeetingMode(!isMeetingMode)}
+          title="Chế độ Trình chiếu Họp Giao ban"
+          className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-[11.5px] font-bold transition-all cursor-pointer ${
+            isMeetingMode
+              ? 'bg-primary-600 text-white border-primary-600 shadow-xs'
+              : 'border-border dark:border-slate-700/80 hover:bg-subtle text-primary-600 dark:text-primary-400'
+          }`}
+        >
+          {isMeetingMode ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+          <span>Trình chiếu</span>
+        </button>
       </div>
     </div>
   );
 
+  // ─── RENDER TABS ───
   const renderTabs = () => {
     const tabs = [
       { id: 'tong-quan', label: 'Tổng quan Viện', icon: Activity },
       { id: 'nckh', label: 'Nghiên cứu & QLNN', icon: Microscope },
       { id: 'kinh-doanh', label: 'Kinh doanh & TBKT', icon: TrendingUp },
-      { id: 'tai-chinh', label: 'Tài chính & Đầu tư', icon: PiggyBank },
+      ...(coTabTaiChinh ? [{ id: 'tai-chinh', label: 'Tài chính & Đầu tư', icon: PiggyBank }] : []),
       { id: 'nhan-su', label: 'Tổ chức & Hành chính', icon: Users },
     ];
 
     return (
-      <div className="flex flex-wrap gap-1 bg-surface p-1 rounded-xl shadow-sm border border-border w-fit">
+      <div className="flex flex-wrap gap-1 bg-surface p-1 rounded-xl shadow-xs border border-border dark:border-slate-700/80 w-fit">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -406,7 +927,7 @@ export function DashboardPage() {
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-bold transition-all whitespace-nowrap cursor-pointer ${
                 isActive
-                  ? 'bg-primary-500 text-white shadow-sm'
+                  ? 'bg-primary-500 text-white shadow-xs'
                   : 'text-ink-secondary hover:bg-subtle hover:text-ink'
               }`}
             >
@@ -426,9 +947,18 @@ export function DashboardPage() {
     icon: React.ElementType;
     color?: 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'accent' | 'gold';
     trend?: string;
+    onClick?: () => void;
   }
 
-  const KPICard = ({ title, value, subtitle, icon: Icon, color = 'primary', trend }: KPICardProps) => {
+  const KPICard = ({
+    title,
+    value,
+    subtitle,
+    icon: Icon,
+    color = 'primary',
+    trend,
+    onClick,
+  }: KPICardProps) => {
     const colorClasses: Record<string, string> = {
       primary: 'bg-primary-500/10 text-primary-500',
       success: 'bg-success/10 text-success',
@@ -440,92 +970,251 @@ export function DashboardPage() {
     };
 
     return (
-      <div className="card p-5 flex flex-col justify-between hover:-translate-y-1 transition-transform duration-200">
+      <div
+        onClick={onClick}
+        className={`card p-5 flex flex-col justify-between transition-all duration-200 border border-border dark:border-slate-700/80 relative group ${
+          onClick ? 'cursor-pointer hover:-translate-y-1 hover:border-primary-500/50 hover:shadow-md' : ''
+        }`}
+      >
         <div className="flex items-start justify-between mb-4">
           <div className={`p-3 rounded-xl ${colorClasses[color]}`}>
             <Icon className="w-6 h-6" />
           </div>
-          {trend && (
-            <span className={`text-[13px] font-bold px-2.5 py-1 rounded-full ${trend.startsWith('+') ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}`}>
-              {trend}
-            </span>
-          )}
+          <div className="flex items-center gap-1.5">
+            {trend && (
+              <span
+                className={`text-[13px] font-bold px-2.5 py-1 rounded-full ${
+                  trend.startsWith('+') ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'
+                }`}
+              >
+                {trend}
+              </span>
+            )}
+            {onClick && (
+              <span className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-primary-500">
+                <ArrowUpRight className="w-4 h-4" />
+              </span>
+            )}
+          </div>
         </div>
         <div>
-          <h3 className="text-3xl font-black text-ink mb-1">{value}</h3>
+          <h3 className="text-3xl font-black text-ink mb-1 group-hover:text-primary-600 transition-colors">
+            {value}
+          </h3>
           <p className="text-[14px] font-bold text-ink-muted uppercase tracking-wider">{title}</p>
-          {subtitle && <p className="text-[13px] font-medium text-ink-secondary mt-1.5">{subtitle}</p>}
+          {subtitle && (
+            <p className="text-[13px] font-medium text-ink-secondary mt-1.5 flex items-center justify-between">
+              <span>{subtitle}</span>
+              {onClick && (
+                <span className="text-[11px] text-primary-600 dark:text-primary-400 font-bold underline opacity-0 group-hover:opacity-100 transition-opacity">
+                  Xem chi tiết
+                </span>
+              )}
+            </p>
+          )}
         </div>
       </div>
     );
   };
 
   return (
-    <div className="px-6 pt-2 pb-20 w-full mx-auto space-y-4">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-        <h1 className="text-3xl font-black text-ink">Dashboard Quản trị IBST</h1>
-        <div className="flex items-center gap-2">
-          <span className="relative flex h-3 w-3">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-success"></span>
-          </span>
-          <p className="text-ink-muted text-[15px] font-medium">Dữ liệu tổng hợp Real-time</p>
+    <div
+      className={`px-6 pt-2 pb-20 w-full mx-auto space-y-5 transition-all ${
+        isMeetingMode
+          ? 'fixed inset-0 z-50 overflow-y-auto bg-surface dark:bg-slate-950 p-8 space-y-6'
+          : ''
+      }`}
+    >
+      {/* ── Tiêu đề & Chế độ Họp Giao ban ── */}
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-border dark:border-slate-700/80 pb-3">
+        <div className="flex items-center gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl lg:text-3xl font-black text-ink">
+                {isMeetingMode ? 'BỘ XÂY DỰNG — VIỆN KHCN XÂY DỰNG — BÁO CÁO ĐIỀU HÀNH' : 'Dashboard Quản trị IBST'}
+              </h1>
+              {filterDonVi !== 'all' && (
+                <span className="px-2 py-0.5 rounded-full text-xs font-black bg-primary-500/15 text-primary-600 border border-primary-500/30">
+                  {filterDonVi}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-success"></span>
+              </span>
+              <p className="text-ink-muted text-xs font-medium">
+                Dữ liệu tổng hợp Real-time từ CSDL • Kỳ {filterPeriod === 'all' ? 'Cả năm' : filterPeriod} {filterYear}
+              </p>
+            </div>
+          </div>
         </div>
+
+        {isMeetingMode && (
+          <button
+            onClick={() => setIsMeetingMode(false)}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-danger text-white font-bold text-xs hover:bg-danger/90 shadow-sm transition-all cursor-pointer"
+          >
+            <Minimize2 className="w-4 h-4" />
+            <span>Thoát Trình chiếu (ESC)</span>
+          </button>
+        )}
       </div>
 
+      {/* ── Widget Cảnh báo Điều hành & Tuân thủ QC 2815 ── */}
+      {canhBaoSummary && (
+        <ExecutiveWarningBanner
+          summary={canhBaoSummary}
+          onOpenAlerts={(tabKey) => handleOpenDrilldown((tabKey as DashboardDrilldownTab) || 'canh-bao')}
+        />
+      )}
+
+      {/* ── Tabs & Filter Bar ── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         {renderTabs()}
         {renderFilterBar()}
       </div>
 
-      {/* TAB 1: TỔNG QUAN */}
+      {/* ══════════════════ TAB 1: TỔNG QUAN VIỆN ══════════════════ */}
       {activeTab === 'tong-quan' && (
         <div className="space-y-6 animate-in fade-in duration-300">
-          {/* Row 1: KPI Cards */}
+          {/* Row 1: KPI Cards có hỗ trợ Drill-down */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-            <KPICard title="Giá trị Ký Hợp đồng" value={`${overviewData.giaTriKy} tỷ`} subtitle="Đạt 101% kế hoạch (750 tỷ)" icon={FileSignature} color="primary" trend="+34%" />
-            <KPICard title="Thực hiện Doanh thu" value={`${overviewData.giaTriDoanhThu} tỷ`} subtitle="Đạt 53% kế hoạch (750 tỷ)" icon={DollarSign} color="success" trend="+28%" />
-            <KPICard title="Nhiệm vụ KHCN" value={overviewData.totalNhiemVuKHCN} subtitle="Kinh phí NSNN 29.56 tỷ" icon={BookOpen} color="gold" />
-            <KPICard title="Phục vụ QLNN" value={`${overviewData.nhiemVuQLNN} Lượt`} subtitle="48 báo cáo rà soát" icon={Landmark} color="info" />
-            <KPICard title="Tổng nợ lũy kế" value={`${overviewData.tongNoLuyKe} tỷ`} subtitle="Cần đôn đốc thu hồi" icon={AlertTriangle} color="danger" trend="+12%" />
+            <KPICard
+              title="Giá trị Ký Hợp đồng"
+              value={`${overviewData.giaTriKy} tỷ`}
+              subtitle={`Đạt ${overviewData.tyLeDatKyMoi}% kế hoạch (750 tỷ)`}
+              icon={FileSignature}
+              color="primary"
+              trend="+38%"
+              onClick={() => handleOpenDrilldown('hop-dong')}
+            />
+            <KPICard
+              title="Thực hiện Doanh thu"
+              value={`${overviewData.giaTriDoanhThu} tỷ`}
+              subtitle={`Đạt ${overviewData.tyLeDatDoanhThu}% kế hoạch (750 tỷ)`}
+              icon={DollarSign}
+              color="success"
+              trend="+28%"
+              onClick={() => handleOpenDrilldown('hop-dong')}
+            />
+            <KPICard
+              title="Nhiệm vụ KHCN"
+              value={overviewData.totalNhiemVuKHCN}
+              subtitle={`Kinh phí NSNN ${overviewData.kinhPhiKHCN2026} tỷ`}
+              icon={BookOpen}
+              color="gold"
+              onClick={() => handleOpenDrilldown('khcn')}
+            />
+            <KPICard
+              title="Phục vụ QLNN"
+              value={`${overviewData.nhiemVuQLNN} Lượt`}
+              subtitle="48 báo cáo rà soát"
+              icon={Landmark}
+              color="info"
+              onClick={() => handleOpenDrilldown('khcn')}
+            />
+            <KPICard
+              title="Tổng nợ lũy kế"
+              value={`${overviewData.tongNoLuyKe} tỷ`}
+              subtitle="Cần đôn đốc thu hồi"
+              icon={AlertTriangle}
+              color="danger"
+              trend="+12%"
+              onClick={() => handleOpenDrilldown('cong-no')}
+            />
+          </div>
+
+          {/* Quick Highlight Banner: Ký HĐKT 2026 đạt 941,74 tỷ (126% KH, 138% Cùng kỳ) */}
+          <div className="bg-gradient-to-r from-primary-500/10 via-primary-500/5 to-transparent border border-primary-500/20 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-primary-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+                <FileSpreadsheet className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h4 className="text-sm font-black text-ink">
+                    Lũy kế Ký HĐKT toàn Viện đạt 941,736 tỷ VNĐ (tính tới 21.8.2026)
+                  </h4>
+                  <span className="px-2 py-0.5 rounded-full text-[11px] font-black bg-success/15 text-success">
+                    Đạt 126% KH cả năm
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full text-[11px] font-black bg-sky-500/15 text-sky-600 dark:text-sky-400">
+                    138% Cùng kỳ 2025
+                  </span>
+                </div>
+                <p className="text-xs text-ink-muted mt-0.5">
+                  Viện ký: <strong className="text-ink font-bold">261,225 tỷ (27.7%)</strong> • Đơn vị ký: <strong className="text-ink font-bold">680,510 tỷ (72.3%)</strong> • KH giao: 750,0 tỷ • Cùng kỳ 2025: 684,245 tỷ
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setActiveTab('kinh-doanh')}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary-500 hover:bg-primary-600 text-white text-xs font-bold shadow-xs transition-colors shrink-0 cursor-pointer self-start md:self-auto"
+            >
+              <span>Xem Bảng 16 Đơn vị & Biểu đồ</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </button>
           </div>
 
           {/* Row 2: Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="card p-6 lg:col-span-2">
-              <div className="flex justify-between items-center mb-6 border-b border-border pb-3">
-                <h3 className="text-[16px] font-black text-ink">Biểu đồ Kế hoạch & Doanh thu các Đơn vị (Tỷ VNĐ)</h3>
+            <div className="card p-6 lg:col-span-2 border border-border dark:border-slate-700/80">
+              <div className="flex justify-between items-center mb-6 border-b border-border dark:border-slate-700/80 pb-3">
+                <h3 className="text-[16px] font-black text-ink">
+                  Biểu đồ Kế hoạch & Doanh thu các Đơn vị (Tỷ VNĐ)
+                </h3>
+                <span className="text-2xs text-ink-muted">Bấm cột để xem chi tiết</span>
               </div>
-              <div className="h-[500px]">
+              <div className="h-[460px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart data={doanhThuData} margin={{ top: 25, right: 20, bottom: 35, left: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
-                    <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={10} tickMargin={12} angle={-35} textAnchor="end" height={70} />
+                    <XAxis
+                      dataKey="name"
+                      stroke="var(--text-muted)"
+                      fontSize={10}
+                      tickMargin={12}
+                      angle={-35}
+                      textAnchor="end"
+                      height={70}
+                    />
                     <YAxis stroke="var(--text-muted)" fontSize={12} />
-                    <Tooltip 
+                    <Tooltip
                       cursor={{ fill: 'var(--bg-subtle)' }}
                       {...tooltipStyle}
                       formatter={(value: any, name: any, props: any) => {
-                        if (name === "Doanh thu thực hiện") {
+                        if (name === 'Doanh thu thực hiện') {
                           const pct = props.payload?.kh;
                           return [`${value} tỷ (${pct}%)`, name];
                         }
                         return [`${value} tỷ`, name];
                       }}
                     />
-                    <Legend wrapperStyle={{ fontSize: '14px', fontWeight: '600', paddingTop: '20px' }} />
-                    <Bar 
-                      dataKey="doanhThu" 
-                      name="Doanh thu thực hiện" 
-                      radius={[4, 4, 0, 0]} 
-                      maxBarSize={30} 
+                    <Legend wrapperStyle={{ fontSize: '13px', fontWeight: '600', paddingTop: '15px' }} />
+                    <Bar
+                      dataKey="doanhThu"
+                      name="Doanh thu thực hiện"
+                      radius={[4, 4, 0, 0]}
+                      maxBarSize={30}
                       fill="var(--color-success, #10b981)"
+                      onClick={() => handleOpenDrilldown('hop-dong')}
+                      className="cursor-pointer"
                       label={(props: any) => {
                         const { x, y, width, index } = props;
-                        if (index === undefined || x === undefined || y === undefined || width === undefined) return null;
+                        if (index === undefined || x === undefined || y === undefined || width === undefined)
+                          return null;
                         const pct = doanhThuData[index]?.kh;
                         return (
-                          <text x={Number(x) + Number(width) / 2} y={Number(y) - 8} fill="var(--text-secondary)" fontSize={9} fontWeight={700} textAnchor="middle">
+                          <text
+                            x={Number(x) + Number(width) / 2}
+                            y={Number(y) - 8}
+                            fill="var(--text-secondary)"
+                            fontSize={9}
+                            fontWeight={700}
+                            textAnchor="middle"
+                          >
                             {pct}%
                           </text>
                         );
@@ -535,63 +1224,98 @@ export function DashboardPage() {
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Bar>
-                    <Line type="monotone" dataKey="keHoach" name="Kế hoạch Doanh thu" stroke="var(--text-primary)" strokeWidth={2.5} dot={{ r: 5, fill: 'var(--bg-surface)' }} />
+                    <Line
+                      type="monotone"
+                      dataKey="keHoach"
+                      name="Kế hoạch Doanh thu"
+                      stroke="var(--text-primary)"
+                      strokeWidth={2.5}
+                      dot={{ r: 4, fill: 'var(--bg-surface)' }}
+                    />
                   </ComposedChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
             <div className="grid grid-rows-2 gap-6 lg:col-span-1">
-              <div className="card p-6">
-                <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border pb-3">Cơ cấu Doanh thu theo Lĩnh vực</h3>
+              <div className="card p-6 border border-border dark:border-slate-700/80">
+                <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border dark:border-slate-700/80 pb-3">
+                  Cơ cấu Doanh thu theo Lĩnh vực
+                </h3>
                 <div className="h-[180px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie data={coCauDoanhThu} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={2} dataKey="value" stroke="none">
+                      <Pie
+                        data={coCauDoanhThu}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={75}
+                        paddingAngle={2}
+                        dataKey="value"
+                        stroke="none"
+                      >
                         {coCauDoanhThu.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
                       <Tooltip {...tooltipStyle} formatter={(value: any) => `${value} tỷ`} />
-                      <Legend layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{ fontSize: '12px', fontWeight: '500' }} />
+                      <Legend
+                        layout="vertical"
+                        verticalAlign="middle"
+                        align="right"
+                        wrapperStyle={{ fontSize: '11.5px', fontWeight: '500' }}
+                      />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
               </div>
 
-              <div className="card p-6">
-                <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border pb-3">Hoạt động Quản trị nổi bật</h3>
+              <div className="card p-6 border border-border dark:border-slate-700/80">
+                <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border dark:border-slate-700/80 pb-3">
+                  Hoạt động Quản trị nổi bật
+                </h3>
                 <ul className="space-y-4">
                   <li className="flex items-start gap-3">
-                    <div className="p-2 bg-info/10 rounded-lg text-info"><Globe2 className="w-5 h-5" /></div>
+                    <div className="p-2 bg-info/10 rounded-lg text-info">
+                      <Globe2 className="w-5 h-5" />
+                    </div>
                     <div>
                       <h4 className="font-bold text-ink text-[14px]">Hợp tác Quốc tế & Trong nước</h4>
-                      <p className="text-[13px] text-ink-secondary mt-1">Ký MOU Tập đoàn Trần Đức, làm việc với JICA, ACI, KICT.</p>
+                      <p className="text-[12.5px] text-ink-secondary mt-1">
+                        Ký MOU Tập đoàn Trần Đức, làm việc với JICA, ACI, KICT.
+                      </p>
                     </div>
                   </li>
                   <li className="flex items-start gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg text-primary-500"><Building2 className="w-5 h-5" /></div>
+                    <div className="p-2 bg-primary/10 rounded-lg text-primary-500">
+                      <Building2 className="w-5 h-5" />
+                    </div>
                     <div>
                       <h4 className="font-bold text-ink text-[14px]">Dự án Tòa nhà 10 tầng</h4>
-                      <p className="text-[13px] text-ink-secondary mt-1">Tổng mức đầu tư 562.5 tỷ. Đang lập quy hoạch tổng mặt bằng.</p>
+                      <p className="text-[12.5px] text-ink-secondary mt-1">
+                        Tổng mức đầu tư 562.5 tỷ. Đang lập quy hoạch tổng mặt bằng.
+                      </p>
                     </div>
                   </li>
                 </ul>
               </div>
             </div>
           </div>
-          
-          {/* Row 3: More detail tables/charts */}
+
+          {/* Row 3: Dòng tiền & Cảnh báo Nợ đọng */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="card p-6">
-              <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border pb-3">Ký hợp đồng, Doanh thu & Dòng tiền về trong kỳ (Tỷ VNĐ)</h3>
+            <div className="card p-6 border border-border dark:border-slate-700/80">
+              <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border dark:border-slate-700/80 pb-3">
+                Ký hợp đồng, Doanh thu & Dòng tiền về trong kỳ (Tỷ VNĐ)
+              </h3>
               <div className="h-[370px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart data={taiChinhData} margin={{ top: 10, right: 10, left: 5, bottom: 0 }}>
                     <defs>
                       <linearGradient id="colorDongTien" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="var(--color-primary, #00668c)" stopOpacity={0.25}/>
-                        <stop offset="95%" stopColor="var(--color-primary, #00668c)" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="var(--color-primary, #00668c)" stopOpacity={0.25} />
+                        <stop offset="95%" stopColor="var(--color-primary, #00668c)" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <XAxis dataKey="month" stroke="var(--text-muted)" fontSize={12} />
@@ -599,104 +1323,149 @@ export function DashboardPage() {
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
                     <Tooltip {...tooltipStyle} />
                     <Legend wrapperStyle={{ fontSize: '13px', fontWeight: '600', paddingTop: '10px' }} />
-                    <Area type="monotone" dataKey="dongTien" name="Dòng tiền về" stroke="var(--color-primary, #00668c)" strokeWidth={3} fillOpacity={1} fill="url(#colorDongTien)" />
-                    <Line type="monotone" dataKey="doanhThu" name="Doanh thu thực hiện" stroke="var(--color-success, #10b981)" strokeWidth={2.5} dot={{ r: 4, fill: 'var(--bg-surface)' }} />
-                    <Line type="monotone" dataKey="kyMoi" name="Ký Hợp đồng mới" stroke="var(--color-warning, #f59e0b)" strokeWidth={2.5} dot={{ r: 4, fill: 'var(--bg-surface)' }} />
+                    <Area
+                      type="monotone"
+                      dataKey="dongTien"
+                      name="Dòng tiền về"
+                      stroke="var(--color-primary, #00668c)"
+                      strokeWidth={3}
+                      fillOpacity={1}
+                      fill="url(#colorDongTien)"
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="doanhThu"
+                      name="Doanh thu thực hiện"
+                      stroke="var(--color-success, #10b981)"
+                      strokeWidth={2.5}
+                      dot={{ r: 4, fill: 'var(--bg-surface)' }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="kyMoi"
+                      name="Ký Hợp đồng mới"
+                      stroke="var(--color-warning, #f59e0b)"
+                      strokeWidth={2.5}
+                      dot={{ r: 4, fill: 'var(--bg-surface)' }}
+                    />
                   </ComposedChart>
                 </ResponsiveContainer>
               </div>
             </div>
-            
-            <div className="card p-6">
-              <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border pb-3">Cảnh báo Nợ đọng: TOP Đơn vị nguy cơ cao</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr>
-                      <th className="th-cell rounded-tl-lg">Đơn vị</th>
-                      <th className="th-cell">Tổng Nợ (Tỷ)</th>
-                      <th className="th-cell">Nợ Nghĩa vụ Viện</th>
-                      <th className="th-cell text-right">Trạng thái</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {noDongData.slice(0, 8).map((row, idx) => (
-                      <tr key={idx} className="tr-hover">
-                        <td className="td-cell font-bold" style={{ color: DEBT_COLORS[idx] }}>{row.name}</td>
-                        <td className="td-cell text-danger font-bold">{row.tongNo}</td>
-                        <td className="td-cell font-medium text-warning">{row.noNV}</td>
-                        <td className="td-cell text-right">
-                          <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold bg-danger/10 text-danger">
-                            Cảnh báo
-                          </span>
-                        </td>
+
+            <div className="card p-6 border border-border dark:border-slate-700/80 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-4 border-b border-border dark:border-slate-700/80 pb-3">
+                  <h3 className="text-[16px] font-black text-ink">Cảnh báo Nợ đọng: TOP Đơn vị nguy cơ cao</h3>
+                  <button
+                    onClick={() => handleOpenDrilldown('cong-no')}
+                    className="text-xs font-bold text-primary-600 dark:text-primary-400 hover:underline cursor-pointer"
+                  >
+                    Xem tất cả &gt;
+                  </button>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-[12.5px]">
+                    <thead>
+                      <tr className="border-b border-border dark:border-slate-700/80 bg-subtle/40">
+                        <th className="th-cell rounded-tl-lg py-2">Đơn vị</th>
+                        <th className="th-cell py-2">Tổng Nợ (Tỷ)</th>
+                        <th className="th-cell py-2">Nợ Nghĩa vụ Viện</th>
+                        <th className="th-cell text-right py-2 rounded-tr-lg">Thao tác</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-border/60 dark:divide-slate-700/80">
+                      {noDongData.slice(0, 6).map((row, idx) => (
+                        <tr key={idx} className="tr-hover">
+                          <td className="td-cell font-bold py-2.5" style={{ color: DEBT_COLORS[idx] }}>
+                            {row.name}
+                          </td>
+                          <td className="td-cell text-danger font-bold py-2.5">{row.tongNo}</td>
+                          <td className="td-cell font-medium text-warning py-2.5">{row.noNV}</td>
+                          <td className="td-cell text-right py-2.5">
+                            <button
+                              onClick={() => handleOpenDrilldown('cong-no')}
+                              className="px-2 py-0.5 rounded text-xs font-bold bg-danger/10 text-danger hover:bg-danger/20 transition-colors cursor-pointer"
+                            >
+                              Đôn đốc
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Row 4: Công trình trọng điểm & Đấu thầu */}
+          {/* Row 4: Công trình trọng điểm & Năng lực đấu thầu */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="card p-6 lg:col-span-2">
-              <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border pb-3">Giám sát các Công trình Trọng điểm Quốc gia (Mục IX.1)</h3>
+            <div className="card p-6 lg:col-span-2 border border-border dark:border-slate-700/80">
+              <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border dark:border-slate-700/80 pb-3">
+                Giám sát các Công trình Trọng điểm Quốc gia (Mục IX.1)
+              </h3>
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
+                <table className="w-full text-left border-collapse text-[12.5px]">
                   <thead>
-                    <tr>
-                      <th className="th-cell rounded-tl-lg">Tên công trình</th>
-                      <th className="th-cell">Nội dung hỗ trợ kỹ thuật</th>
-                      <th className="th-cell">Trạng thái báo cáo</th>
-                      <th className="th-cell text-right rounded-tr-lg">Tiến độ</th>
+                    <tr className="border-b border-border dark:border-slate-700/80 bg-subtle/40">
+                      <th className="th-cell rounded-tl-lg py-2">Tên công trình</th>
+                      <th className="th-cell py-2">Nội dung hỗ trợ kỹ thuật</th>
+                      <th className="th-cell py-2">Trạng thái báo cáo</th>
+                      <th className="th-cell text-right rounded-tr-lg py-2">Tiến độ</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-border/60 dark:divide-slate-700/80">
                     {majorProjects.map((proj, idx) => (
                       <tr key={idx} className="tr-hover">
-                        <td className="td-cell font-bold text-ink">{proj.name}</td>
-                        <td className="td-cell text-ink-secondary">{proj.category}</td>
-                        <td className="td-cell">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${
-                            proj.status.startsWith('Hoàn thành')
-                              ? 'bg-success/10 text-success'
-                              : 'bg-primary/10 text-primary-500'
-                          }`}>
+                        <td className="td-cell font-bold text-ink py-2.5">{proj.name}</td>
+                        <td className="td-cell text-ink-secondary py-2.5">{proj.category}</td>
+                        <td className="td-cell py-2.5">
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${
+                              proj.status.startsWith('Hoàn thành')
+                                ? 'bg-success/10 text-success'
+                                : 'bg-primary/10 text-primary-500'
+                            }`}
+                          >
                             {proj.status}
                           </span>
                         </td>
-                        <td className="td-cell text-right font-black text-ink-secondary">{proj.progress}%</td>
+                        <td className="td-cell text-right font-black text-ink-secondary py-2.5">
+                          {proj.progress}%
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
             </div>
-            
-            <div className="card p-6 lg:col-span-1 flex flex-col justify-between">
+
+            <div className="card p-6 lg:col-span-1 border border-border dark:border-slate-700/80 flex flex-col justify-between">
               <div>
-                <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border pb-3">Năng lực Đấu thầu qua mạng</h3>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center bg-subtle p-3 rounded-lg border border-border">
+                <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border dark:border-slate-700/80 pb-3">
+                  Năng lực Đấu thầu qua mạng
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center bg-subtle p-3 rounded-lg border border-border dark:border-slate-700/80">
                     <span className="text-[13px] font-bold text-ink-secondary">Tổng gói tham gia</span>
                     <span className="text-[15px] font-black text-ink">58 gói</span>
                   </div>
-                  <div className="flex justify-between items-center bg-subtle p-3 rounded-lg border border-border">
+                  <div className="flex justify-between items-center bg-subtle p-3 rounded-lg border border-border dark:border-slate-700/80">
                     <span className="text-[13px] font-bold text-ink-secondary">Số gói trúng thầu</span>
                     <span className="text-[15px] font-black text-success">47 gói</span>
                   </div>
-                  <div className="flex justify-between items-center bg-subtle p-3 rounded-lg border border-border">
+                  <div className="flex justify-between items-center bg-subtle p-3 rounded-lg border border-border dark:border-slate-700/80">
                     <span className="text-[13px] font-bold text-ink-secondary">Tỷ lệ trúng thầu</span>
                     <span className="text-[15px] font-black text-primary-500">81.0%</span>
                   </div>
-                  <div className="flex justify-between items-center bg-subtle p-3 rounded-lg border border-border">
+                  <div className="flex justify-between items-center bg-subtle p-3 rounded-lg border border-border dark:border-slate-700/80">
                     <span className="text-[13px] font-bold text-ink-secondary">Tổng giá trị trúng</span>
                     <span className="text-[15px] font-black text-danger">18.94 tỷ</span>
                   </div>
                 </div>
               </div>
-              <div className="mt-4 pt-4 border-t border-border flex items-center justify-between text-2xs text-ink-muted">
+              <div className="mt-4 pt-4 border-t border-border dark:border-slate-700/80 flex items-center justify-between text-2xs text-ink-muted">
                 <span>Đại diện Viện: Phòng KHKT</span>
                 <span>Dữ liệu đến 28/06/2026</span>
               </div>
@@ -705,28 +1474,73 @@ export function DashboardPage() {
         </div>
       )}
 
-      {/* TAB 2: NGHIÊN CỨU & QLNN */}
+      {/* ══════════════════ TAB 2: NGHIÊN CỨU & QLNN ══════════════════ */}
       {activeTab === 'nckh' && (
         <div className="space-y-6 animate-in fade-in duration-300">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <KPICard title="Kinh phí NSNN" value={`${overviewData.kinhPhiKHCN2026} tỷ`} subtitle="Thực hiện trong kỳ" icon={Banknote} color="gold" />
-            <KPICard title="Tiêu chuẩn / Quy chuẩn" value="56" subtitle="54 TC, 02 QC đang thực hiện" icon={FileText} color="primary" />
-            <KPICard title="Đề tài NCKH cấp Bộ" value="14" subtitle="02 Vốn Doanh nghiệp" icon={Microscope} color="accent" />
-            <KPICard title="Bài báo Khoa học" value="08" subtitle="Tạp chí Quốc tế/Trong nước" icon={Newspaper} color="success" />
+            <KPICard
+              title="Kinh phí NSNN"
+              value={`${overviewData.kinhPhiKHCN2026} tỷ`}
+              subtitle="Thực hiện trong kỳ"
+              icon={Banknote}
+              color="gold"
+              onClick={() => handleOpenDrilldown('khcn')}
+            />
+            <KPICard
+              title="Tiêu chuẩn / Quy chuẩn"
+              value="56"
+              subtitle="54 TC, 02 QC đang thực hiện"
+              icon={FileText}
+              color="primary"
+              onClick={() => handleOpenDrilldown('khcn')}
+            />
+            <KPICard
+              title="Đề tài NCKH cấp Bộ"
+              value="14"
+              subtitle="02 Vốn Doanh nghiệp"
+              icon={Microscope}
+              color="accent"
+              onClick={() => handleOpenDrilldown('khcn')}
+            />
+            <KPICard
+              title="Bài báo Khoa học"
+              value="08"
+              subtitle="Tạp chí Quốc tế/Trong nước"
+              icon={Newspaper}
+              color="success"
+            />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="card p-6 lg:col-span-2">
-              <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border pb-3">Biểu đồ Phân bổ Kinh phí KHCN cấp 2026 (Tỷ VNĐ)</h3>
+            <div className="card p-6 lg:col-span-2 border border-border dark:border-slate-700/80">
+              <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border dark:border-slate-700/80 pb-3">
+                Biểu đồ Phân bổ Kinh phí KHCN cấp 2026 (Tỷ VNĐ)
+              </h3>
               <div className="h-[400px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={khcnData} margin={{ top: 25, right: 20, bottom: 35, left: 10 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
-                    <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={10} tickMargin={12} angle={-35} textAnchor="end" height={65} />
-                    <YAxis stroke="var(--text-muted)" fontSize={12} label={{ value: 'Kinh phí cấp (Tỷ VNĐ)', angle: -90, position: 'insideLeft', fill: 'var(--text-muted)', fontSize: 13, offset: -5 }} />
+                    <XAxis
+                      dataKey="name"
+                      stroke="var(--text-muted)"
+                      fontSize={10}
+                      tickMargin={12}
+                      angle={-35}
+                      textAnchor="end"
+                      height={65}
+                    />
+                    <YAxis stroke="var(--text-muted)" fontSize={12} />
                     <Tooltip cursor={{ fill: 'var(--bg-subtle)' }} content={<CustomKHCNTooltip />} />
-                    <Legend wrapperStyle={{ fontSize: '14px', fontWeight: '600', paddingTop: '20px' }} />
-                    <Bar dataKey="kinhPhi" name="Kinh phí cấp 2026" radius={[4, 4, 0, 0]} maxBarSize={25} fill="var(--color-primary, #00668c)">
+                    <Legend wrapperStyle={{ fontSize: '13px', fontWeight: '600', paddingTop: '15px' }} />
+                    <Bar
+                      dataKey="kinhPhi"
+                      name="Kinh phí cấp 2026"
+                      radius={[4, 4, 0, 0]}
+                      maxBarSize={25}
+                      fill="var(--color-primary, #00668c)"
+                      onClick={() => handleOpenDrilldown('khcn')}
+                      className="cursor-pointer"
+                    >
                       {khcnData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
@@ -736,87 +1550,114 @@ export function DashboardPage() {
               </div>
             </div>
 
-            <div className="card p-6 lg:col-span-1">
-              <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border pb-3">Thực hiện nhiệm vụ QLNN</h3>
+            <div className="card p-6 lg:col-span-1 border border-border dark:border-slate-700/80">
+              <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border dark:border-slate-700/80 pb-3">
+                Thực hiện nhiệm vụ QLNN
+              </h3>
               <ul className="space-y-5">
                 <li className="flex items-start gap-4">
-                  <div className="p-2.5 bg-danger/10 rounded-xl text-danger"><AlertTriangle className="w-6 h-6" /></div>
+                  <div className="p-2.5 bg-danger/10 rounded-xl text-danger shrink-0">
+                    <AlertTriangle className="w-6 h-6" />
+                  </div>
                   <div>
-                    <h4 className="font-bold text-ink text-[15px]">Sự cố & Giám định Tư pháp</h4>
-                    <p className="text-[13px] text-ink-secondary mt-1.5 leading-relaxed">Giải quyết sạt lở kè kênh Tàu Hủ (TP.HCM), sự cố ống nước Quảng Trạch 1, và 06 vụ trưng cầu của TAND.</p>
+                    <h4 className="font-bold text-ink text-[14px]">Sự cố & Giám định Tư pháp</h4>
+                    <p className="text-[12.5px] text-ink-secondary mt-1 leading-relaxed">
+                      Giải quyết sạt lở kè kênh Tàu Hủ (TP.HCM), sự cố ống nước Quảng Trạch 1, và 06 vụ trưng cầu
+                      của TAND.
+                    </p>
                   </div>
                 </li>
                 <li className="flex items-start gap-4">
-                  <div className="p-2.5 bg-primary/10 rounded-xl text-primary-500"><Landmark className="w-6 h-6" /></div>
+                  <div className="p-2.5 bg-primary/10 rounded-xl text-primary-500 shrink-0">
+                    <Landmark className="w-6 h-6" />
+                  </div>
                   <div>
-                    <h4 className="font-bold text-ink text-[15px]">Giám sát Công trình Quốc gia</h4>
-                    <p className="text-[13px] text-ink-secondary mt-1.5 leading-relaxed">Nghiệm thu Sân bay Long Thành, quyết toán Nhà Quốc hội Lào, và báo cáo an toàn TT Hội nghị Quốc gia.</p>
+                    <h4 className="font-bold text-ink text-[14px]">Giám sát Công trình Quốc gia</h4>
+                    <p className="text-[12.5px] text-ink-secondary mt-1 leading-relaxed">
+                      Nghiệm thu Sân bay Long Thành, quyết toán Nhà Quốc hội Lào, và báo cáo an toàn TT Hội nghị
+                      Quốc gia.
+                    </p>
                   </div>
                 </li>
                 <li className="flex items-start gap-4">
-                  <div className="p-2.5 bg-success/10 rounded-xl text-success"><FileText className="w-6 h-6" /></div>
+                  <div className="p-2.5 bg-success/10 rounded-xl text-success shrink-0">
+                    <FileText className="w-6 h-6" />
+                  </div>
                   <div>
-                    <h4 className="font-bold text-ink text-[15px]">Biên soạn & Giải đáp Kỹ thuật</h4>
-                    <p className="text-[13px] text-ink-secondary mt-1.5 leading-relaxed">Soạn thảo giải pháp PCCC cho cơ sở cũ, xử lý 119 lượt nhiệm vụ và 48 lượt báo cáo rà soát của Bộ.</p>
+                    <h4 className="font-bold text-ink text-[14px]">Biên soạn & Giải đáp Kỹ thuật</h4>
+                    <p className="text-[12.5px] text-ink-secondary mt-1 leading-relaxed">
+                      Soạn thảo giải pháp PCCC cho cơ sở cũ, xử lý 119 lượt nhiệm vụ và 48 lượt báo cáo rà soát của
+                      Bộ.
+                    </p>
                   </div>
                 </li>
               </ul>
             </div>
           </div>
 
-          {/* Row 3: Phân bổ kinh phí & Quy chuẩn cốt lõi (Phụ lục 1.1) */}
+          {/* Row 3: Bảng 5 & Quy chuẩn cốt lõi */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="card p-6 lg:col-span-2">
-              <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border pb-3">Kinh phí & Giải ngân các Nhiệm vụ KHCN thực hiện năm 2026 (Bảng 5)</h3>
+            <div className="card p-6 lg:col-span-2 border border-border dark:border-slate-700/80">
+              <div className="flex items-center justify-between mb-4 border-b border-border dark:border-slate-700/80 pb-3">
+                <h3 className="text-[16px] font-black text-ink">
+                  Kinh phí & Giải ngân các Nhiệm vụ KHCN thực hiện năm 2026 (Bảng 5)
+                </h3>
+                <button
+                  onClick={() => handleOpenDrilldown('khcn')}
+                  className="text-xs font-bold text-primary-600 dark:text-primary-400 hover:underline cursor-pointer"
+                >
+                  Xem chi tiết &gt;
+                </button>
+              </div>
               <div className="overflow-x-auto max-h-[350px] overflow-y-auto pr-1">
-                <table className="w-full text-left border-collapse">
+                <table className="w-full text-left border-collapse text-[12.5px]">
                   <thead>
-                    <tr>
-                      <th className="th-cell rounded-tl-lg">Đơn vị chủ trì</th>
-                      <th className="th-cell text-center">Số lượng NV</th>
-                      <th className="th-cell">Giá trị HĐ (Tỷ)</th>
-                      <th className="th-cell">KP cấp 2026 (Tỷ)</th>
-                      <th className="th-cell">Giải ngân chủ trì (Tỷ)</th>
-                      <th className="th-cell text-right rounded-tr-lg">Tỷ lệ giải ngân</th>
+                    <tr className="border-b border-border dark:border-slate-700/80 bg-subtle/40">
+                      <th className="th-cell rounded-tl-lg py-2">Đơn vị chủ trì</th>
+                      <th className="th-cell text-center py-2">Số lượng NV</th>
+                      <th className="th-cell py-2">Giá trị HĐ (Tỷ)</th>
+                      <th className="th-cell py-2">KP cấp 2026 (Tỷ)</th>
+                      <th className="th-cell py-2">Giải ngân chủ trì (Tỷ)</th>
+                      <th className="th-cell text-right rounded-tr-lg py-2">Tỷ lệ giải ngân</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-border/60 dark:divide-slate-700/80">
                     {khcnData.map((row, idx) => (
                       <tr key={idx} className="tr-hover">
-                        <td className="td-cell font-bold text-ink">{row.name}</td>
-                        <td className="td-cell text-center text-ink font-semibold">{row.deTai}</td>
-                        <td className="td-cell text-ink-secondary font-medium">{row.contractVal.toFixed(3)}</td>
-                        <td className="td-cell text-primary-500 font-bold">{row.kinhPhi.toFixed(3)}</td>
-                        <td className="td-cell text-success font-bold">{row.disbursed.toFixed(3)}</td>
-                        <td className="td-cell text-right">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-black ${
-                            row.pct > 50 ? 'bg-success/10 text-success' : row.pct > 0 ? 'bg-warning/10 text-warning' : 'bg-subtle text-ink-muted'
-                          }`}>
+                        <td className="td-cell font-bold text-ink py-2.5">{row.name}</td>
+                        <td className="td-cell text-center text-ink font-semibold py-2.5">{row.deTai}</td>
+                        <td className="td-cell text-ink-secondary font-medium py-2.5">
+                          {row.contractVal.toFixed(3)}
+                        </td>
+                        <td className="td-cell text-primary-500 font-bold py-2.5">{row.kinhPhi.toFixed(3)}</td>
+                        <td className="td-cell text-success font-bold py-2.5">{row.disbursed.toFixed(3)}</td>
+                        <td className="td-cell text-right py-2.5">
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-black ${
+                              row.pct > 50
+                                ? 'bg-success/10 text-success'
+                                : row.pct > 0
+                                ? 'bg-warning/10 text-warning'
+                                : 'bg-subtle text-ink-muted'
+                            }`}
+                          >
                             {row.pct.toFixed(1)}%
                           </span>
                         </td>
                       </tr>
                     ))}
-                    {/* Hàng tổng cộng */}
-                    <tr className="bg-subtle/50 font-black border-t-2 border-border">
-                      <td className="td-cell text-ink font-black">Cộng</td>
-                      <td className="td-cell text-center text-ink font-black">70</td>
-                      <td className="td-cell text-ink font-black">62.768</td>
-                      <td className="td-cell text-primary-500 font-black">29.568</td>
-                      <td className="td-cell text-success font-black">4.365</td>
-                      <td className="td-cell text-right text-success font-black">14.8%</td>
-                    </tr>
                   </tbody>
                 </table>
               </div>
-              <p className="text-2xs text-ink-muted mt-3 italic">*Đơn vị tính quy đổi: Tỷ VNĐ (Báo cáo gốc sử dụng đơn vị nghìn đồng).</p>
             </div>
-            
-            <div className="card p-6 lg:col-span-1">
-              <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border pb-3">Quy chuẩn & Tiêu chuẩn Cốt lõi đang soạn thảo</h3>
-              <div className="space-y-4 max-h-[450px] overflow-y-auto pr-1">
+
+            <div className="card p-6 lg:col-span-1 border border-border dark:border-slate-700/80">
+              <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border dark:border-slate-700/80 pb-3">
+                Quy chuẩn & Tiêu chuẩn Cốt lõi đang soạn thảo
+              </h3>
+              <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
                 {coreStandards.map((std, idx) => (
-                  <div key={idx} className="bg-subtle p-3 rounded-lg border border-border">
+                  <div key={idx} className="bg-subtle p-3 rounded-lg border border-border dark:border-slate-700/80">
                     <div className="flex justify-between items-start">
                       <span className="text-[11.5px] font-black text-primary-500">{std.code}</span>
                       <span className="text-[11px] font-bold text-ink-muted">{std.progress}%</span>
@@ -831,90 +1672,414 @@ export function DashboardPage() {
               </div>
             </div>
           </div>
-
-          {/* Row 4: Sản phẩm Khoa học & Hợp tác Quốc tế tiêu biểu (Phụ lục 5 & 6) */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-            {/* Cột 1 & 2: Ấn phẩm & Bài báo Khoa học (Phụ lục 5) */}
-            <div className="card p-6 lg:col-span-2">
-              <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border pb-3">Ấn phẩm & Bài báo Khoa học tiêu biểu (Phụ lục 5)</h3>
-              <div className="space-y-4 max-h-[300px] overflow-y-auto pr-1">
-                {scientificPapers.map((paper, idx) => (
-                  <a 
-                    key={idx} 
-                    href={paper.url} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    className="bg-subtle p-3 rounded-lg border border-border flex justify-between items-start gap-4 hover:border-primary-500 hover:bg-hover-row transition-all block group cursor-pointer"
-                  >
-                    <div className="flex-1">
-                      <h4 className="text-[13.5px] font-bold text-ink leading-snug group-hover:text-primary-500 transition-colors">{paper.title}</h4>
-                      <p className="text-[12px] text-ink-secondary mt-1.5 font-medium">Tác giả: {paper.author}</p>
-                    </div>
-                    <div className="text-right">
-                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-3xs font-bold bg-primary/10 text-primary-500 group-hover:bg-primary-500 group-hover:text-white transition-all whitespace-nowrap">
-                        {paper.journal}
-                      </span>
-                    </div>
-                  </a>
-                ))}
-              </div>
-            </div>
-
-            {/* Cột 3: Hội nghị & Hội thảo Khoa học tiêu biểu (Phụ lục 6) */}
-            <div className="card p-6 lg:col-span-1">
-              <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border pb-3">Hội thảo Khoa học tiêu biểu</h3>
-              <div className="space-y-4 max-h-[300px] overflow-y-auto pr-1">
-                {conferences.map((conf, idx) => (
-                  <div key={idx} className="bg-subtle p-3 rounded-lg border border-border">
-                    <div className="flex justify-between items-start">
-                      <span className="text-[11.5px] font-black text-success">{conf.date}</span>
-                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-3xs font-bold bg-success/10 text-success whitespace-nowrap">
-                        {conf.org}
-                      </span>
-                    </div>
-                    <h4 className="text-[13px] font-bold text-ink mt-1.5 leading-snug">{conf.name}</h4>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
         </div>
       )}
 
-      {/* TAB 3: KINH DOANH & TBKT */}
+      {/* ══════════════════ TAB 3: KINH DOANH & TBKT ══════════════════ */}
       {activeTab === 'kinh-doanh' && (
         <div className="space-y-6 animate-in fade-in duration-300">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <KPICard title="Tổng Ký Hợp đồng" value={`${overviewData.giaTriKy} tỷ`} subtitle="Đạt 101% kế hoạch (750 tỷ)" icon={Handshake} color="primary" />
-            <KPICard title="Thực hiện Doanh thu" value={`${overviewData.giaTriDoanhThu} tỷ`} subtitle="Đạt 53% kế hoạch (750 tỷ)" icon={TrendingUp} color="success" />
-            <KPICard title="Tổng Tiền Về" value={`${overviewData.tongTienVe} tỷ`} subtitle="Thu thực tế trong kỳ" icon={Wallet} color="info" />
-            <KPICard title="Tổng Nợ Lũy Kế" value={`${overviewData.tongNoLuyKe} tỷ`} subtitle="Công nợ cần thu hồi" icon={AlertCircle} color="danger" />
+            <KPICard
+              title="Tổng Ký Hợp đồng"
+              value={`${overviewData.giaTriKy} tỷ`}
+              subtitle={`Đạt ${overviewData.tyLeDatKyMoi}% kế hoạch (750 tỷ)`}
+              icon={Handshake}
+              color="primary"
+              onClick={() => handleOpenDrilldown('hop-dong')}
+            />
+            <KPICard
+              title="Thực hiện Doanh thu"
+              value={`${overviewData.giaTriDoanhThu} tỷ`}
+              subtitle={`Đạt ${overviewData.tyLeDatDoanhThu}% kế hoạch (750 tỷ)`}
+              icon={TrendingUp}
+              color="success"
+              onClick={() => handleOpenDrilldown('hop-dong')}
+            />
+            <KPICard
+              title="Tổng Tiền Về"
+              value={`${overviewData.tongTienVe} tỷ`}
+              subtitle="Thu thực tế trong kỳ"
+              icon={Wallet}
+              color="info"
+              onClick={() => handleOpenDrilldown('hop-dong')}
+            />
+            <KPICard
+              title="Tổng Nợ Lũy Kế"
+              value={`${overviewData.tongNoLuyKe} tỷ`}
+              subtitle="Công nợ cần thu hồi"
+              icon={AlertCircle}
+              color="danger"
+              onClick={() => handleOpenDrilldown('cong-no')}
+            />
+          </div>
+
+          {/* ── BẢNG TỔNG HỢP GIÁ TRỊ KÝ HĐKT CÁC ĐƠN VỊ NĂM 2026 (THEO BÁO CÁO 21/8/2026) ── */}
+          <div className="card p-6 border border-border dark:border-slate-700/80 space-y-4 shadow-sm">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border dark:border-slate-700/80 pb-4">
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <FileSpreadsheet className="w-5 h-5 text-primary-500" />
+                  <h3 className="text-[17px] font-black text-ink">
+                    Bảng Tổng hợp Giá trị ký HĐKT các Đơn vị năm 2026 (tính tới 21.8.2026)
+                  </h3>
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-success/15 text-success border border-success/30">
+                    Đạt 126% KH cả năm
+                  </span>
+                </div>
+                <p className="text-xs text-ink-muted mt-1">
+                  Số liệu lũy kế chính thức toàn Viện IBST • Phân cấp Viện ký (261,225 tỷ) và Đơn vị tự ký (680,510 tỷ)
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Bộ chuyển đổi đơn vị */}
+                <div className="flex items-center bg-subtle p-0.5 rounded-lg border border-border dark:border-slate-700/80 text-xs font-bold">
+                  <button
+                    onClick={() => setTableUnit('ty')}
+                    className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                      tableUnit === 'ty'
+                        ? 'bg-primary-500 text-white shadow-xs'
+                        : 'text-ink-secondary hover:text-ink'
+                    }`}
+                  >
+                    Tỷ VNĐ
+                  </button>
+                  <button
+                    onClick={() => setTableUnit('nghin')}
+                    className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                      tableUnit === 'nghin'
+                        ? 'bg-primary-500 text-white shadow-xs'
+                        : 'text-ink-secondary hover:text-ink'
+                    }`}
+                  >
+                    Nghìn đồng (Gốc)
+                  </button>
+                </div>
+
+                {/* Nút Xuất Excel */}
+                <button
+                  onClick={handleExportBangTongHopHDKT}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer"
+                  title="Xuất bảng này ra file Excel (.xls)"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Xuất Excel</span>
+                </button>
+
+                {/* Nút In bảng */}
+                <button
+                  onClick={handlePrint}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border dark:border-slate-700/80 hover:bg-subtle text-ink text-xs font-bold transition-colors cursor-pointer"
+                  title="In báo cáo này"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>In bảng</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Bảng dữ liệu 10 cột */}
+            <div className="overflow-x-auto rounded-xl border border-border dark:border-slate-700/80">
+              <table className="w-full text-left border-collapse text-[12.5px]">
+                <thead>
+                  <tr className="border-b border-border dark:border-slate-700/80 bg-subtle dark:bg-slate-900/60 text-ink">
+                    <th className="th-cell text-center py-2.5 w-10">TT</th>
+                    <th className="th-cell py-2.5 min-w-[190px]">Nhóm / Đơn vị</th>
+                    <th className="th-cell text-right py-2.5 min-w-[125px]">
+                      Đăng ký KH năm ({tableUnit === 'nghin' ? 'Nghìn đ' : 'Tỷ'})
+                    </th>
+                    <th className="th-cell text-right py-2.5 min-w-[125px]">
+                      Cùng kỳ 2025 ({tableUnit === 'nghin' ? 'Nghìn đ' : 'Tỷ'})
+                    </th>
+                    <th className="th-cell text-right py-2.5 min-w-[110px] text-sky-600 dark:text-sky-400">
+                      Viện ký
+                    </th>
+                    <th className="th-cell text-right py-2.5 min-w-[110px] text-teal-600 dark:text-teal-400">
+                      Đơn vị ký
+                    </th>
+                    <th className="th-cell text-right py-2.5 min-w-[125px] font-black text-primary-600 dark:text-primary-400">
+                      Tổng ký 2026
+                    </th>
+                    <th className="th-cell text-center py-2.5 min-w-[95px]">So KH năm</th>
+                    <th className="th-cell text-center py-2.5 min-w-[95px]">So Cùng kỳ</th>
+                    <th className="th-cell py-2.5 min-w-[150px]">Ghi chú</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60 dark:divide-slate-700/80">
+                  {BANG_TONG_HOP_ROWS.map((row, idx) => {
+                    if (row.isHeader) {
+                      return (
+                        <tr
+                          key={`header-${idx}`}
+                          className="bg-subtle/80 dark:bg-slate-800/80 font-black text-primary-600 dark:text-primary-400 text-xs tracking-wider uppercase border-t border-b border-border dark:border-slate-700/80"
+                        >
+                          <td className="py-2.5 px-3 text-center">{row.group}</td>
+                          <td colSpan={9} className="py-2.5 px-3">
+                            {row.title}
+                          </td>
+                        </tr>
+                      );
+                    }
+
+                    const isSub = row.isSubtotal;
+                    const isGrand = row.isGrandTotal;
+
+                    const fmtNum = (ty: number, nghin: number) => {
+                      if (tableUnit === 'nghin') {
+                        return nghin.toLocaleString('vi-VN');
+                      }
+                      return ty > 0
+                        ? ty.toLocaleString('vi-VN', {
+                            minimumFractionDigits: ty % 1 === 0 ? 0 : 3,
+                            maximumFractionDigits: 3,
+                          })
+                        : '—';
+                    };
+
+                    let rowClass = 'hover:bg-muted/40 dark:hover:bg-slate-800/40 transition-colors';
+                    if (isSub) {
+                      rowClass = 'bg-sky-50/70 dark:bg-sky-950/30 font-black border-y-2 border-sky-400/40 text-ink';
+                    } else if (isGrand) {
+                      rowClass =
+                        'bg-primary-500/15 dark:bg-primary-900/40 font-black text-[13.5px] border-t-2 border-primary-500 text-ink';
+                    }
+
+                    return (
+                      <tr key={`row-${idx}`} className={rowClass}>
+                        <td className="py-2.5 px-3 text-center text-ink-muted font-bold">
+                          {row.stt}
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-ink">{row.code}</span>
+                            {!isSub && !isGrand && row.name && (
+                              <span
+                                className="text-2xs text-ink-muted hidden sm:inline truncate max-w-[140px]"
+                                title={row.name}
+                              >
+                                • {row.name}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-3 text-right tabular-nums text-amber-700 dark:text-amber-400 font-bold">
+                          {fmtNum(row.khTy ?? 0, row.khNghin ?? 0)}
+                        </td>
+                        <td className="py-2.5 px-3 text-right tabular-nums text-ink-secondary">
+                          {fmtNum(row.ckTy ?? 0, row.ckNghin ?? 0)}
+                        </td>
+                        <td className="py-2.5 px-3 text-right tabular-nums text-sky-600 dark:text-sky-400 font-semibold">
+                          {fmtNum(row.vienKyTy ?? 0, row.vienKyNghin ?? 0)}
+                        </td>
+                        <td className="py-2.5 px-3 text-right tabular-nums text-teal-600 dark:text-teal-400 font-semibold">
+                          {fmtNum(row.dvKyTy ?? 0, row.dvKyNghin ?? 0)}
+                        </td>
+                        <td className="py-2.5 px-3 text-right tabular-nums text-primary-600 dark:text-primary-400 font-black">
+                          {fmtNum(row.tongKyTy ?? 0, row.tongKyNghin ?? 0)}
+                        </td>
+                        <td className="py-2.5 px-3 text-center">
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-black ${
+                              (row.pctKH ?? 0) >= 100
+                                ? 'bg-success/15 text-success dark:bg-success/20 dark:text-success'
+                                : 'bg-amber-500/15 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400'
+                            }`}
+                          >
+                            {row.pctKH ?? 0}%
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3 text-center tabular-nums">
+                          <span
+                            className={`font-black text-xs ${
+                              (row.pctCungKy ?? 0) >= 100 ? 'text-success' : 'text-danger'
+                            }`}
+                          >
+                            {row.pctCungKy ?? 0}%
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3 text-xs text-amber-700 dark:text-amber-400 italic">
+                          {row.ghiChu || '—'}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Footer tóm tắt */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-ink-muted pt-2 border-t border-border dark:border-slate-700/80">
+              <div className="flex items-center gap-4 flex-wrap">
+                <span>
+                  Tổng KH năm: <strong className="text-ink font-bold">750,0 tỷ</strong>
+                </span>
+                <span>
+                  Thực hiện cùng kỳ 2025: <strong className="text-ink font-bold">684,245 tỷ</strong>
+                </span>
+                <span>
+                  Lũy kế ký 2026:{' '}
+                  <strong className="text-primary-600 dark:text-primary-400 font-bold">
+                    941,736 tỷ
+                  </strong>
+                </span>
+              </div>
+              <div className="text-success font-black">
+                ★ Tăng trưởng so với cùng kỳ: +38% (Vượt KH cả năm trước 4 tháng)
+              </div>
+            </div>
+          </div>
+
+          {/* ── HAI BIỂU ĐỒ SO SÁNH 16 ĐƠN VỊ ── */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Biểu đồ Cột Nhóm & Xếp Chồng 16 Đơn vị */}
+            <div className="card p-6 lg:col-span-2 border border-border dark:border-slate-700/80">
+              <div className="flex justify-between items-center mb-4 border-b border-border dark:border-slate-700/80 pb-3">
+                <div>
+                  <h3 className="text-[16px] font-black text-ink flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-primary-500" />
+                    So sánh Kế hoạch 2026 vs Cùng kỳ 2025 vs Thực hiện Ký 2026 (Tỷ VNĐ)
+                  </h3>
+                  <p className="text-xs text-ink-muted mt-0.5">
+                    HĐ ký 2026 xếp chồng: Đơn vị ký (xanh ngọc) + Viện ký (xanh dương) so với KH (vàng) và Cùng kỳ (xám)
+                  </p>
+                </div>
+              </div>
+              <div className="h-[400px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={doanhThuData} margin={{ top: 20, right: 20, left: 10, bottom: 40 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
+                    <XAxis
+                      dataKey="name"
+                      stroke="var(--text-muted)"
+                      fontSize={10}
+                      tickMargin={12}
+                      angle={-35}
+                      textAnchor="end"
+                      height={70}
+                    />
+                    <YAxis stroke="var(--text-muted)" fontSize={12} tickFormatter={(v) => `${v} tỷ`} />
+                    <Tooltip cursor={{ fill: 'var(--bg-subtle)' }} content={<CustomComparisonTooltip />} />
+                    <Legend wrapperStyle={{ fontSize: '12px', fontWeight: '600', paddingTop: '15px' }} />
+                    <Bar dataKey="keHoach" name="KH năm 2026" fill="#f59e0b" radius={[4, 4, 0, 0]} maxBarSize={14} />
+                    <Bar dataKey="cungKy2025" name="Cùng kỳ năm 2025" fill="#94a3b8" radius={[4, 4, 0, 0]} maxBarSize={14} />
+                    <Bar dataKey="donViKy" stackId="ky2026" name="Đơn vị ký (2026)" fill="#0d9488" maxBarSize={14} />
+                    <Bar dataKey="vienKy" stackId="ky2026" name="Viện ký (2026)" fill="#0284c7" radius={[4, 4, 0, 0]} maxBarSize={14} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Biểu đồ % Tốc độ Tăng trưởng so với cùng kỳ 2025 */}
+            <div className="card p-6 lg:col-span-1 border border-border dark:border-slate-700/80 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-4 border-b border-border dark:border-slate-700/80 pb-3">
+                  <div>
+                    <h3 className="text-[16px] font-black text-ink flex items-center gap-2">
+                      <Percent className="w-4 h-4 text-emerald-500" />
+                      Tăng trưởng so với Cùng kỳ
+                    </h3>
+                    <p className="text-xs text-ink-muted mt-0.5">Tỷ lệ % so với cùng kỳ năm 2025</p>
+                  </div>
+                </div>
+                <div className="h-[400px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      layout="vertical"
+                      data={[...doanhThuData].sort((a, b) => (b.pctCungKy || 0) - (a.pctCungKy || 0))}
+                      margin={{ top: 10, right: 25, left: 10, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="var(--border-subtle)" />
+                      <XAxis type="number" stroke="var(--text-muted)" fontSize={11} tickFormatter={(v) => `${v}%`} />
+                      <YAxis
+                        dataKey="name"
+                        type="category"
+                        width={75}
+                        tick={{ fontSize: 10.5, fill: 'var(--text-secondary)', fontWeight: 700 }}
+                        stroke="none"
+                      />
+                      <Tooltip cursor={{ fill: 'var(--bg-subtle)' }} content={<CustomGrowthTooltip />} />
+                      <ReferenceLine
+                        x={100}
+                        stroke="#ef4444"
+                        strokeDasharray="3 3"
+                        label={{ value: '100%', fill: '#ef4444', fontSize: 10, position: 'top' }}
+                      />
+                      <Bar dataKey="pctCungKy" name="% So cùng kỳ 2025" radius={[0, 4, 4, 0]} barSize={14}>
+                        {[...doanhThuData]
+                          .sort((a, b) => (b.pctCungKy || 0) - (a.pctCungKy || 0))
+                          .map((entry, index) => {
+                            const val = entry.pctCungKy || 0;
+                            const fill =
+                              val >= 200
+                                ? '#059669'
+                                : val >= 100
+                                ? '#10b981'
+                                : val >= 60
+                                ? '#f59e0b'
+                                : '#ef4444';
+                            return <Cell key={`cell-pct-${index}`} fill={fill} />;
+                          })}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+              <div className="mt-2 pt-3 border-t border-border dark:border-slate-700/80 text-2xs text-ink-muted flex items-center justify-between">
+                <span>Ngưỡng 100%: Ngang bằng cùng kỳ</span>
+                <span className="text-success font-bold">&gt;100%: Tăng trưởng</span>
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="card p-6 lg:col-span-2">
-              <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border pb-3">Biểu đồ Ký mới & Doanh thu thực hiện các Đơn vị (Tỷ VNĐ)</h3>
+            <div className="card p-6 lg:col-span-2 border border-border dark:border-slate-700/80">
+              <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border dark:border-slate-700/80 pb-3">
+                Biểu đồ Ký mới & Doanh thu thực hiện các Đơn vị (Tỷ VNĐ)
+              </h3>
               <div className="h-[380px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart data={doanhThuData} margin={{ top: 20, right: 30, left: 20, bottom: 35 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
-                    <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={10} tickMargin={12} angle={-35} textAnchor="end" height={70} />
+                    <XAxis
+                      dataKey="name"
+                      stroke="var(--text-muted)"
+                      fontSize={10}
+                      tickMargin={12}
+                      angle={-35}
+                      textAnchor="end"
+                      height={70}
+                    />
                     <YAxis stroke="var(--text-muted)" fontSize={12} />
                     <Tooltip cursor={{ fill: 'var(--bg-subtle)' }} {...tooltipStyle} />
-                    <Legend wrapperStyle={{ fontSize: '14px', fontWeight: '600', paddingTop: '20px' }} />
-                    <Bar dataKey="doanhThu" name="Doanh thu thực hiện" radius={[4, 4, 0, 0]} maxBarSize={30} fill="var(--color-success, #10b981)">
+                    <Legend wrapperStyle={{ fontSize: '13px', fontWeight: '600', paddingTop: '15px' }} />
+                    <Bar
+                      dataKey="doanhThu"
+                      name="Doanh thu thực hiện"
+                      radius={[4, 4, 0, 0]}
+                      maxBarSize={30}
+                      fill="var(--color-success, #10b981)"
+                    >
                       {doanhThuData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Bar>
-                    <Line type="monotone" dataKey="kyMoi" name="Ký Hợp đồng mới" stroke="var(--text-primary)" strokeWidth={2.5} dot={{ r: 5, fill: 'var(--bg-surface)' }} />
+                    <Line
+                      type="monotone"
+                      dataKey="kyMoi"
+                      name="Ký Hợp đồng mới"
+                      stroke="var(--text-primary)"
+                      strokeWidth={2.5}
+                      dot={{ r: 4, fill: 'var(--bg-surface)' }}
+                    />
                   </ComposedChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
-            <div className="card p-6 lg:col-span-1">
-              <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border pb-3">Tăng trưởng cùng kỳ (2025 vs 2026)</h3>
+            <div className="card p-6 lg:col-span-1 border border-border dark:border-slate-700/80">
+              <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border dark:border-slate-700/80 pb-3">
+                Tăng trưởng cùng kỳ (2025 vs 2026)
+              </h3>
               <div className="h-[380px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={growthComparisonData} margin={{ top: 20, right: 10, left: -20, bottom: 35 }}>
@@ -930,61 +2095,298 @@ export function DashboardPage() {
               </div>
             </div>
 
-            <div className="card p-6 lg:col-span-2">
-              <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border pb-3">Phân tích Chi tiết Công nợ đọng của 16 Đơn vị (Tỷ VNĐ)</h3>
-              <div className="h-[750px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart layout="vertical" data={noDongData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="var(--border-subtle)" />
-                    <XAxis type="number" stroke="var(--text-muted)" fontSize={12} />
-                    <YAxis dataKey="name" type="category" width={95} tick={{ fontSize: 11, fill: 'var(--text-secondary)', fontWeight: 600 }} stroke="none" />
-                    <Tooltip cursor={{ fill: 'var(--bg-subtle)' }} {...tooltipStyle} formatter={(value: any) => `${value} tỷ`} />
-                    <Legend wrapperStyle={{ fontSize: '13px', fontWeight: '500', paddingTop: '10px' }} />
-                    <Bar dataKey="tongNo" name="Tổng nợ (Khách hàng nợ Đơn vị)" fill="var(--color-danger, #ef4444)" radius={[0, 4, 4, 0]} barSize={10} />
-                    <Bar dataKey="noNV" name="Nợ Nghĩa vụ Viện (Đơn vị nợ Viện)" fill="var(--color-warning, #f59e0b)" radius={[0, 4, 4, 0]} barSize={10} />
-                  </BarChart>
-                </ResponsiveContainer>
+            {/* Phân tích nợ đọng */}
+            <div className="card p-6 lg:col-span-2 border border-border dark:border-slate-700/80 flex flex-col justify-between">
+              <div>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-border dark:border-slate-700/80 pb-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-red-500/10 dark:bg-red-500/20 text-red-600 dark:text-red-400 flex items-center justify-center font-black">
+                        <Wallet className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h3 className="text-[16px] font-black text-ink">
+                          Phân tích Chi tiết Công nợ đọng 16 Đơn vị
+                        </h3>
+                        <p className="text-2xs text-ink-muted">
+                          Đối chiếu Tổng nợ khách hàng &amp; Nghĩa vụ nộp Viện theo QC 2815 (Tỷ VNĐ)
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center flex-wrap gap-2">
+                    {/* Chuyển chế độ xem: Biểu đồ cột đứng vs Ma trận rủi ro */}
+                    <div className="inline-flex p-0.5 rounded-lg bg-subtle/80 dark:bg-slate-800/80 border border-border dark:border-slate-700/80 text-xs">
+                      <button
+                        type="button"
+                        onClick={() => setDebtViewMode('cot-dung')}
+                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md font-bold transition-colors cursor-pointer ${
+                          debtViewMode === 'cot-dung'
+                            ? 'bg-surface text-primary-600 dark:text-primary-400 shadow-sm'
+                            : 'text-ink-muted hover:text-ink'
+                        }`}
+                        title="Xem dạng biểu đồ cột đứng"
+                      >
+                        <BarChart3 className="w-3.5 h-3.5" />
+                        <span>Cột đứng</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDebtViewMode('ma-tran')}
+                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md font-bold transition-colors cursor-pointer ${
+                          debtViewMode === 'ma-tran'
+                            ? 'bg-surface text-primary-600 dark:text-primary-400 shadow-sm'
+                            : 'text-ink-muted hover:text-ink'
+                        }`}
+                        title="Xem dạng ma trận phân loại rủi ro"
+                      >
+                        <Table className="w-3.5 h-3.5" />
+                        <span>Ma trận rủi ro</span>
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowAllDebts(!showAllDebts)}
+                      className="px-2.5 py-1 rounded-lg border border-border dark:border-slate-700/80 text-xs font-bold text-ink hover:bg-subtle dark:hover:bg-slate-800/40 transition-colors cursor-pointer"
+                    >
+                      {showAllDebts ? 'Top 8 nợ cao' : 'Toàn bộ 16'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenDrilldown('cong-no')}
+                      className="px-2.5 py-1 rounded-lg bg-danger/10 text-danger text-xs font-bold hover:bg-danger/20 transition-colors cursor-pointer flex items-center gap-1"
+                    >
+                      <span>Drill-down HĐ nợ</span>
+                      <ArrowUpRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* 3 thẻ tóm tắt nhanh KPI công nợ */}
+                <div className="grid grid-cols-3 gap-2.5 mb-4">
+                  <div className="p-2.5 rounded-lg bg-red-500/5 dark:bg-red-950/20 border border-red-500/20">
+                    <p className="text-3xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wider">
+                      Tổng nợ khách hàng
+                    </p>
+                    <p className="text-sm sm:text-base font-black text-red-600 dark:text-red-400 mt-0.5">
+                      {noDongData.reduce((acc, d) => acc + (d.tongNo || 0), 0).toFixed(2)} tỷ
+                    </p>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-amber-500/5 dark:bg-amber-950/20 border border-amber-500/20">
+                    <p className="text-3xs font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+                      Nợ Nghĩa vụ Viện
+                    </p>
+                    <p className="text-sm sm:text-base font-black text-amber-600 dark:text-amber-400 mt-0.5">
+                      {noDongData.reduce((acc, d) => acc + (d.noNV || 0), 0).toFixed(2)} tỷ
+                    </p>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-rose-500/5 dark:bg-rose-950/20 border border-rose-500/20">
+                    <p className="text-3xs font-semibold text-rose-600 dark:text-rose-400 uppercase tracking-wider">
+                      Đơn vị nợ cao (&ge;15 tỷ)
+                    </p>
+                    <p className="text-sm sm:text-base font-black text-rose-600 dark:text-rose-400 mt-0.5">
+                      {noDongData.filter((d) => (d.tongNo || 0) >= 15).length} Đơn vị
+                    </p>
+                  </div>
+                </div>
+
+                {debtViewMode === 'cot-dung' ? (
+                  /* ── DẠNG 1: BIỂU ĐỒ CỘT ĐỨNG HIỆN ĐẠI ── */
+                  <div className={showAllDebts ? 'h-[440px]' : 'h-[360px]'}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={showAllDebts ? noDongData : noDongData.slice(0, 8)}
+                        margin={{ top: 20, right: 15, left: -5, bottom: 40 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
+                        <XAxis
+                          dataKey="name"
+                          stroke="var(--text-muted)"
+                          fontSize={10}
+                          tickMargin={10}
+                          angle={-35}
+                          textAnchor="end"
+                          height={55}
+                        />
+                        <YAxis
+                          stroke="var(--text-muted)"
+                          fontSize={11}
+                          tickFormatter={(val) => `${val} tỷ`}
+                        />
+                        <Tooltip cursor={{ fill: 'var(--bg-subtle)' }} content={<CustomDebtTooltip />} />
+                        <Legend
+                          wrapperStyle={{ fontSize: '12px', fontWeight: '600', paddingTop: '10px' }}
+                        />
+                        <ReferenceLine
+                          y={15}
+                          stroke="#ef4444"
+                          strokeDasharray="4 4"
+                          label={{
+                            value: 'Ngưỡng nợ cao (>15 tỷ)',
+                            position: 'insideTopRight',
+                            fill: '#ef4444',
+                            fontSize: 10,
+                            fontWeight: 700,
+                          }}
+                        />
+                        <Bar
+                          dataKey="tongNo"
+                          name="Khách hàng nợ Đơn vị"
+                          fill="#ef4444"
+                          radius={[4, 4, 0, 0]}
+                          maxBarSize={showAllDebts ? 18 : 28}
+                        />
+                        <Bar
+                          dataKey="noNV"
+                          name="Nợ Nghĩa vụ Viện"
+                          fill="#f59e0b"
+                          radius={[4, 4, 0, 0]}
+                          maxBarSize={showAllDebts ? 18 : 28}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  /* ── DẠNG 2: MA TRẬN RỦI RO & BẢNG ĐÔN ĐỐC ── */
+                  <div className="overflow-x-auto max-h-[380px] overflow-y-auto pr-1 border border-border dark:border-slate-700/80 rounded-xl">
+                    <table className="w-full text-left border-collapse text-[12.5px]">
+                      <thead className="sticky top-0 z-10 bg-surface dark:bg-slate-900 shadow-sm">
+                        <tr className="border-b border-border dark:border-slate-700/80 bg-subtle/50 dark:bg-slate-900/80">
+                          <th className="th-cell py-2.5 px-3 text-center w-10">#</th>
+                          <th className="th-cell py-2.5 px-3">Đơn vị</th>
+                          <th className="th-cell py-2.5 px-3 min-w-[150px]">Tổng nợ KH (Tỷ)</th>
+                          <th className="th-cell py-2.5 px-3">Nợ Viện (Tỷ)</th>
+                          <th className="th-cell py-2.5 px-3 text-center">Tỷ trọng NV</th>
+                          <th className="th-cell py-2.5 px-3 text-center">Mức rủi ro</th>
+                          <th className="th-cell py-2.5 px-3 text-right">Đôn đốc</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border/60 dark:divide-slate-700/80">
+                        {(showAllDebts ? noDongData : noDongData.slice(0, 8)).map((row, idx) => {
+                          const maxDebt = noDongData[0]?.tongNo || 1;
+                          const pctOfMax = Math.min(100, Math.round((row.tongNo / maxDebt) * 100));
+                          const isRedAlert = row.tongNo >= 20;
+                          const isOrangeAlert = row.tongNo >= 15 && row.tongNo < 20;
+                          const isYellowAlert = row.tongNo >= 10 && row.tongNo < 15;
+
+                          return (
+                            <tr
+                              key={row.name}
+                              className="hover:bg-muted/40 dark:hover:bg-slate-800/40 transition-colors"
+                            >
+                              <td className="py-2.5 px-3 text-center font-bold text-ink-muted text-xs">
+                                {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : idx + 1}
+                              </td>
+                              <td className="py-2.5 px-3">
+                                <div className="font-bold text-ink text-xs">{row.name}</div>
+                                <div className="text-3xs text-ink-muted truncate max-w-[180px]">
+                                  {row.fullName || row.name}
+                                </div>
+                              </td>
+                              <td className="py-2.5 px-3">
+                                <div className="flex items-center justify-between text-xs font-black text-red-600 dark:text-red-400">
+                                  <span>{row.tongNo.toFixed(2)} tỷ</span>
+                                  <span className="text-3xs text-ink-muted font-normal">
+                                    {pctOfMax}% max
+                                  </span>
+                                </div>
+                                <div className="w-full bg-subtle dark:bg-slate-800 h-1.5 rounded-full overflow-hidden mt-1">
+                                  <div
+                                    className={`h-full rounded-full ${
+                                      isRedAlert
+                                        ? 'bg-rose-500'
+                                        : isOrangeAlert
+                                        ? 'bg-amber-500'
+                                        : 'bg-primary-500'
+                                    }`}
+                                    style={{ width: `${pctOfMax}%` }}
+                                  />
+                                </div>
+                              </td>
+                              <td className="py-2.5 px-3 font-semibold text-amber-600 dark:text-amber-400 text-xs">
+                                {row.noNV.toFixed(2)} tỷ
+                              </td>
+                              <td className="py-2.5 px-3 text-center text-xs font-bold text-ink">
+                                {row.tyLeNoNV ?? (row.tongNo > 0 ? Math.round((row.noNV / row.tongNo) * 100) : 0)}%
+                              </td>
+                              <td className="py-2.5 px-3 text-center">
+                                {isRedAlert ? (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-3xs font-black bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30">
+                                    🚨 Rất cao
+                                  </span>
+                                ) : isOrangeAlert ? (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-3xs font-black bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                                    ⚠️ Cảnh báo
+                                  </span>
+                                ) : isYellowAlert ? (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-3xs font-semibold bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border border-yellow-500/30">
+                                    🟡 Theo dõi
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-3xs font-medium bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                                    🟢 An toàn
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-2.5 px-3 text-right">
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenDrilldown('cong-no')}
+                                  className="px-2 py-1 rounded text-2xs font-bold bg-danger/10 text-danger hover:bg-danger/20 transition-colors cursor-pointer"
+                                  title={`Mở danh sách hợp đồng nợ của ${row.name}`}
+                                >
+                                  Đôn đốc
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* Chú thích cuối thẻ */}
+              <div className="mt-3 pt-3 border-t border-border dark:border-slate-700/80 text-2xs text-ink-muted flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-3">
+                  <span className="flex items-center gap-1">
+                    <span className="w-2.5 h-2.5 rounded-sm bg-red-500 inline-block" />
+                    Khách hàng nợ Đơn vị
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-2.5 h-2.5 rounded-sm bg-amber-500 inline-block" />
+                    Nợ nghĩa vụ nộp về Viện
+                  </span>
+                </div>
+                <span>* Căn cứ dữ liệu chốt sổ &amp; đối chiếu hợp đồng thực hiện 2026</span>
               </div>
             </div>
 
-            <div className="space-y-6 flex flex-col">
-              <div className="card p-6">
-                <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border pb-3">Phân bổ Dòng tiền về (Tổng: 449.67 Tỷ VNĐ)</h3>
-                <div className="h-[320px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie data={coCauTienVe} cx="50%" cy="50%" innerRadius={70} outerRadius={110} paddingAngle={4} dataKey="value" stroke="none">
-                        {coCauTienVe.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip {...tooltipStyle} formatter={(value: any) => `${value} tỷ`} />
-                      <Legend wrapperStyle={{ fontSize: '13px', fontWeight: '500' }} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              <div className="card p-6 flex-1">
-                <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border pb-3">Xếp hạng Sức khỏe Vận hành 16 Đơn vị (Unit Health Score)</h3>
-                <div className="overflow-x-auto max-h-[300px] overflow-y-auto pr-1">
-                  <table className="w-full text-left border-collapse">
+            {/* Xếp hạng sức khỏe đơn vị */}
+            <div className="card p-6 border border-border dark:border-slate-700/80 flex flex-col justify-between">
+              <div>
+                <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border dark:border-slate-700/80 pb-3">
+                  Xếp hạng Sức khỏe Vận hành 16 Đơn vị
+                </h3>
+                <div className="overflow-x-auto max-h-[340px] overflow-y-auto pr-1">
+                  <table className="w-full text-left border-collapse text-[12.5px]">
                     <thead>
-                      <tr>
-                        <th className="th-cell rounded-tl-lg">Đơn vị</th>
-                        <th className="th-cell">% KH Doanh thu</th>
-                        <th className="th-cell text-right rounded-tr-lg">Đánh giá sức khỏe</th>
+                      <tr className="border-b border-border dark:border-slate-700/80 bg-subtle/40">
+                        <th className="th-cell rounded-tl-lg py-2">Đơn vị</th>
+                        <th className="th-cell py-2">% KH Doanh thu</th>
+                        <th className="th-cell text-right rounded-tr-lg py-2">Đánh giá</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-border/60 dark:divide-slate-700/80">
                       {unitHealthData.map((row, idx) => (
                         <tr key={idx} className="tr-hover">
-                          <td className="td-cell font-bold text-ink">{row.name}</td>
-                          <td className="td-cell text-ink-secondary font-black">{row.khProgress}%</td>
-                          <td className="td-cell text-right">
-                            <span className={`font-black text-[13px] ${row.color}`}>
-                              {row.status}
-                            </span>
+                          <td className="td-cell font-bold text-ink py-2">{row.name}</td>
+                          <td className="td-cell text-ink-secondary font-black py-2">{row.khProgress}%</td>
+                          <td className="td-cell text-right py-2">
+                            <span className={`font-black text-xs ${row.color}`}>{row.status}</span>
                           </td>
                         </tr>
                       ))}
@@ -997,19 +2399,46 @@ export function DashboardPage() {
         </div>
       )}
 
-      {/* TAB 4: TÀI CHÍNH & ĐẦU TƯ */}
-      {activeTab === 'tai-chinh' && (
+      {/* ══════════════════ TAB 4: TÀI CHÍNH & ĐẦU TƯ ══════════════════ */}
+      {activeTab === 'tai-chinh' && coTabTaiChinh && (
         <div className="space-y-6 animate-in fade-in duration-300">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <KPICard title="Nộp Ngân sách NN" value={`${overviewData.nopNganSach} tỷ`} subtitle="GTGT, TNDN, TNCN" icon={Receipt} color="success" />
-            <KPICard title="Quỹ Lương CB" value={`${overviewData.quyLuong} tỷ`} subtitle={`Cho ${overviewData.tongNhanSu} cán bộ`} icon={Wallet} color="primary" />
-            <KPICard title="Bảo lãnh Ngân hàng" value={`${overviewData.baoLanhNH} tỷ`} subtitle="Đang thực hiện" icon={Building2} color="warning" />
-            <KPICard title="Đầu tư Quỹ PTSN" value="8.89 tỷ" subtitle="Thiết bị quan trắc" icon={Target} color="info" />
+            <KPICard
+              title="Nộp Ngân sách NN"
+              value={`${overviewData.nopNganSach} tỷ`}
+              subtitle="GTGT, TNDN, TNCN"
+              icon={Receipt}
+              color="success"
+            />
+            <KPICard
+              title="Quỹ Lương CB"
+              value={`${overviewData.quyLuong} tỷ`}
+              subtitle={`Cho ${overviewData.tongNhanSu} cán bộ`}
+              icon={Wallet}
+              color="primary"
+              onClick={() => handleOpenDrilldown('nhan-su')}
+            />
+            <KPICard
+              title="Bảo lãnh Ngân hàng"
+              value={`${overviewData.baoLanhNH} tỷ`}
+              subtitle="Đang thực hiện"
+              icon={Building2}
+              color="warning"
+            />
+            <KPICard
+              title="Đầu tư Quỹ PTSN"
+              value="8.89 tỷ"
+              subtitle="Thiết bị quan trắc"
+              icon={Target}
+              color="info"
+            />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="card p-6 lg:col-span-2">
-              <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border pb-3">Biến động Chi Lương & Nộp Thuế theo kỳ (Tỷ VNĐ)</h3>
+            <div className="card p-6 lg:col-span-2 border border-border dark:border-slate-700/80">
+              <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border dark:border-slate-700/80 pb-3">
+                Biến động Chi Lương & Nộp Thuế theo kỳ (Tỷ VNĐ)
+              </h3>
               <div className="h-[350px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={taiChinhData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
@@ -1017,21 +2446,52 @@ export function DashboardPage() {
                     <XAxis dataKey="month" stroke="var(--text-muted)" fontSize={12} tickMargin={10} />
                     <YAxis stroke="var(--text-muted)" fontSize={12} />
                     <Tooltip {...tooltipStyle} />
-                    <Legend wrapperStyle={{ fontSize: '14px', fontWeight: '600', paddingTop: '20px' }} />
-                    <Line type="monotone" dataKey="luong" name="Chi Lương & BH" stroke="var(--color-primary, #00668c)" strokeWidth={4} activeDot={{ r: 8, strokeWidth: 0 }} />
-                    <Line type="monotone" dataKey="thue" name="Nộp Thuế NSNN" stroke="var(--color-danger, #ef4444)" strokeWidth={4} />
-                    <Line type="monotone" dataKey="nsnn" name="NSNN Cấp" stroke="var(--color-success, #10b981)" strokeWidth={4} strokeDasharray="5 5" />
+                    <Legend wrapperStyle={{ fontSize: '13px', fontWeight: '600', paddingTop: '15px' }} />
+                    <Line
+                      type="monotone"
+                      dataKey="luong"
+                      name="Chi Lương & BH"
+                      stroke="var(--color-primary, #00668c)"
+                      strokeWidth={3.5}
+                      activeDot={{ r: 6 }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="thue"
+                      name="Nộp Thuế NSNN"
+                      stroke="var(--color-danger, #ef4444)"
+                      strokeWidth={3}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="nsnn"
+                      name="NSNN Cấp"
+                      stroke="var(--color-success, #10b981)"
+                      strokeWidth={3}
+                      strokeDasharray="5 5"
+                    />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
-            <div className="card p-6 lg:col-span-1">
-              <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border pb-3">Cơ cấu Nộp Thuế (Tỷ VNĐ)</h3>
+            <div className="card p-6 lg:col-span-1 border border-border dark:border-slate-700/80">
+              <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border dark:border-slate-700/80 pb-3">
+                Cơ cấu Nộp Thuế (Tỷ VNĐ)
+              </h3>
               <div className="h-[350px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie data={coCauThue} cx="50%" cy="50%" innerRadius={70} outerRadius={110} paddingAngle={3} dataKey="value" stroke="none">
+                    <Pie
+                      data={coCauThue}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={65}
+                      outerRadius={100}
+                      paddingAngle={3}
+                      dataKey="value"
+                      stroke="none"
+                    >
                       {coCauThue.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
@@ -1044,36 +2504,39 @@ export function DashboardPage() {
             </div>
           </div>
 
-          {/* Row 3: Giám sát đầu tư xây dựng nhỏ & mua sắm trang thiết bị */}
-          <div className="card p-6">
-            <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border pb-3">Giám sát các Dự án Đầu tư Phát triển Cơ sở vật chất & Mua sắm (Mục IX.5)</h3>
+          <div className="card p-6 border border-border dark:border-slate-700/80">
+            <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border dark:border-slate-700/80 pb-3">
+              Giám sát các Dự án Đầu tư Phát triển Cơ sở vật chất & Mua sắm (Mục IX.5)
+            </h3>
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+              <table className="w-full text-left border-collapse text-[12.5px]">
                 <thead>
-                  <tr>
-                    <th className="th-cell rounded-tl-lg">Tên dự án đầu tư / Mua sắm</th>
-                    <th className="th-cell">Quy mô vốn</th>
-                    <th className="th-cell">Nguồn vốn / Giai đoạn</th>
-                    <th className="th-cell">Trạng thái thực tế</th>
-                    <th className="th-cell text-right rounded-tr-lg">Tiến độ chuẩn bị / Giải ngân</th>
+                  <tr className="border-b border-border dark:border-slate-700/80 bg-subtle/40">
+                    <th className="th-cell rounded-tl-lg py-2">Tên dự án đầu tư / Mua sắm</th>
+                    <th className="th-cell py-2">Quy mô vốn</th>
+                    <th className="th-cell py-2">Nguồn vốn / Giai đoạn</th>
+                    <th className="th-cell py-2">Trạng thái thực tế</th>
+                    <th className="th-cell text-right rounded-tr-lg py-2">Tiến độ</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-border/60 dark:divide-slate-700/80">
                   {investmentProjects.map((proj, idx) => (
                     <tr key={idx} className="tr-hover">
-                      <td className="td-cell font-bold text-ink">{proj.name}</td>
-                      <td className="td-cell text-ink-secondary font-medium">{proj.scale}</td>
-                      <td className="td-cell text-ink-secondary font-medium">{proj.period}</td>
-                      <td className="td-cell">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${
-                          proj.status === 'Hoàn thành bàn giao'
-                            ? 'bg-success/10 text-success'
-                            : 'bg-primary/10 text-primary-500'
-                        }`}>
+                      <td className="td-cell font-bold text-ink py-2.5">{proj.name}</td>
+                      <td className="td-cell text-ink-secondary font-medium py-2.5">{proj.scale}</td>
+                      <td className="td-cell text-ink-secondary font-medium py-2.5">{proj.period}</td>
+                      <td className="td-cell py-2.5">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${
+                            proj.status === 'Hoàn thành bàn giao'
+                              ? 'bg-success/10 text-success'
+                              : 'bg-primary/10 text-primary-500'
+                          }`}
+                        >
                           {proj.status}
                         </span>
                       </td>
-                      <td className="td-cell text-right font-black text-ink-secondary">{proj.progress}%</td>
+                      <td className="td-cell text-right font-black text-ink-secondary py-2.5">{proj.progress}%</td>
                     </tr>
                   ))}
                 </tbody>
@@ -1083,92 +2546,61 @@ export function DashboardPage() {
         </div>
       )}
 
-      {/* TAB 5: TỔ CHỨC & HÀNH CHÍNH */}
+      {/* ══════════════════ TAB 5: TỔ CHỨC & HÀNH CHÍNH ══════════════════ */}
       {activeTab === 'nhan-su' && (
         <div className="space-y-6 animate-in fade-in duration-300">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <KPICard title="Tổng Nhân sự" value={overviewData.tongNhanSu} subtitle="+63 tuyển mới, -20 nghỉ | Thu nhập 18tr/th" icon={Users} color="primary" />
-            <KPICard title="Văn bản tiếp nhận" value="1,600+" subtitle="Qua hệ thống mạng" icon={FileCheck2} color="info" />
-            <KPICard title="Mạng lưới LAS-XD" value="11" subtitle="LAS-XD toàn quốc | 04 số tạp chí/năm" icon={Network} color="success" />
-            <KPICard title="An toàn PCCC" value="Đảm bảo" subtitle="Đã kiểm tra định kỳ" icon={ShieldAlert} color="accent" />
+            <KPICard
+              title="Tổng Nhân sự"
+              value={overviewData.tongNhanSu}
+              subtitle="+63 tuyển mới, -20 nghỉ | Thu nhập 18tr/th"
+              icon={Users}
+              color="primary"
+              onClick={() => handleOpenDrilldown('nhan-su')}
+            />
+            <KPICard
+              title="Văn bản tiếp nhận"
+              value="1,600+"
+              subtitle="Qua hệ thống mạng e-Office"
+              icon={FileCheck2}
+              color="info"
+            />
+            <KPICard
+              title="Mạng lưới LAS-XD"
+              value="11"
+              subtitle="LAS-XD toàn quốc | 04 số tạp chí/năm"
+              icon={Network}
+              color="success"
+            />
+            <KPICard
+              title="An toàn PCCC"
+              value="Đảm bảo"
+              subtitle="Đã kiểm tra định kỳ"
+              icon={ShieldAlert}
+              color="accent"
+            />
           </div>
 
-          <div className="card p-8">
-            <h3 className="text-[18px] font-black text-ink mb-6 border-b border-border pb-4">Hoạt động Hành chính, Đào tạo & Quản trị</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-              <ul className="space-y-6">
-                <li className="flex items-start space-x-4 group cursor-pointer hover:bg-subtle p-3 rounded-xl transition-colors">
-                  <div className="w-3 h-3 mt-1.5 rounded-full bg-primary-500 shadow-[0_0_10px_rgba(0,102,140,0.5)]"></div>
-                  <div>
-                    <p className="text-[15px] font-bold text-ink group-hover:text-primary-600 transition-colors">Đào tạo & Tạp chí KHCN</p>
-                    <p className="text-[14px] text-ink-secondary leading-relaxed mt-1.5">Xuất bản thành công 02 số Tạp chí KHCN Xây dựng (Mục tiêu 04 số/năm). Cập nhật dữ liệu lên hệ thống VJOL. Quản lý hệ đào tạo Nghiên cứu sinh (NCS) trình độ tiến sĩ đang tích cực tuyển sinh và đào tạo.</p>
-                  </div>
-                </li>
-                <li className="flex items-start space-x-4 group cursor-pointer hover:bg-subtle p-3 rounded-xl transition-colors">
-                  <div className="w-3 h-3 mt-1.5 rounded-full bg-warning shadow-[0_0_10px_rgba(245,158,11,0.5)]"></div>
-                  <div>
-                    <p className="text-[15px] font-bold text-ink group-hover:text-warning transition-colors">Hội thảo & Sự kiện chuyên môn</p>
-                    <p className="text-[14px] text-ink-secondary leading-relaxed mt-1.5">Tổ chức thành công hội nghị công trình xanh EDGE, hội thảo Bê tông đúc sẵn, Nhà ở xã hội phát thải carbon thấp (tại TPHCM).</p>
-                  </div>
-                </li>
-              </ul>
-              <ul className="space-y-6">
-                <li className="flex items-start space-x-4 group cursor-pointer hover:bg-subtle p-3 rounded-xl transition-colors">
-                  <div className="w-3 h-3 mt-1.5 rounded-full bg-success shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
-                  <div>
-                    <p className="text-[15px] font-bold text-ink group-hover:text-success transition-colors">Quản trị & Số hóa VB</p>
-                    <p className="text-[14px] text-ink-secondary leading-relaxed mt-1.5">Xử lý 1,600+ văn bản đến và 1,300+ văn bản đi qua trục liên thông. Cấp 05 USB Token ký số. Nâng cấp trực tuyến hội trường.</p>
-                  </div>
-                </li>
-                <li className="flex items-start space-x-4 group cursor-pointer hover:bg-subtle p-3 rounded-xl transition-colors">
-                  <div className="w-3 h-3 mt-1.5 rounded-full bg-danger shadow-[0_0_10px_rgba(239,68,68,0.5)]"></div>
-                  <div>
-                    <p className="text-[15px] font-bold text-ink group-hover:text-danger transition-colors">Sửa chữa & Nâng cấp cơ sở</p>
-                    <p className="text-[14px] text-ink-secondary leading-relaxed mt-1.5">Cải tạo mặt đứng N1, chống thấm. Sửa chữa Phòng thí nghiệm Viện CNKC, nhà thí nghiệm gió. Cải tạo phân viện Miền Trung.</p>
-                  </div>
-                </li>
-              </ul>
+          <div className="card p-6 border border-border dark:border-slate-700/80">
+            <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border dark:border-slate-700/80 pb-3">
+              Biểu đồ Biến động Nhân sự Cán bộ theo tháng
+            </h3>
+            <div className="h-[280px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={nhanSuBienDongData} margin={{ top: 20, right: 20, bottom: 5, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
+                  <XAxis dataKey="month" stroke="var(--text-muted)" fontSize={12} />
+                  <YAxis stroke="var(--text-muted)" fontSize={12} />
+                  <Tooltip cursor={{ fill: 'var(--bg-subtle)' }} {...tooltipStyle} />
+                  <Legend wrapperStyle={{ fontSize: '13px', fontWeight: '600', paddingTop: '10px' }} />
+                  <Bar dataKey="tuyen" name="Tuyển mới" fill="var(--color-primary, #00668c)" radius={[4, 4, 0, 0]} maxBarSize={25} />
+                  <Bar dataKey="nghi" name="Nghỉ việc/Chấm dứt HĐ" fill="var(--color-danger, #ef4444)" radius={[4, 4, 0, 0]} maxBarSize={25} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
-          </div>
-
-          {/* Row 3: Nâng cấp dữ liệu trực quan về Nhân sự & Mạng lưới LAS-XD */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Cột 1 & 2: Biến động nhân sự */}
-            <div className="card p-6 lg:col-span-2">
-              <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border pb-3">Biểu đồ Biến động Nhân sự Cán bộ theo tháng</h3>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={nhanSuBienDongData} margin={{ top: 20, right: 20, bottom: 5, left: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
-                    <XAxis dataKey="month" stroke="var(--text-muted)" fontSize={12} />
-                    <YAxis stroke="var(--text-muted)" fontSize={12} />
-                    <Tooltip cursor={{ fill: 'var(--bg-subtle)' }} {...tooltipStyle} />
-                    <Legend wrapperStyle={{ fontSize: '13px', fontWeight: '600', paddingTop: '10px' }} />
-                    <Bar dataKey="tuyen" name="Tuyển mới" fill="var(--color-primary, #00668c)" radius={[4, 4, 0, 0]} maxBarSize={25} />
-                    <Bar dataKey="nghi" name="Nghỉ việc/Chấm dứt HĐ" fill="var(--color-danger, #ef4444)" radius={[4, 4, 0, 0]} maxBarSize={25} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-              <p className="text-2xs text-ink-muted mt-3 italic">*Tổng kết 6 tháng: Tuyển mới 63 cán bộ, giảm 20 cán bộ (phù hợp với quy trình kiện toàn tinh giản bộ máy).</p>
-            </div>
-
-            {/* Cột 3: Chi tiết Mạng lưới phòng LAS-XD */}
-            <div className="card p-6 lg:col-span-1">
-              <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border pb-3">Phân bổ Mạng lưới LAS-XD (11 Phòng)</h3>
-              <div className="space-y-4">
-                {lasXdData.map((las, idx) => (
-                  <div key={idx} className="bg-subtle p-3 rounded-lg border border-border">
-                    <div className="flex justify-between items-start">
-                      <span className="text-[13px] font-black text-ink">{las.name}</span>
-                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-3xs font-bold bg-success/10 text-success whitespace-nowrap">
-                        {las.status}
-                      </span>
-                    </div>
-                    <p className="text-[12px] text-ink-secondary mt-1.5 leading-relaxed">{las.desc}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <p className="text-2xs text-ink-muted mt-3 italic">
+              *Tổng kết: Tuyển mới 63 cán bộ, giảm 20 cán bộ (phù hợp với quy trình kiện toàn tinh giản bộ máy).
+            </p>
           </div>
         </div>
       )}

@@ -14,6 +14,8 @@ export const VAI_TRO_LABEL: Record<string, string> = {
   'phong-tchc': 'Phòng Tổ chức – Hành chính',
   'phong-th-don-vi': 'Phòng Tổng hợp đơn vị',
   'phu-trach-ke-toan-dv': 'Phụ trách kế toán đơn vị',
+  'can-bo-to-chuc': 'Cán bộ Tổ chức - Hành chính',
+  'van-phong-dang-uy': 'Văn phòng Đảng ủy',
 };
 
 export const VAI_TRO_OPTIONS = Object.entries(VAI_TRO_LABEL).map(([value, label]) => ({
@@ -25,6 +27,7 @@ export const VAI_TRO_OPTIONS = Object.entries(VAI_TRO_LABEL).map(([value, label]
 
 export interface NguoiDung {
   userId: string;
+  nhanSuId: string | null;
   hoTen: string;
   vaiTro: string;
   donVi: string;
@@ -34,11 +37,12 @@ export interface NguoiDung {
 export async function fetchNguoiDung(): Promise<NguoiDung[]> {
   const { data, error } = await supabase
     .from('nguoi_dung')
-    .select('user_id, vai_tro, trang_thai, nhan_su(ho_va_ten), don_vi(ten_don_vi)')
+    .select('user_id, nhan_su_id, vai_tro, trang_thai, nhan_su(ho_va_ten), don_vi(ten_don_vi)')
     .order('vai_tro');
   throwIf(error);
   return (data ?? []).map((r) => ({
     userId: String(r.user_id),
+    nhanSuId: r.nhan_su_id != null ? String(r.nhan_su_id) : null,
     hoTen: (r.nhan_su as unknown as { ho_va_ten: string } | null)?.ho_va_ten ?? '(chưa gắn nhân sự)',
     vaiTro: r.vai_tro,
     donVi: (r.don_vi as unknown as { ten_don_vi: string } | null)?.ten_don_vi ?? '',

@@ -211,6 +211,53 @@ export function DonViChiTietPanel({
             ))}
           </div>
 
+          {/* Khối Chỉ tiêu Kế hoạch Năm & Tình hình Ký HĐKT */}
+          {donVi.keHoachNam != null && donVi.keHoachNam > 0 && (
+            <div className="bg-surface rounded-xl border border-border dark:border-slate-700/80 p-4 space-y-3">
+              <div className="flex items-center justify-between border-b border-border dark:border-slate-700/80 pb-2">
+                <div className="flex items-center gap-2">
+                  <Handshake size={16} className="text-primary" />
+                  <h3 className="text-sm font-black text-ink">Chỉ tiêu Kế hoạch Năm 2026 & Giao khoán</h3>
+                </div>
+                {donVi.ghiChuKeHoach && (
+                  <span className="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 px-2 py-0.5 rounded border border-amber-300 dark:border-amber-800/50 font-medium">
+                    {donVi.ghiChuKeHoach}
+                  </span>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="p-3 bg-subtle/40 rounded-lg border border-border/50 dark:border-slate-700/60">
+                  <p className="text-2xs font-bold text-ink-muted uppercase">Đăng ký KH cả năm 2026</p>
+                  <p className="text-lg font-black text-ink mt-0.5">
+                    {(donVi.keHoachNam / 1000000).toLocaleString('vi-VN', { maximumFractionDigits: 3 })} tỷ
+                  </p>
+                  <p className="text-3xs text-ink-muted">({donVi.keHoachNam.toLocaleString('vi-VN')} nghìn đ)</p>
+                </div>
+
+                <div className="p-3 bg-subtle/40 rounded-lg border border-border/50 dark:border-slate-700/60">
+                  <p className="text-2xs font-bold text-ink-muted uppercase">SL Cùng kỳ năm 2025</p>
+                  <p className="text-lg font-black text-ink-secondary mt-0.5">
+                    {donVi.keHoachNamTruoc
+                      ? `${(donVi.keHoachNamTruoc / 1000000).toLocaleString('vi-VN', { maximumFractionDigits: 3 })} tỷ`
+                      : '—'}
+                  </p>
+                  {donVi.keHoachNamTruoc && (
+                    <p className="text-3xs text-ink-muted">({donVi.keHoachNamTruoc.toLocaleString('vi-VN')} nghìn đ)</p>
+                  )}
+                </div>
+
+                <div className="p-3 bg-primary-500/10 rounded-lg border border-primary-500/20">
+                  <p className="text-2xs font-bold text-primary-600 dark:text-primary-400 uppercase">Tỷ lệ Hoàn thành KH</p>
+                  <p className="text-lg font-black text-primary-600 dark:text-primary-400 mt-0.5">
+                    {Math.round(((tongGiaTri / 1000) / (donVi.keHoachNam / 1000000)) * 100)}%
+                  </p>
+                  <p className="text-3xs text-ink-muted">Đã ký: {(tongGiaTri / 1000).toFixed(2)} tỷ</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Ban Lãnh đạo & Phân bổ Nhân sự (song song — tham khảo Top Performers + Phân bổ NS CIC-ERP) */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             {/* Ban Lãnh đạo */}

@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { throwIfKhongGhiDuoc } from '../lib/rlsGuard';
 import type {
   VanBan,
   DeTai,
@@ -140,10 +141,10 @@ export async function createVanBan(i: VanBanInput) {
   throwIf((await supabase.from('van_ban').insert(vanBanRow(i))).error);
 }
 export async function updateVanBan(id: string, i: VanBanInput) {
-  throwIf((await supabase.from('van_ban').update(vanBanRow(i)).eq('id', Number(id))).error);
+  throwIfKhongGhiDuoc(await supabase.from('van_ban').update(vanBanRow(i)).eq('id', Number(id)).select('id'));
 }
 export async function deleteVanBan(id: string) {
-  throwIf((await supabase.from('van_ban').delete().eq('id', Number(id))).error);
+  throwIfKhongGhiDuoc(await supabase.from('van_ban').delete().eq('id', Number(id)).select('id'));
 }
 
 // ─── ĐỀ TÀI ───
@@ -206,10 +207,10 @@ export async function createDeTai(i: DeTaiInput) {
   throwIf((await supabase.from('de_tai').insert(deTaiRow(i))).error);
 }
 export async function updateDeTai(id: string, i: DeTaiInput) {
-  throwIf((await supabase.from('de_tai').update(deTaiRow(i)).eq('id', Number(id))).error);
+  throwIfKhongGhiDuoc(await supabase.from('de_tai').update(deTaiRow(i)).eq('id', Number(id)).select('id'));
 }
 export async function deleteDeTai(id: string) {
-  throwIf((await supabase.from('de_tai').delete().eq('id', Number(id))).error);
+  throwIfKhongGhiDuoc(await supabase.from('de_tai').delete().eq('id', Number(id)).select('id'));
 }
 
 // ─── HỢP ĐỒNG ───
@@ -489,10 +490,10 @@ export async function createMauThiNghiem(i: MauThiNghiemInput) {
   throwIf((await supabase.from('mau_thi_nghiem').insert(mauRow(i))).error);
 }
 export async function updateMauThiNghiem(id: string, i: MauThiNghiemInput) {
-  throwIf((await supabase.from('mau_thi_nghiem').update(mauRow(i)).eq('id', Number(id))).error);
+  throwIfKhongGhiDuoc(await supabase.from('mau_thi_nghiem').update(mauRow(i)).eq('id', Number(id)).select('id'));
 }
 export async function deleteMauThiNghiem(id: string) {
-  throwIf((await supabase.from('mau_thi_nghiem').delete().eq('id', Number(id))).error);
+  throwIfKhongGhiDuoc(await supabase.from('mau_thi_nghiem').delete().eq('id', Number(id)).select('id'));
 }
 
 // ─── LỚP ĐÀO TẠO ───
@@ -539,10 +540,10 @@ export async function createLopDaoTao(i: LopDaoTaoInput) {
   throwIf((await supabase.from('lop_dao_tao').insert(lopRow(i))).error);
 }
 export async function updateLopDaoTao(id: string, i: LopDaoTaoInput) {
-  throwIf((await supabase.from('lop_dao_tao').update(lopRow(i)).eq('id', Number(id))).error);
+  throwIfKhongGhiDuoc(await supabase.from('lop_dao_tao').update(lopRow(i)).eq('id', Number(id)).select('id'));
 }
 export async function deleteLopDaoTao(id: string) {
-  throwIf((await supabase.from('lop_dao_tao').delete().eq('id', Number(id))).error);
+  throwIfKhongGhiDuoc(await supabase.from('lop_dao_tao').delete().eq('id', Number(id)).select('id'));
 }
 
 // ─── NGHIÊN CỨU SINH (NCS) ───

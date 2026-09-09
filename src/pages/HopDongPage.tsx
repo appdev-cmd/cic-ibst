@@ -55,6 +55,8 @@ import { BaoCaoKhktPanel } from '../components/BaoCaoKhktPanel';
 import { CanhBaoQuyChePanel } from '../components/CanhBaoQuyChePanel';
 import { useSlidePanel } from '../context/SlidePanelContext';
 import { useAuth } from '../context/AuthContext';
+import { usePhanQuyen } from '../hooks/usePhanQuyen';
+import { tabDuocPhep, type TaiNguyen } from '../lib/phanQuyen';
 import {
   DAC_TA_NHANH,
   NHAN_TRANG_THAI_GIAO_VIEC,
@@ -79,6 +81,7 @@ import { KhachHangPage } from './KhachHangPage';
 import { DauThauPage } from './DauThauPage';
 import { PvqlnnPage } from './PvqlnnPage';
 import { UyQuyenPage } from './UyQuyenPage';
+import { TaiChinhPage } from './TaiChinhPage';
 import { useAsyncData } from '../hooks/useAsyncData';
 import { useTableControls } from '../hooks/useTableControls';
 import { useCrudForm } from '../hooks/useCrudForm';
@@ -128,7 +131,19 @@ import { formatTrieu, formatNgay, cn } from '../lib/utils';
 import { printPhieuGiaoViec, sinhHtmlPhieuGiaoViec } from '../lib/printGiaoViec';
 import { fetchDonViGiaoViec, type DonViGiaoViec } from '../services/chitiet';
 
-type Tab = 'hop-dong-2815' | 'crm-khach-hang' | 'dau-thau' | 'pvqlnn' | 'bao-cao-khkt';
+type Tab = 'hop-dong-2815' | 'tai-chinh' | 'crm-khach-hang' | 'dau-thau' | 'pvqlnn' | 'bao-cao-khkt';
+
+const TAB_IDS: Tab[] = ['hop-dong-2815', 'tai-chinh', 'crm-khach-hang', 'dau-thau', 'pvqlnn', 'bao-cao-khkt'];
+
+/** Ánh xạ tab → tài nguyên (Tầng 3) — khớp `ROUTE_PERMISSION_MAP['/hop-dong']`. */
+const TAB_TAI_NGUYEN: Record<Tab, TaiNguyen> = {
+  'hop-dong-2815': 'hop_dong',
+  'tai-chinh': 'tai_chinh',
+  'crm-khach-hang': 'khach_hang',
+  'dau-thau': 'dau_thau',
+  pvqlnn: 'pvqlnn',
+  'bao-cao-khkt': 'bao_cao_khkt',
+};
 
 const EMPTY_FORM: HopDongInput = {
   soHD: '',
@@ -282,7 +297,7 @@ export function HopDongPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab') as Tab | null;
   const [activeTab, setActiveTabState] = useState<Tab>(() => {
-    if (tabParam && ['hop-dong-2815', 'crm-khach-hang', 'dau-thau', 'pvqlnn', 'bao-cao-khkt'].includes(tabParam)) {
+    if (tabParam && ['hop-dong-2815', 'tai-chinh', 'crm-khach-hang', 'dau-thau', 'pvqlnn', 'bao-cao-khkt'].includes(tabParam)) {
       return tabParam;
     }
     return 'hop-dong-2815';
@@ -294,10 +309,22 @@ export function HopDongPage() {
   };
 
   useEffect(() => {
-    if (tabParam && ['hop-dong-2815', 'crm-khach-hang', 'dau-thau', 'pvqlnn', 'bao-cao-khkt'].includes(tabParam)) {
+    if (tabParam && ['hop-dong-2815', 'tai-chinh', 'crm-khach-hang', 'dau-thau', 'pvqlnn', 'bao-cao-khkt'].includes(tabParam)) {
       setActiveTabState(tabParam);
     }
   }, [tabParam]);
+
+  // Lọc tab theo quyền (Tầng 3) — nếu tab đang chọn (mặc định hoặc lấy từ URL) không
+  // còn quyền xem sau khi nạp xong, tự chuyển sang tab được phép đầu tiên.
+  const { can: coQuyenTab, dangTai: dangTaiQuyen } = usePhanQuyen();
+  const tabHienDuoc = (t: Tab) => tabDuocPhep(t, TAB_TAI_NGUYEN, coQuyenTab, dangTaiQuyen);
+  useEffect(() => {
+    if (dangTaiQuyen) return;
+    if (tabHienDuoc(activeTab)) return;
+    const taiChoPhep = TAB_IDS.find((t) => coQuyenTab(TAB_TAI_NGUYEN[t], 'xem'));
+    if (taiChoPhep) setActiveTab(taiChoPhep);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dangTaiQuyen]);
 
   const { data: hopDongList, loading, error, refetch } = useAsyncData(fetchHopDong, []);
   const { data: khachHangOptions } = useAsyncData(fetchKhachHangOptions, []);
@@ -1210,69 +1237,98 @@ export function HopDongPage() {
         subtitle="Quản lý vòng đời hợp đồng theo Quy chế 2815/QĐ-VKH: Đấu thầu, giao việc, phân bổ tài chính & giám sát thực hiện"
       />
 
-      {/* 5 Tabs Switcher theo chuẩn vòng đời hợp đồng */}
+      {/* 6 Tabs Switcher theo chuẩn vòng đời hợp đồng — mỗi tab chỉ hiện khi có quyền xem tài nguyên tương ứng (Tầng 3) */}
       <div className="mb-6 flex flex-wrap gap-1.5 rounded-xl bg-muted p-1.5 w-full sm:w-fit border border-border">
-        <button
-          onClick={() => setActiveTab('hop-dong-2815')}
-          className={cn(
-            'flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all',
-            activeTab === 'hop-dong-2815'
-              ? 'bg-surface text-primary-600 shadow-card dark:text-primary-300'
-              : 'text-ink-muted hover:text-ink hover:bg-surface/50'
-          )}
-        >
-          <Handshake size={15} /> 1. Hợp đồng kinh tế (QC 2815)
-        </button>
-        <button
-          onClick={() => setActiveTab('crm-khach-hang')}
-          className={cn(
-            'flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all',
-            activeTab === 'crm-khach-hang'
-              ? 'bg-surface text-primary-600 shadow-card dark:text-primary-300'
-              : 'text-ink-muted hover:text-ink hover:bg-surface/50'
-          )}
-        >
-          <Users2 size={15} /> 2. Khách hàng & CRM
-        </button>
-        <button
-          onClick={() => setActiveTab('dau-thau')}
-          className={cn(
-            'flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all',
-            activeTab === 'dau-thau'
-              ? 'bg-surface text-primary-600 shadow-card dark:text-primary-300'
-              : 'text-ink-muted hover:text-ink hover:bg-surface/50'
-          )}
-        >
-          <Gavel size={15} /> 3. Đấu thầu & Chào giá
-        </button>
-        <button
-          onClick={() => setActiveTab('pvqlnn')}
-          className={cn(
-            'flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all',
-            activeTab === 'pvqlnn'
-              ? 'bg-surface text-primary-600 shadow-card dark:text-primary-300'
-              : 'text-ink-muted hover:text-ink hover:bg-surface/50'
-          )}
-        >
-          <Landmark size={15} /> 4. Nhiệm vụ PVQLNN (N1b)
-        </button>
-        <button
-          onClick={() => setActiveTab('bao-cao-khkt')}
-          className={cn(
-            'flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all',
-            activeTab === 'bao-cao-khkt'
-              ? 'bg-surface text-primary-600 shadow-card dark:text-primary-300'
-              : 'text-ink-muted hover:text-ink hover:bg-surface/50'
-          )}
-        >
-          <BarChart3 size={15} /> 5. Báo cáo & Giám sát KHKT
-        </button>
+        {tabHienDuoc('hop-dong-2815') && (
+          <button
+            onClick={() => setActiveTab('hop-dong-2815')}
+            className={cn(
+              'flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all',
+              activeTab === 'hop-dong-2815'
+                ? 'bg-surface text-primary-600 shadow-card dark:text-primary-300'
+                : 'text-ink-muted hover:text-ink hover:bg-surface/50'
+            )}
+          >
+            <Handshake size={15} /> 1. Hợp đồng kinh tế (QC 2815)
+          </button>
+        )}
+        {tabHienDuoc('tai-chinh') && (
+          <button
+            onClick={() => setActiveTab('tai-chinh')}
+            className={cn(
+              'flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all',
+              activeTab === 'tai-chinh'
+                ? 'bg-surface text-primary-600 shadow-card dark:text-primary-300'
+                : 'text-ink-muted hover:text-ink hover:bg-surface/50'
+            )}
+          >
+            <Wallet size={15} /> 2. Tài chính & Thu chi
+          </button>
+        )}
+        {tabHienDuoc('crm-khach-hang') && (
+          <button
+            onClick={() => setActiveTab('crm-khach-hang')}
+            className={cn(
+              'flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all',
+              activeTab === 'crm-khach-hang'
+                ? 'bg-surface text-primary-600 shadow-card dark:text-primary-300'
+                : 'text-ink-muted hover:text-ink hover:bg-surface/50'
+            )}
+          >
+            <Users2 size={15} /> 3. Khách hàng & CRM
+          </button>
+        )}
+        {tabHienDuoc('dau-thau') && (
+          <button
+            onClick={() => setActiveTab('dau-thau')}
+            className={cn(
+              'flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all',
+              activeTab === 'dau-thau'
+                ? 'bg-surface text-primary-600 shadow-card dark:text-primary-300'
+                : 'text-ink-muted hover:text-ink hover:bg-surface/50'
+            )}
+          >
+            <Gavel size={15} /> 4. Đấu thầu & Chào giá
+          </button>
+        )}
+        {tabHienDuoc('pvqlnn') && (
+          <button
+            onClick={() => setActiveTab('pvqlnn')}
+            className={cn(
+              'flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all',
+              activeTab === 'pvqlnn'
+                ? 'bg-surface text-primary-600 shadow-card dark:text-primary-300'
+                : 'text-ink-muted hover:text-ink hover:bg-surface/50'
+            )}
+          >
+            <Landmark size={15} /> 5. Nhiệm vụ PVQLNN (N1b)
+          </button>
+        )}
+        {tabHienDuoc('bao-cao-khkt') && (
+          <button
+            onClick={() => setActiveTab('bao-cao-khkt')}
+            className={cn(
+              'flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all',
+              activeTab === 'bao-cao-khkt'
+                ? 'bg-surface text-primary-600 shadow-card dark:text-primary-300'
+                : 'text-ink-muted hover:text-ink hover:bg-surface/50'
+            )}
+          >
+            <BarChart3 size={15} /> 6. Báo cáo & Giám sát KHKT
+          </button>
+        )}
       </div>
 
-      {activeTab === 'crm-khach-hang' && <KhachHangPage />}
-      {activeTab === 'dau-thau' && <DauThauPage showHeader={false} />}
-      {activeTab === 'pvqlnn' && <PvqlnnPage showHeader={false} />}
-      {activeTab === 'bao-cao-khkt' && (
+      {activeTab === 'tai-chinh' && tabHienDuoc('tai-chinh') && (
+        <TaiChinhPage
+          showHeader={false}
+          onSelectHopDong={(hd) => openDetail(hd, 'tai-chinh')}
+        />
+      )}
+      {activeTab === 'crm-khach-hang' && tabHienDuoc('crm-khach-hang') && <KhachHangPage />}
+      {activeTab === 'dau-thau' && tabHienDuoc('dau-thau') && <DauThauPage showHeader={false} />}
+      {activeTab === 'pvqlnn' && tabHienDuoc('pvqlnn') && <PvqlnnPage showHeader={false} />}
+      {activeTab === 'bao-cao-khkt' && tabHienDuoc('bao-cao-khkt') && (
         <div className="space-y-6">
           <BaoCaoKhktPanel hopDongList={hopDongList} />
           <CanhBaoQuyChePanel hopDongList={hopDongList} />
@@ -1283,7 +1339,7 @@ export function HopDongPage() {
         </div>
       )}
 
-      {activeTab === 'hop-dong-2815' && (
+      {activeTab === 'hop-dong-2815' && tabHienDuoc('hop-dong-2815') && (
         <>
           <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <KpiCard

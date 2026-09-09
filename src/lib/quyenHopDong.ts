@@ -65,6 +65,8 @@ export const NHAN_VAI_TRO: Record<VaiTro, string> = {
   'phong-tchc': 'Phòng Tổ chức – Hành chính',
   'phong-th-don-vi': 'Phòng Tổng hợp đơn vị',
   'phu-trach-ke-toan-dv': 'Phụ trách kế toán đơn vị',
+  'can-bo-to-chuc': 'Cán bộ Tổ chức - Hành chính',
+  'van-phong-dang-uy': 'Văn phòng Đảng ủy',
 };
 
 /** Câu giải thích hiện khi nút bị ẩn/khóa, để người dùng hiểu vì sao không thao tác được. */

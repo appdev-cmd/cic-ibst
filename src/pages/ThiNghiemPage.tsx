@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Microscope, Timer, LoaderCircle, Printer, ShieldCheck, Wrench, AlertTriangle, Building } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { StatusBadge, TRANG_THAI_OPTIONS } from '../components/StatusBadge';
@@ -22,8 +22,16 @@ import { fetchKetQuaPhepThu, updateTrangThaiMau } from '../services/chitiet';
 import type { MauThiNghiem, TrangThai } from '../types';
 import { formatNgay, cn } from '../lib/utils';
 import { printPhieuKetQua } from '../lib/print';
+import { usePhanQuyen } from '../hooks/usePhanQuyen';
+import { tabDuocPhep, type TaiNguyen } from '../lib/phanQuyen';
 
 type Tab = 'mau-thu' | 'thiet-bi-las' | 'dau-tu-cong';
+const TAB_IDS: Tab[] = ['mau-thu', 'thiet-bi-las', 'dau-tu-cong'];
+const TAB_TAI_NGUYEN: Record<Tab, TaiNguyen> = {
+  'mau-thu': 'mau_thu',
+  'thiet-bi-las': 'thiet_bi_las',
+  'dau-tu-cong': 'dau_tu_cong',
+};
 
 const NEXT_TRANG_THAI: Partial<Record<TrangThai, { to: TrangThai; label: string }>> = {
   moi: { to: 'dang-thuc-hien', label: 'Bắt đầu thí nghiệm' },
@@ -59,6 +67,15 @@ const MOCK_EQUIPMENT = [
 
 export function ThiNghiemPage() {
   const [activeTab, setActiveTab] = useState<Tab>('mau-thu');
+
+  const { can: coQuyenTab, dangTai: dangTaiQuyen } = usePhanQuyen();
+  const tabHienDuoc = (t: Tab) => tabDuocPhep(t, TAB_TAI_NGUYEN, coQuyenTab, dangTaiQuyen);
+  useEffect(() => {
+    if (dangTaiQuyen || tabHienDuoc(activeTab)) return;
+    const taiChoPhep = TAB_IDS.find((t) => coQuyenTab(TAB_TAI_NGUYEN[t], 'xem'));
+    if (taiChoPhep) setActiveTab(taiChoPhep);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dangTaiQuyen]);
 
   const { data: mauList, loading, error, refetch } = useAsyncData(fetchMauThiNghiem, []);
   const { data: khachHangOptions } = useAsyncData(fetchKhachHangOptions, []);
@@ -151,8 +168,9 @@ export function ThiNghiemPage() {
         subtitle="Tiếp nhận mẫu, tính kết quả cơ lý ISO/IEC 17025, ký số CA pháp lý tệp PDF & Nhắc lịch kiểm định thiết bị 11 phòng LAS-XD trước 30 ngày"
       />
 
-      {/* Tabs Switcher */}
+      {/* Tabs Switcher — mỗi tab chỉ hiện khi có quyền xem tài nguyên tương ứng (Tầng 3) */}
       <div className="mb-6 flex flex-wrap gap-2 rounded-xl bg-muted p-1.5 w-fit border border-border">
+        {tabHienDuoc('mau-thu') && (
         <button
           onClick={() => setActiveTab('mau-thu')}
           className={cn(
@@ -164,6 +182,8 @@ export function ThiNghiemPage() {
         >
           <Microscope size={16} /> Phiếu Thử nghiệm & Chữ ký số CA
         </button>
+        )}
+        {tabHienDuoc('thiet-bi-las') && (
         <button
           onClick={() => setActiveTab('thiet-bi-las')}
           className={cn(
@@ -175,6 +195,8 @@ export function ThiNghiemPage() {
         >
           <Wrench size={16} /> Danh mục Thiết bị 11 phòng LAS-XD
         </button>
+        )}
+        {tabHienDuoc('dau-tu-cong') && (
         <button
           onClick={() => setActiveTab('dau-tu-cong')}
           className={cn(
@@ -186,9 +208,10 @@ export function ThiNghiemPage() {
         >
           <Building size={16} /> Giám sát Vốn Đầu tư Công
         </button>
+        )}
       </div>
 
-      {activeTab === 'mau-thu' && (
+      {activeTab === 'mau-thu' && tabHienDuoc('mau-thu') && (
         <>
           <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
             <KpiCard label="TỔNG MẪU TIẾP NHẬN" value={String(mauList.length)} icon={Microscope} tone="primary" />
@@ -322,7 +345,7 @@ export function ThiNghiemPage() {
         </>
       )}
 
-      {activeTab === 'thiet-bi-las' && (
+      {activeTab === 'thiet-bi-las' && tabHienDuoc('thiet-bi-las') && (
         <div className="space-y-4">
           <div className="card p-4 border-l-4 border-l-amber-500 bg-subtle/50 flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -367,7 +390,7 @@ export function ThiNghiemPage() {
         </div>
       )}
 
-      {activeTab === 'dau-tu-cong' && (
+      {activeTab === 'dau-tu-cong' && tabHienDuoc('dau-tu-cong') && (
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="card p-4 border-l-4 border-l-primary">

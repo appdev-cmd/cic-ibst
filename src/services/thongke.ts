@@ -91,19 +91,36 @@ export async function fetchTongQuan(): Promise<TongQuan> {
   };
 }
 
-/** Doanh thu thực thu theo từng tháng trong năm hiện tại (triệu đồng). */
-export async function fetchDoanhThuTheoThang(): Promise<{ thang: string; thucHien: number }[]> {
+/** Doanh thu kế hoạch và thực thu tiền về theo từng tháng trong năm hiện tại (triệu đồng). */
+export async function fetchDoanhThuTheoThang(): Promise<
+  { thang: string; doanhThu: number; tienVe: number; thucHien: number }[]
+> {
   const { data, error } = await supabase
     .from('dot_thanh_toan')
-    .select('so_tien, ngay_thuc_thu');
+    .select('so_tien, ngay_thuc_thu, ngay_du_kien');
   throwIf(error);
-  const theoThang = Array.from({ length: 12 }, () => 0);
+
+  const keHoachTheoThang = Array.from({ length: 12 }, () => 0);
+  const thucThuTheoThang = Array.from({ length: 12 }, () => 0);
+
   (data ?? []).forEach((r) => {
-    if (!r.ngay_thuc_thu) return;
-    const d = new Date(r.ngay_thuc_thu);
-    if (d.getFullYear() === NAM) theoThang[d.getMonth()] += Number(r.so_tien);
+    const tien = Number(r.so_tien) || 0;
+    if (r.ngay_du_kien) {
+      const d = new Date(r.ngay_du_kien);
+      if (d.getFullYear() === NAM) keHoachTheoThang[d.getMonth()] += tien;
+    }
+    if (r.ngay_thuc_thu) {
+      const d = new Date(r.ngay_thuc_thu);
+      if (d.getFullYear() === NAM) thucThuTheoThang[d.getMonth()] += tien;
+    }
   });
-  return theoThang.map((v, i) => ({ thang: `T${i + 1}`, thucHien: Math.round((v / 1000) * 10) / 10 }));
+
+  return Array.from({ length: 12 }, (_, i) => ({
+    thang: `T${i + 1}`,
+    doanhThu: keHoachTheoThang[i],
+    tienVe: thucThuTheoThang[i],
+    thucHien: Math.round((thucThuTheoThang[i] / 1000) * 10) / 10,
+  }));
 }
 
 /** Cơ cấu giá trị hợp đồng đang theo dõi theo đơn vị thực hiện (top). */

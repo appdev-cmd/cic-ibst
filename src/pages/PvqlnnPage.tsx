@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Landmark,
   Plus,
@@ -9,6 +9,9 @@ import {
   Clock,
   Shield,
   Pencil,
+  FileSpreadsheet,
+  AlertTriangle,
+  Filter,
 } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { KpiCard } from '../components/KpiCard';
@@ -27,7 +30,7 @@ import {
 } from '../services/workflow';
 import { fetchDonViOptions, fetchNhanSuOptions } from '../services/queries';
 import type { NhiemVuPVQLNN, TrangThai } from '../types';
-import { formatTrieu, formatNgay } from '../lib/utils';
+import { formatTrieu, formatNgay, exportExcel } from '../lib/utils';
 
 const EMPTY_FORM: NhiemVuPVQLNNInput = {
   tenNhiemVu: '',
@@ -63,6 +66,8 @@ export function PvqlnnPage({ showHeader = true }: { showHeader?: boolean } = {})
   const { data: donViOptions } = useAsyncData(fetchDonViOptions, []);
   const { data: nhanSuOptions } = useAsyncData(fetchNhanSuOptions, []);
   const [selectedItem, setSelectedItem] = useState<NhiemVuPVQLNN | null>(null);
+  const [filterTrangThai, setFilterTrangThai] = useState<string>('all');
+  const [filterDonViId, setFilterDonViId] = useState<string>('all');
 
   const crud = useCrudForm<NhiemVuPVQLNN, NhiemVuPVQLNNInput>({
     empty: EMPTY_FORM,
@@ -88,10 +93,53 @@ export function PvqlnnPage({ showHeader = true }: { showHeader?: boolean } = {})
     onDone: () => refetch(),
   });
 
-  const table = useTableControls(list, (item) => `${item.tenNhiemVu} ${item.coQuanGiao} ${item.donVi}`, 10);
+  const filteredList = useMemo(() => {
+    return list.filter((i) => {
+      if (filterTrangThai !== 'all' && i.trangThai !== filterTrangThai) return false;
+      if (filterDonViId !== 'all' && String(i.donViId) !== filterDonViId) return false;
+      return true;
+    });
+  }, [list, filterTrangThai, filterDonViId]);
+
+  const table = useTableControls(filteredList, (item) => `${item.tenNhiemVu} ${item.coQuanGiao} ${item.donVi || ''} ${item.soVanBanGiao || ''}`, 10);
 
   const tongKinhPhi = list.reduce((acc, i) => acc + (i.kinhPhi || 0), 0);
   const hoanThanhCount = list.filter((i) => i.trangThai === 'hoan-thanh').length;
+  const dangThucHienCount = list.filter((i) => i.trangThai === 'dang-thuc-hien').length;
+  const moiCount = list.filter((i) => i.trangThai === 'moi').length;
+  const quaHanCount = list.filter((i) => i.trangThai === 'qua-han').length;
+
+  const handleExportExcel = () => {
+    const headers = [
+      'STT',
+      'Tên nhiệm vụ',
+      'Cơ quan giao',
+      'Số văn bản',
+      'Ngày giao',
+      'Hạn hoàn thành',
+      'Đơn vị thực hiện',
+      'Người phụ trách',
+      'Kinh phí cấp (triệu đ)',
+      'Nguồn kinh phí',
+      'Trạng thái',
+      'Kết quả / Sản phẩm'
+    ];
+    const rows = filteredList.map((i, idx) => [
+      idx + 1,
+      i.tenNhiemVu,
+      i.coQuanGiao,
+      i.soVanBanGiao || '',
+      i.ngayGiao || '',
+      i.hanHoanThanh || '',
+      i.donVi || '',
+      i.nguoiPhuTrach || '',
+      i.kinhPhi || 0,
+      i.nguonKinhPhi || '',
+      TRANG_THAI_LABEL[i.trangThai] || i.trangThai,
+      i.ketQua || ''
+    ]);
+    exportExcel('Nhiem_vu_PVQLNN_IBST.xls', 'Nhiệm vụ QLNN', headers, rows);
+  };
 
   // SlidePanel Chi Tiết nhiệm vụ PVQLNN
   useSlidePanelChiTiet({
@@ -361,9 +409,117 @@ export function PvqlnnPage({ showHeader = true }: { showHeader?: boolean } = {})
         </div>
       </div>
 
+      {/* Bộ lọc trạng thái & đơn vị */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+        {/* Filter Pills */}
+        <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-subtle/80 border border-border">
+          <button
+            type="button"
+            onClick={() => setFilterTrangThai('all')}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 ${
+              filterTrangThai === 'all'
+                ? 'bg-surface text-primary shadow-2xs font-bold'
+                : 'text-ink-muted hover:text-ink hover:bg-surface/50'
+            }`}
+          >
+            Tất cả
+            <span className="rounded-full bg-subtle px-1.5 py-0.2 text-2xs font-bold text-ink-muted">
+              {list.length}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilterTrangThai('dang-thuc-hien')}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 ${
+              filterTrangThai === 'dang-thuc-hien'
+                ? 'bg-surface text-blue-600 dark:text-blue-400 shadow-2xs font-bold'
+                : 'text-ink-muted hover:text-ink hover:bg-surface/50'
+            }`}
+          >
+            Đang thực hiện
+            <span className="rounded-full bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 px-1.5 py-0.2 text-2xs font-bold">
+              {dangThucHienCount}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilterTrangThai('hoan-thanh')}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 ${
+              filterTrangThai === 'hoan-thanh'
+                ? 'bg-surface text-emerald-600 dark:text-emerald-400 shadow-2xs font-bold'
+                : 'text-ink-muted hover:text-ink hover:bg-surface/50'
+            }`}
+          >
+            Hoàn thành
+            <span className="rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 px-1.5 py-0.2 text-2xs font-bold">
+              {hoanThanhCount}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilterTrangThai('moi')}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 ${
+              filterTrangThai === 'moi'
+                ? 'bg-surface text-gray-700 dark:text-gray-300 shadow-2xs font-bold'
+                : 'text-ink-muted hover:text-ink hover:bg-surface/50'
+            }`}
+          >
+            Mới giao
+            <span className="rounded-full bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300 px-1.5 py-0.2 text-2xs font-bold">
+              {moiCount}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilterTrangThai('qua-han')}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 ${
+              filterTrangThai === 'qua-han'
+                ? 'bg-surface text-red-600 dark:text-red-400 shadow-2xs font-bold'
+                : 'text-ink-muted hover:text-ink hover:bg-surface/50'
+            }`}
+          >
+            <AlertTriangle size={12} className={quaHanCount > 0 ? 'text-red-500' : ''} />
+            Quá hạn
+            <span className="rounded-full bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300 px-1.5 py-0.2 text-2xs font-bold">
+              {quaHanCount}
+            </span>
+          </button>
+        </div>
+
+        {/* Lọc theo đơn vị & Xuất Excel */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 text-xs text-ink-muted">
+            <Building2 size={14} className="text-ink-muted" />
+            <select
+              aria-label="Lọc theo đơn vị thực hiện"
+              value={filterDonViId}
+              onChange={(e) => setFilterDonViId(e.target.value)}
+              className="rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs text-ink outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+            >
+              <option value="all">-- Tất cả đơn vị ({donViOptions.length}) --</option>
+              {donViOptions.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.ten}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleExportExcel}
+            className="btn-secondary py-1.5 px-3 text-xs font-semibold gap-1.5 shadow-2xs"
+            title="Xuất bảng dữ liệu ra file Excel"
+          >
+            <FileSpreadsheet size={13} className="text-emerald-600 dark:text-emerald-400" />
+            Xuất Excel
+          </button>
+        </div>
+      </div>
+
       {/* Master Table */}
       <MasterTable
-        title="Danh sách nhiệm vụ PVQLNN"
+        title={`Danh sách nhiệm vụ PVQLNN (${filteredList.length})`}
         searchPlaceholder="Tìm kiếm tên nhiệm vụ, cơ quan giao, đơn vị thực hiện..."
         searchQuery={table.search}
         onSearchChange={table.setSearch}

@@ -1,14 +1,30 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FolderOpen, Bot, Shield, FileSpreadsheet, Lock, Search, Sparkles } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { HoSoTaiLieuPage } from './HoSoTaiLieuPage';
 import { AiChatbot } from '../components/AiChatbot';
 import { cn } from '../lib/utils';
+import { usePhanQuyen } from '../hooks/usePhanQuyen';
+import { tabDuocPhep, type TaiNguyen } from '../lib/phanQuyen';
 
 type Tab = 'ho-so-tai-lieu' | 'ai-rag-qcvn';
+const TAB_IDS: Tab[] = ['ho-so-tai-lieu', 'ai-rag-qcvn'];
+const TAB_TAI_NGUYEN: Record<Tab, TaiNguyen> = {
+  'ho-so-tai-lieu': 'ho_so_tai_lieu',
+  'ai-rag-qcvn': 'ai_rag',
+};
 
 export function KhoLuuTruPage() {
   const [activeTab, setActiveTab] = useState<Tab>('ho-so-tai-lieu');
+
+  const { can: coQuyenTab, dangTai: dangTaiQuyen } = usePhanQuyen();
+  const tabHienDuoc = (t: Tab) => tabDuocPhep(t, TAB_TAI_NGUYEN, coQuyenTab, dangTaiQuyen);
+  useEffect(() => {
+    if (dangTaiQuyen || tabHienDuoc(activeTab)) return;
+    const taiChoPhep = TAB_IDS.find((t) => coQuyenTab(TAB_TAI_NGUYEN[t], 'xem'));
+    if (taiChoPhep) setActiveTab(taiChoPhep);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dangTaiQuyen]);
 
   return (
     <div>
@@ -17,30 +33,34 @@ export function KhoLuuTruPage() {
         subtitle="Quản lý tập trung bản vẽ CAD/BIM, báo cáo địa kỹ thuật với phân quyền chi tiết (Granular Access Control) & Trợ lý AI-RAG tra cứu Quy chuẩn kỹ thuật QCVN 06:2022/BXD"
       />
 
-      {/* Tabs Switcher */}
+      {/* Tabs Switcher — mỗi tab chỉ hiện khi có quyền xem tài nguyên tương ứng (Tầng 3) */}
       <div className="mb-6 flex flex-wrap gap-2 rounded-xl bg-muted p-1.5 w-fit border border-border">
-        <button
-          onClick={() => setActiveTab('ho-so-tai-lieu')}
-          className={cn(
-            'flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-bold transition-all',
-            activeTab === 'ho-so-tai-lieu'
-              ? 'bg-surface text-primary-600 shadow-card dark:text-primary-300'
-              : 'text-ink-muted hover:text-ink'
-          )}
-        >
-          <FolderOpen size={16} /> Kho Bản vẽ CAD/BIM & Hồ sơ Kỹ thuật
-        </button>
-        <button
-          onClick={() => setActiveTab('ai-rag-qcvn')}
-          className={cn(
-            'flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-bold transition-all',
-            activeTab === 'ai-rag-qcvn'
-              ? 'bg-surface font-black text-emerald-600 dark:text-emerald-400 shadow-card'
-              : 'text-ink-muted hover:text-ink'
-          )}
-        >
-          <Sparkles size={16} className="text-emerald-500" /> Trợ lý AI-RAG Tra cứu QCVN / TCVN
-        </button>
+        {tabHienDuoc('ho-so-tai-lieu') && (
+          <button
+            onClick={() => setActiveTab('ho-so-tai-lieu')}
+            className={cn(
+              'flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-bold transition-all',
+              activeTab === 'ho-so-tai-lieu'
+                ? 'bg-surface text-primary-600 shadow-card dark:text-primary-300'
+                : 'text-ink-muted hover:text-ink'
+            )}
+          >
+            <FolderOpen size={16} /> Kho Bản vẽ CAD/BIM & Hồ sơ Kỹ thuật
+          </button>
+        )}
+        {tabHienDuoc('ai-rag-qcvn') && (
+          <button
+            onClick={() => setActiveTab('ai-rag-qcvn')}
+            className={cn(
+              'flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-bold transition-all',
+              activeTab === 'ai-rag-qcvn'
+                ? 'bg-surface font-black text-emerald-600 dark:text-emerald-400 shadow-card'
+                : 'text-ink-muted hover:text-ink'
+            )}
+          >
+            <Sparkles size={16} className="text-emerald-500" /> Trợ lý AI-RAG Tra cứu QCVN / TCVN
+          </button>
+        )}
       </div>
 
       {/* Security Level Indicator */}
@@ -53,8 +73,8 @@ export function KhoLuuTruPage() {
       </div>
 
       {/* Tab Contents */}
-      {activeTab === 'ho-so-tai-lieu' && <HoSoTaiLieuPage />}
-      {activeTab === 'ai-rag-qcvn' && (
+      {activeTab === 'ho-so-tai-lieu' && tabHienDuoc('ho-so-tai-lieu') && <HoSoTaiLieuPage />}
+      {activeTab === 'ai-rag-qcvn' && tabHienDuoc('ai-rag-qcvn') && (
         <div className="space-y-4">
           <div className="card p-4 border-l-4 border-l-emerald-500 bg-subtle/50 flex items-center justify-between">
             <div className="space-y-1">

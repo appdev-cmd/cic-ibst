@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { throwIfKhongGhiDuoc } from '../lib/rlsGuard';
 import type { DonVi, LoaiDonVi, NhanSu } from '../types';
 
 // ─── Nhãn + thứ tự nhóm loại đơn vị (theo cơ cấu ibst.vn) ───
@@ -29,6 +30,7 @@ export async function fetchDonVi(): Promise<DonVi[]> {
     .select(
       `id, ma_dinh_danh, ten_don_vi, ten_viet_tat, loai_don_vi, chuc_nang_nhiem_vu,
        so_dien_thoai, email, thu_tu, phu_trach_id, truong_don_vi_id,
+       ke_hoach_nam, ke_hoach_nam_truoc, ghi_chu_ke_hoach,
        truong:nhan_su!don_vi_truong_don_vi_id_fkey(id, ho_va_ten, hoc_vi, chuc_danh),
        phu_trach:nhan_su!don_vi_phu_trach_id_fkey(id, ho_va_ten),
        nhan_su!nhan_su_don_vi_id_fkey(count),
@@ -36,7 +38,7 @@ export async function fetchDonVi(): Promise<DonVi[]> {
     )
     .order('thu_tu');
   throwIf(error);
-  return (data ?? []).map((r) => {
+  return (data ?? []).map((r: any) => {
     const truong = r.truong as unknown as { id: number; ho_va_ten: string; hoc_vi: string | null; chuc_danh: string | null } | null;
     const phuTrach = r.phu_trach as unknown as { id: number; ho_va_ten: string } | null;
     const cnt = (x: unknown) => (x as { count: number }[] | null)?.[0]?.count ?? 0;
@@ -59,6 +61,9 @@ export async function fetchDonVi(): Promise<DonVi[]> {
       soDeTai: cnt(r.de_tai),
       soHopDong: cnt(r.hop_dong),
       thuTu: r.thu_tu,
+      keHoachNam: r.ke_hoach_nam != null ? Number(r.ke_hoach_nam) : null,
+      keHoachNamTruoc: r.ke_hoach_nam_truoc != null ? Number(r.ke_hoach_nam_truoc) : null,
+      ghiChuKeHoach: r.ghi_chu_ke_hoach || null,
     };
   });
 }
@@ -73,6 +78,9 @@ export interface DonViInput {
   email: string;
   phuTrachId: string;
   truongDonViId?: string;
+  keHoachNam?: number | null;
+  keHoachNamTruoc?: number | null;
+  ghiChuKeHoach?: string;
 }
 
 function donViRow(input: DonViInput) {
@@ -86,6 +94,9 @@ function donViRow(input: DonViInput) {
     email: input.email || null,
     phu_trach_id: input.phuTrachId ? Number(input.phuTrachId) : null,
     truong_don_vi_id: input.truongDonViId ? Number(input.truongDonViId) : null,
+    ke_hoach_nam: input.keHoachNam != null ? Number(input.keHoachNam) : null,
+    ke_hoach_nam_truoc: input.keHoachNamTruoc != null ? Number(input.keHoachNamTruoc) : null,
+    ghi_chu_ke_hoach: input.ghiChuKeHoach || null,
   };
 }
 
@@ -95,13 +106,13 @@ export async function createDonVi(input: DonViInput) {
 }
 
 export async function updateDonVi(id: string, input: DonViInput) {
-  const { error } = await supabase.from('don_vi').update(donViRow(input)).eq('id', Number(id));
-  throwIf(error);
+  throwIfKhongGhiDuoc(
+    await supabase.from('don_vi').update(donViRow(input)).eq('id', Number(id)).select('id'),
+  );
 }
 
 export async function deleteDonVi(id: string) {
-  const { error } = await supabase.from('don_vi').delete().eq('id', Number(id));
-  throwIf(error);
+  throwIfKhongGhiDuoc(await supabase.from('don_vi').delete().eq('id', Number(id)).select('id'));
 }
 
 // ─── NHÂN SỰ ───
@@ -175,11 +186,11 @@ export async function createNhanSu(input: NhanSuInput) {
 }
 
 export async function updateNhanSu(id: string, input: NhanSuInput) {
-  const { error } = await supabase.from('nhan_su').update(nhanSuRow(input)).eq('id', Number(id));
-  throwIf(error);
+  throwIfKhongGhiDuoc(
+    await supabase.from('nhan_su').update(nhanSuRow(input)).eq('id', Number(id)).select('id'),
+  );
 }
 
 export async function deleteNhanSu(id: string) {
-  const { error } = await supabase.from('nhan_su').delete().eq('id', Number(id));
-  throwIf(error);
+  throwIfKhongGhiDuoc(await supabase.from('nhan_su').delete().eq('id', Number(id)).select('id'));
 }

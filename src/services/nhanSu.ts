@@ -2,6 +2,7 @@
 // đánh giá xếp loại. Tách khỏi org.ts (org.ts giữ CRUD cơ bản nhan_su/don_vi
 // dùng chung toàn hệ thống — xem docs/ke-hoach-hoan-thien-ph5-nhan-su-dang-doan-the.md).
 import { supabase } from '../lib/supabase';
+import { throwIfKhongGhiDuoc } from '../lib/rlsGuard';
 import type {
   QuaTrinhCongTac,
   BangCap,
@@ -111,7 +112,7 @@ export async function fetchNhanSuHoSoMoRong(nhanSuId: string): Promise<NhanSuHoS
 }
 
 export async function updateNhanSuHoSoMoRong(nhanSuId: string, input: NhanSuHoSoMoRong) {
-  const { error } = await supabase
+  throwIfKhongGhiDuoc(await supabase
     .from('nhan_su')
     .update({
       ngay_sinh: str(input.ngaySinh),
@@ -139,8 +140,8 @@ export async function updateNhanSuHoSoMoRong(nhanSuId: string, input: NhanSuHoSo
       ngay_vao_lam: str(input.ngayVaoLam),
       ngay_nghi_viec: str(input.ngayNghiViec),
     })
-    .eq('id', Number(nhanSuId));
-  throwIf(error);
+    .eq('id', Number(nhanSuId))
+    .select('id'));
 }
 
 // ─── Quá trình công tác ───

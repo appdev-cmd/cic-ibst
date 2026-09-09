@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { throwIfKhongGhiDuoc } from '../lib/rlsGuard';
 
 function throwIf(error: { message: string } | null) {
   if (error) throw new Error(error.message);
@@ -92,7 +93,7 @@ export async function createKhachHang(i: KhachHangInput) {
 export async function updateKhachHang(id: string, i: KhachHangInput) {
   const trung = await kiemTraTrungMaSoThue(i.maSoThue, id);
   if (trung) throw new Error(`Mã số thuế ${i.maSoThue} đã được dùng cho "${trung}". Vui lòng kiểm tra lại để tránh trùng hồ sơ.`);
-  throwIf((await supabase.from('khach_hang').update(row(i)).eq('id', Number(id))).error);
+  throwIfKhongGhiDuoc(await supabase.from('khach_hang').update(row(i)).eq('id', Number(id)).select('id'));
 }
 
 // ─── Hồ sơ 360° khách hàng (Giai đoạn 1 kế hoạch số hóa) ───
@@ -171,5 +172,5 @@ export async function deleteKhachHang(id: string) {
   if ((count ?? 0) > 0) {
     throw new Error(`Không thể xóa: khách hàng đang gắn với ${count} hợp đồng. Hãy chuyển các hợp đồng sang khách hàng khác trước.`);
   }
-  throwIf((await supabase.from('khach_hang').delete().eq('id', Number(id))).error);
+  throwIfKhongGhiDuoc(await supabase.from('khach_hang').delete().eq('id', Number(id)).select('id'));
 }

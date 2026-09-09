@@ -44,8 +44,19 @@ import {
 } from '../services/org';
 import type { NhanSu, DonVi } from '../types';
 import { cn, exportCsv, exportExcel } from '../lib/utils';
+import { usePhanQuyen } from '../hooks/usePhanQuyen';
+import { tabDuocPhep, type TaiNguyen } from '../lib/phanQuyen';
 
 type MainTab = 'co-cau-to-chuc' | 'don-vi' | 'nhan-su' | 'dao-tao-ncs' | 'dang-doan-the' | 'danh-gia-xep-loai';
+const MAIN_TAB_IDS: MainTab[] = ['co-cau-to-chuc', 'don-vi', 'nhan-su', 'dao-tao-ncs', 'dang-doan-the', 'danh-gia-xep-loai'];
+const MAIN_TAB_TAI_NGUYEN: Record<MainTab, TaiNguyen> = {
+  'co-cau-to-chuc': 'co_cau_to_chuc',
+  'don-vi': 'don_vi',
+  'nhan-su': 'nhan_su',
+  'dao-tao-ncs': 'dao_tao_ncs',
+  'dang-doan-the': 'dang_doan_the',
+  'danh-gia-xep-loai': 'danh_gia',
+};
 
 const HOC_VI_OPTIONS = [
   'Giáo sư, Tiến sĩ',
@@ -258,6 +269,15 @@ export function NhanSuPage() {
       return next;
     }, { replace: true });
   };
+
+  const { can: coQuyenTab, dangTai: dangTaiQuyen } = usePhanQuyen();
+  const tabHienDuoc = (t: MainTab) => tabDuocPhep(t, MAIN_TAB_TAI_NGUYEN, coQuyenTab, dangTaiQuyen);
+  useEffect(() => {
+    if (dangTaiQuyen || tabHienDuoc(mainTab)) return;
+    const taiChoPhep = MAIN_TAB_IDS.find((t) => coQuyenTab(MAIN_TAB_TAI_NGUYEN[t], 'xem'));
+    if (taiChoPhep) handleTabChange(taiChoPhep);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dangTaiQuyen]);
 
   const { data: list, loading, error, refetch } = useAsyncData(fetchNhanSuFull, []);
   const { data: donViList } = useAsyncData(fetchDonVi, []);
@@ -544,8 +564,9 @@ export function NhanSuPage() {
         subtitle="Cơ cấu tổ chức viện, hồ sơ cán bộ viên chức, chứng chỉ hành nghề, đào tạo NCS, Đảng - Đoàn thể & Đánh giá xếp loại theo NĐ 233/2026/NĐ-CP"
       />
 
-      {/* Main Tabs Switcher */}
+      {/* Main Tabs Switcher — mỗi tab chỉ hiện khi có quyền xem tài nguyên tương ứng (Tầng 3) */}
       <div className="mb-6 flex flex-wrap gap-2 rounded-xl bg-muted p-1.5 w-fit border border-border">
+        {tabHienDuoc('co-cau-to-chuc') && (
         <button
           onClick={() => handleTabChange('co-cau-to-chuc')}
           className={cn(
@@ -567,6 +588,8 @@ export function NhanSuPage() {
             {donViList.length || 20}
           </span>
         </button>
+        )}
+        {tabHienDuoc('don-vi') && (
         <button
           onClick={() => handleTabChange('don-vi')}
           className={cn(
@@ -588,6 +611,8 @@ export function NhanSuPage() {
             {donViList.filter(d => d.loai !== 'lanh-dao').length || 19}
           </span>
         </button>
+        )}
+        {tabHienDuoc('nhan-su') && (
         <button
           onClick={() => handleTabChange('nhan-su')}
           className={cn(
@@ -609,6 +634,8 @@ export function NhanSuPage() {
             {list.length || 635}
           </span>
         </button>
+        )}
+        {tabHienDuoc('dao-tao-ncs') && (
         <button
           onClick={() => handleTabChange('dao-tao-ncs')}
           className={cn(
@@ -620,6 +647,8 @@ export function NhanSuPage() {
         >
           <GraduationCap size={15} /> Đào tạo & NCS
         </button>
+        )}
+        {tabHienDuoc('dang-doan-the') && (
         <button
           onClick={() => handleTabChange('dang-doan-the')}
           className={cn(
@@ -631,6 +660,8 @@ export function NhanSuPage() {
         >
           <Flag size={15} /> Đảng & Đoàn thể
         </button>
+        )}
+        {tabHienDuoc('danh-gia-xep-loai') && (
         <button
           onClick={() => handleTabChange('danh-gia-xep-loai')}
           className={cn(
@@ -652,10 +683,11 @@ export function NhanSuPage() {
             NĐ 233
           </span>
         </button>
+        )}
       </div>
 
-      {mainTab === 'co-cau-to-chuc' && <DonViPage hideHeader mode="orgchart-only" />}
-      {mainTab === 'don-vi' && (
+      {mainTab === 'co-cau-to-chuc' && tabHienDuoc('co-cau-to-chuc') && <DonViPage hideHeader mode="orgchart-only" />}
+      {mainTab === 'don-vi' && tabHienDuoc('don-vi') && (
         <DonViListTab
           donViList={donViList}
           nhanSuList={list}
@@ -664,15 +696,15 @@ export function NhanSuPage() {
           onRefresh={refetch}
         />
       )}
-      {mainTab === 'dao-tao-ncs' && <DaoTaoPage />}
+      {mainTab === 'dao-tao-ncs' && tabHienDuoc('dao-tao-ncs') && <DaoTaoPage />}
 
-      {mainTab === 'dang-doan-the' && <DangDoanTheTab />}
+      {mainTab === 'dang-doan-the' && tabHienDuoc('dang-doan-the') && <DangDoanTheTab />}
 
-      {mainTab === 'danh-gia-xep-loai' && (
+      {mainTab === 'danh-gia-xep-loai' && tabHienDuoc('danh-gia-xep-loai') && (
         <DanhGiaVienChucTab donViList={donViList} nhanSuList={list} />
       )}
 
-      {mainTab === 'nhan-su' && (
+      {mainTab === 'nhan-su' && tabHienDuoc('nhan-su') && (
         <>
           <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <KpiCard

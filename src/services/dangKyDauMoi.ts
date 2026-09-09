@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { throwIfKhongGhiDuoc } from '../lib/rlsGuard';
 
 function throwIf(error: { message: string } | null) {
   if (error) throw new Error(error.message);
@@ -96,21 +97,22 @@ export async function createDangKyDauMoi(i: DangKyDauMoiInput) {
 
 /** P.KHKT tiếp nhận đăng ký, báo cáo Lãnh đạo Viện xin ý kiến (Đ.5.1c). */
 export async function khktTiepNhan(id: string) {
-  throwIf((await supabase.from('dang_ky_dau_moi').update({ trang_thai: 'cho-ldv-chi-dao' }).eq('id', Number(id))).error);
+  throwIfKhongGhiDuoc(
+    await supabase.from('dang_ky_dau_moi').update({ trang_thai: 'cho-ldv-chi-dao' }).eq('id', Number(id)).select('id'),
+  );
 }
 
 /** Lãnh đạo Viện cho ý kiến — giao đầu mối hoặc không tham gia (Đ.5.1c). */
 export async function phanHoiDangKy(id: string, ketQua: 'giao-dau-moi' | 'khong-tham-gia', lyDo?: string) {
-  throwIf(
-    (
-      await supabase
-        .from('dang_ky_dau_moi')
-        .update({ trang_thai: ketQua, ly_do_khong_tham_gia: ketQua === 'khong-tham-gia' ? lyDo || null : null })
-        .eq('id', Number(id))
-    ).error,
+  throwIfKhongGhiDuoc(
+    await supabase
+      .from('dang_ky_dau_moi')
+      .update({ trang_thai: ketQua, ly_do_khong_tham_gia: ketQua === 'khong-tham-gia' ? lyDo || null : null })
+      .eq('id', Number(id))
+      .select('id'),
   );
 }
 
 export async function deleteDangKyDauMoi(id: string) {
-  throwIf((await supabase.from('dang_ky_dau_moi').delete().eq('id', Number(id))).error);
+  throwIfKhongGhiDuoc(await supabase.from('dang_ky_dau_moi').delete().eq('id', Number(id)).select('id'));
 }
