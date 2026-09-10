@@ -28,6 +28,7 @@ const PresenceContext = createContext<PresenceContextType>({ onlineUsers: [] });
 export function PresenceProvider({ children }: { children: ReactNode }) {
   const { session } = useAuth();
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
+  const [myAvatarUrl, setMyAvatarUrl] = useState<string | undefined>();
 
   useEffect(() => {
     if (!session?.user) return;
@@ -37,7 +38,7 @@ export function PresenceProvider({ children }: { children: ReactNode }) {
       session.user.user_metadata?.full_name ??
       session.user.email?.split('@')[0] ??
       'Người dùng';
-    const email = session.user.email;
+    const email = session.user.email ?? '';
 
     const channel = supabase.channel('ibst_online_users', {
       config: { presence: { key: userId } },
@@ -63,11 +64,29 @@ export function PresenceProvider({ children }: { children: ReactNode }) {
         setOnlineUsers(users);
       })
       .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          await channel.track({
-            user_info: { fullName, email },
-          });
+        if (status !== 'SUBSCRIBED') return;
+
+        // Lấy avatar từ bảng nhan_su (qua bảng nguoi_dung)
+        let avatarUrl: string | undefined;
+        const { data: nd } = await supabase
+          .from('nguoi_dung')
+          .select('nhan_su_id')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+        if (nd?.nhan_su_id) {
+          const { data: ns } = await supabase
+            .from('nhan_su')
+            .select('anh_dai_dien')
+            .eq('id', nd.nhan_su_id)
+            .maybeSingle();
+          avatarUrl = (ns?.anh_dai_dien as string | null) ?? undefined;
+          setMyAvatarUrl(avatarUrl); // lưu để dùng cho fallback
         }
+
+        await channel.track({
+          user_info: { fullName, email, avatarUrl },
+        });
       });
 
     return () => {
@@ -75,7 +94,7 @@ export function PresenceProvider({ children }: { children: ReactNode }) {
     };
   }, [session?.user?.id]);
 
-  // Fallback: nếu channel chưa sync, hiển thị chính mình
+  // Fallback: nếu channel chưa sync, hiển thị chính mình (kèm avatarUrl đã fetch)
   const effectiveOnlineUsers = useMemo(() => {
     if (onlineUsers.length > 0) return onlineUsers;
     if (!session?.user) return [];
@@ -85,9 +104,10 @@ export function PresenceProvider({ children }: { children: ReactNode }) {
         session.user.user_metadata?.full_name ??
         session.user.email?.split('@')[0] ??
         'Người dùng',
-      email: session.user.email,
+      email: session.user.email ?? undefined,
+      avatarUrl: myAvatarUrl,
     }];
-  }, [onlineUsers, session?.user?.id]);
+  }, [onlineUsers, session?.user?.id, myAvatarUrl]);
 
   return (
     <PresenceContext.Provider value={{ onlineUsers: effectiveOnlineUsers }}>
