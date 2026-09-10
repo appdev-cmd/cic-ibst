@@ -4,7 +4,6 @@
  */
 import { useAuth } from '../context/AuthContext';
 import { usePresence, type OnlineUser } from '../context/PresenceContext';
-import { cn } from '../lib/utils';
 
 /** Lấy chữ viết tắt từ họ tên */
 function getInitials(name: string): string {
@@ -16,16 +15,16 @@ function getInitials(name: string): string {
 /** Mini avatar cho 1 user */
 function UserAvatar({ user, size = 32 }: { user: OnlineUser; size?: number }) {
   const initials = getInitials(user.fullName);
-  // Màu gradient ổn định theo userId (hash đơn giản)
-  const colors = [
-    'from-primary-400 to-primary-600',
-    'from-emerald-400 to-teal-600',
-    'from-violet-400 to-purple-600',
-    'from-rose-400 to-pink-600',
-    'from-amber-400 to-orange-500',
-    'from-sky-400 to-blue-600',
+  // Màu gradient ổn định theo userId — dùng inline style để tránh Tailwind purge
+  const GRADIENTS = [
+    'linear-gradient(135deg, #60a5fa, #2563eb)',   // xanh dương
+    'linear-gradient(135deg, #34d399, #0d9488)',   // xanh lá
+    'linear-gradient(135deg, #a78bfa, #7c3aed)',   // tím
+    'linear-gradient(135deg, #fb7185, #e11d48)',   // đỏ hồng
+    'linear-gradient(135deg, #fbbf24, #f97316)',   // cam
+    'linear-gradient(135deg, #38bdf8, #0284c7)',   // sky
   ];
-  const colorIdx = user.id.charCodeAt(0) % colors.length;
+  const gradientIdx = user.id.charCodeAt(0) % GRADIENTS.length;
 
   return (
     <div
@@ -38,19 +37,28 @@ function UserAvatar({ user, size = 32 }: { user: OnlineUser; size?: number }) {
           alt={user.fullName}
           className="rounded-full object-cover ring-2 ring-white dark:ring-slate-900"
           style={{ width: size, height: size }}
-          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).style.display = 'none';
+            const parent = e.currentTarget.parentElement;
+            if (parent) {
+              const fb = parent.querySelector('[data-fallback]') as HTMLElement | null;
+              if (fb) fb.style.display = 'flex';
+            }
+          }}
         />
-      ) : (
-        <div
-          className={cn(
-            'flex items-center justify-center rounded-full ring-2 ring-white dark:ring-slate-900 bg-gradient-to-br text-white font-bold',
-            colors[colorIdx],
-          )}
-          style={{ width: size, height: size, fontSize: size * 0.32 }}
-        >
-          {initials}
-        </div>
-      )}
+      ) : null}
+      {/* Fallback initials gradient — luôn render, ẩn nếu có ảnh */}
+      <div
+        data-fallback
+        className="absolute inset-0 flex items-center justify-center rounded-full ring-2 ring-white dark:ring-slate-900 text-white font-bold"
+        style={{
+          background: GRADIENTS[gradientIdx],
+          fontSize: size * 0.34,
+          display: user.avatarUrl ? 'none' : 'flex',
+        }}
+      >
+        {initials}
+      </div>
       {/* Dot xanh online */}
       <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5">
         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
