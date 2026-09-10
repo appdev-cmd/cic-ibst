@@ -4,7 +4,7 @@ import { PageHeader } from '../components/PageHeader';
 import { KpiCard } from '../components/KpiCard';
 import { DataState } from '../components/DataState';
 import { StatusBadge } from '../components/StatusBadge';
-import { Modal, Field, inputCls } from '../components/Modal';
+import { Field, inputCls } from '../components/Modal';
 import { TableToolbar, FilterSelect } from '../components/TableToolbar';
 import { useAsyncData } from '../hooks/useAsyncData';
 import { useTableControls } from '../hooks/useTableControls';
@@ -235,6 +235,53 @@ export function TapChiPage() {
     onDone: refetchSTC
   });
 
+  // Hook Slide Panel Form Thêm/Sửa Số Tạp chí
+  useSlidePanelForm({
+    id: 'so-tap-chi-form',
+    open: crudSTC.modalOpen,
+    title: crudSTC.editing ? 'Sửa Số Tạp chí' : 'Thêm Số Tạp chí mới',
+    subtitle: crudSTC.editing ? crudSTC.editing.ten : 'Điền thông tin xuất bản số tạp chí',
+    icon: <BookOpen size={18} className="text-primary" />,
+    storageKey: 'slideover-width-so-tap-chi-form',
+    minWidth: 500,
+    deps: [crudSTC.form, crudSTC.saving, crudSTC.actionError, crudSTC.editing],
+    onDongNgoaiLuong: crudSTC.closeModal,
+    footer: (
+      <div className="flex items-center justify-end gap-2">
+        <button type="button" onClick={crudSTC.closeModal} className="btn-ghost">Hủy</button>
+        <button type="submit" form="form-so-tap-chi" disabled={crudSTC.saving} className="btn-primary">
+          {crudSTC.saving && <LoaderCircle size={15} className="animate-spin" />} Lưu lại
+        </button>
+      </div>
+    ),
+    content: (
+      <form id="form-so-tap-chi" onSubmit={crudSTC.submit} className="space-y-4">
+        <Field label="Tên số" required>
+          <input className={inputCls} required value={crudSTC.form.ten} onChange={e => crudSTC.setForm({...crudSTC.form, ten: e.target.value})} placeholder="VD: Số 75 - Tháng 9/2026" />
+        </Field>
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Năm" required>
+            <input type="number" className={inputCls} required value={crudSTC.form.nam} onChange={e => crudSTC.setForm({...crudSTC.form, nam: Number(e.target.value)})} />
+          </Field>
+          <Field label="Quý">
+            <input type="number" min={1} max={4} className={inputCls} value={crudSTC.form.quy} onChange={e => crudSTC.setForm({...crudSTC.form, quy: Number(e.target.value)})} />
+          </Field>
+          <Field label="Trạng thái">
+            <select className={inputCls} value={crudSTC.form.trangThai} onChange={e => crudSTC.setForm({...crudSTC.form, trangThai: e.target.value})}>
+              {TRANG_THAI_SO_TAP_CHI.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </Field>
+          <Field label="Ngày xuất bản">
+            <input type="date" className={inputCls} value={crudSTC.form.ngayXuatBan} onChange={e => crudSTC.setForm({...crudSTC.form, ngayXuatBan: e.target.value})} />
+          </Field>
+        </div>
+        <Field label="Ghi chú">
+          <textarea className={cn(inputCls, 'min-h-16')} value={crudSTC.form.ghiChu} onChange={e => crudSTC.setForm({...crudSTC.form, ghiChu: e.target.value})} />
+        </Field>
+      </form>
+    )
+  });
+
   return (
     <div>
       <PageHeader
@@ -341,37 +388,6 @@ export function TapChiPage() {
               </div>
             ))}
           </div>
-          
-          <Modal title={crudSTC.editing ? 'Sửa Số Tạp chí' : 'Thêm Số Tạp chí mới'} open={crudSTC.modalOpen} onClose={crudSTC.closeModal}>
-            <form onSubmit={crudSTC.submit} className="space-y-4">
-              <Field label="Tên số" required>
-                <input className={inputCls} required value={crudSTC.form.ten} onChange={e => crudSTC.setForm({...crudSTC.form, ten: e.target.value})} placeholder="VD: Số 75 - Tháng 9/2026" />
-              </Field>
-              <div className="grid grid-cols-2 gap-4">
-                <Field label="Năm" required>
-                  <input type="number" className={inputCls} required value={crudSTC.form.nam} onChange={e => crudSTC.setForm({...crudSTC.form, nam: Number(e.target.value)})} />
-                </Field>
-                <Field label="Quý">
-                  <input type="number" min={1} max={4} className={inputCls} value={crudSTC.form.quy} onChange={e => crudSTC.setForm({...crudSTC.form, quy: Number(e.target.value)})} />
-                </Field>
-                <Field label="Trạng thái">
-                  <select className={inputCls} value={crudSTC.form.trangThai} onChange={e => crudSTC.setForm({...crudSTC.form, trangThai: e.target.value})}>
-                    {TRANG_THAI_SO_TAP_CHI.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                  </select>
-                </Field>
-                <Field label="Ngày xuất bản">
-                  <input type="date" className={inputCls} value={crudSTC.form.ngayXuatBan} onChange={e => crudSTC.setForm({...crudSTC.form, ngayXuatBan: e.target.value})} />
-                </Field>
-              </div>
-              <Field label="Ghi chú">
-                <textarea className={cn(inputCls, 'min-h-16')} value={crudSTC.form.ghiChu} onChange={e => crudSTC.setForm({...crudSTC.form, ghiChu: e.target.value})} />
-              </Field>
-              <div className="flex justify-end gap-2 border-t border-border-subtle pt-4">
-                <button type="button" onClick={crudSTC.closeModal} className="btn-ghost">Hủy</button>
-                <button type="submit" disabled={crudSTC.saving} className="btn-primary">{crudSTC.saving ? <LoaderCircle size={15} className="animate-spin" /> : 'Lưu lại'}</button>
-              </div>
-            </form>
-          </Modal>
         </>
       )}
 

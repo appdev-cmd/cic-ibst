@@ -1,12 +1,13 @@
-import { useMemo, useState } from 'react';
+﻿import { useMemo, useState } from 'react';
 import { Plus, FlaskConical, Landmark, AlertTriangle, LoaderCircle } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { StatusBadge, TRANG_THAI_OPTIONS } from '../components/StatusBadge';
 import { KpiCard } from '../components/KpiCard';
 import { DataState } from '../components/DataState';
-import { Modal, Field, inputCls } from '../components/Modal';
+import { Field, inputCls } from '../components/Modal';
 import { TableToolbar, FilterSelect, RowActions } from '../components/TableToolbar';
 import { MocDeTaiPanel } from '../components/DetailPanels';
+import { useSlidePanelChiTiet, useSlidePanelForm } from '../hooks/useSlidePanelCrud';
 import { useAsyncData } from '../hooks/useAsyncData';
 import { useTableControls } from '../hooks/useTableControls';
 import { useCrudForm } from '../hooks/useCrudForm';
@@ -88,6 +89,198 @@ export function DeTaiPage() {
   const tongKinhPhi = deTaiList.reduce((s, dt) => s + dt.kinhPhi, 0);
   const treTienDo = deTaiList.filter((dt) => dt.trangThai === 'qua-han').length;
 
+  // SlidePanel Chi tiết đề tài
+  useSlidePanelChiTiet({
+    id: 'detai-detail',
+    active: detail !== null,
+    title: detail ? `Đề tài ${detail.maSo}` : '',
+    subtitle: detail ? detail.ten : '',
+    icon: <FlaskConical size={18} className="text-primary" />,
+    storageKey: 'slideover-width-detai-chitiet',
+    minWidth: 560,
+    onDongNgoaiLuong: () => setDetail(null),
+    headerExtra: detail ? (
+      <button
+        type="button"
+        onClick={() => {
+          const dt = detail;
+          setDetail(null);
+          crud.openEdit(dt);
+        }}
+        className="rounded-lg border border-border px-2.5 py-1 text-xs font-semibold hover:bg-muted"
+      >
+        Chỉnh sửa
+      </button>
+    ) : undefined,
+    content: detail ? (
+      <div className="space-y-4">
+        <div className="rounded-xl border border-border bg-subtle p-3 text-xs text-ink-secondary space-y-2">
+          <div className="flex flex-wrap gap-x-6 gap-y-1">
+            <span>Cấp: <b className="text-ink">{detail.cap}</b></span>
+            <span>Chủ nhiệm: <b className="text-ink">{detail.chuNhiem}</b></span>
+            <span>Kinh phí: <b className="font-mono text-ink">{formatTrieu(detail.kinhPhi)}</b></span>
+            <span>Tiến độ: <b className="font-mono text-ink">{detail.tienDo}%</b></span>
+          </div>
+          <div>
+            <StatusBadge value={detail.trangThai} />
+          </div>
+        </div>
+        <MocDeTaiPanel key={detail.id} deTaiId={detail.id} />
+      </div>
+    ) : null,
+    footer: (
+      <button
+        type="button"
+        onClick={() => setDetail(null)}
+        className="rounded-xl border border-border px-4 py-2 text-xs font-semibold hover:bg-muted"
+      >
+        Đóng
+      </button>
+    ),
+    deps: [detail],
+  });
+
+  // SlidePanel Form Thêm / Sửa đề tài
+  useSlidePanelForm({
+    id: 'detai-form',
+    open: crud.modalOpen,
+    title: crud.editing ? `Sửa đề tài: ${crud.editing.maSo}` : 'Đăng ký đề tài mới',
+    subtitle: crud.editing ? crud.editing.ten : 'Điền thông tin đăng ký đề tài & nhiệm vụ KHCN',
+    icon: <FlaskConical size={18} className="text-primary" />,
+    storageKey: 'slideover-width-detai-form',
+    minWidth: 540,
+    onDongNgoaiLuong: crud.closeModal,
+    content: (
+      <form id="detai-form-element" onSubmit={crud.submit} className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Mã số" required>
+            <input
+              className={inputCls}
+              required
+              maxLength={50}
+              value={crud.form.maSo}
+              onChange={(e) => crud.setForm({ ...crud.form, maSo: e.target.value })}
+              placeholder="VD: RD 25-26"
+            />
+          </Field>
+          <Field label="Cấp đề tài" required>
+            <select
+              className={inputCls}
+              value={crud.form.capMa}
+              onChange={(e) => crud.setForm({ ...crud.form, capMa: e.target.value })}
+            >
+              {CAP_DE_TAI_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </Field>
+        </div>
+        <Field label="Tên đề tài" required>
+          <textarea
+            className={`${inputCls} min-h-20 resize-y`}
+            required
+            maxLength={500}
+            value={crud.form.ten}
+            onChange={(e) => crud.setForm({ ...crud.form, ten: e.target.value })}
+          />
+        </Field>
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Chủ nhiệm">
+            <select
+              className={inputCls}
+              value={crud.form.chuNhiemId}
+              onChange={(e) => crud.setForm({ ...crud.form, chuNhiemId: e.target.value })}
+            >
+              <option value="">— Chưa chọn —</option>
+              {nhanSuOptions.map((o) => (
+                <option key={o.id} value={o.id}>{o.ten}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Đơn vị chủ trì">
+            <select
+              className={inputCls}
+              value={crud.form.donViId}
+              onChange={(e) => crud.setForm({ ...crud.form, donViId: e.target.value })}
+            >
+              <option value="">— Chưa chọn —</option>
+              {donViOptions.map((o) => (
+                <option key={o.id} value={o.id}>{o.ten}</option>
+              ))}
+            </select>
+          </Field>
+        </div>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <Field label="Kinh phí (triệu)" required>
+            <input
+              type="number"
+              min={0}
+              className={inputCls}
+              required
+              value={crud.form.kinhPhi}
+              onChange={(e) => crud.setForm({ ...crud.form, kinhPhi: e.target.value })}
+            />
+          </Field>
+          <Field label="Tiến độ (%)">
+            <input
+              type="number"
+              min={0}
+              max={100}
+              className={inputCls}
+              value={crud.form.tienDo}
+              onChange={(e) => crud.setForm({ ...crud.form, tienDo: e.target.value })}
+            />
+          </Field>
+          <Field label="Hạn nghiệm thu">
+            <input
+              type="date"
+              className={inputCls}
+              value={crud.form.hanNghiemThu}
+              onChange={(e) => crud.setForm({ ...crud.form, hanNghiemThu: e.target.value })}
+            />
+          </Field>
+          <Field label="Trạng thái" required>
+            <select
+              className={inputCls}
+              value={crud.form.trangThai}
+              onChange={(e) => crud.setForm({ ...crud.form, trangThai: e.target.value })}
+            >
+              {TRANG_THAI_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </Field>
+        </div>
+        {crud.actionError && (
+          <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-danger dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
+            {crud.actionError}
+          </p>
+        )}
+      </form>
+    ),
+    footer: (
+      <div className="flex items-center justify-end gap-2">
+        <button
+          type="button"
+          onClick={crud.closeModal}
+          className="rounded-xl border border-border px-4 py-2.5 text-[13px] font-bold text-ink-secondary transition-colors hover:bg-muted"
+        >
+          Hủy
+        </button>
+        <button
+          type="submit"
+          form="detai-form-element"
+          disabled={crud.saving}
+          className="btn-primary disabled:opacity-60"
+        >
+          {crud.saving && <LoaderCircle size={15} className="animate-spin" />}
+          {crud.editing ? 'Lưu thay đổi' : 'Đăng ký đề tài'}
+        </button>
+      </div>
+    ),
+    deps: [crud.form, crud.saving, crud.actionError, crud.editing, donViOptions, nhanSuOptions],
+  });
+
   return (
     <div>
       <PageHeader
@@ -136,7 +329,7 @@ export function DeTaiPage() {
       <div className="card overflow-hidden">
         <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
         <table className="w-full min-w-[960px]">
-          <thead className="sticky top-0 z-10 border-b border-border bg-subtle dark:bg-[#1f2332]">
+          <thead className="thead-sticky">
             <tr>
               <th className="th-cell w-10 text-center">#</th>
               <th className="th-cell">Mã số</th>
@@ -152,7 +345,7 @@ export function DeTaiPage() {
           </thead>
           <tbody>
             {table.filteredRows.map((dt, idx) => (
-              <tr key={dt.id} className="tr-hover cursor-pointer" onClick={() => setDetail(dt)}>
+              <tr key={dt.id} className="tr-stripe cursor-pointer" onClick={() => setDetail(dt)}>
                 <td className="td-cell text-center text-xs text-ink-muted tabular-nums">{idx + 1}</td>
                 <td className="td-cell font-mono text-xs font-semibold text-primary">{dt.maSo}</td>
                 <td className="td-cell max-w-sm">
@@ -192,157 +385,6 @@ export function DeTaiPage() {
       </div>
 
 
-      {/* Modal thêm/sửa */}
-      <Modal
-        title={crud.editing ? `Sửa đề tài: ${crud.editing.maSo}` : 'Đăng ký đề tài mới'}
-        open={crud.modalOpen}
-        onClose={crud.closeModal}
-        wide
-      >
-        <form onSubmit={crud.submit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Mã số" required>
-              <input
-                className={inputCls}
-                required
-                maxLength={50}
-                value={crud.form.maSo}
-                onChange={(e) => crud.setForm({ ...crud.form, maSo: e.target.value })}
-                placeholder="VD: RD 25-26"
-              />
-            </Field>
-            <Field label="Cấp đề tài" required>
-              <select
-                className={inputCls}
-                value={crud.form.capMa}
-                onChange={(e) => crud.setForm({ ...crud.form, capMa: e.target.value })}
-              >
-                {CAP_DE_TAI_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
-                ))}
-              </select>
-            </Field>
-          </div>
-          <Field label="Tên đề tài" required>
-            <textarea
-              className={`${inputCls} min-h-20 resize-y`}
-              required
-              maxLength={500}
-              value={crud.form.ten}
-              onChange={(e) => crud.setForm({ ...crud.form, ten: e.target.value })}
-            />
-          </Field>
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Chủ nhiệm">
-              <select
-                className={inputCls}
-                value={crud.form.chuNhiemId}
-                onChange={(e) => crud.setForm({ ...crud.form, chuNhiemId: e.target.value })}
-              >
-                <option value="">— Chưa chọn —</option>
-                {nhanSuOptions.map((o) => (
-                  <option key={o.id} value={o.id}>{o.ten}</option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Đơn vị chủ trì">
-              <select
-                className={inputCls}
-                value={crud.form.donViId}
-                onChange={(e) => crud.setForm({ ...crud.form, donViId: e.target.value })}
-              >
-                <option value="">— Chưa chọn —</option>
-                {donViOptions.map((o) => (
-                  <option key={o.id} value={o.id}>{o.ten}</option>
-                ))}
-              </select>
-            </Field>
-          </div>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <Field label="Kinh phí (triệu)" required>
-              <input
-                type="number"
-                min={0}
-                className={inputCls}
-                required
-                value={crud.form.kinhPhi}
-                onChange={(e) => crud.setForm({ ...crud.form, kinhPhi: e.target.value })}
-              />
-            </Field>
-            <Field label="Tiến độ (%)">
-              <input
-                type="number"
-                min={0}
-                max={100}
-                className={inputCls}
-                value={crud.form.tienDo}
-                onChange={(e) => crud.setForm({ ...crud.form, tienDo: e.target.value })}
-              />
-            </Field>
-            <Field label="Hạn nghiệm thu">
-              <input
-                type="date"
-                className={inputCls}
-                value={crud.form.hanNghiemThu}
-                onChange={(e) => crud.setForm({ ...crud.form, hanNghiemThu: e.target.value })}
-              />
-            </Field>
-            <Field label="Trạng thái" required>
-              <select
-                className={inputCls}
-                value={crud.form.trangThai}
-                onChange={(e) => crud.setForm({ ...crud.form, trangThai: e.target.value })}
-              >
-                {TRANG_THAI_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
-                ))}
-              </select>
-            </Field>
-          </div>
-          {crud.actionError && (
-            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-danger dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
-              {crud.actionError}
-            </p>
-          )}
-          <div className="flex justify-end gap-2 border-t border-border-subtle pt-4">
-            <button
-              type="button"
-              onClick={crud.closeModal}
-              className="rounded-xl border border-border px-4 py-2.5 text-[13px] font-bold text-ink-secondary transition-colors hover:bg-muted"
-            >
-              Hủy
-            </button>
-            <button type="submit" disabled={crud.saving} className="btn-primary disabled:opacity-60">
-              {crud.saving && <LoaderCircle size={15} className="animate-spin" />}
-              {crud.editing ? 'Lưu thay đổi' : 'Đăng ký đề tài'}
-            </button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* Modal chi tiết đề tài: mốc thực hiện */}
-      <Modal
-        title={detail ? `Đề tài ${detail.maSo}` : ''}
-        open={detail !== null}
-        onClose={() => setDetail(null)}
-        wide
-      >
-        {detail && (
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-base font-bold text-ink">{detail.ten}</h3>
-              <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-xs text-ink-secondary">
-                <span>Cấp: <b className="text-ink">{detail.cap}</b></span>
-                <span>Chủ nhiệm: <b className="text-ink">{detail.chuNhiem}</b></span>
-                <span>Kinh phí: <b className="font-mono text-ink">{formatTrieu(detail.kinhPhi)}</b></span>
-                <span>Tiến độ: <b className="font-mono text-ink">{detail.tienDo}%</b></span>
-                <StatusBadge value={detail.trangThai} />
-              </div>
-            </div>
-            <MocDeTaiPanel key={detail.id} deTaiId={detail.id} />
-          </div>
-        )}
-      </Modal>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Gavel, Plus, Search, Filter, Building2, Calendar, FileText, CheckCircle2, XCircle, Clock, Users2, Eye } from 'lucide-react';
+import { Gavel, Plus, Building2, Calendar, FileText, CheckCircle2, XCircle, Clock, Users2, Eye } from 'lucide-react';
+import { TableToolbar } from '../components/TableToolbar';
 import { PageHeader } from '../components/PageHeader';
 import { KpiCard } from '../components/KpiCard';
 import { MasterTable } from '../components/MasterTable';
@@ -246,18 +247,18 @@ export function DauThauPage({ showHeader = true }: { showHeader?: boolean } = {}
         <KpiCard label="Tỷ lệ trúng thầu" value={`${tyLeTrungThau}%`} icon={Clock} tone="warning" />
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="relative flex-1 min-w-[240px] max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted" size={16} />
-          <input
-            type="text"
-            placeholder="Tìm kiếm tên gói thầu, chủ đầu tư, đơn vị..."
-            className="w-full rounded-xl border border-border bg-surface pl-9 pr-4 py-2 text-xs text-ink focus:border-primary focus:outline-none"
-            value={table.search}
-            onChange={(e) => table.setSearch(e.target.value)}
-          />
-        </div>
-      </div>
+      <TableToolbar
+        search={table.search}
+        onSearch={table.setSearch}
+        placeholder="Tìm kiếm tên gói thầu, chủ đầu tư, đơn vị..."
+        total={table.total}
+        totalLabel="gói thầu"
+        actions={
+          <button onClick={handleOpenCreateGoiThau} className="btn-primary py-1.5 text-xs">
+            <Plus size={15} /> Thêm gói thầu
+          </button>
+        }
+      />
 
       <MasterTable<DauThau>
         columns={[

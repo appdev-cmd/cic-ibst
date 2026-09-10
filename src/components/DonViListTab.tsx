@@ -99,7 +99,6 @@ export function DonViListTab({
     subtitle: selectedDonVi?.tenVietTat ? `(${selectedDonVi.tenVietTat})` : undefined,
     icon: <Building2 className="text-primary" />,
     storageKey: 'dv-chitiet-w',
-    defaultWidth: 560,
     deps: [selectedDonVi, nhanSuList],
     onDongNgoaiLuong: () => setSelectedId(null),
     content: selectedDonVi ? (

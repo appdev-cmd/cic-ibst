@@ -26,9 +26,9 @@ export interface RoutePermissionEntry {
 export const PUBLIC_ROUTES: string[] = [
   '/',
   '/ibst-portal',
+  '/hop-dong',
   '/tai-chinh',
   '/dau-thau',
-  '/pvqlnn',
   '/uy-quyen',
   '/don-vi',
   '/van-ban',
@@ -38,16 +38,21 @@ export const PUBLIC_ROUTES: string[] = [
   '/ho-so-tai-lieu',
   '/dao-tao',
   '/khach-hang',
+  '/lich-co-quan',
 ];
 
 export const ROUTE_PERMISSION_MAP: RoutePermissionEntry[] = [
+  { pattern: '/dang-vu', taiNguyen: ['dang_doan_the'], label: 'Công tác Đảng vụ' },
+  { pattern: '/pvqlnn', taiNguyen: ['pvqlnn'], label: 'Nhiệm vụ Phục vụ QLNN' },
+  { pattern: '/tu-van-dvkt', taiNguyen: ['hop_dong', 'khach_hang', 'dau_thau', 'bao_cao_khkt'], label: 'Công tác tư vấn DVKT' },
+  { pattern: '/tckt', taiNguyen: ['tai_chinh'], label: 'Công tác TCKT' },
+  { pattern: '/cong-doan', taiNguyen: ['dang_doan_the'], label: 'Công tác Công đoàn, Đoàn TN' },
   { pattern: '/hop-dong', taiNguyen: ['hop_dong', 'tai_chinh', 'khach_hang', 'dau_thau', 'pvqlnn', 'bao_cao_khkt'], label: 'Hợp đồng, CRM & Tài chính' },
-  { pattern: '/khoa-hoc', taiNguyen: ['de_tai', 'tap_chi', 'so_huu_tri_tue', 'chuyen_giao'], label: 'Quản lý Khoa học & SHTT' },
-  { pattern: '/nhan-su', taiNguyen: ['co_cau_to_chuc', 'don_vi', 'nhan_su', 'dao_tao_ncs', 'dang_doan_the', 'danh_gia'], label: 'Tổ chức & Nhân sự' },
-  { pattern: '/thi-nghiem', taiNguyen: ['mau_thu', 'thiet_bi_las', 'dau_tu_cong'], label: 'Thử nghiệm LIMS & Lab' },
+  { pattern: '/khoa-hoc', taiNguyen: ['de_tai', 'tap_chi', 'so_huu_tri_tue', 'chuyen_giao'], label: 'Nhiệm vụ KHCN, đề tài' },
+  { pattern: '/nhan-su', taiNguyen: ['co_cau_to_chuc', 'don_vi', 'nhan_su', 'dao_tao_ncs', 'danh_gia'], label: 'Tổ chức & Nhân sự' },
+  { pattern: '/thi-nghiem', taiNguyen: ['mau_thu', 'thiet_bi_las', 'dau_tu_cong'], label: 'Công tác thí nghiệm, thử nghiệm' },
   { pattern: '/e-office', taiNguyen: ['van_ban', 'cong_viec'], label: 'Văn phòng số e-Office' },
-  { pattern: '/kho-luu-tru', taiNguyen: ['ho_so_tai_lieu', 'ai_rag'], label: 'Kho Lưu trữ & AI-RAG' },
-  { pattern: '/lich-co-quan', taiNguyen: ['lich_co_quan'], label: 'Lịch cơ quan' },
+  { pattern: '/kho-luu-tru', taiNguyen: ['ho_so_tai_lieu', 'ai_rag'], label: 'Kho lưu trữ & AI-RAG' },
   { pattern: '/cai-dat', taiNguyen: ['cai_dat', 'phan_quyen'], label: 'Cài đặt hệ thống' },
 ];
 

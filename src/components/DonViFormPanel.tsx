@@ -18,8 +18,11 @@ const EMPTY_FORM: DonViInput = {
   maDinhDanh: '',
   loai: 'trung-tam',
   chucNangNhiemVu: '',
+  diaChiChiTiet: '',
   dienThoai: '',
   email: '',
+  website: '',
+  ghiChu: '',
   phuTrachId: '',
   truongDonViId: '',
   keHoachNam: null,
@@ -45,8 +48,11 @@ export function DonViFormPanel({
         maDinhDanh: editing.maDinhDanh ?? '',
         loai: editing.loai,
         chucNangNhiemVu: editing.chucNangNhiemVu ?? '',
+        diaChiChiTiet: editing.diaChiChiTiet ?? '',
         dienThoai: editing.dienThoai ?? '',
         email: editing.email ?? '',
+        website: editing.website ?? '',
+        ghiChu: editing.ghiChu ?? '',
         phuTrachId: editing.phuTrachId ?? '',
         truongDonViId: editing.truongDonViId ?? '',
         keHoachNam: editing.keHoachNam ?? null,
@@ -184,24 +190,64 @@ export function DonViFormPanel({
           />
         </Field>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Điện thoại">
+        {/* Khối Thông tin Liên hệ & Trụ sở */}
+        <div className="rounded-xl border border-border dark:border-slate-700/80 p-4 bg-subtle/20 space-y-4">
+          <div className="flex items-center justify-between border-b border-border dark:border-slate-700/80 pb-2">
+            <h4 className="text-[13px] font-black text-ink">Thông tin liên hệ & Trụ sở</h4>
+          </div>
+
+          <Field label="Địa chỉ trụ sở / Văn phòng">
             <input
               className={inputCls}
-              maxLength={130}
-              value={form.dienThoai}
-              onChange={(e) => setForm({ ...form, dienThoai: e.target.value })}
+              maxLength={255}
+              value={form.diaChiChiTiet ?? ''}
+              onChange={(e) => setForm({ ...form, diaChiChiTiet: e.target.value })}
+              placeholder="VD: 81 Trần Cung, P. Nghĩa Tân, Q. Cầu Giấy, Hà Nội"
             />
           </Field>
-          <Field label="Email">
-            <input
-              type="email"
-              className={inputCls}
-              maxLength={150}
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-            />
-          </Field>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field label="Điện thoại">
+              <input
+                className={inputCls}
+                maxLength={130}
+                value={form.dienThoai}
+                onChange={(e) => setForm({ ...form, dienThoai: e.target.value })}
+                placeholder="VD: 024.3754.4374"
+              />
+            </Field>
+            <Field label="Email">
+              <input
+                type="email"
+                className={inputCls}
+                maxLength={150}
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                placeholder="VD: vienchuyenganh@ibst.vn"
+              />
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field label="Website">
+              <input
+                className={inputCls}
+                maxLength={200}
+                value={form.website ?? ''}
+                onChange={(e) => setForm({ ...form, website: e.target.value })}
+                placeholder="VD: https://ibst.vn hoặc https://ibst-am.com.vn"
+              />
+            </Field>
+            <Field label="Ghi chú / Fax / Khác">
+              <input
+                className={inputCls}
+                maxLength={255}
+                value={form.ghiChu ?? ''}
+                onChange={(e) => setForm({ ...form, ghiChu: e.target.value })}
+                placeholder="VD: Fax: 024.3836.1104 hoặc P.305 Nhà A1"
+              />
+            </Field>
+          </div>
         </div>
 
         {/* Khối Chỉ tiêu Kế hoạch Năm & Giao khoán */}

@@ -1,10 +1,11 @@
-import { useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { User, Crown } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export interface NhanSuAvatarProps {
   hoTen?: string | null;
   chucDanh?: string | null;
+  avatarUrl?: string | null;
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   variant?: 'initials' | 'icon';
   showStatus?: boolean;
@@ -26,6 +27,25 @@ const AVATAR_GRADIENTS = [
   'from-cyan-600 to-teal-700 text-white',
   'from-fuchsia-600 to-pink-600 text-white',
 ];
+
+// Ảnh chân dung chính thức của Ban Lãnh đạo Viện IBST (tự động fallback nếu chưa gắn URL)
+const LEADER_AVATARS: Record<string, string> = {
+  'nguyen hong hai': '/avatars/nguyen-hong-hai.jpg',
+  'dinh quoc dan': '/avatars/dinh-quoc-dan.jpg',
+  'nguyen thanh binh': '/avatars/nguyen-thanh-binh.jpg',
+  'cao duy khoi': '/avatars/cao-duy-khoi.jpg',
+};
+
+function normalizeName(str?: string | null): string {
+  if (!str) return '';
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
+    .toLowerCase()
+    .trim();
+}
 
 export function getInitials(name?: string | null): string {
   if (!name || !name.trim()) return '';
@@ -58,6 +78,7 @@ const SIZE_CONFIGS = {
 export function NhanSuAvatar({
   hoTen,
   chucDanh,
+  avatarUrl,
   size = 'md',
   variant = 'initials',
   showStatus = false,
@@ -65,6 +86,12 @@ export function NhanSuAvatar({
   className,
   title,
 }: NhanSuAvatarProps) {
+  const [imgError, setImgError] = useState(false);
+
+  useEffect(() => {
+    setImgError(false);
+  }, [avatarUrl, hoTen]);
+
   const isVienTruong = useMemo(() => {
     if (!chucDanh) return false;
     const cd = chucDanh.toLowerCase();
@@ -78,6 +105,18 @@ export function NhanSuAvatar({
   }, [chucDanh]);
 
   const initials = useMemo(() => getInitials(hoTen), [hoTen]);
+
+  // Ảnh hợp lệ: hoặc do DB cung cấp, hoặc ảnh chính thức của Lãnh đạo Viện
+  const effectiveAvatar = useMemo(() => {
+    if (avatarUrl && !imgError) return avatarUrl;
+    if (!imgError && hoTen) {
+      const norm = normalizeName(hoTen);
+      for (const [key, path] of Object.entries(LEADER_AVATARS)) {
+        if (norm.includes(key)) return path;
+      }
+    }
+    return null;
+  }, [avatarUrl, hoTen, imgError]);
 
   const gradientCls = useMemo(() => {
     if (isVienTruong) {
@@ -96,16 +135,23 @@ export function NhanSuAvatar({
   return (
     <div
       className={cn(
-        'relative inline-flex shrink-0 select-none items-center justify-center rounded-full font-bold shadow-2xs',
+        'relative inline-flex shrink-0 select-none items-center justify-center rounded-full font-bold shadow-2xs overflow-visible',
         cfg.box,
-        'bg-gradient-to-br',
-        gradientCls,
+        !effectiveAvatar && 'bg-gradient-to-br ' + gradientCls,
+        effectiveAvatar && 'bg-surface border border-border dark:border-slate-700/80',
         className,
       )}
       title={tooltipText}
     >
-      {/* Nội dung Avatar: Chữ viết tắt hoặc Icon người */}
-      {variant === 'icon' || !initials ? (
+      {/* Nội dung Avatar: Ảnh chân dung thật, hoặc chữ viết tắt / Icon */}
+      {effectiveAvatar ? (
+        <img
+          src={effectiveAvatar}
+          alt={hoTen || 'Avatar'}
+          onError={() => setImgError(true)}
+          className="w-full h-full object-cover rounded-full pointer-events-none"
+        />
+      ) : variant === 'icon' || !initials ? (
         <User size={cfg.iconSize} className="shrink-0 text-white/95 drop-shadow-xs" />
       ) : (
         <span className="tracking-tight drop-shadow-xs font-bold leading-none">{initials}</span>

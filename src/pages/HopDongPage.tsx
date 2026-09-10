@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+﻿import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   Handshake,
   Banknote,
@@ -293,31 +293,48 @@ function getBuocWorkflowBadge(buoc: string | undefined, trangThai: string) {
   return <StatusBadge value={st as any} />;
 }
 
-export function HopDongPage() {
+export interface HopDongPageProps {
+  excludeTabs?: Tab[];
+  pageTitle?: string;
+  pageSubtitle?: string;
+}
+
+export function HopDongPage({
+  excludeTabs = [],
+  pageTitle = "Quản lý Hợp đồng kinh tế & Khách hàng (CRM)",
+  pageSubtitle = "Quản lý vòng đời hợp đồng theo Quy chế 2815/QĐ-VKH: Đấu thầu, giao việc, phân bổ tài chính & giám sát thực hiện",
+}: HopDongPageProps = {}) {
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab') as Tab | null;
+  const availableTabs = useMemo(() => {
+    const allTabs: Tab[] = ['hop-dong-2815', 'tai-chinh', 'crm-khach-hang', 'dau-thau', 'pvqlnn', 'bao-cao-khkt'];
+    return allTabs.filter((t) => !excludeTabs.includes(t));
+  }, [excludeTabs]);
+
+  const defaultTab = availableTabs[0] || 'hop-dong-2815';
+
   const [activeTab, setActiveTabState] = useState<Tab>(() => {
-    if (tabParam && ['hop-dong-2815', 'tai-chinh', 'crm-khach-hang', 'dau-thau', 'pvqlnn', 'bao-cao-khkt'].includes(tabParam)) {
+    if (tabParam && availableTabs.includes(tabParam)) {
       return tabParam;
     }
-    return 'hop-dong-2815';
+    return defaultTab;
   });
 
   const setActiveTab = (newTab: Tab) => {
     setActiveTabState(newTab);
-    setSearchParams(newTab === 'hop-dong-2815' ? {} : { tab: newTab }, { replace: true });
+    setSearchParams(newTab === defaultTab ? {} : { tab: newTab }, { replace: true });
   };
 
   useEffect(() => {
-    if (tabParam && ['hop-dong-2815', 'tai-chinh', 'crm-khach-hang', 'dau-thau', 'pvqlnn', 'bao-cao-khkt'].includes(tabParam)) {
+    if (tabParam && availableTabs.includes(tabParam)) {
       setActiveTabState(tabParam);
     }
-  }, [tabParam]);
+  }, [tabParam, availableTabs]);
 
   // Lọc tab theo quyền (Tầng 3) — nếu tab đang chọn (mặc định hoặc lấy từ URL) không
   // còn quyền xem sau khi nạp xong, tự chuyển sang tab được phép đầu tiên.
   const { can: coQuyenTab, dangTai: dangTaiQuyen } = usePhanQuyen();
-  const tabHienDuoc = (t: Tab) => tabDuocPhep(t, TAB_TAI_NGUYEN, coQuyenTab, dangTaiQuyen);
+  const tabHienDuoc = (t: Tab) => !excludeTabs.includes(t) && tabDuocPhep(t, TAB_TAI_NGUYEN, coQuyenTab, dangTaiQuyen);
   useEffect(() => {
     if (dangTaiQuyen) return;
     if (tabHienDuoc(activeTab)) return;
@@ -1233,11 +1250,11 @@ export function HopDongPage() {
   return (
     <div>
       <PageHeader
-        title="Quản lý Hợp đồng kinh tế & Khách hàng (CRM)"
-        subtitle="Quản lý vòng đời hợp đồng theo Quy chế 2815/QĐ-VKH: Đấu thầu, giao việc, phân bổ tài chính & giám sát thực hiện"
+        title={pageTitle}
+        subtitle={pageSubtitle}
       />
 
-      {/* 6 Tabs Switcher theo chuẩn vòng đời hợp đồng — mỗi tab chỉ hiện khi có quyền xem tài nguyên tương ứng (Tầng 3) */}
+      {/* Tabs Switcher theo chuẩn vòng đời hợp đồng — mỗi tab chỉ hiện khi có quyền xem tài nguyên tương ứng (Tầng 3) */}
       <div className="mb-6 flex flex-wrap gap-1.5 rounded-xl bg-muted p-1.5 w-full sm:w-fit border border-border">
         {tabHienDuoc('hop-dong-2815') && (
           <button
@@ -1275,7 +1292,7 @@ export function HopDongPage() {
                 : 'text-ink-muted hover:text-ink hover:bg-surface/50'
             )}
           >
-            <Users2 size={15} /> 3. Khách hàng & CRM
+            <Users2 size={15} /> {excludeTabs.includes('tai-chinh') ? '2. Khách hàng & CRM' : '3. Khách hàng & CRM'}
           </button>
         )}
         {tabHienDuoc('dau-thau') && (
@@ -1288,7 +1305,7 @@ export function HopDongPage() {
                 : 'text-ink-muted hover:text-ink hover:bg-surface/50'
             )}
           >
-            <Gavel size={15} /> 4. Đấu thầu & Chào giá
+            <Gavel size={15} /> {excludeTabs.includes('tai-chinh') ? '3. Đấu thầu & Chào giá' : '4. Đấu thầu & Chào giá'}
           </button>
         )}
         {tabHienDuoc('pvqlnn') && (
@@ -1314,7 +1331,7 @@ export function HopDongPage() {
                 : 'text-ink-muted hover:text-ink hover:bg-surface/50'
             )}
           >
-            <BarChart3 size={15} /> 6. Báo cáo & Giám sát KHKT
+            <BarChart3 size={15} /> {excludeTabs.includes('tai-chinh') ? '4. Báo cáo & Giám sát KHKT' : '6. Báo cáo & Giám sát KHKT'}
           </button>
         )}
       </div>
@@ -1429,7 +1446,7 @@ export function HopDongPage() {
           <div className="card overflow-hidden">
             <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
               <table className="w-full min-w-[640px]">
-                <thead className="sticky top-0 z-10 border-b border-border bg-subtle dark:bg-[#1f2332]">
+                <thead className="thead-sticky">
                   <tr>
                     <th className="th-cell w-10 text-center">#</th>
                     <th className="th-cell">Số HĐ / Tên</th>
@@ -1456,7 +1473,7 @@ export function HopDongPage() {
                         key={hd.id}
                         onClick={() => openDetail(hd, 'tong-quan')}
                         className={cn(
-                          'tr-hover cursor-pointer',
+                          'tr-stripe cursor-pointer',
                           active && 'bg-primary-subtle/50 dark:bg-primary-900/20',
                         )}
                       >

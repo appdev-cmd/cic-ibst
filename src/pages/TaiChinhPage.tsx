@@ -27,9 +27,10 @@ import {
   Tooltip,
   Legend,
 } from 'recharts';
+import { ChartDefs } from '../components/ChartDefs';
 import { PageHeader } from '../components/PageHeader';
 import { KpiCard } from '../components/KpiCard';
-import { FilterSelect } from '../components/TableToolbar';
+import { FilterSelect, TableToolbar } from '../components/TableToolbar';
 import { useAsyncData } from '../hooks/useAsyncData';
 import { fetchHopDong, fetchDonViOptions } from '../services/queries';
 import { fetchSlaTheoDoi } from '../services/workflow';
@@ -211,6 +212,7 @@ export function TaiChinhPage({
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={doanhThuChart}>
+                <ChartDefs />
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
                 <XAxis dataKey="thang" stroke="var(--text-muted)" fontSize={11} />
                 <YAxis
@@ -224,10 +226,12 @@ export function TaiChinhPage({
                     name === 'doanhThu' ? 'Kế hoạch doanh thu' : 'Tiền về thực tế',
                   ]}
                   contentStyle={{
-                    backgroundColor: 'var(--bg-surface)',
-                    borderColor: 'var(--border-default)',
+                    backgroundColor: 'rgba(31, 35, 50, 0.95)',
+                    backdropFilter: 'blur(12px)',
+                    borderColor: 'rgba(255, 255, 255, 0.15)',
                     borderRadius: '0.75rem',
                     fontSize: '12px',
+                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)',
                   }}
                 />
                 <Legend
@@ -238,19 +242,21 @@ export function TaiChinhPage({
                   type="monotone"
                   dataKey="doanhThu"
                   name="doanhThu"
-                  stroke="#2563eb"
-                  fill="#2563eb"
-                  fillOpacity={0.15}
-                  strokeWidth={2}
+                  stroke="#38bdf8"
+                  fill="url(#pieGrad-0)"
+                  fillOpacity={0.4}
+                  strokeWidth={3}
+                  filter="url(#glowDongTien)"
                 />
                 <Area
                   type="monotone"
                   dataKey="tienVe"
                   name="tienVe"
-                  stroke="#059669"
-                  fill="#059669"
-                  fillOpacity={0.2}
-                  strokeWidth={2}
+                  stroke="#10b981"
+                  fill="url(#pieGrad-1)"
+                  fillOpacity={0.55}
+                  strokeWidth={3}
+                  filter="url(#glowDoanhThu)"
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -332,42 +338,33 @@ export function TaiChinhPage({
       {/* Sub-tab 1: Bảng Tổng hợp Phân bổ Dòng tiền */}
       {activeSubTab === 'phan-bo' && (
         <>
-          {/* Toolbar lọc đơn vị, dòng tiền & tìm kiếm */}
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2.5">
-            <div className="flex flex-wrap items-center gap-2 flex-1 max-w-2xl">
-              <div className="relative flex-1 min-w-[200px]">
-                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted" />
-                <input
-                  type="text"
-                  value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
-                  placeholder="Tìm theo số HĐ, tên công trình, khách hàng..."
-                  className="w-full rounded-lg border border-border dark:border-slate-700/80 bg-surface pl-8 pr-3 py-1.5 text-xs text-ink placeholder:text-ink-muted outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all"
-                />
-              </div>
+          <TableToolbar
+            search={searchText}
+            onSearch={setSearchText}
+            placeholder="Tìm theo số HĐ, tên công trình, khách hàng..."
+            total={filteredHopDongList.length}
+            totalLabel={`/ ${hopDongList.length} hợp đồng`}
+          >
+            <FilterSelect
+              value={filterDongTien}
+              onChange={setFilterDongTien}
+              allLabel="Tất cả hợp đồng"
+              options={[
+                { value: 'da-thu', label: '✅ Có tiền về thực thu (> 0đ)' },
+                { value: 'cong-no', label: '⏳ Còn công nợ phải thu' },
+                { value: 'chua-thu', label: '⚪ Chưa thanh toán (0đ)' },
+              ]}
+            />
+            {donViOptions.length > 0 && (
               <FilterSelect
-                value={filterDongTien}
-                onChange={setFilterDongTien}
-                allLabel="-- Tất cả hợp đồng --"
-                options={[
-                  { value: 'da-thu', label: '✅ Có tiền về thực thu (> 0đ)' },
-                  { value: 'cong-no', label: '⏳ Còn công nợ phải thu' },
-                  { value: 'chua-thu', label: '⚪ Chưa thanh toán (0đ)' },
-                ]}
+                value={filterDonVi}
+                onChange={setFilterDonVi}
+                allLabel="Tất cả đơn vị"
+                options={donViOptions.map((d) => ({ value: d.id, label: d.ten }))}
               />
-              {donViOptions.length > 0 && (
-                <FilterSelect
-                  value={filterDonVi}
-                  onChange={setFilterDonVi}
-                  allLabel="-- Tất cả đơn vị --"
-                  options={donViOptions.map((d) => ({ value: d.id, label: d.ten }))}
-                />
-              )}
-            </div>
-            <span className="text-2xs font-semibold text-ink-muted">
-              Hiển thị: <strong>{filteredHopDongList.length}</strong> / {hopDongList.length} hợp đồng
-            </span>
-          </div>
+            )}
+          </TableToolbar>
+
 
           <div className="card overflow-hidden">
             <div className="border-b border-border dark:border-slate-700/80 bg-subtle dark:bg-slate-900/60 p-4">

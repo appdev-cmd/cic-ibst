@@ -54,7 +54,7 @@ function computeWidths(
     } else if (saved != null) {
       natural = saved; // Đã từng lưu chiều rộng kéo thủ công trước đó
     } else if (panel.defaultWidth && panel.defaultWidth < 1800) {
-      natural = panel.defaultWidth;
+      natural = Math.max(panel.defaultWidth, defaultHalfWidth);
     } else {
       // Mặc định 1/2 màn hình; nếu là panel xếp chồng phía sau (i > 0)
       // thì lùi nhẹ STACKING_OFFSET để dải hé lộ tai thỏ lộ ra tinh tế

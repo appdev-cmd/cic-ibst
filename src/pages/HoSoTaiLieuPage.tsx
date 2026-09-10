@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react';
 import { Plus, FolderOpen, Files, HardDrive, FileText, Search, Pencil, Trash2, Download, Eye, UploadCloud } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { KpiCard } from '../components/KpiCard';
-import { Modal, Field, inputCls } from '../components/Modal';
+import { Field, inputCls } from '../components/Modal';
 import { TableToolbar, FilterSelect, Pagination } from '../components/TableToolbar';
+import { useSlidePanelChiTiet, useSlidePanelForm } from '../hooks/useSlidePanelCrud';
 import { cn } from '../lib/utils';
 
 interface HoSoTaiLieu {
@@ -99,6 +100,175 @@ export function HoSoTaiLieuPage() {
     setModalOpen(false);
   };
 
+  const [detailItem, setDetailItem] = useState<HoSoTaiLieu | null>(null);
+
+  // SlidePanel Chi tiết Hồ sơ tài liệu
+  useSlidePanelChiTiet({
+    id: 'ho-so-detail',
+    active: detailItem !== null,
+    title: detailItem ? detailItem.tenTaiLieu : '',
+    subtitle: detailItem ? `Người tải: ${detailItem.nguoiTaiLen} • Ngày tạo: ${detailItem.ngayTao}` : '',
+    icon: <FileText size={18} className="text-primary" />,
+    storageKey: 'slideover-width-ho-so-detail',
+    minWidth: 540,
+    onDongNgoaiLuong: () => setDetailItem(null),
+    headerExtra: detailItem ? (
+      <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={() => alert('Đang mở file xem trực tuyến...')}
+          className="flex items-center gap-1 rounded-lg border border-border px-2.5 py-1 text-xs font-semibold hover:bg-muted"
+        >
+          <Eye size={13} /> Xem
+        </button>
+        <button
+          type="button"
+          onClick={() => alert('Đang tải file xuống máy...')}
+          className="flex items-center gap-1 rounded-lg border border-border px-2.5 py-1 text-xs font-semibold hover:bg-muted"
+        >
+          <Download size={13} /> Tải về
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            const item = detailItem;
+            setDetailItem(null);
+            handleOpenEdit(item);
+          }}
+          className="rounded-lg border border-border px-2.5 py-1 text-xs font-semibold hover:bg-muted"
+        >
+          Sửa
+        </button>
+      </div>
+    ) : undefined,
+    content: detailItem ? (
+      <div className="space-y-4">
+        <div className="rounded-xl border border-border bg-subtle p-3 text-xs space-y-2">
+          <div className="flex justify-between">
+            <span className="text-ink-secondary">Phân loại hồ sơ:</span>
+            <span className="font-semibold text-ink">
+              {detailItem.loaiHoSo === 'De-tai-KHCN' && 'Đề tài KHCN'}
+              {detailItem.loaiHoSo === 'Thiet-ke-Ban-ve' && 'Thiết kế - Bản vẽ'}
+              {detailItem.loaiHoSo === 'Thu-nghiem-LAS' && 'Thí nghiệm LIMS'}
+              {detailItem.loaiHoSo === 'Hanh-chinh' && 'Hành chính'}
+              {detailItem.loaiHoSo === 'Khac' && 'Khác'}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-ink-secondary">Trạng thái số hóa:</span>
+            <span className={cn(
+              'inline-flex items-center px-2 py-0.5 rounded text-xs font-black',
+              detailItem.trangThai === 'Da-ky-so' && 'bg-success/10 text-success',
+              detailItem.trangThai === 'Ban-goc' && 'bg-primary/10 text-primary',
+              detailItem.trangThai === 'Ban-nhap' && 'bg-warning/10 text-warning'
+            )}>
+              {detailItem.trangThai === 'Da-ky-so' && 'Đã ký số'}
+              {detailItem.trangThai === 'Ban-goc' && 'Bản gốc'}
+              {detailItem.trangThai === 'Ban-nhap' && 'Bản nháp'}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-ink-secondary">Dung lượng:</span>
+            <span className="font-mono text-ink">{detailItem.dungLuong}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-ink-secondary">Ngày tạo:</span>
+            <span className="font-mono text-ink">{detailItem.ngayTao}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-ink-secondary">Người tải lên:</span>
+            <span className="font-semibold text-ink">{detailItem.nguoiTaiLen}</span>
+          </div>
+        </div>
+      </div>
+    ) : null,
+    footer: (
+      <button
+        type="button"
+        onClick={() => setDetailItem(null)}
+        className="rounded-xl border border-border px-4 py-2 text-xs font-semibold hover:bg-muted"
+      >
+        Đóng
+      </button>
+    ),
+    deps: [detailItem],
+  });
+
+  // SlidePanel Form Thêm / Sửa Hồ sơ tài liệu
+  useSlidePanelForm({
+    id: 'ho-so-tai-lieu-form',
+    open: modalOpen,
+    title: editingItem ? `Sửa thông tin file: ${editingItem.tenTaiLieu}` : 'Tải tài liệu số lên hệ thống',
+    subtitle: editingItem ? editingItem.tenTaiLieu : 'Điền thông tin và phân loại hồ sơ lưu trữ điện tử',
+    icon: <UploadCloud size={18} className="text-primary" />,
+    storageKey: 'slideover-width-ho-so-form',
+    minWidth: 540,
+    onDongNgoaiLuong: () => setModalOpen(false),
+    content: (
+      <form id="form-ho-so-tai-lieu" onSubmit={handleSubmit} className="space-y-4">
+        <Field label="Tên tài liệu / Tên file" required>
+          <input
+            className={inputCls}
+            required
+            value={form.tenTaiLieu}
+            onChange={(e) => setForm({ ...form, tenTaiLieu: e.target.value })}
+            placeholder="VD: Bao-cao-tham-dinh-thiet-ke-cau-ben-cang-long-thanh.pdf"
+          />
+        </Field>
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Loại hồ sơ kỹ thuật" required>
+            <select
+              className={inputCls}
+              value={form.loaiHoSo}
+              onChange={(e) => setForm({ ...form, loaiHoSo: e.target.value as any })}
+            >
+              <option value="De-tai-KHCN">Đề tài KHCN</option>
+              <option value="Thiet-ke-Ban-ve">Thiết kế & Bản vẽ</option>
+              <option value="Thu-nghiem-LAS">Thí nghiệm LIMS</option>
+              <option value="Hanh-chinh">Văn bản hành chính</option>
+              <option value="Khac">Khác</option>
+            </select>
+          </Field>
+          <Field label="Trạng thái tài liệu" required>
+            <select
+              className={inputCls}
+              value={form.trangThai}
+              onChange={(e) => setForm({ ...form, trangThai: e.target.value as any })}
+            >
+              <option value="Ban-goc">Bản gốc</option>
+              <option value="Da-ky-so">Đã ký số (CA)</option>
+              <option value="Ban-nhap">Bản nháp</option>
+            </select>
+          </Field>
+        </div>
+        <Field label="Người tải lên" required>
+          <input
+            className={inputCls}
+            required
+            value={form.nguoiTaiLen}
+            onChange={(e) => setForm({ ...form, nguoiTaiLen: e.target.value })}
+            placeholder="VD: TS. Nguyễn Văn A"
+          />
+        </Field>
+      </form>
+    ),
+    footer: (
+      <div className="flex items-center justify-end gap-2">
+        <button
+          type="button"
+          onClick={() => setModalOpen(false)}
+          className="rounded-xl border border-border px-4 py-2.5 text-[13px] font-bold text-ink-secondary transition-colors hover:bg-muted"
+        >
+          Hủy
+        </button>
+        <button type="submit" form="form-ho-so-tai-lieu" className="btn-primary">
+          {editingItem ? 'Lưu thay đổi' : 'Tải lên'}
+        </button>
+      </div>
+    ),
+    deps: [modalOpen, editingItem, form],
+  });
+
   return (
     <div>
       <PageHeader
@@ -161,7 +331,7 @@ export function HoSoTaiLieuPage() {
           </thead>
           <tbody>
             {filteredList.map((item, idx) => (
-              <tr key={item.id} className="tr-hover">
+              <tr key={item.id} className="tr-hover cursor-pointer" onClick={() => setDetailItem(item)}>
                 <td className="td-cell text-center text-xs text-ink-muted tabular-nums">{idx + 1}</td>
                 <td className="td-cell font-medium max-w-sm truncate" title={item.tenTaiLieu}>
                   <p className="flex items-center gap-2">
@@ -194,28 +364,40 @@ export function HoSoTaiLieuPage() {
                 <td className="td-cell">
                   <div className="flex justify-end gap-1">
                     <button
-                      onClick={() => alert('Đang mở file xem trực tuyến...')}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        alert('Đang mở file xem trực tuyến...');
+                      }}
                       title="Xem trực tuyến"
                       className="rounded-md p-1.5 text-ink-muted transition-colors hover:bg-muted hover:text-primary-600"
                     >
                       <Eye size={14} />
                     </button>
                     <button
-                      onClick={() => alert('Đang tải file xuống máy...')}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        alert('Đang tải file xuống máy...');
+                      }}
                       title="Tải xuống"
                       className="rounded-md p-1.5 text-ink-muted transition-colors hover:bg-muted hover:text-primary-600"
                     >
                       <Download size={14} />
                     </button>
                     <button
-                      onClick={() => handleOpenEdit(item)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenEdit(item);
+                      }}
                       title="Sửa"
                       className="rounded-md p-1.5 text-ink-muted transition-colors hover:bg-muted hover:text-primary-600"
                     >
                       <Pencil size={14} />
                     </button>
                     <button
-                      onClick={() => handleDelete(item.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(item.id);
+                      }}
                       title="Xóa"
                       className="rounded-md p-1.5 text-ink-muted transition-colors hover:bg-red-50 hover:text-danger"
                     >
@@ -236,74 +418,6 @@ export function HoSoTaiLieuPage() {
         </table>
         </div>
       </div>
-
-      {/* Modal Add/Edit */}
-      <Modal
-        title={editingItem ? `Sửa thông tin file: ${editingItem.tenTaiLieu}` : 'Tải tài liệu số lên hệ thống'}
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        wide
-      >
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Field label="Tên tài liệu / Tên file" required>
-            <input
-              className={inputCls}
-              required
-              value={form.tenTaiLieu}
-              onChange={(e) => setForm({ ...form, tenTaiLieu: e.target.value })}
-              placeholder="VD: Bao-cao-tham-dinh-thiet-ke-cau-ben-cang-long-thanh.pdf"
-            />
-          </Field>
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Loại hồ sơ kỹ thuật" required>
-              <select
-                className={inputCls}
-                value={form.loaiHoSo}
-                onChange={(e) => setForm({ ...form, loaiHoSo: e.target.value as any })}
-              >
-                <option value="De-tai-KHCN">Đề tài KHCN</option>
-                <option value="Thiet-ke-Ban-ve">Thiết kế & Bản vẽ</option>
-                <option value="Thu-nghiem-LAS">Thí nghiệm LIMS</option>
-                <option value="Hanh-chinh">Văn bản hành chính</option>
-                <option value="Khac">Khác</option>
-              </select>
-            </Field>
-            <Field label="Trạng thái tài liệu" required>
-              <select
-                className={inputCls}
-                value={form.trangThai}
-                onChange={(e) => setForm({ ...form, trangThai: e.target.value as any })}
-              >
-                <option value="Ban-goc">Bản gốc</option>
-                <option value="Da-ky-so">Đã ký số (CA)</option>
-                <option value="Ban-nhap">Bản nháp</option>
-              </select>
-            </Field>
-          </div>
-          <Field label="Người tải lên" required>
-            <input
-              className={inputCls}
-              required
-              value={form.nguoiTaiLen}
-              onChange={(e) => setForm({ ...form, nguoiTaiLen: e.target.value })}
-              placeholder="VD: TS. Nguyễn Văn A"
-            />
-          </Field>
-
-          <div className="flex justify-end gap-2 border-t border-border-subtle pt-4">
-            <button
-              type="button"
-              onClick={() => setModalOpen(false)}
-              className="rounded-xl border border-border px-4 py-2.5 text-[13px] font-bold text-ink-secondary transition-colors hover:bg-muted"
-            >
-              Hủy
-            </button>
-            <button type="submit" className="btn-primary">
-              {editingItem ? 'Lưu thay đổi' : 'Tải lên'}
-            </button>
-          </div>
-        </form>
-      </Modal>
     </div>
   );
 }

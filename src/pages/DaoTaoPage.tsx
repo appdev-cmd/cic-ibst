@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+﻿import { useMemo, useState } from 'react';
 import {
   Plus, GraduationCap, Users2, CalendarDays, LoaderCircle, Search,
   Pencil, Trash2, ExternalLink, Users, BookOpen, Clock, Award, FileText, CheckCircle2,
@@ -518,7 +518,7 @@ export function DaoTaoPage() {
           <div className="card overflow-hidden">
             <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
             <table className="w-full min-w-[780px]">
-              <thead className="sticky top-0 z-10 border-b border-border bg-subtle dark:bg-[#1f2332]">
+              <thead className="thead-sticky">
                 <tr>
                   <th className="th-cell w-10 text-center">#</th>
                   <th className="th-cell">Tên lớp / sự kiện</th>
@@ -598,7 +598,7 @@ export function DaoTaoPage() {
           <div className="card overflow-hidden">
             <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
             <table className="w-full min-w-[860px]">
-              <thead className="sticky top-0 z-10 border-b border-border bg-subtle dark:bg-[#1f2332]">
+              <thead className="thead-sticky">
                 <tr>
                   <th className="th-cell w-10 text-center">#</th>
                   <th className="th-cell">Họ và tên NCS</th>

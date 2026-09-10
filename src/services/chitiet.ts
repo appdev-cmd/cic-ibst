@@ -173,7 +173,9 @@ export async function upsertPhieuGiaoViec(hopDongId: string, i: PhieuGiaoViecInp
     ngay_giao: i.ngayGiao || null,
   };
   if (dangCo) {
-    throwIf((await supabase.from('phieu_giao_viec').update(noiDungRow).eq('id', Number(dangCo.id))).error);
+    throwIfKhongGhiDuoc(
+      await supabase.from('phieu_giao_viec').update(noiDungRow).eq('id', Number(dangCo.id)).select('id'),
+    );
     return;
   }
   throwIf(
@@ -208,7 +210,7 @@ export async function chuyenBuocGiaoViec(
     if (actor) row.nguoi_duyet_id = actor;
   }
   if (den === 'tra-lai') row.ly_do_tra_lai = opts?.lyDoTraLai || null;
-  throwIf((await supabase.from('phieu_giao_viec').update(row).eq('id', Number(phieuId))).error);
+  throwIfKhongGhiDuoc(await supabase.from('phieu_giao_viec').update(row).eq('id', Number(phieuId)).select('id'));
 }
 
 // ─── CỘNG TÁC VIÊN TRONG PHIẾU GIAO VIỆC ───
@@ -275,10 +277,10 @@ export async function createCtvGiaoViec(phieuGiaoViecId: string, i: CtvGiaoViecI
   );
 }
 export async function updateCtvGiaoViec(id: string, i: CtvGiaoViecInput) {
-  throwIf((await supabase.from('phieu_giao_viec_ctv').update(ctvRow(i)).eq('id', Number(id))).error);
+  throwIfKhongGhiDuoc(await supabase.from('phieu_giao_viec_ctv').update(ctvRow(i)).eq('id', Number(id)).select('id'));
 }
 export async function deleteCtvGiaoViec(id: string) {
-  throwIf((await supabase.from('phieu_giao_viec_ctv').delete().eq('id', Number(id))).error);
+  throwIfKhongGhiDuoc(await supabase.from('phieu_giao_viec_ctv').delete().eq('id', Number(id)).select('id'));
 }
 
 // ─── KẾT QUẢ PHÉP THỬ ───
@@ -548,7 +550,7 @@ export async function createThuongPhat(hopDongId: string, i: ThuongPhatInput) {
 }
 
 export async function deleteThuongPhat(id: string) {
-  throwIf((await supabase.from('hop_dong_thuong_phat').delete().eq('id', Number(id))).error);
+  throwIfKhongGhiDuoc(await supabase.from('hop_dong_thuong_phat').delete().eq('id', Number(id)).select('id'));
 }
 
 // ─── KIỂM TRA NỘI BỘ (Điều 10 Quy chế 2815) ───
@@ -623,7 +625,7 @@ export async function createKiemTraNoiBo(hopDongId: string, i: KiemTraNoiBoInput
 }
 
 export async function deleteKiemTraNoiBo(id: string) {
-  throwIf((await supabase.from('kiem_tra_noi_bo').delete().eq('id', Number(id))).error);
+  throwIfKhongGhiDuoc(await supabase.from('kiem_tra_noi_bo').delete().eq('id', Number(id)).select('id'));
 }
 
 // ─── QUYẾT TOÁN TỪNG PHẦN (Điều 12.1) ───

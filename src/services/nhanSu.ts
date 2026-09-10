@@ -31,6 +31,7 @@ export interface NhanSuHoSoMoRong {
   heSoLuong?: number | null;
   phuCapChucVu?: number | null;
   trangThai?: string;
+  anhDaiDien?: string | null;
   ngaySinh: string;
   gioiTinh: string;
   queQuan: string;
@@ -61,7 +62,7 @@ export async function fetchNhanSuHoSoMoRong(nhanSuId: string): Promise<NhanSuHoS
   const { data, error } = await supabase
     .from('nhan_su')
     .select(
-      `id, ho_va_ten, ma_dinh_danh, email, so_dien_thoai, hoc_vi, chuc_danh, he_so_luong, phu_cap_chuc_vu, trang_thai,
+      `id, ho_va_ten, ma_dinh_danh, email, so_dien_thoai, hoc_vi, chuc_danh, he_so_luong, phu_cap_chuc_vu, trang_thai, anh_dai_dien,
        don_vi!nhan_su_don_vi_id_fkey(ten_don_vi),
        ngay_sinh, gioi_tinh, que_quan, dia_chi_thuong_tru, dia_chi_hien_nay, dan_toc, ton_giao,
        so_dinh_danh_ca_nhan, ngay_cap_cccd, noi_cap_cccd, tinh_trang_hon_nhan,
@@ -84,6 +85,7 @@ export async function fetchNhanSuHoSoMoRong(nhanSuId: string): Promise<NhanSuHoS
     heSoLuong: r?.he_so_luong != null ? Number(r.he_so_luong) : null,
     phuCapChucVu: r?.phu_cap_chuc_vu != null ? Number(r.phu_cap_chuc_vu) : null,
     trangThai: r?.trang_thai ?? 'dang-lam-viec',
+    anhDaiDien: r?.anh_dai_dien ?? null,
     ngaySinh: r?.ngay_sinh ?? '',
     gioiTinh: r?.gioi_tinh ?? '',
     queQuan: r?.que_quan ?? '',
@@ -112,36 +114,72 @@ export async function fetchNhanSuHoSoMoRong(nhanSuId: string): Promise<NhanSuHoS
 }
 
 export async function updateNhanSuHoSoMoRong(nhanSuId: string, input: NhanSuHoSoMoRong) {
+  const updateData: Record<string, any> = {
+    ngay_sinh: str(input.ngaySinh),
+    gioi_tinh: str(input.gioiTinh),
+    que_quan: str(input.queQuan),
+    dia_chi_thuong_tru: str(input.diaChiThuongTru),
+    dia_chi_hien_nay: str(input.diaChiHienNay),
+    dan_toc: str(input.danToc),
+    ton_giao: str(input.tonGiao),
+    so_dinh_danh_ca_nhan: str(input.soDinhDanhCaNhan),
+    ngay_cap_cccd: str(input.ngayCapCccd),
+    noi_cap_cccd: str(input.noiCapCccd),
+    tinh_trang_hon_nhan: str(input.tinhTrangHonNhan),
+    so_bhxh: str(input.soBhxh),
+    ma_so_thue: str(input.maSoThue),
+    so_tai_khoan: str(input.soTaiKhoan),
+    ngan_hang: str(input.nganHang),
+    lien_he_khan_cap: str(input.lienHeKhanCap),
+    sdt_khan_cap: str(input.sdtKhanCap),
+    hoc_ham: str(input.hocHam),
+    chuyen_nganh: str(input.chuyenNganh),
+    ly_luan_chinh_tri: str(input.lyLuanChinhTri),
+    quan_ly_nha_nuoc: str(input.quanLyNhaNuoc),
+    ngach: str(input.ngach),
+    ngay_vao_lam: str(input.ngayVaoLam),
+    ngay_nghi_viec: str(input.ngayNghiViec),
+  };
+
+  if (input.anhDaiDien !== undefined) {
+    updateData.anh_dai_dien = str(input.anhDaiDien ?? '');
+  }
+
   throwIfKhongGhiDuoc(await supabase
     .from('nhan_su')
-    .update({
-      ngay_sinh: str(input.ngaySinh),
-      gioi_tinh: str(input.gioiTinh),
-      que_quan: str(input.queQuan),
-      dia_chi_thuong_tru: str(input.diaChiThuongTru),
-      dia_chi_hien_nay: str(input.diaChiHienNay),
-      dan_toc: str(input.danToc),
-      ton_giao: str(input.tonGiao),
-      so_dinh_danh_ca_nhan: str(input.soDinhDanhCaNhan),
-      ngay_cap_cccd: str(input.ngayCapCccd),
-      noi_cap_cccd: str(input.noiCapCccd),
-      tinh_trang_hon_nhan: str(input.tinhTrangHonNhan),
-      so_bhxh: str(input.soBhxh),
-      ma_so_thue: str(input.maSoThue),
-      so_tai_khoan: str(input.soTaiKhoan),
-      ngan_hang: str(input.nganHang),
-      lien_he_khan_cap: str(input.lienHeKhanCap),
-      sdt_khan_cap: str(input.sdtKhanCap),
-      hoc_ham: str(input.hocHam),
-      chuyen_nganh: str(input.chuyenNganh),
-      ly_luan_chinh_tri: str(input.lyLuanChinhTri),
-      quan_ly_nha_nuoc: str(input.quanLyNhaNuoc),
-      ngach: str(input.ngach),
-      ngay_vao_lam: str(input.ngayVaoLam),
-      ngay_nghi_viec: str(input.ngayNghiViec),
-    })
+    .update(updateData)
     .eq('id', Number(nhanSuId))
     .select('id'));
+}
+
+/** Tải lên ảnh chân dung cho CBVC và lưu vào Supabase Storage bucket 'avatars' */
+export async function uploadNhanSuAvatar(nhanSuId: string, file: File): Promise<string> {
+  const ext = file.name.split('.').pop() || 'jpg';
+  const filePath = `personnel/ns_${nhanSuId}_${Date.now()}.${ext}`;
+  const { error: upErr } = await supabase.storage.from('avatars').upload(filePath, file, {
+    upsert: true,
+    contentType: file.type || 'image/jpeg',
+  });
+  if (upErr) throw upErr;
+
+  const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath);
+
+  const { error: dbErr } = await supabase
+    .from('nhan_su')
+    .update({ anh_dai_dien: publicUrl })
+    .eq('id', Number(nhanSuId));
+  if (dbErr) throw dbErr;
+
+  return publicUrl;
+}
+
+/** Xóa ảnh đại diện của CBVC, quay về icon/chữ cái viết tắt */
+export async function removeNhanSuAvatar(nhanSuId: string): Promise<void> {
+  const { error } = await supabase
+    .from('nhan_su')
+    .update({ anh_dai_dien: null })
+    .eq('id', Number(nhanSuId));
+  if (error) throw error;
 }
 
 // ─── Quá trình công tác ───

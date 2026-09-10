@@ -9,6 +9,7 @@ import {
   CartesianGrid,
   Tooltip,
 } from 'recharts';
+import { ChartDefs } from '../components/ChartDefs';
 import { PageHeader } from '../components/PageHeader';
 import { DataState } from '../components/DataState';
 import { StatusBadge } from '../components/StatusBadge';
@@ -67,6 +68,7 @@ export function BaoCaoPage() {
           <DataState loading={loading} error={error} empty={congNo.length === 0} />
           <ResponsiveContainer width="100%" height={320}>
             <BarChart data={chartData} layout="vertical" margin={{ left: 40 }}>
+              <ChartDefs />
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border-default)" horizontal={false} />
               <XAxis type="number" tick={{ fontSize: 12, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} />
               <YAxis
@@ -77,8 +79,8 @@ export function BaoCaoPage() {
                 axisLine={false}
                 tickLine={false}
               />
-              <Tooltip cursor={{ fill: 'var(--bg-subtle)' }} contentStyle={{ borderRadius: 8, border: '1px solid var(--border-default)', background: 'var(--bg-elevated)', color: 'var(--text-primary)', fontSize: 13 }} />
-              <Bar dataKey="doanhThu" name="Đã thu" fill="var(--color-primary, #00668c)" radius={[0, 4, 4, 0]} barSize={18} />
+              <Tooltip cursor={{ fill: 'var(--bg-subtle)' }} contentStyle={{ borderRadius: 12, border: '1px solid rgba(255, 255, 255, 0.15)', background: 'rgba(31, 35, 50, 0.95)', backdropFilter: 'blur(12px)', color: 'var(--text-primary)', fontSize: 13, boxShadow: '0 10px 25px -5px rgba(0,0,0,0.3)' }} />
+              <Bar dataKey="doanhThu" name="Đã thu" fill="url(#pieGrad-0)" radius={[0, 6, 6, 0]} barSize={18} filter="url(#shadowBar)" />
             </BarChart>
           </ResponsiveContainer>
         </div>

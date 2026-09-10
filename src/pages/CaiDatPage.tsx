@@ -14,12 +14,12 @@ import {
 } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { DataState } from '../components/DataState';
-import { Modal, Field, inputCls } from '../components/Modal';
+import { Field, inputCls } from '../components/Modal';
 import { TableToolbar, RowActions } from '../components/TableToolbar';
 import { useAsyncData } from '../hooks/useAsyncData';
 import { useTableControls } from '../hooks/useTableControls';
 import { useCrudForm } from '../hooks/useCrudForm';
-import { useSlidePanelChiTiet } from '../hooks/useSlidePanelCrud';
+import { useSlidePanelChiTiet, useSlidePanelForm } from '../hooks/useSlidePanelCrud';
 import { useAuth, type VaiTro } from '../context/AuthContext';
 import { usePhanQuyen } from '../hooks/usePhanQuyen';
 import {
@@ -174,6 +174,62 @@ function NguoiDungTab({ coTheSua }: { coTheSua: boolean }) {
     }
   };
 
+  useSlidePanelForm({
+    id: 'phan-quyen-user-form',
+    open: editing !== null,
+    title: editing ? `Phân quyền: ${editing.hoTen}` : 'Phân quyền người dùng',
+    subtitle: editing ? `Tài khoản: ${editing.hoTen} (${editing.donVi || 'Chưa phân đơn vị'})` : undefined,
+    icon: <UserCog size={18} className="text-primary" />,
+    storageKey: 'slideover-width-phan-quyen-user',
+    minWidth: 460,
+    onDongNgoaiLuong: () => setEditing(null),
+    content: (
+      <form id="form-phan-quyen-user" onSubmit={save} className="space-y-4">
+        {editing && (
+          <div className="rounded-xl border border-border bg-subtle/50 p-3.5 space-y-1">
+            <div className="text-2xs font-bold uppercase tracking-wider text-ink-muted">Tài khoản được phân quyền</div>
+            <div className="font-semibold text-ink text-sm">{editing.hoTen}</div>
+            <div className="text-xs text-ink-secondary flex items-center gap-2">
+              <span>Đơn vị: <strong>{editing.donVi || 'Chưa phân bổ'}</strong></span>
+              <span>•</span>
+              <span>ID: <strong>{editing.userId}</strong></span>
+            </div>
+          </div>
+        )}
+        <Field label="Vai trò hệ thống" required>
+          <select className={inputCls} value={vaiTro} onChange={(e) => setVaiTro(e.target.value)}>
+            {VAI_TRO_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Trạng thái tài khoản" required>
+          <select className={inputCls} value={trangThai} onChange={(e) => setTrangThai(e.target.value)}>
+            <option value="hoat-dong">Hoạt động bình thường</option>
+            <option value="khoa">Khóa tài khoản</option>
+          </select>
+        </Field>
+        {err && <p className="text-xs font-semibold text-danger">{err}</p>}
+      </form>
+    ),
+    footer: (
+      <div className="flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={() => setEditing(null)}
+          className="rounded-xl border border-border px-4 py-2.5 text-[13px] font-bold text-ink-secondary hover:bg-muted"
+        >
+          Hủy
+        </button>
+        <button type="submit" form="form-phan-quyen-user" disabled={saving} className="btn-primary disabled:opacity-60">
+          {saving && <LoaderCircle size={15} className="animate-spin" />}
+          Lưu phân quyền
+        </button>
+      </div>
+    ),
+    deps: [editing, vaiTro, trangThai, saving, err],
+  });
+
   return (
     <>
       <DataState loading={loading} error={error} empty={list.length === 0} />
@@ -228,34 +284,6 @@ function NguoiDungTab({ coTheSua }: { coTheSua: boolean }) {
         </table>
         </div>
       </div>
-
-      <Modal title={editing ? `Phân quyền: ${editing.hoTen}` : ''} open={editing !== null} onClose={() => setEditing(null)}>
-        <form onSubmit={save} className="space-y-4">
-          <Field label="Vai trò" required>
-            <select className={inputCls} value={vaiTro} onChange={(e) => setVaiTro(e.target.value)}>
-              {VAI_TRO_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Trạng thái" required>
-            <select className={inputCls} value={trangThai} onChange={(e) => setTrangThai(e.target.value)}>
-              <option value="hoat-dong">Hoạt động</option>
-              <option value="khoa">Khóa tài khoản</option>
-            </select>
-          </Field>
-          {err && <p className="text-xs font-semibold text-danger">{err}</p>}
-          <div className="flex justify-end gap-2 border-t border-border-subtle pt-4">
-            <button type="button" onClick={() => setEditing(null)} className="rounded-xl border border-border px-4 py-2.5 text-[13px] font-bold text-ink-secondary hover:bg-muted">
-              Hủy
-            </button>
-            <button type="submit" disabled={saving} className="btn-primary disabled:opacity-60">
-              {saving && <LoaderCircle size={15} className="animate-spin" />}
-              Lưu
-            </button>
-          </div>
-        </form>
-      </Modal>
     </>
   );
 }
@@ -285,6 +313,68 @@ function DanhMucTab() {
     [list, filterNhom],
   );
   const table = useTableControls(filtered, (d) => `${d.nhom} ${d.maMuc} ${d.tenMuc}`);
+
+  useSlidePanelForm({
+    id: 'danh-muc-form',
+    open: crud.modalOpen,
+    title: crud.editing ? `Sửa mục: ${crud.editing.tenMuc}` : 'Thêm mục danh mục',
+    subtitle: 'Quản lý nhóm và các mục danh mục hệ thống IBST',
+    icon: <ListTree size={18} className="text-primary" />,
+    storageKey: 'slideover-width-danh-muc-form',
+    minWidth: 480,
+    onDongNgoaiLuong: crud.closeModal,
+    content: (
+      <form id="form-danh-muc" onSubmit={crud.submit} className="space-y-4">
+        <Field label="Nhóm" required>
+          <input
+            className={inputCls}
+            required
+            list="nhom-list"
+            value={crud.form.nhom}
+            onChange={(e) => crud.setForm({ ...crud.form, nhom: e.target.value })}
+            placeholder="VD: loai_don_vi"
+          />
+          <datalist id="nhom-list">
+            {nhomList.map((n) => <option key={n} value={n} />)}
+          </datalist>
+        </Field>
+        <Field label="Mã mục" required>
+          <input
+            className={inputCls}
+            required
+            value={crud.form.maMuc}
+            onChange={(e) => crud.setForm({ ...crud.form, maMuc: e.target.value })}
+            placeholder="VD: trung-tam"
+          />
+        </Field>
+        <Field label="Tên mục" required>
+          <input
+            className={inputCls}
+            required
+            value={crud.form.tenMuc}
+            onChange={(e) => crud.setForm({ ...crud.form, tenMuc: e.target.value })}
+          />
+        </Field>
+        {crud.actionError && <p className="text-xs font-semibold text-danger">{crud.actionError}</p>}
+      </form>
+    ),
+    footer: (
+      <div className="flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={crud.closeModal}
+          className="rounded-xl border border-border px-4 py-2.5 text-[13px] font-bold text-ink-secondary hover:bg-muted"
+        >
+          Hủy
+        </button>
+        <button type="submit" form="form-danh-muc" disabled={crud.saving} className="btn-primary disabled:opacity-60">
+          {crud.saving && <LoaderCircle size={15} className="animate-spin" />}
+          {crud.editing ? 'Lưu thay đổi' : 'Thêm'}
+        </button>
+      </div>
+    ),
+    deps: [crud.modalOpen, crud.editing, crud.form, crud.actionError, crud.saving],
+  });
 
   return (
     <>
@@ -337,55 +427,6 @@ function DanhMucTab() {
         </table>
         </div>
       </div>
-
-      <Modal
-        title={crud.editing ? `Sửa mục: ${crud.editing.tenMuc}` : 'Thêm mục danh mục'}
-        open={crud.modalOpen}
-        onClose={crud.closeModal}
-      >
-        <form onSubmit={crud.submit} className="space-y-4">
-          <Field label="Nhóm" required>
-            <input
-              className={inputCls}
-              required
-              list="nhom-list"
-              value={crud.form.nhom}
-              onChange={(e) => crud.setForm({ ...crud.form, nhom: e.target.value })}
-              placeholder="VD: loai_don_vi"
-            />
-            <datalist id="nhom-list">
-              {nhomList.map((n) => <option key={n} value={n} />)}
-            </datalist>
-          </Field>
-          <Field label="Mã mục" required>
-            <input
-              className={inputCls}
-              required
-              value={crud.form.maMuc}
-              onChange={(e) => crud.setForm({ ...crud.form, maMuc: e.target.value })}
-              placeholder="VD: trung-tam"
-            />
-          </Field>
-          <Field label="Tên mục" required>
-            <input
-              className={inputCls}
-              required
-              value={crud.form.tenMuc}
-              onChange={(e) => crud.setForm({ ...crud.form, tenMuc: e.target.value })}
-            />
-          </Field>
-          {crud.actionError && <p className="text-xs font-semibold text-danger">{crud.actionError}</p>}
-          <div className="flex justify-end gap-2 border-t border-border-subtle pt-4">
-            <button type="button" onClick={crud.closeModal} className="rounded-xl border border-border px-4 py-2.5 text-[13px] font-bold text-ink-secondary hover:bg-muted">
-              Hủy
-            </button>
-            <button type="submit" disabled={crud.saving} className="btn-primary disabled:opacity-60">
-              {crud.saving && <LoaderCircle size={15} className="animate-spin" />}
-              {crud.editing ? 'Lưu' : 'Thêm'}
-            </button>
-          </div>
-        </form>
-      </Modal>
     </>
   );
 }

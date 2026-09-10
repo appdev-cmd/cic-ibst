@@ -108,13 +108,30 @@
     @apply rounded-xl border border-border bg-surface shadow-card;
   }
   .th-cell {
-    @apply bg-subtle px-4 py-3 text-left text-xs font-extrabold uppercase tracking-wide text-ink-muted;
+    @apply bg-slate-100 dark:bg-[#191d28] px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-ink-secondary;
   }
   .td-cell {
-    @apply border-t border-border px-4 py-3 text-sm;
+    @apply px-3 py-2.5 text-sm text-ink;
   }
   .tr-hover {
-    @apply transition-colors hover:bg-[var(--bg-hover-row)];
+    @apply transition-colors hover:bg-primary-50/40 dark:hover:bg-slate-800/60;
+  }
+  /* Xen kẽ màu dòng (lấy chuẩn từ NhanSu): dòng lẻ sáng hơn dòng chẵn */
+  .tr-stripe {
+    @apply transition-colors;
+  }
+  .tr-stripe:nth-child(even) {
+    background-color: var(--bg-stripe);
+  }
+  .tr-stripe:nth-child(odd) {
+    background-color: var(--bg-surface);
+  }
+  .tr-stripe:hover {
+    @apply bg-primary-50/40 dark:bg-slate-800/60;
+  }
+  /* Header bảng sticky chuẩn */
+  .thead-sticky {
+    @apply sticky top-0 z-10 border-b border-border bg-slate-100 shadow-sm dark:border-slate-700/80 dark:bg-[#191d28];
   }
   .btn-primary {
     @apply flex min-h-10 items-center justify-center gap-2 rounded-xl bg-primary-500 px-4 py-2.5 text-sm font-bold text-white shadow-card transition-all hover:bg-primary-600 hover:shadow-card-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;

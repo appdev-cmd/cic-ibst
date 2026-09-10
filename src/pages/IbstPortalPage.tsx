@@ -27,25 +27,40 @@ import { cn } from '../lib/utils';
 // --- MOCK DATA FOR ALL SITEMAP SECTIONS ---
 
 // 1. Giới thiệu - Lãnh đạo viện
+// 1. Giới thiệu - Lãnh đạo viện
 const LEADERS = [
-  { name: 'GS. TS. Nguyễn Xuân Khang', role: 'Viện trưởng / Chủ tịch Hội đồng khoa học', phone: '024 37544196', email: 'khangnx@ibst.vn', room: 'Phòng 402 - Nhà điều hành' },
-  { name: 'PGS. TS. Trần Việt Hùng', role: 'Phó Viện trưởng phụ trách Nghiên cứu khoa học & Quy chuẩn', phone: '024 37544197', email: 'hungtv@ibst.vn', room: 'Phòng 403 - Nhà điều hành' },
-  { name: 'TS. Nguyễn Hồng Hải', role: 'Phó Viện trưởng phụ trách Đào tạo & Phục vụ QLNN', phone: '024 37544198', email: 'hainh@ibst.vn', room: 'Phòng 404 - Nhà điều hành' },
-  { name: 'TS. Lê Minh Long', role: 'Phó Viện trưởng phụ trách Hợp tác quốc tế & Chuyên môn', phone: '024 37544199', email: 'longlm@ibst.vn', room: 'Phòng 405 - Nhà điều hành' },
+  { name: 'TS. Nguyễn Hồng Hải', role: 'Viện trưởng / Chủ tịch Hội đồng khoa học', phone: '024 37544196', email: 'hainh@ibst.vn', room: 'Phòng 402 - Nhà điều hành', avatar: '/avatars/nguyen-hong-hai.jpg' },
+  { name: 'TS. Đinh Quốc Dân', role: 'Phó Viện trưởng', phone: '024 37544197', email: 'dandq@ibst.vn', room: 'Phòng 403 - Nhà điều hành', avatar: '/avatars/dinh-quoc-dan.jpg' },
+  { name: 'TS. Nguyễn Thanh Bình', role: 'Phó Viện trưởng', phone: '024 37544198', email: 'binhnt@ibst.vn', room: 'Phòng 404 - Nhà điều hành', avatar: '/avatars/nguyen-thanh-binh.jpg' },
+  { name: 'PGS. TS. Cao Duy Khôi', role: 'Phó Viện trưởng', phone: '024 37544199', email: 'khoicd@ibst.vn', room: 'Phòng 405 - Nhà điều hành', avatar: '/avatars/cao-duy-khoi.jpg' },
 ];
 
-// 2. Giới thiệu - Các đơn vị trực thuộc (21 đơn vị tiêu biểu)
+// 2. Giới thiệu - 19 đơn vị trực thuộc Viện IBST (Theo Quyết định Bộ Xây dựng)
 const UNITS = [
-  { code: 'P.QLKH', name: 'Phòng Quản lý Khoa học & Tiêu chuẩn', type: 'Nghiệp vụ', head: 'TS. Vũ Thành Trung' },
-  { code: 'P.KHTC', name: 'Phòng Kế hoạch Tài chính', type: 'Nghiệp vụ', head: 'ThS. Nguyễn Thị Mai' },
-  { code: 'P.TCHC', name: 'Phòng Tổ chức Hành chính', type: 'Nghiệp vụ', head: 'ThS. Lê Hoàng Nam' },
-  { code: 'PVMN', name: 'Phân viện KHCN Xây dựng miền Nam', type: 'Phân viện trực thuộc', head: 'PGS. TS. Lê Văn Huy', loc: 'TP. Hồ Chí Minh' },
-  { code: 'PVMT', name: 'Phân viện KHCN Xây dựng miền Trung', type: 'Phân viện trực thuộc', head: 'TS. Nguyễn Quốc Đạt', loc: 'Đà Nẵng' },
-  { code: 'IBST-COTEC', name: 'Trung tâm Tư vấn Thiết kế và Xây dựng', type: 'Chuyên môn', head: 'ThS. Đỗ Duy Hải' },
-  { code: 'IBST-LIMS', name: 'Văn phòng Công nhận Chất lượng Phòng thí nghiệm', type: 'Chuyên môn', head: 'TS. Hoàng Minh Đức' },
-  { code: 'TT.ĐB', name: 'Trung tâm Địa kỹ thuật và Trắc địa công trình', type: 'Chuyên môn', head: 'TS. Phạm Anh Tuấn' },
-  { code: 'TT.BT', name: 'Trung tâm Bê tông & Vật liệu xây dựng', type: 'Chuyên môn', head: 'PGS. TS. Hoàng Minh Giang' },
-  { code: 'TT.KC', name: 'Trung tâm Kết cấu công trình xây dựng', type: 'Chuyên môn', head: 'TS. Bùi Danh Nam' },
+  // 3 Phòng chức năng
+  { code: 'TCHC', name: 'Phòng Tổ chức hành chính', type: 'Phòng Chức năng', loc: 'Hà Nội' },
+  { code: 'KHKT', name: 'Phòng Kế hoạch - kỹ thuật', type: 'Phòng Chức năng', loc: 'Hà Nội' },
+  { code: 'TCKT', name: 'Phòng Tài chính - kế toán', type: 'Phòng Chức năng', loc: 'Hà Nội' },
+  // 3 Viện chuyên ngành
+  { code: 'VKC', name: 'Viện chuyên ngành Kết cấu công trình xây dựng', type: 'Viện Chuyên ngành', loc: 'Hà Nội' },
+  { code: 'VBT', name: 'Viện chuyên ngành Bê tông', type: 'Viện Chuyên ngành', loc: 'Hà Nội' },
+  { code: 'VĐKT', name: 'Viện chuyên ngành Địa kỹ thuật công trình và Trắc địa', type: 'Viện Chuyên ngành', loc: 'Hà Nội' },
+  // 2 Phân viện
+  { code: 'PVMN', name: 'Phân viện Khoa học công nghệ xây dựng miền Nam', type: 'Phân viện', loc: 'TP. Hồ Chí Minh' },
+  { code: 'PVMT', name: 'Phân viện Khoa học công nghệ xây dựng miền Trung', type: 'Phân viện', loc: 'Đà Nẵng' },
+  // 10 Trung tâm chuyên môn
+  { code: 'TTAM', name: 'Trung tâm Chống ăn mòn và Bảo vệ công trình', type: 'Trung tâm', loc: 'Hà Nội' },
+  { code: 'TTTD', name: 'Trung tâm Thí nghiệm và Tư vấn xây dựng', type: 'Trung tâm', loc: 'Hà Nội' },
+  { code: 'TTCNVL', name: 'Trung tâm Công nghệ Vật liệu và Xây dựng', type: 'Trung tâm', loc: 'Hà Nội' },
+  { code: 'TTKCT', name: 'Trung tâm Kết cấu thép và Cơ khí xây dựng', type: 'Trung tâm', loc: 'Hà Nội' },
+  { code: 'TTTK', name: 'Trung tâm Thiết kế và Đầu tư xây dựng', type: 'Trung tâm', loc: 'Hà Nội' },
+  { code: 'TTCNXD', name: 'Trung tâm Công nghệ Xây dựng', type: 'Trung tâm', loc: 'Hà Nội' },
+  { code: 'TTCNHT', name: 'Trung tâm Công nghệ và Kỹ thuật hạ tầng', type: 'Trung tâm', loc: 'Hà Nội' },
+  { code: 'TTTBXD', name: 'Trung tâm Thiết bị và An toàn xây dựng', type: 'Trung tâm', loc: 'Hà Nội' },
+  { code: 'TTQT', name: 'Trung tâm Hợp tác và Đào tạo dự án quốc tế', type: 'Trung tâm', loc: 'Hà Nội' },
+  { code: 'TTBIM', name: 'Trung tâm Tư vấn và Ứng dụng BIM trong xây dựng', type: 'Trung tâm', loc: 'Hà Nội' },
+  // 1 Công ty Cổ phần
+  { code: 'CTCP', name: 'Công ty Cổ phần Đầu tư và Tư vấn Xây dựng IBST', type: 'Doanh nghiệp', loc: 'Hà Nội' },
 ];
 
 // 3. Giới thiệu - Hệ thống Phòng thí nghiệm
@@ -420,7 +435,7 @@ export function IbstPortalPage() {
               <div className="card p-4 flex items-center gap-4 hover:shadow-card-hover transition-all">
                 <div className="p-3 bg-primary/10 text-primary-500 rounded-xl"><Layers size={22} /></div>
                 <div className="text-left">
-                  <p className="text-md font-black">21</p>
+                  <p className="text-md font-black">19</p>
                   <p className="text-3xs text-ink-muted uppercase font-bold tracking-wider">{lang === 'vi' ? 'Đơn vị trực thuộc' : 'Departments'}</p>
                 </div>
               </div>
@@ -567,13 +582,26 @@ export function IbstPortalPage() {
                   <div className="card p-6 space-y-4">
                     <h3 className="text-md font-black text-ink border-b border-border pb-3 flex items-center gap-2">
                       <Users className="text-primary-500" size={16} />
-                      Ban Giám Đốc Viện (Nhiệm kỳ 2025 - 2030)
+                      Ban Lãnh đạo Viện (Nhiệm kỳ 2025 - 2030)
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {LEADERS.map((ldr, idx) => (
                         <div key={idx} className="p-4 bg-muted border border-border rounded-xl space-y-2">
-                          <h4 className="font-bold text-ink text-[13px]">{ldr.name}</h4>
-                          <p className="text-3xs font-semibold text-primary-500 uppercase tracking-wider">{ldr.role}</p>
+                          <div className="flex items-center gap-3">
+                            {/* Ảnh chân dung chính thức */}
+                            <div className="w-14 h-20 rounded-lg overflow-hidden border border-border shrink-0 bg-subtle">
+                              <img
+                                src={ldr.avatar}
+                                alt={ldr.name}
+                                className="w-full h-full object-cover object-top"
+                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                              />
+                            </div>
+                            <div className="min-w-0">
+                              <h4 className="font-bold text-ink text-[13px]">{ldr.name}</h4>
+                              <p className="text-3xs font-semibold text-primary-500 uppercase tracking-wider">{ldr.role}</p>
+                            </div>
+                          </div>
                           <div className="text-3xs text-ink-muted space-y-1 font-semibold pt-1 border-t border-border-subtle">
                             <p className="flex items-center gap-1.5"><Phone size={11} /> {ldr.phone}</p>
                             <p className="flex items-center gap-1.5"><Mail size={11} /> {ldr.email}</p>
@@ -588,45 +616,61 @@ export function IbstPortalPage() {
                   <div className="card p-6 space-y-4">
                     <h3 className="text-md font-black text-ink border-b border-border pb-3 flex items-center gap-2">
                       <Layers className="text-primary-500" size={16} />
-                      Sơ đồ Tổ chức hành chính & Phòng ban
+                      Sơ đồ Cơ cấu Tổ chức (19 đơn vị trực thuộc)
                     </h3>
                     <div className="p-4 bg-muted border border-border rounded-xl space-y-4 text-center">
                       <div className="inline-block px-4 py-2 bg-primary text-white text-xs font-black rounded-lg shadow-sm">
-                        Ban Giám Đốc Viện
+                        Ban Lãnh đạo Viện (Viện trưởng & Các Phó Viện trưởng)
                       </div>
                       <div className="w-0.5 h-6 bg-border mx-auto"></div>
                       <div className="grid grid-cols-2 gap-4 max-w-lg mx-auto">
-                        <div className="px-3 py-2 bg-surface border border-border rounded-lg text-2xs font-bold">Hội đồng Khoa học</div>
-                        <div className="px-3 py-2 bg-surface border border-border rounded-lg text-2xs font-bold">Hội đồng Tiêu chuẩn</div>
+                        <div className="px-3 py-2 bg-surface border border-border rounded-lg text-2xs font-bold">Hội đồng Khoa học Viện</div>
+                        <div className="px-3 py-2 bg-surface border border-border rounded-lg text-2xs font-bold">Hội đồng Tiêu chuẩn & Quy chuẩn</div>
                       </div>
                       <div className="w-0.5 h-6 bg-border mx-auto"></div>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <div className="p-3 bg-surface border border-border rounded-xl text-left">
-                          <h5 className="font-bold text-ink-secondary text-2xs mb-2 pb-1 border-b border-border-subtle uppercase">Đơn vị nghiệp vụ</h5>
+                          <h5 className="font-bold text-ink-secondary text-2xs mb-2 pb-1 border-b border-border-subtle uppercase">Phòng Chức năng (3)</h5>
                           <ul className="text-3xs space-y-1 font-semibold text-ink-muted list-disc pl-4">
-                            <li>Phòng QLKH & Tiêu chuẩn</li>
-                            <li>Phòng Kế hoạch Tài chính</li>
-                            <li>Phòng Tổ chức Hành chính</li>
-                            <li>Văn phòng Đảng - Đoàn thể</li>
+                            <li>Phòng Tổ chức hành chính (TCHC)</li>
+                            <li>Phòng Kế hoạch - kỹ thuật (KHKT)</li>
+                            <li>Phòng Tài chính - kế toán (TCKT)</li>
                           </ul>
                         </div>
                         <div className="p-3 bg-surface border border-border rounded-xl text-left">
-                          <h5 className="font-bold text-ink-secondary text-2xs mb-2 pb-1 border-b border-border-subtle uppercase">Trung tâm Chuyên môn</h5>
+                          <h5 className="font-bold text-ink-secondary text-2xs mb-2 pb-1 border-b border-border-subtle uppercase">Viện CN & Phân viện (5)</h5>
                           <ul className="text-3xs space-y-1 font-semibold text-ink-muted list-disc pl-4">
-                            <li>Trung tâm Bê tông & Vật liệu</li>
-                            <li>Trung tâm Địa kỹ thuật & Trắc địa</li>
-                            <li>Trung tâm Kết cấu công trình</li>
-                            <li>Văn phòng Thử nghiệm LIMS</li>
-                          </ul>
-                        </div>
-                        <div className="p-3 bg-surface border border-border rounded-xl text-left">
-                          <h5 className="font-bold text-ink-secondary text-2xs mb-2 pb-1 border-b border-border-subtle uppercase">Chi nhánh</h5>
-                          <ul className="text-3xs space-y-1 font-semibold text-ink-muted list-disc pl-4">
+                            <li>Viện CN Kết cấu công trình (VKC)</li>
+                            <li>Viện CN Bê tông (VBT)</li>
+                            <li>Viện CN Địa kỹ thuật & Trắc địa (VĐKT)</li>
                             <li>Phân viện miền Nam (PVMN)</li>
                             <li>Phân viện miền Trung (PVMT)</li>
-                            <li>Văn phòng Đại diện Hải Phòng</li>
                           </ul>
                         </div>
+                        <div className="p-3 bg-surface border border-border rounded-xl text-left">
+                          <h5 className="font-bold text-ink-secondary text-2xs mb-2 pb-1 border-b border-border-subtle uppercase">Trung tâm & Doanh nghiệp (11)</h5>
+                          <ul className="text-3xs space-y-1 font-semibold text-ink-muted list-disc pl-4">
+                            <li>10 Trung tâm chuyên ngành (TTAM, TTTD, TTCNVL, TTKCT, TTTK, TTCNXD, TTCNHT, TTTBXD, TTQT, TTBIM)</li>
+                            <li>Công ty CP Đầu tư & TVXD IBST (CTCP)</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Bảng danh sách 19 đơn vị trực thuộc */}
+                    <div className="mt-4 pt-4 border-t border-border">
+                      <h4 className="text-xs font-bold text-ink mb-3 uppercase tracking-wider">Danh mục 19 Đơn vị trực thuộc Viện IBST</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                        {UNITS.map((u) => (
+                          <div key={u.code} className="p-2.5 bg-surface border border-border rounded-lg text-left hover:border-primary-400 transition-colors">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="font-black text-primary-500 text-2xs">{u.code}</span>
+                              <span className="text-3xs font-semibold px-1.5 py-0.5 rounded bg-muted text-ink-muted">{u.type}</span>
+                            </div>
+                            <p className="text-2xs font-bold text-ink line-clamp-2">{u.name}</p>
+                            <p className="text-3xs text-ink-muted mt-1">Trụ sở: {u.loc}</p>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>

@@ -17,6 +17,10 @@ import { DauThauPage } from './pages/DauThauPage';
 import { PvqlnnPage } from './pages/PvqlnnPage';
 import { UyQuyenPage } from './pages/UyQuyenPage';
 import { LichCoQuanPage } from './pages/LichCoQuanPage';
+import { DangVuPage } from './pages/DangVuPage';
+import { TuVanDvktPage } from './pages/TuVanDvktPage';
+import { TcktPage } from './pages/TcktPage';
+import { CongDoanPage } from './pages/CongDoanPage';
 
 const SKIP_AUTH = import.meta.env.DEV && import.meta.env.VITE_SKIP_AUTH === 'true';
 
@@ -46,34 +50,37 @@ export default function App() {
           </RequireAuth>
         }
       >
-        {/* 07 Nhóm Phân hệ ERP chuẩn theo kiến trúc gom cụm */}
+        {/* 12 Nhóm Phân hệ ERP chuẩn theo cấu trúc mới thống nhất */}
         <Route path="/" element={<DashboardPage />} />
-        <Route path="/hop-dong" element={<HopDongPage />} />
-        <Route path="/khoa-hoc" element={<KhoaHocPage />} />
         <Route path="/nhan-su" element={<NhanSuPage />} />
-        <Route path="/thi-nghiem" element={<ThiNghiemPage />} />
+        <Route path="/dang-vu" element={<DangVuPage />} />
         <Route path="/e-office" element={<EOfficePage />} />
+        <Route path="/pvqlnn" element={<PvqlnnPage />} />
+        <Route path="/khoa-hoc" element={<KhoaHocPage />} />
+        <Route path="/tu-van-dvkt" element={<TuVanDvktPage />} />
+        <Route path="/thi-nghiem" element={<ThiNghiemPage />} />
+        <Route path="/tckt" element={<TcktPage />} />
+        <Route path="/cong-doan" element={<CongDoanPage />} />
         <Route path="/kho-luu-tru" element={<KhoLuuTruPage />} />
-
-        {/* Các route chuyển tiếp về Phân hệ Hợp đồng, CRM & Tài chính */}
-        <Route path="/tai-chinh" element={<Navigate to="/hop-dong?tab=tai-chinh" replace />} />
-        <Route path="/dau-thau" element={<Navigate to="/hop-dong?tab=dau-thau" replace />} />
-        <Route path="/pvqlnn" element={<Navigate to="/hop-dong?tab=pvqlnn" replace />} />
-        <Route path="/uy-quyen" element={<Navigate to="/hop-dong?tab=bao-cao-khkt" replace />} />
-
-        {/* Các trang hỗ trợ & Cổng thông tin */}
-        <Route path="/don-vi" element={<Navigate to="/nhan-su?tab=don-vi" replace />} />
-        <Route path="/cai-dat" element={<CaiDatPage />} />
         <Route path="/ibst-portal" element={<IbstPortalPage />} />
 
-        <Route path="/lich-co-quan" element={<LichCoQuanPage />} />
+        {/* Cài đặt hệ thống */}
+        <Route path="/cai-dat" element={<CaiDatPage />} />
+
+        {/* Các route chuyển tiếp tương thích ngược (Redirects) */}
+        <Route path="/hop-dong" element={<Navigate to="/tu-van-dvkt" replace />} />
+        <Route path="/tai-chinh" element={<Navigate to="/tckt" replace />} />
+        <Route path="/lich-co-quan" element={<Navigate to="/?tab=lich" replace />} />
+        <Route path="/dau-thau" element={<Navigate to="/tu-van-dvkt?tab=dau-thau" replace />} />
+        <Route path="/uy-quyen" element={<Navigate to="/tu-van-dvkt?tab=bao-cao-khkt" replace />} />
+        <Route path="/khach-hang" element={<Navigate to="/tu-van-dvkt?tab=crm-khach-hang" replace />} />
+        <Route path="/don-vi" element={<Navigate to="/nhan-su?tab=don-vi" replace />} />
         <Route path="/van-ban" element={<Navigate to="/e-office" replace />} />
         <Route path="/cong-viec" element={<Navigate to="/e-office" replace />} />
         <Route path="/de-tai" element={<Navigate to="/khoa-hoc" replace />} />
         <Route path="/so-huu-tri-tue" element={<Navigate to="/khoa-hoc" replace />} />
         <Route path="/ho-so-tai-lieu" element={<Navigate to="/kho-luu-tru" replace />} />
         <Route path="/dao-tao" element={<Navigate to="/nhan-su" replace />} />
-        <Route path="/khach-hang" element={<Navigate to="/hop-dong?tab=crm-khach-hang" replace />} />
       </Route>
     </Routes>
   );

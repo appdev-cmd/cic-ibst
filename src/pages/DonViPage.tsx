@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Plus,
   Network,
@@ -16,21 +16,20 @@ import {
   List,
   Crown,
   Award,
+  MapPin,
+  Globe,
+  ExternalLink,
 } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { KpiCard } from '../components/KpiCard';
 import { DataState } from '../components/DataState';
-import { Modal, Field, inputCls } from '../components/Modal';
 import { OrgChartTree } from '../components/OrgChartTree';
 import { useAsyncData } from '../hooks/useAsyncData';
 import {
   LOAI_DON_VI,
   fetchDonVi,
   fetchNhanSuFull,
-  createDonVi,
-  updateDonVi,
   deleteDonVi,
-  type DonViInput,
 } from '../services/org';
 import type { DonVi, LoaiDonVi } from '../types';
 import { useSlidePanelChiTiet, useSlidePanelForm } from '../hooks/useSlidePanelCrud';
@@ -47,17 +46,6 @@ const LOAI_BADGE: Record<LoaiDonVi, string> = {
   'cong-ty': 'bg-amber-50 text-warning dark:bg-amber-900/20 dark:text-amber-400',
 };
 
-const EMPTY_FORM: DonViInput = {
-  ten: '',
-  tenVietTat: '',
-  loai: 'trung-tam',
-  chucNangNhiemVu: '',
-  dienThoai: '',
-  email: '',
-  phuTrachId: '',
-  truongDonViId: '',
-};
-
 export function DonViPage({ hideHeader = false, mode = 'full' }: { hideHeader?: boolean; mode?: 'full' | 'orgchart-only' } = {}) {
   const { data: donViList, loading, error, refetch } = useAsyncData(fetchDonVi, []);
   const { data: nhanSuList } = useAsyncData(fetchNhanSuFull, []);
@@ -65,8 +53,6 @@ export function DonViPage({ hideHeader = false, mode = 'full' }: { hideHeader?: 
   const [view, setView] = useState<'tree' | 'list'>('tree');
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<DonVi | null>(null);
-  const [form, setForm] = useState<DonViInput>(EMPTY_FORM);
-  const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const selected =
@@ -100,18 +86,6 @@ export function DonViPage({ hideHeader = false, mode = 'full' }: { hideHeader?: 
   );
 
   // Danh sách ứng viên cho chức danh Trưởng đơn vị trong modal
-  const candidatesForTruongDonVi = useMemo(() => {
-    if (!editing) return nhanSuList;
-    const inUnit = nhanSuList.filter((ns) => ns.donViId === editing.id);
-    return inUnit.length > 0 ? inUnit : nhanSuList;
-  }, [editing, nhanSuList]);
-
-  // Lãnh đạo Viện (Viện trưởng + Phó Viện trưởng) để chọn người phụ trách khối
-  const lanhDaoList = useMemo(
-    () => nhanSuList.filter((ns) => ns.chucDanh === 'Viện trưởng' || ns.chucDanh === 'Phó Viện trưởng'),
-    [nhanSuList],
-  );
-
   const tongNhanSu = donViList.reduce((s, d) => s + d.soNhanSu, 0);
   const soVienPhanVien = donViList.filter(
     (d) => d.loai === 'vien-chuyen-nganh' || d.loai === 'phan-vien',
@@ -141,10 +115,10 @@ export function DonViPage({ hideHeader = false, mode = 'full' }: { hideHeader?: 
 
   useSlidePanelForm({
     id: 'orgchart-don-vi-form',
-    open: mode === 'orgchart-only' && modalOpen,
+    open: modalOpen,
     title: editing ? `Sửa đơn vị: ${editing.tenVietTat ?? editing.ten}` : 'Thêm đơn vị trực thuộc',
     storageKey: 'orgchart-dv-form-w',
-    deps: [editing, nhanSuList, form, saving, actionError],
+    deps: [editing, nhanSuList],
     onDongNgoaiLuong: () => setModalOpen(false),
     content: modalOpen ? (
       <DonViFormPanel
@@ -158,41 +132,14 @@ export function DonViPage({ hideHeader = false, mode = 'full' }: { hideHeader?: 
 
   const openCreate = () => {
     setEditing(null);
-    setForm(EMPTY_FORM);
     setActionError(null);
     setModalOpen(true);
   };
 
   const openEdit = (dv: DonVi) => {
     setEditing(dv);
-    setForm({
-      ten: dv.ten,
-      tenVietTat: dv.tenVietTat ?? '',
-      loai: dv.loai,
-      chucNangNhiemVu: dv.chucNangNhiemVu ?? '',
-      dienThoai: dv.dienThoai ?? '',
-      email: dv.email ?? '',
-      phuTrachId: dv.phuTrachId ?? '',
-      truongDonViId: dv.truongDonViId ?? '',
-    });
     setActionError(null);
     setModalOpen(true);
-  };
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    setActionError(null);
-    try {
-      if (editing) await updateDonVi(editing.id, form);
-      else await createDonVi(form);
-      setModalOpen(false);
-      refetch();
-    } catch (err) {
-      setActionError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setSaving(false);
-    }
   };
 
   const handleDelete = async (dv: DonVi) => {
@@ -420,21 +367,58 @@ export function DonViPage({ hideHeader = false, mode = 'full' }: { hideHeader?: 
               </p>
             </div>
 
-            {/* Liên hệ */}
-            {(selected.dienThoai || selected.email) && (
-              <div className="mb-5 flex flex-wrap gap-4 text-xs text-ink-secondary">
-                {selected.dienThoai && (
-                  <span className="flex items-center gap-1.5 rounded-lg bg-subtle px-2.5 py-1">
-                    <Phone size={13} className="text-primary-500" />
-                    <span className="font-mono font-medium">{selected.dienThoai}</span>
-                  </span>
-                )}
-                {selected.email && (
-                  <span className="flex items-center gap-1.5 rounded-lg bg-subtle px-2.5 py-1">
-                    <Mail size={13} className="text-primary-500" />
-                    <span>{selected.email}</span>
-                  </span>
-                )}
+            {/* Thông tin Liên hệ & Trụ sở */}
+            {(selected.diaChiChiTiet || selected.dienThoai || selected.email || selected.website || selected.ghiChu) && (
+              <div className="mb-5 rounded-xl border border-border dark:border-slate-700/80 bg-subtle/30 dark:bg-slate-900/40 p-4">
+                <h4 className="mb-2.5 text-2xs font-black uppercase tracking-wider text-ink-muted">
+                  Thông tin Liên hệ & Trụ sở
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 text-xs text-ink-secondary">
+                  {selected.diaChiChiTiet && (
+                    <div className="md:col-span-2 flex items-start gap-2">
+                      <MapPin size={14} className="text-primary shrink-0 mt-0.5" />
+                      <span className="text-ink font-medium leading-relaxed">{selected.diaChiChiTiet}</span>
+                    </div>
+                  )}
+                  {selected.dienThoai && (
+                    <div className="flex items-center gap-2">
+                      <Phone size={14} className="text-primary shrink-0" />
+                      <span className="text-ink-muted text-3xs uppercase font-bold">ĐT:</span>
+                      <a href={`tel:${selected.dienThoai.split('/')[0].trim()}`} className="font-mono text-ink hover:text-primary font-medium">
+                        {selected.dienThoai}
+                      </a>
+                    </div>
+                  )}
+                  {selected.email && (
+                    <div className="flex items-center gap-2">
+                      <Mail size={14} className="text-primary shrink-0" />
+                      <span className="text-ink-muted text-3xs uppercase font-bold">Email:</span>
+                      <a href={`mailto:${selected.email.split('/')[0].trim()}`} className="text-primary hover:underline font-medium">
+                        {selected.email}
+                      </a>
+                    </div>
+                  )}
+                  {selected.website && (
+                    <div className="flex items-center gap-2">
+                      <Globe size={14} className="text-primary shrink-0" />
+                      <span className="text-ink-muted text-3xs uppercase font-bold">Web:</span>
+                      <a
+                        href={selected.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline font-medium inline-flex items-center gap-1"
+                      >
+                        {selected.website}
+                        <ExternalLink size={11} />
+                      </a>
+                    </div>
+                  )}
+                  {selected.ghiChu && (
+                    <div className="text-ink-muted text-[11px] italic md:col-span-2">
+                      * {selected.ghiChu}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -543,129 +527,6 @@ export function DonViPage({ hideHeader = false, mode = 'full' }: { hideHeader?: 
       </div>
       )}
 
-      {/* Modal thêm/sửa (chỉ hiện ở mode full — mode orgchart-only dùng SlidePanel) */}
-      {mode !== 'orgchart-only' && (
-      <Modal
-        title={editing ? `Sửa đơn vị: ${editing.tenVietTat ?? editing.ten}` : 'Thêm đơn vị trực thuộc'}
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        wide
-      >
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Field label="Tên đơn vị" required>
-            <input
-              className={inputCls}
-              required
-              maxLength={150}
-              value={form.ten}
-              onChange={(e) => setForm({ ...form, ten: e.target.value })}
-              placeholder="VD: Trung tâm Tư vấn và Ứng dụng BIM trong xây dựng"
-            />
-          </Field>
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Tên viết tắt">
-              <input
-                className={inputCls}
-                maxLength={50}
-                value={form.tenVietTat}
-                onChange={(e) => setForm({ ...form, tenVietTat: e.target.value })}
-              />
-            </Field>
-            <Field label="Loại đơn vị" required>
-              <select
-                className={inputCls}
-                value={form.loai}
-                onChange={(e) => setForm({ ...form, loai: e.target.value as LoaiDonVi })}
-              >
-                {LOAI_DON_VI.map((l) => (
-                  <option key={l.ma} value={l.ma}>
-                    {l.ten}
-                  </option>
-                ))}
-              </select>
-            </Field>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Lãnh đạo Viện phụ trách">
-              <select
-                className={inputCls}
-                value={form.phuTrachId}
-                onChange={(e) => setForm({ ...form, phuTrachId: e.target.value })}
-              >
-                <option value="">— Chưa phân công —</option>
-                {lanhDaoList.map((ns) => (
-                  <option key={ns.id} value={ns.id}>
-                    {ns.chucDanh} — {ns.hoTen}
-                  </option>
-                ))}
-              </select>
-            </Field>
-
-            <Field label="Trưởng đơn vị (Giám đốc / Trưởng phòng)">
-              <select
-                className={inputCls}
-                value={form.truongDonViId ?? ''}
-                onChange={(e) => setForm({ ...form, truongDonViId: e.target.value })}
-              >
-                <option value="">— Chưa chỉ định / Chờ kiện toàn —</option>
-                {candidatesForTruongDonVi.map((ns) => (
-                  <option key={ns.id} value={ns.id}>
-                    {ns.hocVi ? `${ns.hocVi}. ` : ''}{ns.hoTen} ({ns.chucDanh || 'Cán bộ'})
-                  </option>
-                ))}
-              </select>
-            </Field>
-          </div>
-
-          <Field label="Chức năng nhiệm vụ">
-            <textarea
-              className={cn(inputCls, 'min-h-24 resize-y')}
-              value={form.chucNangNhiemVu}
-              onChange={(e) => setForm({ ...form, chucNangNhiemVu: e.target.value })}
-              placeholder="Mô tả chức năng, nhiệm vụ chính của đơn vị..."
-            />
-          </Field>
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Điện thoại">
-              <input
-                className={inputCls}
-                maxLength={130}
-                value={form.dienThoai}
-                onChange={(e) => setForm({ ...form, dienThoai: e.target.value })}
-              />
-            </Field>
-            <Field label="Email">
-              <input
-                type="email"
-                className={inputCls}
-                maxLength={150}
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-              />
-            </Field>
-          </div>
-          {actionError && (
-            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-danger dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
-              {actionError}
-            </p>
-          )}
-          <div className="flex justify-end gap-2 border-t border-border-subtle pt-4">
-            <button
-              type="button"
-              onClick={() => setModalOpen(false)}
-              className="rounded-xl border border-border px-4 py-2.5 text-[13px] font-bold text-ink-secondary transition-colors hover:bg-muted"
-            >
-              Hủy
-            </button>
-            <button type="submit" disabled={saving} className="btn-primary disabled:opacity-60">
-              {saving && <LoaderCircle size={15} className="animate-spin" />}
-              {editing ? 'Lưu thay đổi' : 'Thêm đơn vị'}
-            </button>
-          </div>
-        </form>
-      </Modal>
-      )}
     </div>
   );
 }

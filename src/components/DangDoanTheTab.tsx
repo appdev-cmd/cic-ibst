@@ -81,13 +81,17 @@ function ChanForm({ dangLuu, nhan, onHuy, formId }: { dangLuu: boolean; nhan: st
   );
 }
 
-export function DangDoanTheTab() {
+export interface DangDoanTheTabProps {
+  phamVi?: 'dang' | 'doan-the' | 'tat-ca';
+}
+
+export function DangDoanTheTab({ phamVi = 'tat-ca' }: DangDoanTheTabProps = {}) {
   const [subTab, setSubTab] = useState<SubTab>('to-chuc');
   const [chiTiet, setChiTiet] = useState<ChiTiet | null>(null);
   const [tinhPhiBusy, setTinhPhiBusy] = useState(false);
   const [tinhPhiThongBao, setTinhPhiThongBao] = useState<string | null>(null);
 
-  const { data: toChucList, loading: loadingToChuc, error: errorToChuc, refetch: refetchToChuc } =
+  const { data: toChucRawList, loading: loadingToChuc, error: errorToChuc, refetch: refetchToChuc } =
     useAsyncData(fetchToChucDoanThe, []);
   const { data: dangVienList, loading: loadingDangVien, error: errorDangVien, refetch: refetchDangVien } =
     useAsyncData(fetchDangVien, []);
@@ -98,7 +102,16 @@ export function DangDoanTheTab() {
   const ky = kyHienTai();
   const { data: thuPhiKyNay, refetch: refetchThuPhi } = useAsyncData(() => fetchThuPhiDoanThe(ky), []);
 
-  const chiBoList = useMemo(() => toChucList.filter((t) => t.loai === 'dang'), [toChucList]);
+  const toChucList = useMemo(() => {
+    if (phamVi === 'dang') return toChucRawList.filter((t) => t.loai === 'dang');
+    if (phamVi === 'doan-the') return toChucRawList.filter((t) => t.loai !== 'dang');
+    return toChucRawList;
+  }, [toChucRawList, phamVi]);
+
+  const chiBoList = useMemo(() => toChucRawList.filter((t) => t.loai === 'dang'), [toChucRawList]);
+  const congDoanList = useMemo(() => toChucRawList.filter((t) => t.loai === 'cong-doan'), [toChucRawList]);
+  const doanTnList = useMemo(() => toChucRawList.filter((t) => t.loai === 'doan-tn'), [toChucRawList]);
+
   const soDangVienDangSinhHoat = dangVienList.filter(
     (d) => d.trangThai === 'dang-sinh-hoat' || d.trangThai === 'chinh-thuc'
   ).length;
@@ -109,6 +122,10 @@ export function DangDoanTheTab() {
   const soDangPhiDaNop = thuPhiKyNay.filter((t) => t.loaiPhi === 'dang-phi' && t.trangThai === 'da-nop').length;
   const soDangPhiTong = thuPhiKyNay.filter((t) => t.loaiPhi === 'dang-phi').length;
   const tyLeDangPhi = soDangPhiTong > 0 ? Math.round((soDangPhiDaNop / soDangPhiTong) * 100) : null;
+
+  const soDoanPhiDaNop = thuPhiKyNay.filter((t) => t.loaiPhi !== 'dang-phi' && t.trangThai === 'da-nop').length;
+  const soDoanPhiTong = thuPhiKyNay.filter((t) => t.loaiPhi !== 'dang-phi').length;
+  const tyLeDoanPhi = soDoanPhiTong > 0 ? Math.round((soDoanPhiDaNop / soDoanPhiTong) * 100) : null;
 
   // ═══ CRUD: Tổ chức Đảng - Đoàn thể ═══
   const crudToChuc = useCrudForm<ToChucDoanThe, ToChucDoanTheInput>({
@@ -143,7 +160,13 @@ export function DangDoanTheTab() {
           <Field label="Loại tổ chức" required>
             <select className={inputCls} value={crudToChuc.form.loai}
               onChange={(e) => crudToChuc.setForm({ ...crudToChuc.form, loai: e.target.value as LoaiToChucDoanThe })}>
-              {LOAI_TO_CHUC_DOAN_THE.map((o) => <option key={o.ma} value={o.ma}>{o.ten}</option>)}
+              {LOAI_TO_CHUC_DOAN_THE
+                .filter((o) => {
+                  if (phamVi === 'dang') return o.ma === 'dang';
+                  if (phamVi === 'doan-the') return o.ma !== 'dang';
+                  return true;
+                })
+                .map((o) => <option key={o.ma} value={o.ma}>{o.ten}</option>)}
             </select>
           </Field>
           <Field label="Cấp tổ chức" required>
@@ -630,33 +653,65 @@ export function DangDoanTheTab() {
     return true;
   });
 
+  const subTabs = useMemo(() => {
+    if (phamVi === 'doan-the') {
+      return [
+        { id: 'to-chuc' as SubTab, label: 'Tổ chức Công đoàn & Đoàn TN', icon: Users },
+        { id: 'sinh-hoat-phi' as SubTab, label: 'Sinh hoạt & Thu đoàn phí', icon: CalendarClock },
+      ];
+    }
+    if (phamVi === 'dang') {
+      return [
+        { id: 'to-chuc' as SubTab, label: 'Cơ cấu tổ chức Đảng', icon: Users },
+        { id: 'dang-vien' as SubTab, label: 'Hồ sơ đảng viên', icon: Flag },
+        { id: 'phat-trien' as SubTab, label: 'Phát triển đảng viên', icon: ListChecks },
+        { id: 'sinh-hoat-phi' as SubTab, label: 'Sinh hoạt & Đảng phí', icon: CalendarClock },
+      ];
+    }
+    return [
+      { id: 'to-chuc' as SubTab, label: 'Cơ cấu tổ chức', icon: Users },
+      { id: 'dang-vien' as SubTab, label: 'Hồ sơ đảng viên', icon: Flag },
+      { id: 'phat-trien' as SubTab, label: 'Phát triển đảng viên', icon: ListChecks },
+      { id: 'sinh-hoat-phi' as SubTab, label: 'Sinh hoạt & Đảng phí', icon: CalendarClock },
+    ];
+  }, [phamVi]);
+
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard icon={Flag} label="Đảng viên đang sinh hoạt" value={String(soDangVienDangSinhHoat)} tone="accent" />
-        <KpiCard icon={UserCheck} label="Đảng viên dự bị" value={String(soDangVienDuBi)} tone="warning" />
-        <KpiCard icon={Users} label="Chi bộ / Đảng bộ" value={String(chiBoList.length)} tone="primary" />
-        <KpiCard
-          icon={Wallet}
-          label={`Đảng phí đã nộp kỳ ${ky}`}
-          value={tyLeDangPhi === null ? '— (chưa mở sổ thu)' : `${tyLeDangPhi}% (${soDangPhiDaNop}/${soDangPhiTong})`}
-          tone="success"
-        />
-      </div>
+      {phamVi === 'doan-the' ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <KpiCard icon={Users} label="Công đoàn bộ phận / CĐCS" value={String(congDoanList.length)} tone="primary" />
+          <KpiCard icon={Users} label="Chi đoàn Thanh niên" value={String(doanTnList.length)} tone="accent" />
+          <KpiCard icon={CalendarClock} label="Kỳ sinh hoạt ghi nhận" value={String(sinhHoatList.length)} tone="warning" />
+          <KpiCard
+            icon={Wallet}
+            label={`Đoàn phí/CĐ phí kỳ ${ky}`}
+            value={tyLeDoanPhi === null ? '— (chưa mở sổ thu)' : `${tyLeDoanPhi}% (${soDoanPhiDaNop}/${soDoanPhiTong})`}
+            tone="success"
+          />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <KpiCard icon={Flag} label="Đảng viên đang sinh hoạt" value={String(soDangVienDangSinhHoat)} tone="accent" />
+          <KpiCard icon={UserCheck} label="Đảng viên dự bị" value={String(soDangVienDuBi)} tone="warning" />
+          <KpiCard icon={Users} label="Chi bộ / Đảng bộ" value={String(chiBoList.length)} tone="primary" />
+          <KpiCard
+            icon={Wallet}
+            label={`Đảng phí đã nộp kỳ ${ky}`}
+            value={tyLeDangPhi === null ? '— (chưa mở sổ thu)' : `${tyLeDangPhi}% (${soDangPhiDaNop}/${soDangPhiTong})`}
+            tone="success"
+          />
+        </div>
+      )}
 
-      {soQuaHanChuyen > 0 && (
+      {phamVi !== 'doan-the' && soQuaHanChuyen > 0 && (
         <div className="rounded-lg border border-warning/30 bg-amber-50 px-4 py-2.5 text-xs font-semibold text-warning dark:bg-amber-900/20">
           {soQuaHanChuyen} đảng viên dự bị đã quá 12 tháng mà chưa có ngày chuyển đảng chính thức — mở hồ sơ để rà soát.
         </div>
       )}
 
       <div className="flex flex-wrap gap-2 rounded-xl bg-muted p-1.5 w-fit border border-border">
-        {([
-          { id: 'to-chuc', label: 'Cơ cấu tổ chức', icon: Users },
-          { id: 'dang-vien', label: 'Hồ sơ đảng viên', icon: Flag },
-          { id: 'phat-trien', label: 'Phát triển đảng viên', icon: ListChecks },
-          { id: 'sinh-hoat-phi', label: 'Sinh hoạt & Đảng phí', icon: CalendarClock },
-        ] as { id: SubTab; label: string; icon: typeof Flag }[]).map((t) => (
+        {subTabs.map((t) => (
           <button key={t.id} onClick={() => setSubTab(t.id)}
             className={cn('flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all',
               subTab === t.id ? 'bg-surface text-primary-600 shadow-card dark:text-primary-300' : 'text-ink-muted hover:text-ink')}>
@@ -668,7 +723,9 @@ export function DangDoanTheTab() {
       {subTab === 'to-chuc' && (
         <div className="card overflow-hidden">
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
-            <h3 className="text-sm font-bold text-ink">Cây tổ chức Đảng - Đoàn thể</h3>
+            <h3 className="text-sm font-bold text-ink">
+              {phamVi === 'dang' ? 'Cơ cấu tổ chức Đảng' : phamVi === 'doan-the' ? 'Cơ cấu tổ chức Công đoàn & Đoàn TN' : 'Cây tổ chức Đảng - Đoàn thể'}
+            </h3>
             <button onClick={crudToChuc.openCreate} className="btn-primary"><Plus size={15} /> Thêm tổ chức</button>
           </div>
           {crudToChuc.actionError && !crudToChuc.modalOpen && (

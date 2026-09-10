@@ -37,7 +37,7 @@ export interface DoanhThuDonViItem {
   name: string;
   fullName?: string;
   donViId?: string;
-  group?: 'I' | 'II' | 'III' | 'V';
+  group?: 'I' | 'II' | 'III' | 'IV' | 'V';
   groupName?: string;
   doanhThu: number; // tỷ
   kyMoi: number; // tỷ (tổng ký 2026)
@@ -160,7 +160,7 @@ export interface DashboardData {
 export interface DonViBenchmark {
   code: string;
   name: string;
-  group: 'I' | 'II' | 'III' | 'V';
+  group: 'I' | 'II' | 'III' | 'IV' | 'V';
   groupName: string;
   keHoach: number; // tỷ VNĐ (KH cả năm 2026)
   cungKy2025: number; // tỷ VNĐ (Cùng kỳ 2025)
@@ -178,12 +178,12 @@ export interface DonViBenchmark {
   kpDeTai: number;
 }
 
-// ─── 16 ĐƠN VỊ TRỰC THUỘC CHÍNH THỨC CỦA VIỆN IBST (THEO BÁO CÁO 21/8/2026) ───
+// ─── 16 ĐƠN VỊ TRỰC THUỘC SẢN XUẤT KINH DOANH & KÝ HĐKT CỦA VIỆN IBST (THEO BÁO CÁO 21/8/2026) ───
 export const DON_VI_16_BENCHMARKS: DonViBenchmark[] = [
   // I. CÁC VIỆN CHUYÊN NGÀNH
   {
-    code: 'VCNKC',
-    name: 'Viện Chuyên ngành Kết cấu',
+    code: 'VKC',
+    name: 'Viện chuyên ngành Kết cấu công trình xây dựng',
     group: 'I',
     groupName: 'I. Các Viện Chuyên ngành',
     keHoach: 70.0,
@@ -202,8 +202,8 @@ export const DON_VI_16_BENCHMARKS: DonViBenchmark[] = [
     kpDeTai: 9.345,
   },
   {
-    code: 'VCNBT',
-    name: 'Viện Chuyên ngành Bê tông',
+    code: 'VBT',
+    name: 'Viện chuyên ngành Bê tông',
     group: 'I',
     groupName: 'I. Các Viện Chuyên ngành',
     keHoach: 38.6,
@@ -222,8 +222,8 @@ export const DON_VI_16_BENCHMARKS: DonViBenchmark[] = [
     kpDeTai: 3.041,
   },
   {
-    code: 'VCNĐKT',
-    name: 'Viện Chuyên ngành Địa kỹ thuật',
+    code: 'VĐKT',
+    name: 'Viện chuyên ngành Địa kỹ thuật',
     group: 'I',
     groupName: 'I. Các Viện Chuyên ngành',
     keHoach: 22.0,
@@ -245,7 +245,7 @@ export const DON_VI_16_BENCHMARKS: DonViBenchmark[] = [
   // II. CÁC PHÂN VIỆN
   {
     code: 'PVMN',
-    name: 'Phân viện Miền Nam',
+    name: 'Phân Viện Khoa học công nghệ xây dựng miền Nam',
     group: 'II',
     groupName: 'II. Các Phân viện',
     keHoach: 60.5,
@@ -265,7 +265,7 @@ export const DON_VI_16_BENCHMARKS: DonViBenchmark[] = [
   },
   {
     code: 'PVMT',
-    name: 'Phân viện Miền Trung',
+    name: 'Phân Viện Khoa học công nghệ xây dựng miền Trung',
     group: 'II',
     groupName: 'II. Các Phân viện',
     keHoach: 42.0,
@@ -286,8 +286,8 @@ export const DON_VI_16_BENCHMARKS: DonViBenchmark[] = [
 
   // III. CÁC TRUNG TÂM
   {
-    code: 'TVTK',
-    name: 'Trung tâm Tư vấn Thiết kế & XD',
+    code: 'TTTK',
+    name: 'Trung tâm tư vấn thiết kế và xây dựng',
     group: 'III',
     groupName: 'III. Các Trung tâm',
     keHoach: 25.0,
@@ -307,7 +307,7 @@ export const DON_VI_16_BENCHMARKS: DonViBenchmark[] = [
   },
   {
     code: 'TTKCT',
-    name: 'Trung tâm Kết cấu Thép & XD',
+    name: 'Trung tâm Kết cấu thép và xây dựng',
     group: 'III',
     groupName: 'III. Các Trung tâm',
     keHoach: 24.0,
@@ -326,8 +326,8 @@ export const DON_VI_16_BENCHMARKS: DonViBenchmark[] = [
     kpDeTai: 9.982,
   },
   {
-    code: 'TVĂM',
-    name: 'Trung tâm Ăn mòn & Bảo vệ',
+    code: 'TTAM',
+    name: 'Trung tâm tư vấn chống ăn mòn và xây dựng',
     group: 'III',
     groupName: 'III. Các Trung tâm',
     keHoach: 72.2,
@@ -346,8 +346,8 @@ export const DON_VI_16_BENCHMARKS: DonViBenchmark[] = [
     kpDeTai: 0.335,
   },
   {
-    code: 'CNXD',
-    name: 'Viện Chuyên ngành Công nghệ Xây dựng',
+    code: 'TTCNXD',
+    name: 'Trung tâm Công nghệ và Môi trường xây dựng',
     group: 'III',
     groupName: 'III. Các Trung tâm',
     keHoach: 50.0,
@@ -366,8 +366,8 @@ export const DON_VI_16_BENCHMARKS: DonViBenchmark[] = [
     kpDeTai: 0,
   },
   {
-    code: 'TTTĐ',
-    name: 'Trung tâm Trắc địa & Địa chính',
+    code: 'TTTD',
+    name: 'Trung tâm tư vấn trắc địa và xây dựng',
     group: 'III',
     groupName: 'III. Các Trung tâm',
     keHoach: 25.8,
@@ -386,8 +386,8 @@ export const DON_VI_16_BENCHMARKS: DonViBenchmark[] = [
     kpDeTai: 0.150,
   },
   {
-    code: 'CNHT',
-    name: 'Trung tâm Hạ tầng Kỹ thuật & XD',
+    code: 'TTCNHT',
+    name: 'Trung tâm Công nghệ và Kỹ thuật hạ tầng',
     group: 'III',
     groupName: 'III. Các Trung tâm',
     keHoach: 28.0,
@@ -406,8 +406,8 @@ export const DON_VI_16_BENCHMARKS: DonViBenchmark[] = [
     kpDeTai: 0,
   },
   {
-    code: 'TBXD',
-    name: 'Viện Chuyên ngành Thiết bị Xây dựng',
+    code: 'TTTBXD',
+    name: 'Trung tâm Thiết bị và An toàn xây dựng',
     group: 'III',
     groupName: 'III. Các Trung tâm',
     keHoach: 40.0,
@@ -426,8 +426,8 @@ export const DON_VI_16_BENCHMARKS: DonViBenchmark[] = [
     kpDeTai: 0.345,
   },
   {
-    code: 'CNVL',
-    name: 'Trung tâm Vật liệu Xây dựng',
+    code: 'TTCNVL',
+    name: 'Trung tâm Công nghệ Vật liệu và Xây dựng',
     group: 'III',
     groupName: 'III. Các Trung tâm',
     keHoach: 16.0,
@@ -446,8 +446,8 @@ export const DON_VI_16_BENCHMARKS: DonViBenchmark[] = [
     kpDeTai: 0,
   },
   {
-    code: 'TTCDAQT&XD',
-    name: 'Trung tâm Chuyển giao DAQT & XD',
+    code: 'TTQT',
+    name: 'Trung tâm Đào tạo và Quản lý dự án quốc tế',
     group: 'III',
     groupName: 'III. Các Trung tâm',
     keHoach: 45.0,
@@ -466,8 +466,8 @@ export const DON_VI_16_BENCHMARKS: DonViBenchmark[] = [
     kpDeTai: 0.376,
   },
   {
-    code: 'TT BIM',
-    name: 'Trung tâm Tư vấn & Ứng dụng BIM',
+    code: 'TTBIM',
+    name: 'Trung tâm Tư vấn và Ứng dụng BIM trong xây dựng',
     group: 'III',
     groupName: 'III. Các Trung tâm',
     keHoach: 71.8,
@@ -486,12 +486,12 @@ export const DON_VI_16_BENCHMARKS: DonViBenchmark[] = [
     kpDeTai: 0,
   },
 
-  // V. CÔNG TY CỔ PHẦN
+  // IV. CÔNG TY CỔ PHẦN
   {
-    code: 'IBST COTEC',
-    name: 'Công ty CP TVĐT & XD IBST COTEC',
-    group: 'V',
-    groupName: 'V. Công ty Cổ phần',
+    code: 'CTCP',
+    name: 'Công ty Cổ phần Đầu tư và Tư vấn Xây dựng IBST',
+    group: 'IV',
+    groupName: 'IV. Công ty Cổ phần',
     keHoach: 58.0,
     cungKy2025: 59.919,
     vienKy: 0.0,
@@ -507,6 +507,13 @@ export const DON_VI_16_BENCHMARKS: DonViBenchmark[] = [
     deTai: 0,
     kpDeTai: 0,
   },
+];
+
+// ─── 3 PHÒNG CHỨC NĂNG CỦA VIỆN IBST (BỔ SUNG CHO ĐỦ 19 ĐƠN VỊ TRỰC THUỘC) ───
+export const DON_VI_PHONG_CHUC_NANG = [
+  { code: 'TCHC', name: 'Phòng Tổ chức hành chính', group: 'V', groupName: 'V. Phòng Chức năng' },
+  { code: 'KHKT', name: 'Phòng Kế hoạch - kỹ thuật', group: 'V', groupName: 'V. Phòng Chức năng' },
+  { code: 'TCKT', name: 'Phòng Tài chính - kế toán', group: 'V', groupName: 'V. Phòng Chức năng' },
 ];
 
 /** Xác định khoảng ngày bắt đầu và kết thúc từ bộ lọc */
@@ -542,22 +549,27 @@ export function getPeriodDateRange(
 }
 
 export const UNIT_ALIAS_MAP: Record<string, string> = {
-  '1': 'VCNKC', 'VKC': 'VCNKC', 'IBST.KC': 'VCNKC',
-  '2': 'VCNBT', 'VBT': 'VCNBT', 'IBST.BT': 'VCNBT',
-  '3': 'VCNĐKT', 'VDKT': 'VCNĐKT', 'IBST.DKT': 'VCNĐKT',
-  '4': 'PVMN', 'IBST.MN': 'PVMN',
-  '5': 'TVĂM', 'TTAM': 'TVĂM', 'IBST.AM': 'TVĂM', 'TTĂM': 'TVĂM',
-  '6': 'TTTĐ', 'TTTD': 'TTTĐ', 'IBST.TD': 'TTTĐ',
-  '7': 'CNVL', 'TTCN': 'CNVL', 'IBST.CN': 'CNVL',
-  '12': 'PVMT', 'IBST.MT': 'PVMT',
-  '13': 'TTKCT', 'IBST.KCT': 'TTKCT',
-  '14': 'TVTK', 'TTTK': 'TVTK', 'IBST.TKXD': 'TVTK',
-  '15': 'CNXD', 'TTCNXD': 'CNXD', 'IBST.CNXD': 'CNXD',
-  '16': 'CNHT', 'TTCNHT': 'CNHT', 'IBST.CNHT': 'CNHT',
-  '17': 'TBXD', 'TTTB': 'TBXD', 'IBST.TBXD': 'TBXD',
-  '18': 'TTCDAQT&XD', 'TTQT': 'TTCDAQT&XD', 'IBST.QT': 'TTCDAQT&XD',
-  '19': 'TT BIM', 'TTBIM': 'TT BIM', 'IBST.BIM': 'TT BIM',
-  '20': 'IBST COTEC', 'IBST.COTEC': 'IBST COTEC', 'CTCP IBST': 'IBST COTEC', 'IBST.CTCP': 'IBST COTEC',
+  // DB ID mapping & Acronyms
+  '1': 'VKC', 'VKC': 'VKC', 'VCNKC': 'VKC', 'IBST.KC': 'VKC',
+  '2': 'VBT', 'VBT': 'VBT', 'VCNBT': 'VBT', 'IBST.BT': 'VBT',
+  '3': 'VĐKT', 'VDKT': 'VĐKT', 'VCNĐKT': 'VĐKT', 'IBST.DKT': 'VĐKT',
+  '4': 'PVMN', 'PVMN': 'PVMN', 'IBST.MN': 'PVMN',
+  '5': 'TTAM', 'TTAM': 'TTAM', 'TVĂM': 'TTAM', 'IBST.AM': 'TTAM', 'TTĂM': 'TTAM',
+  '6': 'TTTD', 'TTTD': 'TTTD', 'TTTĐ': 'TTTD', 'IBST.TD': 'TTTD',
+  '7': 'TTCNVL', 'TTCN': 'TTCNVL', 'CNVL': 'TTCNVL', 'IBST.CN': 'TTCNVL',
+  '8': 'KHKT', 'KHKT': 'KHKT', 'IBST.KHKT': 'KHKT',
+  '9': 'TCKT', 'TCKT': 'TCKT', 'IBST.TCKT': 'TCKT',
+  '10': 'TCHC', 'TCHC': 'TCHC', 'IBST.TCHC': 'TCHC',
+  '11': 'IBST', 'LĐV': 'IBST', 'IBST.LD': 'IBST',
+  '12': 'PVMT', 'PVMT': 'PVMT', 'IBST.MT': 'PVMT',
+  '13': 'TTKCT', 'TTKCT': 'TTKCT', 'IBST.KCT': 'TTKCT',
+  '14': 'TTTK', 'TTTK': 'TTTK', 'TVTK': 'TTTK', 'IBST.TKXD': 'TTTK',
+  '15': 'TTCNXD', 'TTCNXD': 'TTCNXD', 'CNXD': 'TTCNXD', 'IBST.CNXD': 'TTCNXD',
+  '16': 'TTCNHT', 'TTCNHT': 'TTCNHT', 'CNHT': 'TTCNHT', 'IBST.CNHT': 'TTCNHT',
+  '17': 'TTTBXD', 'TTTB': 'TTTBXD', 'TBXD': 'TTTBXD', 'IBST.TBXD': 'TTTBXD',
+  '18': 'TTQT', 'TTQT': 'TTQT', 'TTCDAQT&XD': 'TTQT', 'IBST.QT': 'TTQT',
+  '19': 'TTBIM', 'TTBIM': 'TTBIM', 'TT BIM': 'TTBIM', 'IBST.BIM': 'TTBIM',
+  '20': 'CTCP', 'CTCP': 'CTCP', 'IBST COTEC': 'CTCP', 'IBST.COTEC': 'CTCP', 'CTCP IBST': 'CTCP', 'IBST.CTCP': 'CTCP',
 };
 
 /** Tải toàn bộ dữ liệu thống kê tổng hợp thời gian thực cho Dashboard Lãnh đạo */
@@ -869,8 +881,8 @@ export async function fetchDashboardData(filter: DashboardFilter): Promise<Dashb
       deTai: dv.deTai,
       contractVal: Math.round(dv.kpDeTai * 1.3 * 1000) / 1000,
       kinhPhi: dv.kpDeTai,
-      disbursed: dv.code === 'VCNKC' ? 1.1335 : dv.code === 'TTKCT' ? 2.1348 : dv.code === 'TBXD' ? 0.2154 : 0,
-      pct: dv.code === 'TBXD' ? 62.43 : dv.code === 'TTKCT' ? 21.39 : dv.code === 'VCNKC' ? 12.13 : 0,
+      disbursed: dv.code === 'VKC' ? 1.1335 : dv.code === 'TTKCT' ? 2.1348 : dv.code === 'TTTBXD' ? 0.2154 : 0,
+      pct: dv.code === 'TTTBXD' ? 62.43 : dv.code === 'TTKCT' ? 21.39 : dv.code === 'VKC' ? 12.13 : 0,
     };
   });
 

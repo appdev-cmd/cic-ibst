@@ -29,7 +29,7 @@ export async function fetchDonVi(): Promise<DonVi[]> {
     .from('don_vi')
     .select(
       `id, ma_dinh_danh, ten_don_vi, ten_viet_tat, loai_don_vi, chuc_nang_nhiem_vu,
-       so_dien_thoai, email, thu_tu, phu_trach_id, truong_don_vi_id,
+       dia_chi_chi_tiet, so_dien_thoai, email, website, ghi_chu, thu_tu, phu_trach_id, truong_don_vi_id,
        ke_hoach_nam, ke_hoach_nam_truoc, ghi_chu_ke_hoach,
        truong:nhan_su!don_vi_truong_don_vi_id_fkey(id, ho_va_ten, hoc_vi, chuc_danh),
        phu_trach:nhan_su!don_vi_phu_trach_id_fkey(id, ho_va_ten),
@@ -49,8 +49,11 @@ export async function fetchDonVi(): Promise<DonVi[]> {
       tenVietTat: r.ten_viet_tat,
       loai: r.loai_don_vi as LoaiDonVi,
       chucNangNhiemVu: r.chuc_nang_nhiem_vu,
+      diaChiChiTiet: r.dia_chi_chi_tiet || null,
       dienThoai: r.so_dien_thoai,
       email: r.email,
+      website: r.website || null,
+      ghiChu: r.ghi_chu || null,
       truongDonViId: r.truong_don_vi_id != null ? String(r.truong_don_vi_id) : null,
       truongDonVi: truong ? truong.ho_va_ten : null,
       truongDonViHocVi: truong?.hoc_vi ?? null,
@@ -74,8 +77,11 @@ export interface DonViInput {
   maDinhDanh?: string;
   loai: LoaiDonVi;
   chucNangNhiemVu: string;
+  diaChiChiTiet?: string;
   dienThoai: string;
   email: string;
+  website?: string;
+  ghiChu?: string;
   phuTrachId: string;
   truongDonViId?: string;
   keHoachNam?: number | null;
@@ -90,8 +96,11 @@ function donViRow(input: DonViInput) {
     ma_dinh_danh: input.maDinhDanh || null,
     loai_don_vi: input.loai,
     chuc_nang_nhiem_vu: input.chucNangNhiemVu || null,
+    dia_chi_chi_tiet: input.diaChiChiTiet || null,
     so_dien_thoai: input.dienThoai || null,
     email: input.email || null,
+    website: input.website || null,
+    ghi_chu: input.ghiChu || null,
     phu_trach_id: input.phuTrachId ? Number(input.phuTrachId) : null,
     truong_don_vi_id: input.truongDonViId ? Number(input.truongDonViId) : null,
     ke_hoach_nam: input.keHoachNam != null ? Number(input.keHoachNam) : null,
@@ -121,7 +130,7 @@ export async function fetchNhanSuFull(): Promise<NhanSu[]> {
   const { data, error } = await supabase
     .from('nhan_su')
     .select(
-      `id, ma_dinh_danh, ho_va_ten, ngay_sinh, gioi_tinh, hoc_vi, chuc_danh, don_vi_id, email, so_dien_thoai, trang_thai, he_so_luong, phu_cap_chuc_vu,
+      `id, ma_dinh_danh, ho_va_ten, ngay_sinh, gioi_tinh, hoc_vi, chuc_danh, don_vi_id, email, so_dien_thoai, trang_thai, he_so_luong, phu_cap_chuc_vu, anh_dai_dien,
        don_vi!nhan_su_don_vi_id_fkey(ten_don_vi, loai_don_vi, thu_tu),
        chung_chi_hanh_nghe(ten_linh_vuc_hanh_nghe, hang_chung_chi, ngay_het_han)`,
     )
@@ -156,6 +165,7 @@ export async function fetchNhanSuFull(): Promise<NhanSu[]> {
         ? `${cc.ten_linh_vuc_hanh_nghe}${cc.hang_chung_chi ? ` (${HANG_CHUNG_CHI[cc.hang_chung_chi] ?? cc.hang_chung_chi})` : ''}`
         : '—',
       hanChungChi: cc?.ngay_het_han ?? '',
+      anhDaiDien: r.anh_dai_dien ?? null,
     };
   });
 }
@@ -168,10 +178,11 @@ export interface NhanSuInput {
   email: string;
   soDienThoai: string;
   trangThaiLamViec: string;
+  anhDaiDien?: string | null;
 }
 
 function nhanSuRow(input: NhanSuInput) {
-  return {
+  const row: Record<string, any> = {
     ho_va_ten: input.hoTen,
     hoc_vi: input.hocVi || null,
     chuc_danh: input.chucDanh || null,
@@ -180,6 +191,10 @@ function nhanSuRow(input: NhanSuInput) {
     so_dien_thoai: input.soDienThoai || null,
     trang_thai: input.trangThaiLamViec,
   };
+  if (input.anhDaiDien !== undefined) {
+    row.anh_dai_dien = input.anhDaiDien || null;
+  }
+  return row;
 }
 
 export async function createNhanSu(input: NhanSuInput) {

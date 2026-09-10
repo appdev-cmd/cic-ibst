@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+﻿import { useMemo, useState } from 'react';
 import { Plus, Building2, Search, Pencil, Trash2, Phone, Mail, MapPin, User, FileText, LoaderCircle, Eye, CheckCircle2 } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { KpiCard } from '../components/KpiCard';
@@ -324,7 +324,7 @@ export function KhachHangPage() {
       <div className="card overflow-hidden">
         <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
         <table className="w-full min-w-[960px]">
-          <thead className="sticky top-0 z-10 border-b border-border bg-subtle dark:bg-[#1f2332]">
+          <thead className="thead-sticky">
             <tr>
               <th className="th-cell w-10 text-center">#</th>
               <th className="th-cell">Tên đơn vị / Tổ chức</th>
@@ -339,7 +339,7 @@ export function KhachHangPage() {
           </thead>
           <tbody>
             {filteredList.map((item, idx) => (
-              <tr key={item.id} className="tr-hover">
+              <tr key={item.id} className="tr-stripe">
                 <td className="td-cell text-center text-xs text-ink-muted tabular-nums">{idx + 1}</td>
                 <td className="td-cell font-semibold max-w-xs truncate">
                   <button

@@ -1,5 +1,5 @@
-import { useState, useEffect, type FormEvent, type ReactNode } from 'react';
-import { Plus, Pencil, Trash2, LoaderCircle, Award, Briefcase, GraduationCap, Wallet, ClipboardCheck, User, CreditCard } from 'lucide-react';
+import { useState, useEffect, useRef, type FormEvent, type ReactNode } from 'react';
+import { Plus, Pencil, Trash2, LoaderCircle, Award, Briefcase, GraduationCap, Wallet, ClipboardCheck, User, CreditCard, Camera, Download, Upload } from 'lucide-react';
 import { useAsyncData } from '../hooks/useAsyncData';
 import { ChungChiPanel } from './DetailPanels';
 import { SlideOverTabs, type SlideOverTabDef } from './SlideOver';
@@ -9,6 +9,8 @@ import { NhanSuAvatar } from './NhanSuAvatar';
 import {
   fetchNhanSuHoSoMoRong,
   updateNhanSuHoSoMoRong,
+  uploadNhanSuAvatar,
+  removeNhanSuAvatar,
   type NhanSuHoSoMoRong,
   fetchQuaTrinhCongTac,
   createQuaTrinhCongTac,
@@ -202,9 +204,48 @@ function HoSoMoRongForm({
   return null;
 }
 
-function ThongTinChungTab({ nhanSuId }: { nhanSuId: string }) {
+function ThongTinChungTab({ nhanSuId, onChanged }: { nhanSuId: string; onChanged?: () => void }) {
   const { data: hs, loading, error, refetch } = useAsyncData(() => fetchNhanSuHoSoMoRong(nhanSuId), null);
   const [formOpen, setFormOpen] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingAvatar(true);
+    try {
+      await uploadNhanSuAvatar(nhanSuId, file);
+      refetch();
+      onChanged?.();
+    } catch (err) {
+      console.error('Upload avatar lỗi:', err);
+    } finally {
+      setUploadingAvatar(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    if (!window.confirm('Xóa ảnh đại diện và quay về chữ cái viết tắt?')) return;
+    try {
+      await removeNhanSuAvatar(nhanSuId);
+      refetch();
+      onChanged?.();
+    } catch (err) {
+      console.error('Xóa avatar lỗi:', err);
+    }
+  };
+
+  const handleDownloadAvatar = () => {
+    if (!hs?.anhDaiDien) return;
+    const link = document.createElement('a');
+    link.href = hs.anhDaiDien;
+    link.download = `avatar-${hs.hoVaTen?.replace(/\s+/g, '-') ?? nhanSuId}.jpg`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   if (loading) {
     return (
@@ -226,14 +267,36 @@ function ThongTinChungTab({ nhanSuId }: { nhanSuId: string }) {
     <>
       <div className="space-y-3.5">
         {/* Profile Card Header với Avatar */}
-        <div className="rounded-xl border border-border bg-gradient-to-r from-subtle/70 to-surface p-3.5 shadow-xs flex items-center gap-3.5 dark:from-slate-900/40 dark:to-slate-800/60 dark:border-slate-700/80">
-          <NhanSuAvatar
-            hoTen={hs.hoVaTen}
-            chucDanh={hs.chucDanh}
-            trangThaiLamViec={hs.trangThai}
-            showStatus
-            size="lg"
-          />
+        <div className="rounded-xl border border-border bg-gradient-to-r from-subtle/70 to-surface p-3.5 shadow-xs flex items-start gap-3.5 dark:from-slate-900/40 dark:to-slate-800/60 dark:border-slate-700/80">
+          {/* Avatar + nút Đổi ảnh khi hover */}
+          <div className="relative group shrink-0">
+            <NhanSuAvatar
+              hoTen={hs.hoVaTen}
+              chucDanh={hs.chucDanh}
+              avatarUrl={hs.anhDaiDien}
+              trangThaiLamViec={hs.trangThai}
+              showStatus
+              size="xl"
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingAvatar}
+              title="Đổi ảnh đại diện"
+              className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+            >
+              {uploadingAvatar
+                ? <LoaderCircle size={18} className="animate-spin text-white" />
+                : <Camera size={18} className="text-white" />}
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleAvatarFileChange}
+            />
+          </div>
+
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="text-base font-bold text-ink leading-tight">{hs.hoVaTen}</h3>
@@ -251,6 +314,33 @@ function ThongTinChungTab({ nhanSuId }: { nhanSuId: string }) {
               {hs.email && hs.soDienThoai && <span>•</span>}
               {hs.soDienThoai && <span>{hs.soDienThoai}</span>}
             </p>
+            {/* Cụm nút thao tác avatar */}
+            <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingAvatar}
+                className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-2xs font-bold text-ink-secondary hover:bg-muted dark:border-slate-700/80 dark:hover:bg-slate-800/40 disabled:opacity-50"
+              >
+                {uploadingAvatar ? <LoaderCircle size={11} className="animate-spin" /> : <Upload size={11} />}
+                Đổi ảnh đại diện
+              </button>
+              {hs.anhDaiDien && (
+                <>
+                  <button
+                    onClick={handleDownloadAvatar}
+                    className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-2xs font-bold text-ink-secondary hover:bg-muted dark:border-slate-700/80 dark:hover:bg-slate-800/40"
+                  >
+                    <Download size={11} /> Tải ảnh về
+                  </button>
+                  <button
+                    onClick={handleRemoveAvatar}
+                    className="flex items-center gap-1 rounded-md border border-red-200 px-2 py-1 text-2xs font-bold text-danger hover:bg-red-50 dark:border-red-800/50 dark:hover:bg-red-900/20"
+                  >
+                    <Trash2 size={11} /> Xóa ảnh
+                  </button>
+                </>
+              )}
+            </div>
           </div>
           <button
             onClick={() => setFormOpen(true)}
@@ -696,7 +786,7 @@ export function NhanSuHoSoPanel({ nhanSuId, onChanged }: { nhanSuId: string; onC
     <div className="card overflow-hidden">
       <SlideOverTabs tabs={TABS} active={tab} onChange={setTab} />
       <div className="p-3">
-        {tab === 'thong-tin-chung' && <ThongTinChungTab nhanSuId={nhanSuId} />}
+        {tab === 'thong-tin-chung' && <ThongTinChungTab nhanSuId={nhanSuId} onChanged={onChanged} />}
         {tab === 'chung-chi' && <ChungChiPanel nhanSuId={nhanSuId} onChanged={onChanged} />}
         {tab === 'qua-trinh' && <QuaTrinhCongTacTab nhanSuId={nhanSuId} onChanged={onChanged} />}
         {tab === 'bang-cap' && <BangCapTab nhanSuId={nhanSuId} onChanged={onChanged} />}

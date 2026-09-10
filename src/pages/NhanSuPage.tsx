@@ -11,7 +11,6 @@ import {
   Pencil,
   Trash2,
   LoaderCircle,
-  Flag,
   Award,
   ChevronLeft,
   ChevronRight,
@@ -28,7 +27,7 @@ import { DataState } from '../components/DataState';
 import { Field, inputCls } from '../components/Modal';
 import { NhanSuHoSoPanel } from '../components/NhanSuHoSoPanel';
 import { NhanSuAvatar } from '../components/NhanSuAvatar';
-import { DangDoanTheTab } from '../components/DangDoanTheTab';
+import { TableToolbar, FilterSelect } from '../components/TableToolbar';
 import { DaoTaoPage } from './DaoTaoPage';
 import { DonViPage } from './DonViPage';
 import { DonViListTab } from '../components/DonViListTab';
@@ -48,14 +47,13 @@ import { cn, exportCsv, exportExcel, formatNgay } from '../lib/utils';
 import { usePhanQuyen } from '../hooks/usePhanQuyen';
 import { tabDuocPhep, type TaiNguyen } from '../lib/phanQuyen';
 
-type MainTab = 'co-cau-to-chuc' | 'don-vi' | 'nhan-su' | 'dao-tao-ncs' | 'dang-doan-the' | 'danh-gia-xep-loai';
-const MAIN_TAB_IDS: MainTab[] = ['co-cau-to-chuc', 'don-vi', 'nhan-su', 'dao-tao-ncs', 'dang-doan-the', 'danh-gia-xep-loai'];
+type MainTab = 'co-cau-to-chuc' | 'don-vi' | 'nhan-su' | 'dao-tao-ncs' | 'danh-gia-xep-loai';
+const MAIN_TAB_IDS: MainTab[] = ['co-cau-to-chuc', 'don-vi', 'nhan-su', 'dao-tao-ncs', 'danh-gia-xep-loai'];
 const MAIN_TAB_TAI_NGUYEN: Record<MainTab, TaiNguyen> = {
   'co-cau-to-chuc': 'co_cau_to_chuc',
   'don-vi': 'don_vi',
   'nhan-su': 'nhan_su',
   'dao-tao-ncs': 'dao_tao_ncs',
-  'dang-doan-the': 'dang_doan_the',
   'danh-gia-xep-loai': 'danh_gia',
 };
 
@@ -240,7 +238,6 @@ export function NhanSuPage() {
     if (tabParam === 'so-do-to-chuc' || tabParam === 'co-cau-to-chuc') return 'co-cau-to-chuc';
     if (tabParam === 'don-vi') return 'don-vi';
     if (tabParam === 'dao-tao-ncs' || tabParam === 'dao-tao') return 'dao-tao-ncs';
-    if (tabParam === 'dang-doan-the') return 'dang-doan-the';
     if (tabParam === 'danh-gia-xep-loai' || tabParam === 'danh-gia') return 'danh-gia-xep-loai';
     return 'nhan-su';
   });
@@ -253,8 +250,6 @@ export function NhanSuPage() {
       setMainTab('don-vi');
     } else if (tabParam === 'dao-tao-ncs' || tabParam === 'dao-tao') {
       setMainTab('dao-tao-ncs');
-    } else if (tabParam === 'dang-doan-the') {
-      setMainTab('dang-doan-the');
     } else if (tabParam === 'danh-gia-xep-loai' || tabParam === 'danh-gia') {
       setMainTab('danh-gia-xep-loai');
     } else if (tabParam === 'nhan-su' || tabParam === 'ho-so-nhan-su') {
@@ -649,19 +644,6 @@ export function NhanSuPage() {
           <GraduationCap size={15} /> Đào tạo & NCS
         </button>
         )}
-        {tabHienDuoc('dang-doan-the') && (
-        <button
-          onClick={() => handleTabChange('dang-doan-the')}
-          className={cn(
-            'flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all',
-            mainTab === 'dang-doan-the'
-              ? 'bg-surface text-primary-600 shadow-card dark:text-primary-300'
-              : 'text-ink-muted hover:text-ink'
-          )}
-        >
-          <Flag size={15} /> Đảng & Đoàn thể
-        </button>
-        )}
         {tabHienDuoc('danh-gia-xep-loai') && (
         <button
           onClick={() => handleTabChange('danh-gia-xep-loai')}
@@ -698,8 +680,6 @@ export function NhanSuPage() {
         />
       )}
       {mainTab === 'dao-tao-ncs' && tabHienDuoc('dao-tao-ncs') && <DaoTaoPage />}
-
-      {mainTab === 'dang-doan-the' && tabHienDuoc('dang-doan-the') && <DangDoanTheTab />}
 
       {mainTab === 'danh-gia-xep-loai' && tabHienDuoc('danh-gia-xep-loai') && (
         <DanhGiaVienChucTab donViList={donViList} nhanSuList={list} />
@@ -740,124 +720,83 @@ export function NhanSuPage() {
 
           <DataState loading={loading} error={error} empty={list.length === 0} />
 
-          {/* ───── TOOLBAR: filter & search theo format cic-erp-contract ───── */}
-          <div className="card mb-4 flex flex-wrap items-center justify-between gap-3 p-3">
-            <div className="flex flex-1 flex-wrap items-center gap-2.5">
-              {/* Search input with clear button */}
-              <div className="relative min-w-[240px] flex-1 max-w-sm">
-                <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted" />
-                <input
-                  type="text"
-                  placeholder="Tìm theo tên, mã, email, SĐT..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="input-search w-full h-9 pl-9 pr-8 text-xs"
-                />
-                {search && (
-                  <button
-                    onClick={() => setSearch('')}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-muted hover:text-ink p-1 rounded-full"
-                    title="Xóa tìm kiếm"
-                  >
-                    <X size={13} />
-                  </button>
-                )}
-              </div>
-
-              {/* Filter Đơn vị */}
-              <select
-                value={filterDonVi}
-                onChange={(e) => setFilterDonVi(e.target.value)}
-                className="select-field text-xs py-1.5 w-44"
-              >
-                <option value="">-- Tất cả đơn vị --</option>
-                {donViList.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.ten}
-                  </option>
-                ))}
-              </select>
-
-              {/* Filter Học vị */}
-              <select
-                value={filterHocVi}
-                onChange={(e) => setFilterHocVi(e.target.value)}
-                className="select-field text-xs py-1.5 w-36"
-              >
-                <option value="">-- Tất cả học vị --</option>
-                {HOC_VI_OPTIONS.map((hv) => (
-                  <option key={hv} value={hv}>
-                    {hv}
-                  </option>
-                ))}
-              </select>
-
-              {/* Filter Trạng thái */}
-              <select
-                value={filterTrangThai}
-                onChange={(e) => setFilterTrangThai(e.target.value)}
-                className="select-field text-xs py-1.5 w-36"
-              >
-                <option value="">-- Trạng thái --</option>
-                <option value="dang-lam-viec">Đang làm việc</option>
-                <option value="nghi-viec">Nghỉ việc</option>
-                <option value="tam-hoan">Tạm hoãn / Nghỉ phép</option>
-              </select>
-
-              {/* Reset filter button */}
-              {hasActiveFilters && (
+          {/* ───── TOOLBAR chuẩn TableToolbar ───── */}
+          <TableToolbar
+            search={search}
+            onSearch={setSearch}
+            placeholder="Tìm theo tên, mã, email, SĐT..."
+            total={filtered.length}
+            totalLabel={`/ ${list.length} NS`}
+            actions={
+              <>
                 <button
-                  onClick={resetFilters}
-                  className="flex items-center gap-1 rounded-md border border-border px-2 py-1.5 text-2xs font-medium text-ink-muted hover:bg-muted hover:text-ink transition-colors"
-                  title="Đặt lại bộ lọc"
+                  onClick={handleExportExcel}
+                  className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-ink hover:bg-muted hover:text-primary transition-colors shadow-xs"
+                  title="Xuất danh sách nhân sự hiện tại ra file CSV/Excel"
                 >
-                  <RotateCcw size={11} /> Xóa lọc
+                  <Download size={14} className="text-primary-600" />
+                  <span>Xuất Excel</span>
                 </button>
-              )}
-
-              {/* Counter summary badge */}
-              <span className="text-2xs text-ink-muted bg-subtle px-2 py-1 rounded-md whitespace-nowrap font-medium">
-                {filtered.length} / {list.length} NS
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2">
+                <button onClick={openCreate} className="btn-primary py-1.5 text-xs">
+                  <Plus size={15} /> Thêm nhân sự
+                </button>
+              </>
+            }
+          >
+            <FilterSelect
+              value={filterDonVi}
+              onChange={setFilterDonVi}
+              allLabel="Tất cả đơn vị"
+              options={donViList.map((d) => ({ value: d.id, label: d.ten }))}
+            />
+            <FilterSelect
+              value={filterHocVi}
+              onChange={setFilterHocVi}
+              allLabel="Tất cả học vị"
+              options={HOC_VI_OPTIONS.map((hv) => ({ value: hv, label: hv }))}
+            />
+            <FilterSelect
+              value={filterTrangThai}
+              onChange={setFilterTrangThai}
+              allLabel="Trạng thái"
+              options={[
+                { value: 'dang-lam-viec', label: 'Đang làm việc' },
+                { value: 'nghi-viec', label: 'Nghỉ việc' },
+                { value: 'tam-hoan', label: 'Tạm hoãn / Nghỉ phép' },
+              ]}
+            />
+            {hasActiveFilters && (
               <button
-                onClick={handleExportExcel}
-                className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-ink hover:bg-muted hover:text-primary transition-colors shadow-xs"
-                title="Xuất danh sách nhân sự hiện tại ra file CSV/Excel"
+                onClick={resetFilters}
+                className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-2xs font-medium text-ink-muted hover:bg-muted hover:text-ink transition-colors"
+                title="Đặt lại bộ lọc"
               >
-                <Download size={14} className="text-primary-600" />
-                <span>Xuất Excel</span>
+                <RotateCcw size={11} /> Xóa lọc
               </button>
-
-              <button onClick={openCreate} className="btn-primary py-1.5 text-xs">
-                <Plus size={15} /> Thêm nhân sự
-              </button>
-            </div>
-          </div>
+            )}
+          </TableToolbar>
 
           {/* ───── TABLE: theo format cic-erp-contract ───── */}
           <div className="overflow-hidden rounded-lg border border-border dark:border-slate-700/70 bg-surface shadow-xs">
             <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
               <table className="w-full text-left">
-                <thead className="sticky top-0 z-20 bg-slate-100 dark:bg-[#191d28] border-b border-border dark:border-slate-700/80 shadow-xs">
+                <thead className="thead-sticky">
                   <tr>
-                    <th className="sticky top-0 bg-slate-100 dark:bg-[#191d28] px-3 py-3 w-10 text-center text-[11px] font-bold text-ink-secondary uppercase tracking-wider">#</th>
-                    <th className="sticky top-0 bg-slate-100 dark:bg-[#191d28] px-3 py-3 w-28 text-left text-[11px] font-bold text-ink-secondary uppercase tracking-wider">Mã NV</th>
-                    <th className="sticky top-0 bg-slate-100 dark:bg-[#191d28] px-3 py-3 min-w-[210px] text-left text-[11px] font-bold text-ink-secondary uppercase tracking-wider">Họ và tên</th>
-                    <th className="sticky top-0 bg-slate-100 dark:bg-[#191d28] px-3 py-3 w-28 text-center text-[11px] font-bold text-ink-secondary uppercase tracking-wider">Ngày sinh</th>
-                    <th className="sticky top-0 bg-slate-100 dark:bg-[#191d28] px-3 py-3 min-w-[150px] text-left text-[11px] font-bold text-ink-secondary uppercase tracking-wider">Chức vụ / Chức danh</th>
-                    <th className="sticky top-0 bg-slate-100 dark:bg-[#191d28] px-3 py-3 w-28 text-center text-[11px] font-bold text-ink-secondary uppercase tracking-wider">Học vị</th>
-                    <th className="sticky top-0 bg-slate-100 dark:bg-[#191d28] px-3 py-3 min-w-[190px] text-left text-[11px] font-bold text-ink-secondary uppercase tracking-wider">Đơn vị công tác</th>
-                    <th className="sticky top-0 bg-slate-100 dark:bg-[#191d28] px-3 py-3 min-w-[210px] text-left text-[11px] font-bold text-ink-secondary uppercase tracking-wider">Chứng chỉ hành nghề</th>
-                    <th className="sticky top-0 bg-slate-100 dark:bg-[#191d28] px-3 py-3 w-28 text-left text-[11px] font-bold text-ink-secondary uppercase tracking-wider">Số ĐT</th>
-                    <th className="sticky top-0 bg-slate-100 dark:bg-[#191d28] px-3 py-3 w-24 text-right text-[11px] font-bold text-ink-secondary uppercase tracking-wider">Hệ số &amp; PCCV</th>
-                    <th className="sticky top-0 bg-slate-100 dark:bg-[#191d28] px-3 py-3 w-28 text-center text-[11px] font-bold text-ink-secondary uppercase tracking-wider">Trạng thái</th>
-                    <th className="sticky top-0 bg-slate-100 dark:bg-[#191d28] px-3 py-3 w-16 text-right text-[11px] font-bold text-ink-secondary uppercase tracking-wider"></th>
+                    <th className="th-cell w-10 text-center text-[11px] font-bold text-ink-secondary uppercase tracking-wider">#</th>
+                    <th className="th-cell w-28 text-left text-[11px] font-bold text-ink-secondary uppercase tracking-wider">Mã NV</th>
+                    <th className="th-cell min-w-[210px] text-left text-[11px] font-bold text-ink-secondary uppercase tracking-wider">Họ và tên</th>
+                    <th className="th-cell w-28 text-center text-[11px] font-bold text-ink-secondary uppercase tracking-wider">Ngày sinh</th>
+                    <th className="th-cell min-w-[150px] text-left text-[11px] font-bold text-ink-secondary uppercase tracking-wider">Chức vụ / Chức danh</th>
+                    <th className="th-cell w-28 text-center text-[11px] font-bold text-ink-secondary uppercase tracking-wider">Học vị</th>
+                    <th className="th-cell min-w-[190px] text-left text-[11px] font-bold text-ink-secondary uppercase tracking-wider">Đơn vị công tác</th>
+                    <th className="th-cell min-w-[210px] text-left text-[11px] font-bold text-ink-secondary uppercase tracking-wider">Chứng chỉ hành nghề</th>
+                    <th className="th-cell w-28 text-left text-[11px] font-bold text-ink-secondary uppercase tracking-wider">Số ĐT</th>
+                    <th className="th-cell w-24 text-right text-[11px] font-bold text-ink-secondary uppercase tracking-wider">Hệ số &amp; PCCV</th>
+                    <th className="th-cell w-28 text-center text-[11px] font-bold text-ink-secondary uppercase tracking-wider">Trạng thái</th>
+                    <th className="th-cell w-16 text-right text-[11px] font-bold text-ink-secondary uppercase tracking-wider"></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border-subtle dark:divide-slate-700/60">
+                <tbody>
                   {filtered.map((ns, idx) => {
                     const active = detail?.id === ns.id;
 
@@ -866,13 +805,10 @@ export function NhanSuPage() {
                         key={ns.id}
                         onClick={() => setDetailId(ns.id)}
                         className={cn(
-                          'cursor-pointer transition-colors',
+                          'cursor-pointer',
                           active
                             ? 'bg-primary-subtle/50 dark:bg-primary-900/30 ring-1 ring-inset ring-primary/30'
-                            : idx % 2 !== 0
-                              ? 'bg-muted/40 dark:bg-white/[0.03]'
-                              : 'bg-surface',
-                          !active && 'hover:bg-primary-subtle/30 dark:hover:bg-slate-800/60',
+                            : 'tr-stripe',
                         )}
                       >
                         {/* STT */}
@@ -891,6 +827,7 @@ export function NhanSuPage() {
                             <NhanSuAvatar
                               hoTen={ns.hoTen}
                               chucDanh={ns.chucDanh}
+                              avatarUrl={ns.anhDaiDien}
                               trangThaiLamViec={ns.trangThaiLamViec}
                               showStatus
                               size="md"

@@ -34,6 +34,9 @@ import {
   Globe,
   Gavel,
   Landmark,
+  Flag,
+  Briefcase,
+  HeartHandshake,
   ShieldCheck,
   Menu,
   X,
@@ -47,6 +50,7 @@ import type { TaiNguyen } from '../lib/phanQuyen';
 import { GlobalSearch } from '../components/GlobalSearch';
 import { Notifications } from '../components/Notifications';
 import { AiChatbot } from '../components/AiChatbot';
+import { OnlineUsersWidget } from '../components/OnlineUsersWidget';
 import { SlidePanelProvider } from '../context/SlidePanelContext';
 import { SlidePanelStack } from '../components/SlidePanelStack';
 import { BanTinTuanTicker } from '../components/BanTinTuanTicker';
@@ -79,20 +83,18 @@ interface NavItem {
 }
 
 const NAV_MENU: NavItem[] = [
-  { id: 'dashboard', to: '/', label: '1. Dashboard Lãnh đạo', icon: LayoutDashboard },
-  {
-    id: 'hop-dong-crm',
-    to: '/hop-dong',
-    label: '2. Hợp đồng, CRM & Tài chính',
-    icon: Handshake,
-  },
-  { id: 'khoa-hoc', to: '/khoa-hoc', label: '3. Quản lý Khoa học & SHTT', icon: FlaskConical },
-  { id: 'nhan-su', to: '/nhan-su', label: '4. Tổ chức & Nhân sự', icon: Users },
-  { id: 'thi-nghiem', to: '/thi-nghiem', label: '5. Thử nghiệm LIMS & Lab', icon: Microscope },
-  { id: 'e-office', to: '/e-office', label: '6. Văn phòng số e-Office', icon: FileText },
-  { id: 'kho-luu-tru', to: '/kho-luu-tru', label: '7. Kho Lưu trữ & AI-RAG', icon: FolderOpen },
-  { id: 'lich-co-quan', to: '/lich-co-quan', label: 'Lịch cơ quan', icon: Calendar },
-  // { id: 'ibst-portal', to: '/ibst-portal', label: 'Cổng thông tin IBST', icon: Globe }, // Tạm ẩn theo yêu cầu
+  { id: 'dashboard', to: '/', label: '1. Dashboard & Lịch công tác', icon: LayoutDashboard },
+  { id: 'nhan-su', to: '/nhan-su', label: '2. Tổ chức & Nhân sự', icon: Users },
+  { id: 'dang-vu', to: '/dang-vu', label: '3. Công tác Đảng vụ', icon: Flag },
+  { id: 'e-office', to: '/e-office', label: '4. Văn phòng số e-Office', icon: FileText },
+  { id: 'pvqlnn', to: '/pvqlnn', label: '5. Nhiệm vụ Phục vụ QLNN', icon: Landmark },
+  { id: 'khoa-hoc', to: '/khoa-hoc', label: '6. Nhiệm vụ KHCN, đề tài', icon: FlaskConical },
+  { id: 'tu-van-dvkt', to: '/tu-van-dvkt', label: '7. Công tác tư vấn DVKT', icon: Briefcase },
+  { id: 'thi-nghiem', to: '/thi-nghiem', label: '8. Công tác thí nghiệm, thử nghiệm', icon: Microscope },
+  { id: 'tckt', to: '/tckt', label: '9. Công tác TCKT', icon: Wallet },
+  { id: 'cong-doan', to: '/cong-doan', label: '10. Công tác Công đoàn, Đoàn TN', icon: HeartHandshake },
+  { id: 'kho-luu-tru', to: '/kho-luu-tru', label: '11. Kho lưu trữ & AI-RAG', icon: FolderOpen },
+  { id: 'ibst-portal', to: '/ibst-portal', label: '12. Website', icon: Globe },
 ];
 
 /**
@@ -118,9 +120,11 @@ export function AppLayout() {
   const visibleNavMenu = dangTai ? NAV_MENU : NAV_MENU.filter((item) => hienThiMucMenu(item.to, can));
 
   // Tự động tìm nhãn menu hiện tại
-  let currentLabel = '1. Dashboard Lãnh đạo';
-  if (pathname === '/ibst-portal') currentLabel = 'Cổng thông tin IBST';
-  if (pathname === '/lich-co-quan') currentLabel = 'Lịch cơ quan';
+  let currentLabel = '1. Dashboard & Lịch công tác';
+  if (pathname === '/ibst-portal') currentLabel = '12. Website';
+  if (pathname === '/lich-co-quan') currentLabel = '1. Dashboard & Lịch công tác';
+  if (pathname === '/hop-dong') currentLabel = '7. Công tác tư vấn DVKT';
+  if (pathname === '/tai-chinh') currentLabel = '9. Công tác TCKT';
   for (const n of NAV_MENU) {
     if (n.to === pathname) {
       currentLabel = n.label;
@@ -542,6 +546,9 @@ export function AppLayout() {
 
           {/* Right */}
           <div className="flex shrink-0 items-center justify-end gap-2 sm:gap-3">
+            {/* Online users widget */}
+            <OnlineUsersWidget />
+            <div className="mx-1 hidden h-6 w-px bg-border sm:block" />
             <Notifications />
             <div className="mx-1 hidden h-6 w-px bg-border sm:block" />
             
@@ -551,8 +558,18 @@ export function AppLayout() {
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
                 className="flex cursor-pointer items-center gap-2.5 rounded-xl p-1.5 pr-2 transition-colors hover:bg-muted"
               >
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary-400 to-primary-600 text-xs font-bold text-white ring-2 ring-primary-100 dark:ring-primary-900">
-                  {initials || 'ND'}
+                <div className="flex h-8 w-8 items-center justify-center rounded-full overflow-hidden ring-2 ring-primary-100 dark:ring-primary-900 shrink-0">
+                  {session?.user.email === 'vientruong@ibst.vn' ? (
+                    <img
+                      src="/avatars/nguyen-hong-hai.jpg"
+                      alt="Viện trưởng Nguyễn Hồng Hải"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary-400 to-primary-600 text-xs font-bold text-white">
+                      {initials || 'ND'}
+                    </div>
+                  )}
                 </div>
                 <div className="hidden max-w-[140px] text-left sm:block">
                   <p className="truncate text-xs font-bold leading-tight text-ink">{fullName}</p>

@@ -1,12 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { Microscope, Timer, LoaderCircle, Printer, ShieldCheck, Wrench, AlertTriangle, Building } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { StatusBadge, TRANG_THAI_OPTIONS } from '../components/StatusBadge';
 import { KpiCard } from '../components/KpiCard';
 import { DataState } from '../components/DataState';
-import { Modal, Field, inputCls } from '../components/Modal';
+import { Field, inputCls } from '../components/Modal';
 import { TableToolbar, FilterSelect, RowActions } from '../components/TableToolbar';
 import { KetQuaPhepThuPanel } from '../components/DetailPanels';
+import { useSlidePanelChiTiet, useSlidePanelForm } from '../hooks/useSlidePanelCrud';
 import { useAsyncData } from '../hooks/useAsyncData';
 import { useTableControls } from '../hooks/useTableControls';
 import { useCrudForm } from '../hooks/useCrudForm';
@@ -161,6 +162,204 @@ export function ThiNghiemPage() {
     }
   };
 
+  // SlidePanel Chi tiết Mẫu Thí Nghiệm & Kết quả phép thử
+  useSlidePanelChiTiet({
+    id: 'thi-nghiem-detail',
+    active: detail !== null,
+    title: detail ? `Mẫu: ${detail.maPhieu}` : '',
+    subtitle: detail ? `${detail.tenMau} • ${detail.phongThiNghiem}` : '',
+    icon: <Microscope size={18} className="text-primary" />,
+    storageKey: 'slideover-width-thi-nghiem-detail',
+    minWidth: 580,
+    onDongNgoaiLuong: () => setDetail(null),
+    headerExtra: detail ? (
+      <div className="flex items-center gap-1.5">
+        {detail.trangThai === 'hoan-thanh' && (
+          <button
+            type="button"
+            onClick={() => handlePrint(detail)}
+            className="flex items-center gap-1 rounded-lg border border-border px-2.5 py-1 text-xs font-semibold hover:bg-muted"
+            title="In / Xuất PDF có Chữ ký số"
+          >
+            <Printer size={13} /> In phiếu
+          </button>
+        )}
+        {NEXT_TRANG_THAI[detail.trangThai] && (
+          <button
+            type="button"
+            onClick={() => handleNextTrangThai(detail)}
+            disabled={advancingId === detail.id}
+            className="btn-secondary py-1 text-xs font-bold"
+          >
+            {advancingId === detail.id ? <LoaderCircle size={13} className="animate-spin" /> : NEXT_TRANG_THAI[detail.trangThai]?.label}
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={() => {
+            const m = detail;
+            setDetail(null);
+            crud.openEdit(m);
+          }}
+          className="rounded-lg border border-border px-2.5 py-1 text-xs font-semibold hover:bg-muted"
+        >
+          Sửa
+        </button>
+      </div>
+    ) : undefined,
+    content: detail ? (
+      <div className="space-y-4">
+        <div className="rounded-xl border border-border bg-subtle p-3 text-xs space-y-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="font-semibold text-ink">{detail.tenMau}</span>
+            <StatusBadge value={detail.trangThai} />
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-ink-secondary">
+            <div>Phép thử: <b className="text-ink">{detail.phepThu}</b></div>
+            <div>Tiêu chuẩn: <b className="font-mono text-ink">{detail.tieuChuan}</b></div>
+            <div>Phòng LAS: <b className="text-ink">{detail.phongThiNghiem}</b></div>
+            <div>Hạn trả: <b className="font-mono text-ink">{formatNgay(detail.hanTra)}</b></div>
+          </div>
+          {detail.trangThai === 'hoan-thanh' && (
+            <div className="flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 pt-1 border-t border-border">
+              <ShieldCheck size={14} /> Đã đóng dấu Chữ ký số CA ISO 17025
+            </div>
+          )}
+        </div>
+        <KetQuaPhepThuPanel key={detail.id} mauId={detail.id} />
+      </div>
+    ) : null,
+    footer: (
+      <button
+        type="button"
+        onClick={() => setDetail(null)}
+        className="rounded-xl border border-border px-4 py-2 text-xs font-semibold hover:bg-muted"
+      >
+        Đóng
+      </button>
+    ),
+    deps: [detail, advancingId],
+  });
+
+  // SlidePanel Form Thêm / Sửa Mẫu Thí Nghiệm
+  useSlidePanelForm({
+    id: 'thi-nghiem-form',
+    open: crud.modalOpen,
+    title: crud.editing ? `Sửa phiếu: ${crud.editing.maPhieu}` : 'Tạo phiếu mẫu thí nghiệm mới',
+    subtitle: crud.editing ? crud.editing.tenMau : 'Nhập thông tin mẫu gửi thử nghiệm và chỉ định phòng LAS-XD',
+    icon: <Microscope size={18} className="text-primary" />,
+    storageKey: 'slideover-width-thi-nghiem-form',
+    minWidth: 540,
+    onDongNgoaiLuong: crud.closeModal,
+    content: (
+      <form id="form-thi-nghiem" onSubmit={crud.submit} className="space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Mã phiếu mẫu" required>
+            <input
+              type="text"
+              required
+              value={crud.form.maPhieu}
+              onChange={(e) => crud.setForm({ ...crud.form, maPhieu: e.target.value })}
+              className={inputCls}
+              placeholder="VD: 2026-LAS01-089"
+            />
+          </Field>
+
+          <Field label="Phòng Thí nghiệm LAS-XD" required>
+            <select
+              value={crud.form.phongThiNghiem}
+              onChange={(e) => crud.setForm({ ...crud.form, phongThiNghiem: e.target.value })}
+              className={inputCls}
+            >
+              {PHONG_TN_OPTIONS.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </div>
+
+        <Field label="Tên mẫu thử" required>
+          <input
+            type="text"
+            required
+            value={crud.form.tenMau}
+            onChange={(e) => crud.setForm({ ...crud.form, tenMau: e.target.value })}
+            className={inputCls}
+          />
+        </Field>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Phép thử">
+            <input
+              type="text"
+              value={crud.form.phepThu}
+              onChange={(e) => crud.setForm({ ...crud.form, phepThu: e.target.value })}
+              className={inputCls}
+            />
+          </Field>
+
+          <Field label="Tiêu chuẩn áp dụng">
+            <input
+              type="text"
+              value={crud.form.tieuChuan}
+              onChange={(e) => crud.setForm({ ...crud.form, tieuChuan: e.target.value })}
+              className={inputCls}
+            />
+          </Field>
+        </div>
+
+        <Field label="Khách hàng gửi mẫu">
+          <select
+            value={crud.form.khachHangId}
+            onChange={(e) => crud.setForm({ ...crud.form, khachHangId: e.target.value })}
+            className={inputCls}
+          >
+            <option value="">-- Chọn khách hàng --</option>
+            {khachHangOptions.map((k) => (
+              <option key={k.id} value={k.id}>
+                {k.ten}
+              </option>
+            ))}
+          </select>
+        </Field>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Ngày nhận">
+            <input
+              type="date"
+              value={crud.form.ngayNhan}
+              onChange={(e) => crud.setForm({ ...crud.form, ngayNhan: e.target.value })}
+              className={inputCls}
+            />
+          </Field>
+
+          <Field label="Hạn trả kết quả">
+            <input
+              type="date"
+              value={crud.form.hanTra}
+              onChange={(e) => crud.setForm({ ...crud.form, hanTra: e.target.value })}
+              className={inputCls}
+            />
+          </Field>
+        </div>
+      </form>
+    ),
+    footer: (
+      <div className="flex items-center justify-end gap-2">
+        <button type="button" onClick={crud.closeModal} className="btn-ghost">
+          Hủy
+        </button>
+        <button type="submit" form="form-thi-nghiem" disabled={crud.saving} className="btn-primary">
+          {crud.saving && <LoaderCircle size={15} className="animate-spin" />}
+          {crud.editing ? 'Cập nhật' : 'Tạo mới'}
+        </button>
+      </div>
+    ),
+    deps: [crud.form, crud.saving, crud.actionError, crud.editing, khachHangOptions],
+  });
+
   return (
     <div>
       <PageHeader
@@ -256,11 +455,10 @@ export function ThiNghiemPage() {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <div className="card overflow-hidden lg:col-span-2">
-              <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 'calc(100vh - 300px)' }}>
-              <table className="w-full min-w-[640px]">
-                <thead className="sticky top-0 z-10 border-b border-border bg-subtle dark:bg-[#1f2332]">
+          <div className="card overflow-hidden">
+            <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 'calc(100vh - 300px)' }}>
+            <table className="w-full min-w-[860px]">
+                <thead className="thead-sticky">
                   <tr>
                     <th className="th-cell w-10 text-center">#</th>
                     <th className="th-cell">Mã phiếu / Tên mẫu</th>
@@ -282,7 +480,7 @@ export function ThiNghiemPage() {
                         key={mau.id}
                         onClick={() => setDetail(mau)}
                         className={cn(
-                          'tr-hover cursor-pointer',
+                          'tr-stripe cursor-pointer',
                           active && 'bg-primary-subtle/50 dark:bg-primary-900/20',
                         )}
                       >
@@ -337,11 +535,6 @@ export function ThiNghiemPage() {
               </table>
               </div>
             </div>
-
-            <div className="lg:col-span-1">
-              <KetQuaPhepThuPanel mauId={detail?.id ?? ''} />
-            </div>
-          </div>
         </>
       )}
 
@@ -412,121 +605,6 @@ export function ThiNghiemPage() {
         </div>
       )}
 
-      {/* Modal Thêm/Sửa Mẫu */}
-      <Modal
-        open={crud.modalOpen}
-        onClose={crud.closeModal}
-        title={crud.editing ? 'Chỉnh sửa phiếu mẫu' : 'Tạo phiếu mẫu mới'}
-      >
-        <form onSubmit={crud.submit} className="space-y-4">
-          {crud.actionError && (
-            <div className="rounded-lg bg-danger-subtle p-3 text-xs text-danger">
-              {crud.actionError}
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Mã phiếu mẫu" required>
-              <input
-                type="text"
-                required
-                value={crud.form.maPhieu}
-                onChange={(e) => crud.setForm({ ...crud.form, maPhieu: e.target.value })}
-                className={inputCls}
-              />
-            </Field>
-
-            <Field label="Phòng thí nghiệm LAS-XD">
-              <select
-                value={crud.form.phongThiNghiem}
-                onChange={(e) => crud.setForm({ ...crud.form, phongThiNghiem: e.target.value })}
-                className={inputCls}
-              >
-                {PHONG_TN_OPTIONS.map((p) => (
-                  <option key={p} value={p}>
-                    {p}
-                  </option>
-                ))}
-              </select>
-            </Field>
-          </div>
-
-          <Field label="Tên mẫu thử" required>
-            <input
-              type="text"
-              required
-              value={crud.form.tenMau}
-              onChange={(e) => crud.setForm({ ...crud.form, tenMau: e.target.value })}
-              className={inputCls}
-            />
-          </Field>
-
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Phép thử">
-              <input
-                type="text"
-                value={crud.form.phepThu}
-                onChange={(e) => crud.setForm({ ...crud.form, phepThu: e.target.value })}
-                className={inputCls}
-              />
-            </Field>
-
-            <Field label="Tiêu chuẩn áp dụng">
-              <input
-                type="text"
-                value={crud.form.tieuChuan}
-                onChange={(e) => crud.setForm({ ...crud.form, tieuChuan: e.target.value })}
-                className={inputCls}
-              />
-            </Field>
-          </div>
-
-          <Field label="Khách hàng gửi mẫu">
-            <select
-              value={crud.form.khachHangId}
-              onChange={(e) => crud.setForm({ ...crud.form, khachHangId: e.target.value })}
-              className={inputCls}
-            >
-              <option value="">-- Chọn khách hàng --</option>
-              {khachHangOptions.map((k) => (
-                <option key={k.id} value={k.id}>
-                  {k.ten}
-                </option>
-              ))}
-            </select>
-          </Field>
-
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Ngày nhận">
-              <input
-                type="date"
-                value={crud.form.ngayNhan}
-                onChange={(e) => crud.setForm({ ...crud.form, ngayNhan: e.target.value })}
-                className={inputCls}
-              />
-            </Field>
-
-            <Field label="Hạn trả kết quả">
-              <input
-                type="date"
-                value={crud.form.hanTra}
-                onChange={(e) => crud.setForm({ ...crud.form, hanTra: e.target.value })}
-                className={inputCls}
-              />
-            </Field>
-          </div>
-
-          <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={crud.closeModal} className="btn-ghost">
-              Hủy
-            </button>
-            <button type="submit" disabled={crud.saving} className="btn-primary">
-              {crud.saving && <LoaderCircle size={15} className="animate-spin" />}
-              {crud.editing ? 'Cập nhật' : 'Tạo mới'}
-            </button>
-          </div>
-        </form>
-      </Modal>
     </div>
   );
 }

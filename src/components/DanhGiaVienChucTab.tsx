@@ -24,6 +24,7 @@ import {
 import { KpiCard } from './KpiCard';
 import { DataState } from './DataState';
 import { Field, inputCls } from './Modal';
+import { useSlidePanelChiTiet, useSlidePanelForm } from '../hooks/useSlidePanelCrud';
 import { cn, exportCsv, exportExcel } from '../lib/utils';
 import type { DonVi, NhanSu } from '../types';
 import * as danhGiaSvc from '../services/danhGia';
@@ -202,6 +203,435 @@ export function DanhGiaVienChucTab({ donViList, nhanSuList }: Props) {
       setSubmitting(false);
     }
   };
+
+  // ── SlidePanel: Chi tiết Phiếu Đánh Giá Viên Chức (Mẫu NĐ 233/2026) ──
+  useSlidePanelChiTiet({
+    id: 'danh-gia-vien-chuc-chi-tiet',
+    active: isChiTietOpen && !!chiTietData,
+    title: chiTietData
+      ? `Phiếu Đánh Giá: ${chiTietData.hocVi ? `${chiTietData.hocVi}. ` : ''}${chiTietData.hoVaTen}`
+      : 'Phiếu Đánh Giá Viên Chức',
+    subtitle: chiTietData
+      ? `Mẫu NĐ 233/2026/NĐ-CP · ${danhGiaSvc.KY_DANH_GIA_LABELS[chiTietData.ky]} ${chiTietData.nam}`
+      : undefined,
+    icon: <FileSpreadsheet className="text-primary" size={16} />,
+    storageKey: 'slideover-width-dgvc-detail',
+    minWidth: 540,
+    deps: [chiTietData, isChiTietOpen],
+    onDongNgoaiLuong: closeChiTiet,
+    headerExtra: chiTietData && (
+      <button
+        type="button"
+        onClick={() => {
+          openEdit(chiTietData);
+        }}
+        className="btn-secondary py-1 px-2.5 text-xs font-bold gap-1"
+      >
+        <Pencil size={12} /> Chỉnh sửa
+      </button>
+    ),
+    content: chiTietData ? (
+      <div className="space-y-5 p-1 text-xs">
+        {/* Thông tin cán bộ */}
+        <div className="p-3.5 rounded-xl border border-border bg-subtle/50 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-base font-black text-ink">
+              {chiTietData.hocVi ? `${chiTietData.hocVi}. ` : ''}{chiTietData.hoVaTen}
+            </span>
+            <span
+              className={cn(
+                'px-2.5 py-0.5 rounded-full text-xs font-bold border',
+                danhGiaSvc.MUC_XEP_LOAI_META[chiTietData.xepLoai].badgeCls
+              )}
+            >
+              {danhGiaSvc.MUC_XEP_LOAI_META[chiTietData.xepLoai].label}
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-ink-secondary text-[11px] pt-1 border-t border-border-subtle">
+            <div>Chức vụ: <strong>{chiTietData.chucDanh || 'Viên chức'}</strong></div>
+            <div>Đơn vị: <strong>{chiTietData.donViTen || chiTietData.donViTenVietTat}</strong></div>
+            <div>Năm đánh giá: <strong>{chiTietData.nam}</strong></div>
+            <div>Kỳ đánh giá: <strong>{danhGiaSvc.KY_DANH_GIA_LABELS[chiTietData.ky]}</strong></div>
+          </div>
+        </div>
+
+        {/* Bảng phân tích điểm định lượng (100 điểm) */}
+        <div className="space-y-3">
+          <h4 className="font-bold text-ink text-xs uppercase tracking-wider flex items-center gap-1.5">
+            <TrendingUp size={14} className="text-primary" />
+            Kết quả Chấm điểm Định lượng (Thang điểm 100)
+          </h4>
+
+          {/* Tiêu chí chung (30đ) */}
+          <div className="p-3 rounded-lg border border-border bg-surface space-y-1.5">
+            <div className="flex justify-between items-center">
+              <span className="font-bold text-ink">1. Tiêu chí chung (Tối đa 30 điểm)</span>
+              <span className="font-mono font-bold text-primary text-sm">
+                {chiTietData.diemChung} / 30 đ
+              </span>
+            </div>
+            <p className="text-[10px] text-ink-muted">
+              Phẩm chất chính trị, đạo đức nghề nghiệp, tác phong lề lối, ý thức tổ chức kỷ luật, chuyển đổi số.
+            </p>
+            <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+              <div
+                className="bg-primary h-full rounded-full"
+                style={{ width: `${(chiTietData.diemChung / 30) * 100}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Kết quả thực hiện nhiệm vụ (70đ) */}
+          <div className="p-3 rounded-lg border border-border bg-surface space-y-1.5">
+            <div className="flex justify-between items-center">
+              <span className="font-bold text-ink">2. Kết quả thực hiện nhiệm vụ (Tối đa 70 điểm)</span>
+              <span className="font-mono font-bold text-primary text-sm">
+                {chiTietData.diemNhiemVu} / 70 đ
+              </span>
+            </div>
+            <p className="text-[10px] text-ink-muted">
+              Tiến độ, khối lượng, chất lượng công việc theo hợp đồng làm việc, đề tài NCKH, dịch vụ kỹ thuật, tiêu chuẩn.
+            </p>
+            <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+              <div
+                className="bg-emerald-500 h-full rounded-full"
+                style={{ width: `${(chiTietData.diemNhiemVu / 70) * 100}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Tổng điểm */}
+          <div className="p-3.5 rounded-xl border-2 border-primary/30 bg-primary/5 flex items-center justify-between">
+            <div>
+              <p className="font-black text-ink text-sm">TỔNG ĐIỂM ĐÁNH GIÁ</p>
+              <p className="text-[10px] text-ink-muted">Tỷ lệ hoàn thành nhiệm vụ: {chiTietData.tiLeHoanThanh}%</p>
+            </div>
+            <div className="text-2xl font-black font-mono text-primary">
+              {chiTietData.tongDiem} <span className="text-xs font-normal text-ink-muted">/ 100</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Tình trạng kỷ luật (Nếu có) */}
+        {chiTietData.biKyLuat && (
+          <div className="p-3.5 rounded-xl border border-rose-300 bg-rose-50 dark:bg-rose-950/40 space-y-1">
+            <div className="flex items-center gap-1.5 font-bold text-rose-700 dark:text-rose-400">
+              <ShieldAlert size={16} />
+              Xử lý kỷ luật trong năm (Áp dụng NĐ 233/2026/NĐ-CP)
+            </div>
+            <p className="text-[11px] text-rose-800 dark:text-rose-300">
+              Hình thức: <strong>{chiTietData.hinhThucKyLuat || 'Khiển trách'}</strong>
+            </p>
+            <p className="text-[10px] text-rose-700/80">
+              Theo quy định, viên chức bị xử lý kỷ luật Đảng hoặc kỷ luật hành chính trong năm đánh giá sẽ bị xếp loại ở mức <strong>Không hoàn thành nhiệm vụ</strong>.
+            </p>
+          </div>
+        )}
+
+        {/* Nhận xét & Đánh giá */}
+        <div className="space-y-1.5">
+          <h4 className="font-bold text-ink text-xs uppercase tracking-wider">
+            Nhận xét của Hội đồng / Cấp quản lý
+          </h4>
+          <div className="p-3 rounded-xl border border-border bg-surface text-ink leading-relaxed">
+            {chiTietData.nhanXet || 'Không có nhận xét bổ sung.'}
+          </div>
+        </div>
+      </div>
+    ) : null,
+    footer: chiTietData ? (
+      <div className="flex w-full items-center justify-between">
+        <button
+          type="button"
+          onClick={async () => {
+            const next = chiTietData.trangThai === 'da-duyet' ? 'cho-duyet' : 'da-duyet';
+            await danhGiaSvc.updateTrangThaiDanhGia(chiTietData.id, next);
+            setChiTietData({ ...chiTietData, trangThai: next });
+            reload();
+          }}
+          className={cn(
+            'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors',
+            chiTietData.trangThai === 'da-duyet'
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300'
+              : 'bg-primary text-white border-primary hover:bg-primary-600'
+          )}
+          title="Cập nhật trạng thái phê duyệt"
+        >
+          <CheckCheck size={14} />
+          {chiTietData.trangThai === 'da-duyet' ? 'Đã duyệt (Bấm để hủy)' : 'Phê duyệt phiếu này'}
+        </button>
+        <div className="flex gap-2">
+          <button type="button" onClick={closeChiTiet} className="btn-ghost">
+            Đóng
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              openEdit(chiTietData);
+            }}
+            className="btn-primary flex items-center gap-1.5"
+          >
+            <Pencil size={14} /> Chỉnh sửa phiếu
+          </button>
+        </div>
+      </div>
+    ) : null,
+  });
+
+  // ── SlidePanel: Thêm / Chỉnh Sửa Phiếu Đánh Giá ──
+  useSlidePanelForm({
+    id: 'danh-gia-vien-chuc-form',
+    open: isFormOpen,
+    title: isEdit ? 'Chỉnh Sửa Phiếu Đánh Giá' : 'Chấm Điểm / Tạo Phiếu Đánh Giá Mới',
+    subtitle: 'Khung chấm điểm định lượng 100đ - Nghị định 233/2026/NĐ-CP',
+    icon: <Pencil className="text-primary" size={16} />,
+    storageKey: 'slideover-width-dgvc-form',
+    minWidth: 540,
+    deps: [
+      isFormOpen,
+      isEdit,
+      editData,
+      formNhanSuId,
+      formNam,
+      formKy,
+      formDiemChung,
+      formDiemNhiemVu,
+      formBiKyLuat,
+      formHinhThucKyLuat,
+      formNhanXet,
+      formXepLoai,
+      submitting,
+    ],
+    onDongNgoaiLuong: closeForm,
+    content: (
+      <form id="dgvc-form-element" onSubmit={handleSubmitForm} className="space-y-4 p-1 text-xs">
+        {/* Chọn Nhân sự */}
+        <Field label="Viên chức được đánh giá *">
+          <select
+            value={formNhanSuId}
+            disabled={isEdit}
+            className={inputCls}
+            required
+            onChange={async (e) => {
+              const newId = e.target.value;
+              setFormNhanSuId(newId);
+              try {
+                const kl = await danhGiaSvc.kiemTraKyLuatTrongNam(newId, formNam);
+                if (kl.biKyLuat) {
+                  setFormBiKyLuat(true);
+                  if (kl.hinhThuc) setFormHinhThucKyLuat(kl.hinhThuc);
+                  setFormXepLoai('khong-hoan-thanh');
+                }
+              } catch {
+                // ignore
+              }
+            }}
+          >
+            {nhanSuList.map((ns) => (
+              <option key={ns.id} value={ns.id}>
+                {ns.hocVi ? `${ns.hocVi}. ` : ''}{ns.hoTen} ({ns.chucDanh || 'Viên chức'} - {ns.donVi})
+              </option>
+            ))}
+          </select>
+        </Field>
+
+        {/* Năm và Kỳ */}
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Năm đánh giá *">
+            <select
+              value={formNam}
+              onChange={(e) => setFormNam(Number(e.target.value))}
+              className={inputCls}
+            >
+              <option value={2026}>Năm 2026</option>
+              <option value={2025}>Năm 2025</option>
+              <option value={2024}>Năm 2024</option>
+            </select>
+          </Field>
+
+          <Field label="Kỳ đánh giá (Quá trình) *">
+            <select
+              value={formKy}
+              onChange={(e) => setFormKy(e.target.value as KyDanhGia)}
+              className={inputCls}
+            >
+              <option value="ca-nam">Cả năm</option>
+              <option value="quy-1">Quý 1</option>
+              <option value="quy-2">Quý 2</option>
+              <option value="quy-3">Quý 3</option>
+              <option value="quy-4">Quý 4</option>
+              <option value="6-thang-dau-nam">6 tháng đầu năm</option>
+              <option value="6-thang-cuoi-nam">6 tháng cuối năm</option>
+            </select>
+          </Field>
+        </div>
+
+        {/* Chấm điểm tiêu chí chung */}
+        <div className="p-3.5 rounded-xl border border-border bg-subtle/40 space-y-2">
+          <div className="flex justify-between items-center">
+            <label className="font-bold text-ink flex items-center gap-1.5">
+              <span>1. Tiêu chí chung</span>
+              <span className="text-[10px] text-ink-muted font-normal">(Tối đa 30 điểm)</span>
+            </label>
+            <div className="flex items-center gap-1">
+              <input
+                type="number"
+                min={0}
+                max={30}
+                step={0.5}
+                value={formDiemChung}
+                onChange={(e) => setFormDiemChung(Number(e.target.value))}
+                className="w-16 px-2 py-1 border rounded font-mono font-bold text-right text-primary"
+                required
+              />
+              <span className="text-ink-muted">/ 30đ</span>
+            </div>
+          </div>
+          <input
+            type="range"
+            min={0}
+            max={30}
+            step={0.5}
+            value={formDiemChung}
+            onChange={(e) => setFormDiemChung(Number(e.target.value))}
+            className="w-full accent-primary cursor-pointer"
+          />
+        </div>
+
+        {/* Chấm điểm kết quả thực hiện nhiệm vụ */}
+        <div className="p-3.5 rounded-xl border border-border bg-subtle/40 space-y-2">
+          <div className="flex justify-between items-center">
+            <label className="font-bold text-ink flex items-center gap-1.5">
+              <span>2. Kết quả thực hiện nhiệm vụ</span>
+              <span className="text-[10px] text-ink-muted font-normal">(Tối đa 70 điểm)</span>
+            </label>
+            <div className="flex items-center gap-1">
+              <input
+                type="number"
+                min={0}
+                max={70}
+                step={0.5}
+                value={formDiemNhiemVu}
+                onChange={(e) => setFormDiemNhiemVu(Number(e.target.value))}
+                className="w-16 px-2 py-1 border rounded font-mono font-bold text-right text-emerald-600"
+                required
+              />
+              <span className="text-ink-muted">/ 70đ</span>
+            </div>
+          </div>
+          <input
+            type="range"
+            min={0}
+            max={70}
+            step={0.5}
+            value={formDiemNhiemVu}
+            onChange={(e) => setFormDiemNhiemVu(Number(e.target.value))}
+            className="w-full accent-emerald-600 cursor-pointer"
+          />
+        </div>
+
+        {/* Khung tổng hợp điểm */}
+        <div className="p-3 rounded-xl border-2 border-dashed border-primary/40 bg-primary/5 flex items-center justify-between">
+          <div>
+            <span className="text-[11px] font-bold text-ink-secondary">TỔNG ĐIỂM TỰ ĐỘNG CỘNG</span>
+            <p className="text-[10px] text-ink-muted">Thang điểm 100 theo Nghị định 233/2026/NĐ-CP</p>
+          </div>
+          <div className="text-xl font-black font-mono text-primary">
+            {formTongDiem} / 100
+          </div>
+        </div>
+
+        {/* Tình trạng kỷ luật */}
+        <div className="p-3 rounded-xl border border-border bg-subtle/30 space-y-2">
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={formBiKyLuat}
+              onChange={(e) => setFormBiKyLuat(e.target.checked)}
+              className="rounded text-rose-600 focus:ring-rose-500 w-4 h-4"
+            />
+            <span className="font-bold text-ink">
+              Viên chức có quyết định kỷ luật trong năm đánh giá
+            </span>
+          </label>
+
+          {formBiKyLuat && (
+            <div className="pt-2 animate-in fade-in space-y-1.5">
+              <Field label="Hình thức kỷ luật *">
+                <select
+                  value={formHinhThucKyLuat}
+                  onChange={(e) => setFormHinhThucKyLuat(e.target.value)}
+                  className={inputCls}
+                >
+                  <option value="Khiển trách">Khiển trách</option>
+                  <option value="Cảnh cáo">Cảnh cáo</option>
+                  <option value="Cách chức">Cách chức (đối với viên chức quản lý)</option>
+                  <option value="Buộc thôi việc">Buộc thôi việc</option>
+                </select>
+              </Field>
+              <p className="text-[10px] text-rose-600 font-semibold">
+                * Chú ý: Theo Điều 1 NĐ 233/2026, viên chức bị kỷ luật sẽ tự động xếp loại "Không hoàn thành nhiệm vụ".
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Mức xếp loại */}
+        <Field label="Mức xếp loại chất lượng (Tự động đề xuất theo điểm)">
+          <select
+            value={formXepLoai}
+            onChange={(e) => setFormXepLoai(e.target.value as MucXepLoai)}
+            className={cn(inputCls, 'font-bold')}
+            disabled={formBiKyLuat}
+          >
+            <option value="hoan-thanh-xuat-sac">Hoàn thành xuất sắc nhiệm vụ (≥ 90đ, trần ≤ 20%)</option>
+            <option value="hoan-thanh-tot">Hoàn thành tốt nhiệm vụ (70đ đến &lt; 90đ)</option>
+            <option value="hoan-thanh">Hoàn thành nhiệm vụ (50đ đến &lt; 70đ)</option>
+            <option value="khong-hoan-thanh">Không hoàn thành nhiệm vụ (&lt; 50đ hoặc bị kỷ luật)</option>
+          </select>
+          {formXepLoai === 'hoan-thanh-xuat-sac' && (() => {
+            const selectedNs = nhanSuList.find((n) => String(n.id) === String(formNhanSuId));
+            const isLeader = /viện trưởng|giám đốc|trưởng phòng|trưởng ban/i.test(selectedNs?.chucDanh || '');
+            if (isLeader) {
+              return (
+                <div className="rounded-lg bg-amber-50 p-2 text-2xs text-warning border border-amber-200 dark:bg-amber-950/40 dark:border-amber-800 dark:text-amber-300 flex items-start gap-1.5 mt-2">
+                  <AlertTriangle size={13} className="shrink-0 mt-0.5" />
+                  <span><strong>Lưu ý Điều 12 NĐ 233/2026:</strong> Mức xếp loại của người đứng đầu không được cao hơn mức xếp loại của tập thể đơn vị do mình phụ trách.</span>
+                </div>
+              );
+            }
+            return null;
+          })()}
+        </Field>
+
+        {/* Nhận xét */}
+        <Field label="Nhận xét của Hội đồng / Cấp quản lý">
+          <textarea
+            rows={3}
+            value={formNhanXet}
+            onChange={(e) => setFormNhanXet(e.target.value)}
+            className={inputCls}
+            placeholder="Nhập nhận xét cụ thể về kết quả thực hiện nhiệm vụ và ý thức tổ chức kỷ luật..."
+          />
+        </Field>
+      </form>
+    ),
+    footer: (
+      <div className="flex w-full justify-end gap-2">
+        <button type="button" onClick={closeForm} className="btn-ghost">
+          Hủy bỏ
+        </button>
+        <button
+          type="submit"
+          form="dgvc-form-element"
+          disabled={submitting}
+          className="btn-primary flex items-center gap-1.5"
+        >
+          {submitting ? 'Đang lưu...' : isEdit ? 'Cập nhật phiếu' : 'Lưu phiếu đánh giá'}
+        </button>
+      </div>
+    ),
+  });
 
   const handleExportNd233 = () => {
     const headers = [
@@ -701,401 +1131,6 @@ export function DanhGiaVienChucTab({ donViList, nhanSuList }: Props) {
             </table>
           </div>
       </div>
-
-      {/* ── SlidePanel: Chi tiết Phiếu Đánh Giá Viên Chức (Mẫu NĐ 233/2026) ── */}
-      {isChiTietOpen && chiTietData && (
-        <div className="fixed inset-0 z-50 overflow-hidden bg-black/40 backdrop-blur-xs flex justify-end animate-in fade-in duration-150">
-          <div className="w-full max-w-xl bg-surface border-l border-border h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-200">
-            {/* Header */}
-            <div className="p-4 border-b border-border flex items-center justify-between bg-subtle">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
-                  <FileSpreadsheet size={18} />
-                </div>
-                <div>
-                  <h3 className="font-bold text-sm text-ink">Phiếu Đánh Giá Xếp Loại Viên Chức</h3>
-                  <p className="text-[10px] text-ink-muted">
-                    Theo Nghị định số 233/2026/NĐ-CP của Chính phủ
-                  </p>
-                </div>
-              </div>
-              <button onClick={closeChiTiet} className="p-1 rounded hover:bg-muted text-ink-muted">
-                <X size={18} />
-              </button>
-            </div>
-
-            {/* Body */}
-            <div className="flex-1 overflow-y-auto p-5 space-y-5 text-xs">
-              {/* Thông tin cán bộ */}
-              <div className="p-3.5 rounded-xl border border-border bg-subtle/50 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-base font-black text-ink">
-                    {chiTietData.hocVi ? `${chiTietData.hocVi}. ` : ''}{chiTietData.hoVaTen}
-                  </span>
-                  <span
-                    className={cn(
-                      'px-2.5 py-0.5 rounded-full text-xs font-bold border',
-                      danhGiaSvc.MUC_XEP_LOAI_META[chiTietData.xepLoai].badgeCls
-                    )}
-                  >
-                    {danhGiaSvc.MUC_XEP_LOAI_META[chiTietData.xepLoai].label}
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-ink-secondary text-[11px] pt-1 border-t border-border-subtle">
-                  <div>Chức vụ: <strong>{chiTietData.chucDanh || 'Viên chức'}</strong></div>
-                  <div>Đơn vị: <strong>{chiTietData.donViTen || chiTietData.donViTenVietTat}</strong></div>
-                  <div>Năm đánh giá: <strong>{chiTietData.nam}</strong></div>
-                  <div>Kỳ đánh giá: <strong>{danhGiaSvc.KY_DANH_GIA_LABELS[chiTietData.ky]}</strong></div>
-                </div>
-              </div>
-
-              {/* Bảng phân tích điểm định lượng (100 điểm) */}
-              <div className="space-y-3">
-                <h4 className="font-bold text-ink text-xs uppercase tracking-wider flex items-center gap-1.5">
-                  <TrendingUp size={14} className="text-primary" />
-                  Kết quả Chấm điểm Định lượng (Thang điểm 100)
-                </h4>
-
-                {/* Tiêu chí chung (30đ) */}
-                <div className="p-3 rounded-lg border border-border bg-surface space-y-1.5">
-                  <div className="flex justify-between items-center">
-                    <span className="font-bold text-ink">1. Tiêu chí chung (Tối đa 30 điểm)</span>
-                    <span className="font-mono font-bold text-primary text-sm">
-                      {chiTietData.diemChung} / 30 đ
-                    </span>
-                  </div>
-                  <p className="text-[10px] text-ink-muted">
-                    Phẩm chất chính trị, đạo đức nghề nghiệp, tác phong lề lối, ý thức tổ chức kỷ luật, chuyển đổi số.
-                  </p>
-                  <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
-                    <div
-                      className="bg-primary h-full rounded-full"
-                      style={{ width: `${(chiTietData.diemChung / 30) * 100}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Kết quả thực hiện nhiệm vụ (70đ) */}
-                <div className="p-3 rounded-lg border border-border bg-surface space-y-1.5">
-                  <div className="flex justify-between items-center">
-                    <span className="font-bold text-ink">2. Kết quả thực hiện nhiệm vụ (Tối đa 70 điểm)</span>
-                    <span className="font-mono font-bold text-primary text-sm">
-                      {chiTietData.diemNhiemVu} / 70 đ
-                    </span>
-                  </div>
-                  <p className="text-[10px] text-ink-muted">
-                    Tiến độ, khối lượng, chất lượng công việc theo hợp đồng làm việc, đề tài NCKH, dịch vụ kỹ thuật, tiêu chuẩn.
-                  </p>
-                  <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
-                    <div
-                      className="bg-emerald-500 h-full rounded-full"
-                      style={{ width: `${(chiTietData.diemNhiemVu / 70) * 100}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Tổng điểm */}
-                <div className="p-3.5 rounded-xl border-2 border-primary/30 bg-primary/5 flex items-center justify-between">
-                  <div>
-                    <p className="font-black text-ink text-sm">TỔNG ĐIỂM ĐÁNH GIÁ</p>
-                    <p className="text-[10px] text-ink-muted">Tỷ lệ hoàn thành nhiệm vụ: {chiTietData.tiLeHoanThanh}%</p>
-                  </div>
-                  <div className="text-2xl font-black font-mono text-primary">
-                    {chiTietData.tongDiem} <span className="text-xs font-normal text-ink-muted">/ 100</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Tình trạng kỷ luật (Nếu có) */}
-              {chiTietData.biKyLuat && (
-                <div className="p-3.5 rounded-xl border border-rose-300 bg-rose-50 dark:bg-rose-950/40 space-y-1">
-                  <div className="flex items-center gap-1.5 font-bold text-rose-700 dark:text-rose-400">
-                    <ShieldAlert size={16} />
-                    Xử lý kỷ luật trong năm (Áp dụng NĐ 233/2026/NĐ-CP)
-                  </div>
-                  <p className="text-[11px] text-rose-800 dark:text-rose-300">
-                    Hình thức: <strong>{chiTietData.hinhThucKyLuat || 'Khiển trách'}</strong>
-                  </p>
-                  <p className="text-[10px] text-rose-700/80">
-                    Theo quy định, viên chức bị xử lý kỷ luật Đảng hoặc kỷ luật hành chính trong năm đánh giá sẽ bị xếp loại ở mức <strong>Không hoàn thành nhiệm vụ</strong>.
-                  </p>
-                </div>
-              )}
-
-              {/* Nhận xét & Đánh giá */}
-              <div className="space-y-1.5">
-                <h4 className="font-bold text-ink text-xs uppercase tracking-wider">
-                  Nhận xét của Hội đồng / Cấp quản lý
-                </h4>
-                <div className="p-3 rounded-xl border border-border bg-surface text-ink leading-relaxed">
-                  {chiTietData.nhanXet || 'Không có nhận xét bổ sung.'}
-                </div>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="p-4 border-t border-border bg-subtle flex items-center justify-between">
-              <div>
-                <button
-                  onClick={async () => {
-                    const next = chiTietData.trangThai === 'da-duyet' ? 'cho-duyet' : 'da-duyet';
-                    await danhGiaSvc.updateTrangThaiDanhGia(chiTietData.id, next);
-                    setChiTietData({ ...chiTietData, trangThai: next });
-                    reload();
-                  }}
-                  className={cn(
-                    'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors',
-                    chiTietData.trangThai === 'da-duyet'
-                      ? 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300'
-                      : 'bg-primary text-white border-primary hover:bg-primary-600'
-                  )}
-                  title="Cập nhật trạng thái phê duyệt"
-                >
-                  <CheckCheck size={14} />
-                  {chiTietData.trangThai === 'da-duyet' ? 'Đã duyệt (Bấm để hủy)' : 'Phê duyệt phiếu này'}
-                </button>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={closeChiTiet} className="btn-ghost">
-                  Đóng
-                </button>
-                <button
-                  onClick={() => {
-                    closeChiTiet();
-                    openEdit(chiTietData);
-                  }}
-                  className="btn-primary flex items-center gap-1.5"
-                >
-                  <Pencil size={14} /> Chỉnh sửa phiếu
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── SlidePanel: Thêm / Chỉnh Sửa Phiếu Đánh Giá ── */}
-      {isFormOpen && (
-        <div className="fixed inset-0 z-50 overflow-hidden bg-black/40 backdrop-blur-xs flex justify-end animate-in fade-in duration-150">
-          <form
-            onSubmit={handleSubmitForm}
-            className="w-full max-w-xl bg-surface border-l border-border h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-200"
-          >
-            {/* Header */}
-            <div className="p-4 border-b border-border flex items-center justify-between bg-subtle">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
-                  <Pencil size={18} />
-                </div>
-                <div>
-                  <h3 className="font-bold text-sm text-ink">
-                    {isEdit ? 'Chỉnh Sửa Phiếu Đánh Giá' : 'Chấm Điểm / Tạo Phiếu Đánh Giá Mới'}
-                  </h3>
-                  <p className="text-[10px] text-ink-muted">
-                    Khung chấm điểm định lượng 100đ - Nghị định 233/2026/NĐ-CP
-                  </p>
-                </div>
-              </div>
-              <button type="button" onClick={closeForm} className="p-1 rounded hover:bg-muted text-ink-muted">
-                <X size={18} />
-              </button>
-            </div>
-
-            {/* Form Body */}
-            <div className="flex-1 overflow-y-auto p-5 space-y-4 text-xs">
-              {/* Chọn Nhân sự */}
-              <Field label="Viên chức được đánh giá *">
-                <select
-                  value={formNhanSuId}
-                  disabled={isEdit}
-                  className={inputCls}
-                  required
-                  onChange={async (e) => {
-                    const newId = e.target.value;
-                    setFormNhanSuId(newId);
-                    try {
-                      const kl = await danhGiaSvc.kiemTraKyLuatTrongNam(newId, formNam);
-                      if (kl.biKyLuat) {
-                        setFormBiKyLuat(true);
-                        if (kl.hinhThuc) setFormHinhThucKyLuat(kl.hinhThuc);
-                        setFormXepLoai('khong-hoan-thanh');
-                      }
-                    } catch {
-                      // ignore
-                    }
-                  }}
-                >
-                  {nhanSuList.map((ns) => (
-                    <option key={ns.id} value={ns.id}>
-                      {ns.hocVi ? `${ns.hocVi}. ` : ''}{ns.hoTen} ({ns.chucDanh || 'Viên chức'} - {ns.donVi})
-                    </option>
-                  ))}
-                </select>
-              </Field>
-
-              {/* Năm và Kỳ */}
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Năm đánh giá *">
-                  <select
-                    value={formNam}
-                    onChange={(e) => setFormNam(Number(e.target.value))}
-                    className={inputCls}
-                  >
-                    <option value={2026}>Năm 2026</option>
-                    <option value={2025}>Năm 2025</option>
-                    <option value={2024}>Năm 2024</option>
-                  </select>
-                </Field>
-
-                <Field label="Kỳ đánh giá (Quá trình) *">
-                  <select
-                    value={formKy}
-                    onChange={(e) => setFormKy(e.target.value as KyDanhGia)}
-                    className={inputCls}
-                  >
-                    <option value="ca-nam">Cả năm</option>
-                    <option value="quy-1">Quý 1</option>
-                    <option value="quy-2">Quý 2</option>
-                    <option value="quy-3">Quý 3</option>
-                    <option value="quy-4">Quý 4</option>
-                  </select>
-                </Field>
-              </div>
-
-              {/* Chấm điểm định lượng */}
-              <div className="p-3.5 rounded-xl border border-border bg-subtle/40 space-y-3">
-                <h4 className="font-bold text-ink text-xs uppercase tracking-wide">
-                  Chấm điểm tiêu chí định lượng (Thang điểm 100)
-                </h4>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="1. Tiêu chí chung (Tối đa 30đ) *">
-                    <input
-                      type="number"
-                      step="0.5"
-                      min={0}
-                      max={30}
-                      value={formDiemChung}
-                      onChange={(e) => setFormDiemChung(Number(e.target.value))}
-                      className={cn(inputCls, 'font-mono font-bold')}
-                      required
-                    />
-                  </Field>
-
-                  <Field label="2. Kết quả nhiệm vụ (Tối đa 70đ) *">
-                    <input
-                      type="number"
-                      step="0.5"
-                      min={0}
-                      max={70}
-                      value={formDiemNhiemVu}
-                      onChange={(e) => setFormDiemNhiemVu(Number(e.target.value))}
-                      className={cn(inputCls, 'font-mono font-bold')}
-                      required
-                    />
-                  </Field>
-                </div>
-
-                {/* Hiển thị tổng điểm và tự động tính */}
-                <div className="flex items-center justify-between pt-2 border-t border-border-subtle">
-                  <span className="font-bold text-ink">Tổng điểm:</span>
-                  <span className="font-mono font-black text-lg text-primary">
-                    {formTongDiem} / 100 điểm
-                  </span>
-                </div>
-              </div>
-
-              {/* Kỷ luật (Theo quy tắc NĐ 233/2026) */}
-              <div className="p-3 rounded-xl border border-border bg-surface space-y-2">
-                <label className="flex items-center gap-2 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={formBiKyLuat}
-                    onChange={(e) => setFormBiKyLuat(e.target.checked)}
-                    className="rounded text-rose-600 focus:ring-rose-500 w-4 h-4"
-                  />
-                  <span className="font-bold text-ink">
-                    Viên chức có quyết định kỷ luật trong năm đánh giá
-                  </span>
-                </label>
-
-                {formBiKyLuat && (
-                  <div className="pt-2 animate-in fade-in space-y-1.5">
-                    <Field label="Hình thức kỷ luật *">
-                      <select
-                        value={formHinhThucKyLuat}
-                        onChange={(e) => setFormHinhThucKyLuat(e.target.value)}
-                        className={inputCls}
-                      >
-                        <option value="Khiển trách">Khiển trách</option>
-                        <option value="Cảnh cáo">Cảnh cáo</option>
-                        <option value="Cách chức">Cách chức (đối với viên chức quản lý)</option>
-                        <option value="Buộc thôi việc">Buộc thôi việc</option>
-                      </select>
-                    </Field>
-                    <p className="text-[10px] text-rose-600 font-semibold">
-                      * Chú ý: Theo Điều 1 NĐ 233/2026, viên chức bị kỷ luật sẽ tự động xếp loại "Không hoàn thành nhiệm vụ".
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Mức xếp loại */}
-              <Field label="Mức xếp loại chất lượng (Tự động đề xuất theo điểm)">
-                <select
-                  value={formXepLoai}
-                  onChange={(e) => setFormXepLoai(e.target.value as MucXepLoai)}
-                  className={cn(inputCls, 'font-bold')}
-                  disabled={formBiKyLuat}
-                >
-                  <option value="hoan-thanh-xuat-sac">Hoàn thành xuất sắc nhiệm vụ (≥ 90đ, trần ≤ 20%)</option>
-                  <option value="hoan-thanh-tot">Hoàn thành tốt nhiệm vụ (70đ đến &lt; 90đ)</option>
-                  <option value="hoan-thanh">Hoàn thành nhiệm vụ (50đ đến &lt; 70đ)</option>
-                  <option value="khong-hoan-thanh">Không hoàn thành nhiệm vụ (&lt; 50đ hoặc bị kỷ luật)</option>
-                </select>
-                {formXepLoai === 'hoan-thanh-xuat-sac' && (() => {
-                  const selectedNs = nhanSuList.find((n) => String(n.id) === String(formNhanSuId));
-                  const isLeader = /viện trưởng|giám đốc|trưởng phòng|trưởng ban/i.test(selectedNs?.chucDanh || '');
-                  if (isLeader) {
-                    return (
-                      <div className="rounded-lg bg-amber-50 p-2 text-2xs text-warning border border-amber-200 dark:bg-amber-950/40 dark:border-amber-800 dark:text-amber-300 flex items-start gap-1.5 mt-2">
-                        <AlertTriangle size={13} className="shrink-0 mt-0.5" />
-                        <span><strong>Lưu ý Điều 12 NĐ 233/2026:</strong> Mức xếp loại của người đứng đầu không được cao hơn mức xếp loại của tập thể đơn vị do mình phụ trách.</span>
-                      </div>
-                    );
-                  }
-                  return null;
-                })()}
-              </Field>
-
-              {/* Nhận xét */}
-              <Field label="Nhận xét của Hội đồng / Cấp quản lý">
-                <textarea
-                  rows={3}
-                  value={formNhanXet}
-                  onChange={(e) => setFormNhanXet(e.target.value)}
-                  className={inputCls}
-                  placeholder="Nhập nhận xét cụ thể về kết quả thực hiện nhiệm vụ và ý thức tổ chức kỷ luật..."
-                />
-              </Field>
-            </div>
-
-            {/* Footer */}
-            <div className="p-4 border-t border-border bg-subtle flex justify-end gap-2">
-              <button type="button" onClick={closeForm} className="btn-ghost">
-                Hủy bỏ
-              </button>
-              <button
-                type="submit"
-                disabled={submitting}
-                className="btn-primary flex items-center gap-1.5"
-              >
-                {submitting ? 'Đang lưu...' : isEdit ? 'Cập nhật phiếu' : 'Lưu phiếu đánh giá'}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
     </div>
   );
 }

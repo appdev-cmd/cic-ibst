@@ -1,9 +1,12 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { usePhanQuyen } from '../hooks/usePhanQuyen';
 import { useSlidePanel } from '../context/SlidePanelContext';
+import { LichCoQuanPage } from './LichCoQuanPage';
 import {
   fetchDashboardData,
   DON_VI_16_BENCHMARKS,
+  DON_VI_PHONG_CHUC_NANG,
   type DashboardData,
 } from '../services/dashboardService';
 import { ExecutiveWarningBanner } from '../components/ExecutiveWarningBanner';
@@ -71,6 +74,7 @@ import {
   Area,
   ReferenceLine,
 } from 'recharts';
+import { ChartDefs } from '../components/ChartDefs';
 
 const tooltipStyle = {
   contentStyle: {
@@ -217,7 +221,27 @@ const CustomDebtTooltip = ({ active, payload }: any) => {
 };
 
 export function DashboardPage() {
-  const [activeTab, setActiveTab] = useState('tong-quan');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(() => {
+    if (tabParam === 'lich') return 'lich';
+    if (tabParam && ['tong-quan', 'nckh', 'kinh-doanh', 'tai-chinh', 'nhan-su'].includes(tabParam)) return tabParam;
+    return 'tong-quan';
+  });
+
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId);
+    setSearchParams(tabId === 'tong-quan' ? {} : { tab: tabId }, { replace: true });
+  };
+
+  useEffect(() => {
+    if (tabParam === 'lich') {
+      setActiveTab('lich');
+    } else if (tabParam && ['tong-quan', 'nckh', 'kinh-doanh', 'tai-chinh', 'nhan-su'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
+
   const [filterYear, setFilterYear] = useState('2026');
   const [filterPeriod, setFilterPeriod] = useState('all');
   const [filterDonVi, setFilterDonVi] = useState('all');
@@ -240,7 +264,7 @@ export function DashboardPage() {
 
   useEffect(() => {
     if (dangTaiQuyenDashboard || activeTab !== 'tai-chinh' || coTabTaiChinh) return;
-    setActiveTab('tong-quan');
+    handleTabChange('tong-quan');
   }, [dangTaiQuyenDashboard, activeTab, coTabTaiChinh]);
 
   // Nạp dữ liệu thống kê tổng hợp thực tế & theo bộ lọc
@@ -345,8 +369,8 @@ export function DashboardPage() {
     { isHeader: true, group: 'I', title: 'I. CÁC VIỆN CHUYÊN NGÀNH' },
     {
       stt: '1',
-      code: 'VCNKC',
-      name: 'Viện Chuyên ngành Kết cấu',
+      code: 'VKC',
+      name: 'Viện chuyên ngành Kết cấu công trình xây dựng',
       khNghin: 70000000,
       khTy: 70.0,
       ckNghin: 67747280,
@@ -363,8 +387,8 @@ export function DashboardPage() {
     },
     {
       stt: '2',
-      code: 'VCNBT',
-      name: 'Viện Chuyên ngành Bê tông',
+      code: 'VBT',
+      name: 'Viện chuyên ngành Bê tông',
       khNghin: 38600000,
       khTy: 38.6,
       ckNghin: 20191235,
@@ -381,8 +405,8 @@ export function DashboardPage() {
     },
     {
       stt: '3',
-      code: 'VCNĐKT',
-      name: 'Viện Chuyên ngành Địa kỹ thuật',
+      code: 'VĐKT',
+      name: 'Viện chuyên ngành Địa kỹ thuật',
       khNghin: 22000000,
       khTy: 22.0,
       ckNghin: 16050776,
@@ -402,7 +426,7 @@ export function DashboardPage() {
     {
       stt: '4',
       code: 'PVMN',
-      name: 'Phân viện Miền Nam',
+      name: 'Phân Viện Khoa học công nghệ xây dựng miền Nam',
       khNghin: 60500000,
       khTy: 60.5,
       ckNghin: 23789989,
@@ -420,7 +444,7 @@ export function DashboardPage() {
     {
       stt: '5',
       code: 'PVMT',
-      name: 'Phân viện Miền Trung',
+      name: 'Phân Viện Khoa học công nghệ xây dựng miền Trung',
       khNghin: 42000000,
       khTy: 42.0,
       ckNghin: 36268364,
@@ -439,8 +463,8 @@ export function DashboardPage() {
     { isHeader: true, group: 'III', title: 'III. CÁC TRUNG TÂM' },
     {
       stt: '6',
-      code: 'TVTK',
-      name: 'Trung tâm Tư vấn Thiết kế & XD',
+      code: 'TTTK',
+      name: 'Trung tâm tư vấn thiết kế và xây dựng',
       khNghin: 25000000,
       khTy: 25.0,
       ckNghin: 34280507,
@@ -458,7 +482,7 @@ export function DashboardPage() {
     {
       stt: '7',
       code: 'TTKCT',
-      name: 'Trung tâm Kết cấu Thép & XD',
+      name: 'Trung tâm Kết cấu thép và xây dựng',
       khNghin: 24000000,
       khTy: 24.0,
       ckNghin: 20162107,
@@ -475,8 +499,8 @@ export function DashboardPage() {
     },
     {
       stt: '8',
-      code: 'TVĂM',
-      name: 'Trung tâm Ăn mòn & Bảo vệ',
+      code: 'TTAM',
+      name: 'Trung tâm tư vấn chống ăn mòn và xây dựng',
       khNghin: 72200000,
       khTy: 72.2,
       ckNghin: 74227557,
@@ -493,8 +517,8 @@ export function DashboardPage() {
     },
     {
       stt: '9',
-      code: 'CNXD',
-      name: 'Viện Chuyên ngành Công nghệ Xây dựng',
+      code: 'TTCNXD',
+      name: 'Trung tâm Công nghệ và Môi trường xây dựng',
       khNghin: 50000000,
       khTy: 50.0,
       ckNghin: 60916109,
@@ -511,8 +535,8 @@ export function DashboardPage() {
     },
     {
       stt: '10',
-      code: 'TTTĐ',
-      name: 'Trung tâm Trắc địa & Địa chính',
+      code: 'TTTD',
+      name: 'Trung tâm tư vấn trắc địa và xây dựng',
       khNghin: 25800000,
       khTy: 25.8,
       ckNghin: 47293696,
@@ -529,8 +553,8 @@ export function DashboardPage() {
     },
     {
       stt: '11',
-      code: 'CNHT',
-      name: 'Trung tâm Hạ tầng Kỹ thuật & XD',
+      code: 'TTCNHT',
+      name: 'Trung tâm Công nghệ và Kỹ thuật hạ tầng',
       khNghin: 28000000,
       khTy: 28.0,
       ckNghin: 29923810,
@@ -547,8 +571,8 @@ export function DashboardPage() {
     },
     {
       stt: '12',
-      code: 'TBXD',
-      name: 'Viện Chuyên ngành Thiết bị Xây dựng',
+      code: 'TTTBXD',
+      name: 'Trung tâm Thiết bị và An toàn xây dựng',
       khNghin: 40000000,
       khTy: 40.0,
       ckNghin: 38561149,
@@ -565,8 +589,8 @@ export function DashboardPage() {
     },
     {
       stt: '13',
-      code: 'CNVL',
-      name: 'Trung tâm Vật liệu Xây dựng',
+      code: 'TTCNVL',
+      name: 'Trung tâm Công nghệ Vật liệu và Xây dựng',
       khNghin: 16000000,
       khTy: 16.0,
       ckNghin: 13728161,
@@ -583,8 +607,8 @@ export function DashboardPage() {
     },
     {
       stt: '14',
-      code: 'TTCDAQT&XD',
-      name: 'Trung tâm Chuyển giao DAQT & XD',
+      code: 'TTQT',
+      name: 'Trung tâm Đào tạo và Quản lý dự án quốc tế',
       khNghin: 45000000,
       khTy: 45.0,
       ckNghin: 49437953,
@@ -601,8 +625,8 @@ export function DashboardPage() {
     },
     {
       stt: '15',
-      code: 'TT BIM',
-      name: 'Trung tâm Tư vấn & Ứng dụng BIM',
+      code: 'TTBIM',
+      name: 'Trung tâm Tư vấn và Ứng dụng BIM trong xây dựng',
       khNghin: 71800000,
       khTy: 71.8,
       ckNghin: 91747268,
@@ -643,8 +667,8 @@ export function DashboardPage() {
     { isHeader: true, group: 'V', title: 'V. CÔNG TY CỔ PHẦN' },
     {
       stt: '16',
-      code: 'IBST.COTEC',
-      name: 'Công ty CP TVĐT & XD IBST COTEC',
+      code: 'CTCP',
+      name: 'Công ty Cổ phần Đầu tư và Tư vấn Xây dựng IBST',
       khNghin: 58000000,
       khTy: 58.0,
       ckNghin: 59918682,
@@ -861,15 +885,45 @@ export function DashboardPage() {
           <select
             value={filterDonVi}
             onChange={(e) => setFilterDonVi(e.target.value)}
-            className="appearance-none bg-subtle text-ink font-bold text-[12px] rounded-lg pl-2.5 pr-7 py-1.5 outline-none border border-border dark:border-slate-700/80 focus:border-primary-500 transition-colors cursor-pointer max-w-[160px] truncate"
+            className="appearance-none bg-subtle text-ink font-bold text-[12px] rounded-lg pl-2.5 pr-7 py-1.5 outline-none border border-border dark:border-slate-700/80 focus:border-primary-500 transition-colors cursor-pointer max-w-[240px] truncate"
             title="Lọc theo đơn vị"
           >
-            <option value="all">Toàn Viện (16 đơn vị)</option>
-            {DON_VI_16_BENCHMARKS.map((dv) => (
-              <option key={dv.code} value={dv.code}>
-                {dv.code} - {dv.name}
-              </option>
-            ))}
+            <option value="all">Toàn Viện (19 đơn vị trực thuộc)</option>
+            <optgroup label="I. Các Viện chuyên ngành">
+              {DON_VI_16_BENCHMARKS.filter((d) => d.group === 'I').map((dv) => (
+                <option key={dv.code} value={dv.code}>
+                  {dv.code} - {dv.name}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="II. Các Phân viện">
+              {DON_VI_16_BENCHMARKS.filter((d) => d.group === 'II').map((dv) => (
+                <option key={dv.code} value={dv.code}>
+                  {dv.code} - {dv.name}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="III. Các Trung tâm chuyên môn">
+              {DON_VI_16_BENCHMARKS.filter((d) => d.group === 'III').map((dv) => (
+                <option key={dv.code} value={dv.code}>
+                  {dv.code} - {dv.name}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="IV. Doanh nghiệp trực thuộc">
+              {DON_VI_16_BENCHMARKS.filter((d) => d.group === 'IV').map((dv) => (
+                <option key={dv.code} value={dv.code}>
+                  {dv.code} - {dv.name}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="V. Phòng chức năng quản lý">
+              {DON_VI_PHONG_CHUC_NANG.map((dv) => (
+                <option key={dv.code} value={dv.code}>
+                  {dv.code} - {dv.name}
+                </option>
+              ))}
+            </optgroup>
           </select>
           <ChevronDown className="w-3.5 h-3.5 text-ink-muted absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-primary-500 transition-colors" />
         </div>
@@ -947,6 +1001,7 @@ export function DashboardPage() {
       { id: 'kinh-doanh', label: 'Kinh doanh & TBKT', icon: TrendingUp },
       ...(coTabTaiChinh ? [{ id: 'tai-chinh', label: 'Tài chính & Đầu tư', icon: PiggyBank }] : []),
       { id: 'nhan-su', label: 'Tổ chức & Hành chính', icon: Users },
+      { id: 'lich', label: 'Lịch công tác', icon: Calendar },
     ];
 
     return (
@@ -957,7 +1012,7 @@ export function DashboardPage() {
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => handleTabChange(tab.id)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-bold transition-all whitespace-nowrap cursor-pointer ${
                 isActive
                   ? 'bg-primary-500 text-white shadow-xs'
@@ -993,59 +1048,43 @@ export function DashboardPage() {
     onClick,
   }: KPICardProps) => {
     const colorClasses: Record<string, string> = {
-      primary: 'bg-primary-500/10 text-primary-500',
+      primary: 'bg-primary-50 text-primary-600 dark:bg-primary-950/30 dark:text-primary-400',
       success: 'bg-success/10 text-success',
       warning: 'bg-warning/10 text-warning',
       danger: 'bg-danger/10 text-danger',
-      info: 'bg-info/10 text-info',
-      accent: 'bg-accent/10 text-accent',
-      gold: 'bg-gold/10 text-gold-dark',
+      info: 'bg-sky-50 text-sky-600 dark:bg-sky-950/30 dark:text-sky-400',
+      accent: 'bg-purple-50 text-purple-600 dark:bg-purple-950/30 dark:text-purple-400',
+      gold: 'bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400',
     };
 
     return (
       <div
         onClick={onClick}
-        className={`card p-5 flex flex-col justify-between transition-all duration-200 border border-border dark:border-slate-700/80 relative group ${
-          onClick ? 'cursor-pointer hover:-translate-y-1 hover:border-primary-500/50 hover:shadow-md' : ''
+        className={`card p-5 border border-border dark:border-slate-700/80 hover:shadow-md transition-all ${
+          onClick ? 'cursor-pointer hover:border-primary-500/50 group' : ''
         }`}
       >
-        <div className="flex items-start justify-between mb-4">
-          <div className={`p-3 rounded-xl ${colorClasses[color]}`}>
-            <Icon className="w-6 h-6" />
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-2xs font-black uppercase tracking-wider text-ink-muted mb-1">{title}</p>
+            <h3 className="text-2xl font-black text-ink tracking-tight group-hover:text-primary-600 transition-colors">
+              {value}
+            </h3>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className={`p-2.5 rounded-xl ${colorClasses[color]}`}>
+            <Icon className="w-5 h-5" />
+          </div>
+        </div>
+        {subtitle && (
+          <p className="text-2xs text-ink-muted mt-2 flex items-center gap-1.5 font-medium">
+            <span>{subtitle}</span>
             {trend && (
-              <span
-                className={`text-[13px] font-bold px-2.5 py-1 rounded-full ${
-                  trend.startsWith('+') ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'
-                }`}
-              >
+              <span className={`font-bold ${trend.startsWith('+') ? 'text-success' : 'text-danger'}`}>
                 {trend}
               </span>
             )}
-            {onClick && (
-              <span className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-primary-500">
-                <ArrowUpRight className="w-4 h-4" />
-              </span>
-            )}
-          </div>
-        </div>
-        <div>
-          <h3 className="text-3xl font-black text-ink mb-1 group-hover:text-primary-600 transition-colors">
-            {value}
-          </h3>
-          <p className="text-[14px] font-bold text-ink-muted uppercase tracking-wider">{title}</p>
-          {subtitle && (
-            <p className="text-[13px] font-medium text-ink-secondary mt-1.5 flex items-center justify-between">
-              <span>{subtitle}</span>
-              {onClick && (
-                <span className="text-[11px] text-primary-600 dark:text-primary-400 font-bold underline opacity-0 group-hover:opacity-100 transition-opacity">
-                  Xem chi tiết
-                </span>
-              )}
-            </p>
-          )}
-        </div>
+          </p>
+        )}
       </div>
     );
   };
@@ -1106,7 +1145,7 @@ export function DashboardPage() {
       {/* ── Tabs & Filter Bar ── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         {renderTabs()}
-        {renderFilterBar()}
+        {activeTab !== 'lich' && renderFilterBar()}
       </div>
 
       {/* ══════════════════ TAB 1: TỔNG QUAN VIỆN ══════════════════ */}
@@ -1264,20 +1303,7 @@ export function DashboardPage() {
               <div className="h-[430px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart data={luyKeChartData} margin={{ top: 20, right: 25, left: 10, bottom: 10 }}>
-                    <defs>
-                      <linearGradient id="colorLuyKeKyKet" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.35} />
-                        <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.02} />
-                      </linearGradient>
-                      <linearGradient id="colorLuyKeDoanhThu" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.35} />
-                        <stop offset="95%" stopColor="#10b981" stopOpacity={0.02} />
-                      </linearGradient>
-                      <linearGradient id="colorLuyKeDongTien" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#0284c7" stopOpacity={0.35} />
-                        <stop offset="95%" stopColor="#0284c7" stopOpacity={0.02} />
-                      </linearGradient>
-                    </defs>
+                    <ChartDefs />
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
                     <XAxis dataKey="month" stroke="var(--text-muted)" fontSize={12} tickMargin={10} />
                     <YAxis
@@ -1304,7 +1330,7 @@ export function DashboardPage() {
                         if (!active || !payload || !payload.length) return null;
                         const data = payload[0].payload;
                         return (
-                          <div className="bg-surface/95 dark:bg-slate-900/95 backdrop-blur-md p-3.5 rounded-xl shadow-lg border border-border dark:border-slate-700/80 text-xs min-w-[230px]">
+                          <div className="bg-surface/95 dark:bg-slate-900/95 backdrop-blur-md p-3.5 rounded-xl shadow-xl border border-border dark:border-slate-700/80 text-xs min-w-[230px]">
                             <div className="font-black text-ink pb-1.5 mb-2 border-b border-border dark:border-slate-700/80 flex items-center justify-between">
                               <span>{data.monthLabel}</span>
                               <span className="text-2xs text-ink-muted">Mục tiêu năm: 750 tỷ</span>
@@ -1402,7 +1428,7 @@ export function DashboardPage() {
                       formatter={(value) => <span className="text-xs font-bold text-ink-secondary px-1.5">{value}</span>}
                     />
 
-                    {/* Render đường theo mode đã chọn chuẩn phong cách ảnh 2 */}
+                    {/* Render đường theo mode đã chọn với hiệu ứng mờ bóng gạch nối high-tech */}
                     {trendChartMode === 'ky-ket' && (
                       <>
                         <Area
@@ -1410,12 +1436,13 @@ export function DashboardPage() {
                           dataKey="kyMoiLuyKe"
                           name="Lũy kế"
                           stroke="#f59e0b"
-                          strokeWidth={3}
+                          strokeWidth={3.5}
                           fillOpacity={1}
                           fill="url(#colorLuyKeKyKet)"
+                          filter="url(#glowKyKet)"
                           connectNulls={false}
-                          dot={{ r: 4, fill: '#f59e0b', stroke: 'var(--bg-surface)', strokeWidth: 2 }}
-                          activeDot={{ r: 6, stroke: '#f59e0b', strokeWidth: 2 }}
+                          dot={{ r: 4.5, fill: '#f59e0b', stroke: '#ffffff', strokeWidth: 2.5 }}
+                          activeDot={{ r: 7, stroke: '#ffffff', strokeWidth: 3, fill: '#f59e0b' }}
                         />
                         <Line
                           type="monotone"
@@ -1437,12 +1464,13 @@ export function DashboardPage() {
                           dataKey="doanhThuLuyKe"
                           name="Lũy kế"
                           stroke="#10b981"
-                          strokeWidth={3}
+                          strokeWidth={3.5}
                           fillOpacity={1}
                           fill="url(#colorLuyKeDoanhThu)"
+                          filter="url(#glowDoanhThu)"
                           connectNulls={false}
-                          dot={{ r: 4, fill: '#10b981', stroke: 'var(--bg-surface)', strokeWidth: 2 }}
-                          activeDot={{ r: 6, stroke: '#10b981', strokeWidth: 2 }}
+                          dot={{ r: 4.5, fill: '#10b981', stroke: '#ffffff', strokeWidth: 2.5 }}
+                          activeDot={{ r: 7, stroke: '#ffffff', strokeWidth: 3, fill: '#10b981' }}
                         />
                         <Line
                           type="monotone"
@@ -1464,12 +1492,13 @@ export function DashboardPage() {
                           dataKey="dongTienLuyKe"
                           name="Lũy kế"
                           stroke="#0284c7"
-                          strokeWidth={3}
+                          strokeWidth={3.5}
                           fillOpacity={1}
                           fill="url(#colorLuyKeDongTien)"
+                          filter="url(#glowDongTien)"
                           connectNulls={false}
-                          dot={{ r: 4, fill: '#0284c7', stroke: 'var(--bg-surface)', strokeWidth: 2 }}
-                          activeDot={{ r: 6, stroke: '#0284c7', strokeWidth: 2 }}
+                          dot={{ r: 4.5, fill: '#0284c7', stroke: '#ffffff', strokeWidth: 2.5 }}
+                          activeDot={{ r: 7, stroke: '#ffffff', strokeWidth: 3, fill: '#0284c7' }}
                         />
                         <Line
                           type="monotone"
@@ -1491,22 +1520,24 @@ export function DashboardPage() {
                           dataKey="kyMoiLuyKe"
                           name="Ký kết Lũy kế"
                           stroke="#f59e0b"
-                          strokeWidth={3}
-                          fillOpacity={0.4}
+                          strokeWidth={3.5}
+                          fillOpacity={0.6}
                           fill="url(#colorLuyKeKyKet)"
+                          filter="url(#glowKyKet)"
                           connectNulls={false}
-                          dot={{ r: 3.5, fill: '#f59e0b', stroke: 'var(--bg-surface)', strokeWidth: 2 }}
-                          activeDot={{ r: 5 }}
+                          dot={{ r: 4, fill: '#f59e0b', stroke: '#ffffff', strokeWidth: 2 }}
+                          activeDot={{ r: 6.5 }}
                         />
                         <Line
                           type="monotone"
                           dataKey="doanhThuLuyKe"
                           name="Doanh thu Lũy kế"
                           stroke="#10b981"
-                          strokeWidth={3}
+                          strokeWidth={3.5}
+                          filter="url(#glowDoanhThu)"
                           connectNulls={false}
-                          dot={{ r: 3.5, fill: '#10b981', stroke: 'var(--bg-surface)', strokeWidth: 2 }}
-                          activeDot={{ r: 5 }}
+                          dot={{ r: 4, fill: '#10b981', stroke: '#ffffff', strokeWidth: 2 }}
+                          activeDot={{ r: 6.5 }}
                         />
                         <Line
                           type="monotone"
@@ -1530,32 +1561,40 @@ export function DashboardPage() {
                 <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border dark:border-slate-700/80 pb-3">
                   Cơ cấu Doanh thu theo Lĩnh vực
                 </h3>
-                <div className="h-[180px]">
+                <div className="h-[210px] relative">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
+                      <ChartDefs />
                       <Pie
                         data={coCauDoanhThu}
                         cx="50%"
-                        cy="50%"
-                        innerRadius={50}
-                        outerRadius={75}
-                        paddingAngle={2}
+                        cy="42%"
+                        innerRadius={48}
+                        outerRadius={70}
+                        paddingAngle={3}
                         dataKey="value"
-                        stroke="none"
+                        stroke="var(--bg-surface)"
+                        strokeWidth={2}
+                        filter="url(#pieGlow)"
                       >
                         {coCauDoanhThu.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          <Cell key={`cell-${index}`} fill={`url(#pieGrad-${index % 5})`} />
                         ))}
                       </Pie>
                       <Tooltip {...tooltipStyle} formatter={(value: any) => `${value} tỷ`} />
                       <Legend
-                        layout="vertical"
-                        verticalAlign="middle"
-                        align="right"
-                        wrapperStyle={{ fontSize: '11.5px', fontWeight: '500' }}
+                        layout="horizontal"
+                        verticalAlign="bottom"
+                        align="center"
+                        wrapperStyle={{ fontSize: '11px', fontWeight: '600', paddingTop: '6px' }}
                       />
                     </PieChart>
                   </ResponsiveContainer>
+                  {/* Center donut overlay label: cx="50%", cy="42%" -> left-1/2, top-[42%] chuẩn xác 100% tuyệt đối */}
+                  <div className="absolute top-[42%] left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
+                    <p className="text-[15px] font-black text-ink leading-none">396.7</p>
+                    <p className="text-[9px] font-bold text-ink-muted uppercase tracking-wider mt-0.5">Tỷ VNĐ</p>
+                  </div>
                 </div>
               </div>
 
@@ -1603,6 +1642,7 @@ export function DashboardPage() {
               <div className="h-[460px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart data={doanhThuData} margin={{ top: 25, right: 20, bottom: 35, left: 0 }}>
+                    <ChartDefs />
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
                     <XAxis
                       dataKey="name"
@@ -1629,11 +1669,11 @@ export function DashboardPage() {
                     <Bar
                       dataKey="doanhThu"
                       name="Doanh thu thực hiện"
-                      radius={[4, 4, 0, 0]}
+                      radius={[6, 6, 0, 0]}
                       maxBarSize={30}
-                      fill="var(--color-success, #10b981)"
                       onClick={() => handleOpenDrilldown('hop-dong')}
                       className="cursor-pointer"
+                      filter="url(#shadowBar)"
                       label={(props: any) => {
                         const { x, y, width, index } = props;
                         if (index === undefined || x === undefined || y === undefined || width === undefined)
@@ -1642,9 +1682,9 @@ export function DashboardPage() {
                         return (
                           <text
                             x={Number(x) + Number(width) / 2}
-                            y={Number(y) - 8}
+                            y={Number(y) - 10}
                             fill="var(--text-secondary)"
-                            fontSize={9}
+                            fontSize={9.5}
                             fontWeight={700}
                             textAnchor="middle"
                           >
@@ -1654,16 +1694,17 @@ export function DashboardPage() {
                       }}
                     >
                       {doanhThuData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        <Cell key={`cell-${index}`} fill={`url(#grad-${index % 16})`} />
                       ))}
                     </Bar>
                     <Line
-                      type="monotone"
+                      type="linear"
                       dataKey="keHoach"
                       name="Kế hoạch Doanh thu"
-                      stroke="var(--text-primary)"
+                      stroke="#38bdf8"
                       strokeWidth={2.5}
-                      dot={{ r: 4, fill: 'var(--bg-surface)' }}
+                      dot={{ r: 4, fill: '#ffffff', stroke: '#38bdf8', strokeWidth: 2 }}
+                      activeDot={{ r: 6.5, fill: '#38bdf8', stroke: '#ffffff', strokeWidth: 2.5 }}
                     />
                   </ComposedChart>
                 </ResponsiveContainer>
@@ -1836,6 +1877,7 @@ export function DashboardPage() {
               <div className="h-[400px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={khcnData} margin={{ top: 25, right: 20, bottom: 35, left: 10 }}>
+                    <ChartDefs />
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
                     <XAxis
                       dataKey="name"
@@ -1852,14 +1894,14 @@ export function DashboardPage() {
                     <Bar
                       dataKey="kinhPhi"
                       name="Kinh phí cấp 2026"
-                      radius={[4, 4, 0, 0]}
+                      radius={[6, 6, 0, 0]}
                       maxBarSize={25}
-                      fill="var(--color-primary, #00668c)"
                       onClick={() => handleOpenDrilldown('khcn')}
                       className="cursor-pointer"
+                      filter="url(#shadowBar)"
                     >
                       {khcnData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        <Cell key={`cell-${index}`} fill={`url(#grad-${index % 16})`} />
                       ))}
                     </Bar>
                   </BarChart>
@@ -2264,6 +2306,7 @@ export function DashboardPage() {
               <div className="h-[400px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={doanhThuData} margin={{ top: 20, right: 20, left: 10, bottom: 40 }}>
+                    <ChartDefs />
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
                     <XAxis
                       dataKey="name"
@@ -2277,10 +2320,10 @@ export function DashboardPage() {
                     <YAxis stroke="var(--text-muted)" fontSize={12} tickFormatter={(v) => `${v} tỷ`} />
                     <Tooltip cursor={{ fill: 'var(--bg-subtle)' }} content={<CustomComparisonTooltip />} />
                     <Legend wrapperStyle={{ fontSize: '12px', fontWeight: '600', paddingTop: '15px' }} />
-                    <Bar dataKey="keHoach" name="KH năm 2026" fill="#f59e0b" radius={[4, 4, 0, 0]} maxBarSize={14} />
+                    <Bar dataKey="keHoach" name="KH năm 2026" fill="url(#pieGrad-2)" radius={[4, 4, 0, 0]} maxBarSize={14} filter="url(#shadowBar)" />
                     <Bar dataKey="cungKy2025" name="Cùng kỳ năm 2025" fill="#94a3b8" radius={[4, 4, 0, 0]} maxBarSize={14} />
-                    <Bar dataKey="donViKy" stackId="ky2026" name="Đơn vị ký (2026)" fill="#0d9488" maxBarSize={14} />
-                    <Bar dataKey="vienKy" stackId="ky2026" name="Viện ký (2026)" fill="#0284c7" radius={[4, 4, 0, 0]} maxBarSize={14} />
+                    <Bar dataKey="donViKy" stackId="ky2026" name="Đơn vị ký (2026)" fill="url(#pieGrad-1)" maxBarSize={14} />
+                    <Bar dataKey="vienKy" stackId="ky2026" name="Viện ký (2026)" fill="url(#pieGrad-0)" radius={[4, 4, 0, 0]} maxBarSize={14} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -2305,6 +2348,7 @@ export function DashboardPage() {
                       data={[...doanhThuData].sort((a, b) => (b.pctCungKy || 0) - (a.pctCungKy || 0))}
                       margin={{ top: 10, right: 25, left: 10, bottom: 5 }}
                     >
+                      <ChartDefs />
                       <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="var(--border-subtle)" />
                       <XAxis type="number" stroke="var(--text-muted)" fontSize={11} tickFormatter={(v) => `${v}%`} />
                       <YAxis
@@ -2321,19 +2365,19 @@ export function DashboardPage() {
                         strokeDasharray="3 3"
                         label={{ value: '100%', fill: '#ef4444', fontSize: 10, position: 'top' }}
                       />
-                      <Bar dataKey="pctCungKy" name="% So cùng kỳ 2025" radius={[0, 4, 4, 0]} barSize={14}>
+                      <Bar dataKey="pctCungKy" name="% So cùng kỳ 2025" radius={[0, 6, 6, 0]} barSize={14} filter="url(#shadowBar)">
                         {[...doanhThuData]
                           .sort((a, b) => (b.pctCungKy || 0) - (a.pctCungKy || 0))
                           .map((entry, index) => {
                             const val = entry.pctCungKy || 0;
                             const fill =
                               val >= 200
-                                ? '#059669'
+                                ? 'url(#pieGrad-1)'
                                 : val >= 100
-                                ? '#10b981'
+                                ? 'url(#pieGrad-1)'
                                 : val >= 60
-                                ? '#f59e0b'
-                                : '#ef4444';
+                                ? 'url(#pieGrad-2)'
+                                : 'url(#pieGrad-3)';
                             return <Cell key={`cell-pct-${index}`} fill={fill} />;
                           })}
                       </Bar>
@@ -2353,9 +2397,10 @@ export function DashboardPage() {
               <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border dark:border-slate-700/80 pb-3">
                 Biểu đồ Ký mới & Doanh thu thực hiện các Đơn vị (Tỷ VNĐ)
               </h3>
-              <div className="h-[380px]">
+              <div className="h-[420px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart data={doanhThuData} margin={{ top: 20, right: 30, left: 20, bottom: 35 }}>
+                    <ChartDefs />
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
                     <XAxis
                       dataKey="name"
@@ -2372,21 +2417,23 @@ export function DashboardPage() {
                     <Bar
                       dataKey="doanhThu"
                       name="Doanh thu thực hiện"
-                      radius={[4, 4, 0, 0]}
+                      radius={[6, 6, 0, 0]}
                       maxBarSize={30}
-                      fill="var(--color-success, #10b981)"
+                      filter="url(#shadowBar)"
                     >
                       {doanhThuData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        <Cell key={`cell-${index}`} fill={`url(#grad-${index % 16})`} />
                       ))}
                     </Bar>
                     <Line
                       type="monotone"
                       dataKey="kyMoi"
                       name="Ký Hợp đồng mới"
-                      stroke="var(--text-primary)"
-                      strokeWidth={2.5}
-                      dot={{ r: 4, fill: 'var(--bg-surface)' }}
+                      stroke="#f59e0b"
+                      strokeWidth={3}
+                      filter="url(#glowKyKet)"
+                      dot={{ r: 4, fill: '#f59e0b', stroke: '#ffffff', strokeWidth: 2 }}
+                      activeDot={{ r: 7, fill: '#f59e0b', stroke: '#ffffff', strokeWidth: 3 }}
                     />
                   </ComposedChart>
                 </ResponsiveContainer>
@@ -2397,16 +2444,17 @@ export function DashboardPage() {
               <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border dark:border-slate-700/80 pb-3">
                 Tăng trưởng cùng kỳ (2025 vs 2026)
               </h3>
-              <div className="h-[380px]">
+              <div className="h-[420px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={growthComparisonData} margin={{ top: 20, right: 10, left: -20, bottom: 35 }}>
+                    <ChartDefs />
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
                     <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={12} tickMargin={10} />
                     <YAxis stroke="var(--text-muted)" fontSize={12} />
                     <Tooltip cursor={{ fill: 'var(--bg-subtle)' }} {...tooltipStyle} formatter={(value: any) => `${value} tỷ`} />
                     <Legend wrapperStyle={{ fontSize: '12px', fontWeight: '600', paddingTop: '10px' }} />
                     <Bar dataKey="val2025" name="Năm 2025" fill="#94a3b8" radius={[4, 4, 0, 0]} maxBarSize={20} />
-                    <Bar dataKey="val2026" name="Năm 2026" fill="var(--color-primary, #00668c)" radius={[4, 4, 0, 0]} maxBarSize={20} />
+                    <Bar dataKey="val2026" name="Năm 2026" fill="url(#pieGrad-0)" radius={[6, 6, 0, 0]} maxBarSize={20} filter="url(#shadowBar)" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -2426,7 +2474,7 @@ export function DashboardPage() {
                           Phân tích Chi tiết Công nợ đọng 16 Đơn vị
                         </h3>
                         <p className="text-2xs text-ink-muted">
-                          Đối chiếu Tổng nợ khách hàng &amp; Nghĩa vụ nộp Viện theo QC 2815 (Tỷ VNĐ)
+                          Đối chiếu Tổng nợ khách hàng &amp; Nghĩa vụ nộp Viện theo QC 2815 • Dữ liệu chốt sổ 2026 (Tỷ VNĐ)
                         </p>
                       </div>
                     </div>
@@ -2510,12 +2558,13 @@ export function DashboardPage() {
 
                 {debtViewMode === 'cot-dung' ? (
                   /* ── DẠNG 1: BIỂU ĐỒ CỘT ĐỨNG HIỆN ĐẠI ── */
-                  <div className={showAllDebts ? 'h-[440px]' : 'h-[360px]'}>
+                  <div className="h-[620px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart
                         data={showAllDebts ? noDongData : noDongData.slice(0, 8)}
                         margin={{ top: 20, right: 15, left: -5, bottom: 40 }}
                       >
+                        <ChartDefs />
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
                         <XAxis
                           dataKey="name"
@@ -2539,34 +2588,57 @@ export function DashboardPage() {
                           y={15}
                           stroke="#ef4444"
                           strokeDasharray="4 4"
-                          label={{
-                            value: 'Ngưỡng nợ cao (>15 tỷ)',
-                            position: 'insideTopRight',
-                            fill: '#ef4444',
-                            fontSize: 10,
-                            fontWeight: 700,
+                          label={({ viewBox }: any) => {
+                            if (!viewBox) return null;
+                            const { x, y } = viewBox;
+                            return (
+                              <g>
+                                <rect
+                                  x={x + 10}
+                                  y={y - 20}
+                                  width={140}
+                                  height={18}
+                                  rx={4}
+                                  fill="var(--bg-surface, #ffffff)"
+                                  stroke="#ef4444"
+                                  strokeWidth={1}
+                                  className="dark:fill-slate-900"
+                                />
+                                <text
+                                  x={x + 16}
+                                  y={y - 7}
+                                  fill="#ef4444"
+                                  fontSize={10.5}
+                                  fontWeight={700}
+                                >
+                                  ⚠ Ngưỡng nợ cao (&gt;15 tỷ)
+                                </text>
+                              </g>
+                            );
                           }}
                         />
                         <Bar
                           dataKey="tongNo"
                           name="Khách hàng nợ Đơn vị"
-                          fill="#ef4444"
-                          radius={[4, 4, 0, 0]}
-                          maxBarSize={showAllDebts ? 18 : 28}
+                          fill="url(#pieGrad-3)"
+                          radius={[6, 6, 0, 0]}
+                          maxBarSize={showAllDebts ? 20 : 32}
+                          filter="url(#shadowBar)"
                         />
                         <Bar
                           dataKey="noNV"
                           name="Nợ Nghĩa vụ Viện"
-                          fill="#f59e0b"
-                          radius={[4, 4, 0, 0]}
-                          maxBarSize={showAllDebts ? 18 : 28}
+                          fill="url(#pieGrad-2)"
+                          radius={[6, 6, 0, 0]}
+                          maxBarSize={showAllDebts ? 20 : 32}
+                          filter="url(#shadowBar)"
                         />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
                 ) : (
                   /* ── DẠNG 2: MA TRẬN RỦI RO & BẢNG ĐÔN ĐỐC ── */
-                  <div className="overflow-x-auto max-h-[380px] overflow-y-auto pr-1 border border-border dark:border-slate-700/80 rounded-xl">
+                  <div className="overflow-x-auto pr-1 border border-border dark:border-slate-700/80 rounded-xl">
                     <table className="w-full text-left border-collapse text-[12.5px]">
                       <thead className="sticky top-0 z-10 bg-surface dark:bg-slate-900 shadow-sm">
                         <tr className="border-b border-border dark:border-slate-700/80 bg-subtle/50 dark:bg-slate-900/80">
@@ -2664,21 +2736,6 @@ export function DashboardPage() {
                   </div>
                 )}
               </div>
-
-              {/* Chú thích cuối thẻ */}
-              <div className="mt-3 pt-3 border-t border-border dark:border-slate-700/80 text-2xs text-ink-muted flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-3">
-                  <span className="flex items-center gap-1">
-                    <span className="w-2.5 h-2.5 rounded-sm bg-red-500 inline-block" />
-                    Khách hàng nợ Đơn vị
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span className="w-2.5 h-2.5 rounded-sm bg-amber-500 inline-block" />
-                    Nợ nghĩa vụ nộp về Viện
-                  </span>
-                </div>
-                <span>* Căn cứ dữ liệu chốt sổ &amp; đối chiếu hợp đồng thực hiện 2026</span>
-              </div>
             </div>
 
             {/* Xếp hạng sức khỏe đơn vị */}
@@ -2687,21 +2744,21 @@ export function DashboardPage() {
                 <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border dark:border-slate-700/80 pb-3">
                   Xếp hạng Sức khỏe Vận hành 16 Đơn vị
                 </h3>
-                <div className="overflow-x-auto max-h-[340px] overflow-y-auto pr-1">
+                <div className="overflow-x-auto pr-1">
                   <table className="w-full text-left border-collapse text-[12.5px]">
                     <thead>
                       <tr className="border-b border-border dark:border-slate-700/80 bg-subtle/40">
-                        <th className="th-cell rounded-tl-lg py-2">Đơn vị</th>
-                        <th className="th-cell py-2">% KH Doanh thu</th>
-                        <th className="th-cell text-right rounded-tr-lg py-2">Đánh giá</th>
+                        <th className="th-cell rounded-tl-lg py-2.5">Đơn vị</th>
+                        <th className="th-cell py-2.5">% KH Doanh thu</th>
+                        <th className="th-cell text-right rounded-tr-lg py-2.5">Đánh giá</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border/60 dark:divide-slate-700/80">
                       {unitHealthData.map((row, idx) => (
                         <tr key={idx} className="tr-hover">
-                          <td className="td-cell font-bold text-ink py-2">{row.name}</td>
-                          <td className="td-cell text-ink-secondary font-black py-2">{row.khProgress}%</td>
-                          <td className="td-cell text-right py-2">
+                          <td className="td-cell font-bold text-ink py-2.5">{row.name}</td>
+                          <td className="td-cell text-ink-secondary font-black py-2.5">{row.khProgress}%</td>
+                          <td className="td-cell text-right py-2.5">
                             <span className={`font-black text-xs ${row.color}`}>{row.status}</span>
                           </td>
                         </tr>
@@ -2921,6 +2978,13 @@ export function DashboardPage() {
               *Tổng kết: Tuyển mới 63 cán bộ, giảm 20 cán bộ (phù hợp với quy trình kiện toàn tinh giản bộ máy).
             </p>
           </div>
+        </div>
+      )}
+
+      {/* ══════════════════ TAB 6: LỊCH CÔNG TÁC ══════════════════ */}
+      {activeTab === 'lich' && (
+        <div className="space-y-6 animate-in fade-in duration-300">
+          <LichCoQuanPage />
         </div>
       )}
     </div>

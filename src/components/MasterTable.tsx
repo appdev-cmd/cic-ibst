@@ -70,18 +70,18 @@ export function MasterTable<T extends { id: string }>({
 
       <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: scrollH }}>
         <table className="w-full text-left text-sm">
-          <thead className="sticky top-0 z-10 border-b border-border bg-subtle text-xs uppercase tracking-wide text-ink-muted font-bold dark:bg-[#1f2332]">
+          <thead className="thead-sticky">
             <tr>
-              <th className="px-3 py-3 font-bold text-center w-10">#</th>
+              <th className="th-cell w-10 text-center">#</th>
               {columns.map((col, idx) => (
-                <th key={idx} className={`px-4 py-3 font-bold ${col.className || ''}`}>
+                <th key={idx} className={`th-cell ${col.className || ''}`}>
                   {col.header}
                 </th>
               ))}
-              {hasActions && <th className="px-4 py-3 font-bold text-right">Thao tác</th>}
+              {hasActions && <th className="th-cell text-right">Thao tác</th>}
             </tr>
           </thead>
-          <tbody className="divide-y divide-border-subtle">
+          <tbody>
             {data.length === 0 && (
               <tr>
                 <td colSpan={columns.length + (hasActions ? 2 : 1)} className="px-4 py-8 text-center text-xs text-ink-muted italic">
@@ -92,7 +92,7 @@ export function MasterTable<T extends { id: string }>({
             {data.map((item, rowIdx) => (
               <tr
                 key={item.id}
-                className={`hover:bg-hover-row transition-colors ${clickable ? 'cursor-pointer' : ''}`}
+                className={`tr-stripe ${clickable ? 'cursor-pointer' : ''}`}
                 onClick={() => {
                   if (onRowClick) onRowClick(item);
                   else if (onView) onView(item);

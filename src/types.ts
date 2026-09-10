@@ -127,6 +127,7 @@ export interface NhanSu {
   heSoLuong?: number | null;
   chungChi: string;
   hanChungChi: string;
+  anhDaiDien?: string | null;
 }
 
 export type LoaiDonVi =
@@ -144,8 +145,11 @@ export interface DonVi {
   tenVietTat: string | null;
   loai: LoaiDonVi;
   chucNangNhiemVu: string | null;
+  diaChiChiTiet?: string | null;
   dienThoai: string | null;
   email: string | null;
+  website?: string | null;
+  ghiChu?: string | null;
   truongDonViId: string | null;
   truongDonVi: string | null;
   truongDonViHocVi: string | null;

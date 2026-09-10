@@ -20,9 +20,9 @@ const supabase = createClient(env.VITE_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_K
 // Email quy ước: <ma_don_vi.lower>@ibst.vn — mật khẩu: 123456
 const ACCOUNTS = [
   // ── Lãnh đạo Viện (Admin) ──
-  { email: 'giamdoc@ibst.vn',    ten: 'Giám đốc Viện (Admin)',             donViId: 11, nhanSuId: 1,   icon: '🏛️' },
+  { email: 'vientruong@ibst.vn', ten: 'Viện trưởng (Admin)',             donViId: 11, nhanSuId: 1,   icon: '🏛️' },
   // ── 4 Phòng chức năng ──
-  { email: 'tonghop@ibst.vn',    ten: 'PGĐ / Phòng Tổng hợp',             donViId: 11, nhanSuId: null, icon: '🏢' },
+  { email: 'tonghop@ibst.vn',    ten: 'Phó Viện trưởng / Phòng Tổng hợp', donViId: 11, nhanSuId: null, icon: '🏢' },
   { email: 'khkt@ibst.vn',       ten: 'Phòng KHKT',                        donViId: 8,  nhanSuId: 853,  icon: '📋' },
   { email: 'tckt@ibst.vn',       ten: 'Phòng TCKT',                        donViId: 9,  nhanSuId: null, icon: '💰' },
   { email: 'tchc@ibst.vn',       ten: 'Phòng TCHC',                        donViId: 10, nhanSuId: 851,  icon: '📁' },

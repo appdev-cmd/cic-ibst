@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   Pencil, Trash2, Phone, Mail, Users, Crown,
   FlaskConical, Handshake, Target, BarChart3, Clock, FileText,
+  Globe, MapPin, Printer, ExternalLink,
 } from 'lucide-react';
 import { LOAI_DON_VI } from '../services/org';
 import { fetchHopDong, fetchDeTai } from '../services/queries';
@@ -326,21 +327,69 @@ export function DonViChiTietPanel({
             </div>
           )}
 
-          {/* Liên hệ */}
-          {(donVi.dienThoai || donVi.email) && (
+          {/* Thông tin Liên hệ & Trụ sở */}
+          {(donVi.dienThoai || donVi.email || donVi.website || donVi.diaChiChiTiet || donVi.ghiChu) && (
             <div className="bg-surface rounded-lg border border-border dark:border-slate-700/80 p-5">
-              <h3 className="text-sm font-black text-ink mb-3">Liên hệ</h3>
-              <div className="space-y-2">
+              <h3 className="text-sm font-black text-ink mb-3 flex items-center gap-2">
+                <MapPin size={16} className="text-primary" />
+                Thông tin Liên hệ & Trụ sở
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                {donVi.diaChiChiTiet && (
+                  <div className="md:col-span-2 flex items-start gap-2.5 p-2.5 rounded-lg bg-subtle/50 dark:bg-slate-900/40 border border-border-subtle">
+                    <MapPin size={15} className="text-primary shrink-0 mt-0.5" />
+                    <div>
+                      <span className="text-xs font-bold text-ink-muted uppercase block">Địa chỉ trụ sở</span>
+                      <span className="text-ink font-medium leading-relaxed">{donVi.diaChiChiTiet}</span>
+                    </div>
+                  </div>
+                )}
                 {donVi.dienThoai && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Phone size={14} className="text-ink-muted" />
-                    <span className="text-ink">{donVi.dienThoai}</span>
+                  <div className="flex items-start gap-2.5 p-2.5 rounded-lg bg-subtle/50 dark:bg-slate-900/40 border border-border-subtle">
+                    <Phone size={15} className="text-primary shrink-0 mt-0.5" />
+                    <div>
+                      <span className="text-xs font-bold text-ink-muted uppercase block">Điện thoại</span>
+                      <a href={`tel:${donVi.dienThoai.split('/')[0].trim()}`} className="text-ink hover:text-primary font-mono font-medium">
+                        {donVi.dienThoai}
+                      </a>
+                    </div>
                   </div>
                 )}
                 {donVi.email && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Mail size={14} className="text-ink-muted" />
-                    <span className="text-ink">{donVi.email}</span>
+                  <div className="flex items-start gap-2.5 p-2.5 rounded-lg bg-subtle/50 dark:bg-slate-900/40 border border-border-subtle">
+                    <Mail size={15} className="text-primary shrink-0 mt-0.5" />
+                    <div>
+                      <span className="text-xs font-bold text-ink-muted uppercase block">Email liên hệ</span>
+                      <a href={`mailto:${donVi.email.split('/')[0].trim()}`} className="text-primary hover:underline font-medium">
+                        {donVi.email}
+                      </a>
+                    </div>
+                  </div>
+                )}
+                {donVi.website && (
+                  <div className="flex items-start gap-2.5 p-2.5 rounded-lg bg-subtle/50 dark:bg-slate-900/40 border border-border-subtle">
+                    <Globe size={15} className="text-primary shrink-0 mt-0.5" />
+                    <div>
+                      <span className="text-xs font-bold text-ink-muted uppercase block">Trang tin điện tử (Website)</span>
+                      <a
+                        href={donVi.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline font-medium inline-flex items-center gap-1"
+                      >
+                        {donVi.website}
+                        <ExternalLink size={12} />
+                      </a>
+                    </div>
+                  </div>
+                )}
+                {donVi.ghiChu && (
+                  <div className="flex items-start gap-2.5 p-2.5 rounded-lg bg-subtle/50 dark:bg-slate-900/40 border border-border-subtle">
+                    <Printer size={15} className="text-primary shrink-0 mt-0.5" />
+                    <div>
+                      <span className="text-xs font-bold text-ink-muted uppercase block">Ghi chú / Fax</span>
+                      <span className="text-ink-secondary">{donVi.ghiChu}</span>
+                    </div>
                   </div>
                 )}
               </div>

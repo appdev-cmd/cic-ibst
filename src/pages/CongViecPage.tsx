@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react';
 import { ClipboardList, Plus, Clock, User, CheckCircle2, AlertCircle, Trash2, Pencil, BarChart } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { KpiCard } from '../components/KpiCard';
-import { Modal, Field, inputCls } from '../components/Modal';
+import { Field, inputCls } from '../components/Modal';
+import { useSlidePanelChiTiet, useSlidePanelForm } from '../hooks/useSlidePanelCrud';
 import { cn } from '../lib/utils';
 
 interface CongViec {
@@ -114,6 +115,204 @@ export function CongViecPage() {
     setModalOpen(false);
   };
 
+  const [detailItem, setDetailItem] = useState<CongViec | null>(null);
+
+  // SlidePanel Chi tiết Công việc
+  useSlidePanelChiTiet({
+    id: 'cong-viec-detail',
+    active: detailItem !== null,
+    title: detailItem ? detailItem.tenCongViec : '',
+    subtitle: detailItem ? `Người thực hiện: ${detailItem.nguoiThucHien} • Hạn: ${detailItem.hanHoanThanh}` : '',
+    icon: <ClipboardList size={18} className="text-primary" />,
+    storageKey: 'slideover-width-cong-viec-detail',
+    minWidth: 540,
+    onDongNgoaiLuong: () => setDetailItem(null),
+    headerExtra: detailItem ? (
+      <button
+        type="button"
+        onClick={() => {
+          const item = detailItem;
+          setDetailItem(null);
+          handleOpenEdit(item);
+        }}
+        className="rounded-lg border border-border px-2.5 py-1 text-xs font-semibold hover:bg-muted"
+      >
+        Chỉnh sửa
+      </button>
+    ) : undefined,
+    content: detailItem ? (
+      <div className="space-y-4">
+        <div className="rounded-xl border border-border bg-subtle p-3 text-xs space-y-2">
+          <div className="flex justify-between">
+            <span className="text-ink-secondary">Người giao việc:</span>
+            <span className="font-semibold text-ink">{detailItem.nguoiGiao}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-ink-secondary">Người thực hiện:</span>
+            <span className="font-semibold text-ink">{detailItem.nguoiThucHien}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-ink-secondary">Hạn hoàn thành:</span>
+            <span className="font-mono text-ink">{detailItem.hanHoanThanh}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-ink-secondary">Độ ưu tiên:</span>
+            <span className={cn(
+              'inline-flex px-1.5 py-0.5 rounded text-[10px] font-black',
+              detailItem.doUuTien === 'Cao' && 'bg-danger/10 text-danger',
+              detailItem.doUuTien === 'Trung-binh' && 'bg-warning/10 text-warning',
+              detailItem.doUuTien === 'Thap' && 'bg-subtle text-ink-muted'
+            )}>
+              {detailItem.doUuTien}
+            </span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-ink-secondary">Trạng thái:</span>
+            <span className={cn(
+              'inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold',
+              detailItem.trangThai === 'Hoan-thanh' && 'bg-success/15 text-success',
+              detailItem.trangThai === 'Dang-thuc-hien' && 'bg-primary/15 text-primary',
+              detailItem.trangThai === 'Chua-bat-dau' && 'bg-subtle text-ink-muted',
+              detailItem.trangThai === 'Tre-han' && 'bg-danger/15 text-danger'
+            )}>
+              {detailItem.trangThai === 'Hoan-thanh' && 'Đã hoàn thành'}
+              {detailItem.trangThai === 'Dang-thuc-hien' && 'Đang làm'}
+              {detailItem.trangThai === 'Chua-bat-dau' && 'Chưa làm'}
+              {detailItem.trangThai === 'Tre-han' && 'Trễ hạn'}
+            </span>
+          </div>
+        </div>
+
+        <div>
+          <label className="text-xs font-semibold text-ink-muted">Tiến độ thực tế ({detailItem.tienDo}%):</label>
+          <div className="mt-1 h-2.5 w-full rounded-full bg-border overflow-hidden">
+            <div className="h-full bg-primary transition-all" style={{ width: `${detailItem.tienDo}%` }} />
+          </div>
+        </div>
+
+        {detailItem.moTa && (
+          <div>
+            <label className="text-xs font-semibold text-ink-muted">Mô tả yêu cầu chi tiết:</label>
+            <p className="mt-1 rounded-xl border border-border bg-subtle p-3 text-xs leading-relaxed text-ink-secondary whitespace-pre-line">
+              {detailItem.moTa}
+            </p>
+          </div>
+        )}
+      </div>
+    ) : null,
+    footer: (
+      <button
+        type="button"
+        onClick={() => setDetailItem(null)}
+        className="rounded-xl border border-border px-4 py-2 text-xs font-semibold hover:bg-muted"
+      >
+        Đóng
+      </button>
+    ),
+    deps: [detailItem],
+  });
+
+  // SlidePanel Form Thêm / Sửa Công việc
+  useSlidePanelForm({
+    id: 'cong-viec-form',
+    open: modalOpen,
+    title: editingItem ? 'Sửa thông tin công việc giao' : 'Giao việc mới cho cán bộ',
+    subtitle: editingItem ? editingItem.tenCongViec : 'Nhập thông tin giao việc, người thực hiện và thời hạn',
+    icon: <ClipboardList size={18} className="text-primary" />,
+    storageKey: 'slideover-width-cong-viec-form',
+    minWidth: 540,
+    onDongNgoaiLuong: () => setModalOpen(false),
+    content: (
+      <form id="cong-viec-form-element" onSubmit={handleSubmit} className="space-y-4">
+        <Field label="Tên công việc / Nhiệm vụ giao" required>
+          <input
+            className={inputCls}
+            required
+            value={form.tenCongViec}
+            onChange={(e) => setForm({ ...form, tenCongViec: e.target.value })}
+            placeholder="VD: Kiểm định nứt lún dầm biên ga S9 - Metro 3"
+          />
+        </Field>
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Người giao việc" required>
+            <input
+              className={inputCls}
+              required
+              value={form.nguoiGiao}
+              onChange={(e) => setForm({ ...form, nguoiGiao: e.target.value })}
+              placeholder="VD: Viện trưởng Nguyễn Văn Hùng"
+            />
+          </Field>
+          <Field label="Người thực hiện" required>
+            <input
+              className={inputCls}
+              required
+              value={form.nguoiThucHien}
+              onChange={(e) => setForm({ ...form, nguoiThucHien: e.target.value })}
+              placeholder="VD: KS. Trần Văn B"
+            />
+          </Field>
+        </div>
+        <div className="grid grid-cols-3 gap-4">
+          <Field label="Hạn hoàn thành (Deadline)" required>
+            <input
+              type="date"
+              className={inputCls}
+              required
+              value={form.hanHoanThanh}
+              onChange={(e) => setForm({ ...form, hanHoanThanh: e.target.value })}
+            />
+          </Field>
+          <Field label="Tiến độ thực tế (%)" required>
+            <input
+              type="number"
+              min={0}
+              max={100}
+              className={inputCls}
+              required
+              value={form.tienDo}
+              onChange={(e) => setForm({ ...form, tienDo: Number(e.target.value) })}
+            />
+          </Field>
+          <Field label="Độ ưu tiên" required>
+            <select
+              className={inputCls}
+              value={form.doUuTien}
+              onChange={(e) => setForm({ ...form, doUuTien: e.target.value as any })}
+            >
+              <option value="Cao">Cao</option>
+              <option value="Trung-binh">Trung bình</option>
+              <option value="Thap">Thấp</option>
+            </select>
+          </Field>
+        </div>
+        <Field label="Mô tả yêu cầu chi tiết">
+          <textarea
+            className={cn(inputCls, 'h-24 py-2 resize-none')}
+            value={form.moTa}
+            onChange={(e) => setForm({ ...form, moTa: e.target.value })}
+            placeholder="Ghi nhận các yêu cầu chất lượng, biểu mẫu bàn giao cần tuân thủ..."
+          />
+        </Field>
+      </form>
+    ),
+    footer: (
+      <div className="flex items-center justify-end gap-2">
+        <button
+          type="button"
+          onClick={() => setModalOpen(false)}
+          className="rounded-xl border border-border px-4 py-2.5 text-[13px] font-bold text-ink-secondary transition-colors hover:bg-muted"
+        >
+          Hủy
+        </button>
+        <button type="submit" form="cong-viec-form-element" className="btn-primary">
+          {editingItem ? 'Lưu thay đổi' : 'Giao việc'}
+        </button>
+      </div>
+    ),
+    deps: [modalOpen, editingItem, form],
+  });
+
   return (
     <div>
       <PageHeader
@@ -166,7 +365,7 @@ export function CongViecPage() {
           </thead>
           <tbody>
             {filteredList.map((item, idx) => (
-              <tr key={item.id} className="tr-hover">
+              <tr key={item.id} className="tr-hover cursor-pointer" onClick={() => setDetailItem(item)}>
                 <td className="td-cell text-center text-xs text-ink-muted tabular-nums">{idx + 1}</td>
                 <td className="td-cell font-semibold max-w-sm truncate" title={item.tenCongViec}>{item.tenCongViec}</td>
                 <td className="td-cell text-ink-secondary text-xs">{item.nguoiGiao}</td>
@@ -207,13 +406,19 @@ export function CongViecPage() {
                 <td className="td-cell">
                   <div className="flex justify-end gap-1">
                     <button
-                      onClick={() => handleOpenEdit(item)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenEdit(item);
+                      }}
                       className="rounded-md p-1.5 text-ink-muted transition-colors hover:bg-muted hover:text-primary-600"
                     >
                       <Pencil size={14} />
                     </button>
                     <button
-                      onClick={() => handleDelete(item.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(item.id);
+                      }}
                       className="rounded-md p-1.5 text-ink-muted transition-colors hover:bg-red-50 hover:text-danger"
                     >
                       <Trash2 size={14} />
@@ -226,100 +431,6 @@ export function CongViecPage() {
         </table>
         </div>
       </div>
-
-      {/* Modal Add/Edit */}
-      <Modal
-        title={editingItem ? 'Sửa thông tin công việc giao' : 'Giao việc mới cho cán bộ'}
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        wide
-      >
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Field label="Tên công việc / Nhiệm vụ giao" required>
-            <input
-              className={inputCls}
-              required
-              value={form.tenCongViec}
-              onChange={(e) => setForm({ ...form, tenCongViec: e.target.value })}
-              placeholder="VD: Kiểm định nứt lún dầm biên ga S9 - Metro 3"
-            />
-          </Field>
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Người giao việc" required>
-              <input
-                className={inputCls}
-                required
-                value={form.nguoiGiao}
-                onChange={(e) => setForm({ ...form, nguoiGiao: e.target.value })}
-                placeholder="VD: Viện trưởng Nguyễn Văn Hùng"
-              />
-            </Field>
-            <Field label="Người thực hiện" required>
-              <input
-                className={inputCls}
-                required
-                value={form.nguoiThucHien}
-                onChange={(e) => setForm({ ...form, nguoiThucHien: e.target.value })}
-                placeholder="VD: KS. Trần Văn B"
-              />
-            </Field>
-          </div>
-          <div className="grid grid-cols-3 gap-4">
-            <Field label="Hạn hoàn thành (Deadline)" required>
-              <input
-                type="date"
-                className={inputCls}
-                required
-                value={form.hanHoanThanh}
-                onChange={(e) => setForm({ ...form, hanHoanThanh: e.target.value })}
-              />
-            </Field>
-            <Field label="Tiến độ thực tế (%)" required>
-              <input
-                type="number"
-                min="0"
-                max="100"
-                className={inputCls}
-                required
-                value={form.tienDo}
-                onChange={(e) => setForm({ ...form, tienDo: Number(e.target.value) })}
-              />
-            </Field>
-            <Field label="Độ ưu tiên" required>
-              <select
-                className={inputCls}
-                value={form.doUuTien}
-                onChange={(e) => setForm({ ...form, doUuTien: e.target.value as any })}
-              >
-                <option value="Cao">Cao</option>
-                <option value="Trung-binh">Trung bình</option>
-                <option value="Thap">Thấp</option>
-              </select>
-            </Field>
-          </div>
-          <Field label="Mô tả yêu cầu chi tiết">
-            <textarea
-              className={cn(inputCls, 'h-24 py-2 resize-none')}
-              value={form.moTa}
-              onChange={(e) => setForm({ ...form, moTa: e.target.value })}
-              placeholder="Ghi nhận các yêu cầu chất lượng, biểu mẫu bàn giao cần tuân thủ..."
-            />
-          </Field>
-
-          <div className="flex justify-end gap-2 border-t border-border-subtle pt-4">
-            <button
-              type="button"
-              onClick={() => setModalOpen(false)}
-              className="rounded-xl border border-border px-4 py-2.5 text-[13px] font-bold text-ink-secondary transition-colors hover:bg-muted"
-            >
-              Hủy
-            </button>
-            <button type="submit" className="btn-primary">
-              {editingItem ? 'Lưu thay đổi' : 'Giao việc'}
-            </button>
-          </div>
-        </form>
-      </Modal>
     </div>
   );
 }
