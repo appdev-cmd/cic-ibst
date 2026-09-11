@@ -840,25 +840,25 @@ export function DashboardPage() {
 
   // ─── RENDER FILTER BAR ───
   const renderFilterBar = () => (
-    <div className="flex flex-wrap items-center gap-2 bg-surface p-1 rounded-xl border border-border dark:border-slate-700/80 shadow-xs w-fit">
-      <div className="flex items-center border-r border-border dark:border-slate-700/80 pl-1.5 pr-2.5">
-        <Filter className="w-4 h-4 text-primary-500" />
+    <div className="flex flex-wrap items-center gap-1.5 bg-surface p-1 rounded-xl border border-border dark:border-slate-700/80 shadow-xs w-fit">
+      <div className="flex items-center border-r border-border dark:border-slate-700/80 pl-1.5 pr-2">
+        <Filter className="w-3.5 h-3.5 text-primary-500" />
       </div>
 
-      <div className="flex flex-wrap items-center gap-1.5">
+      <div className="flex flex-wrap items-center gap-1">
         {/* Bộ chọn Năm */}
         <div className="relative group">
           <select
             value={filterYear}
             onChange={(e) => setFilterYear(e.target.value)}
-            className="appearance-none bg-subtle text-ink font-bold text-[12px] rounded-lg pl-2.5 pr-7 py-1.5 outline-none border border-border dark:border-slate-700/80 focus:border-primary-500 transition-colors cursor-pointer"
+            className="w-[92px] appearance-none bg-subtle text-ink font-bold text-[11.5px] rounded-lg pl-2 pr-5 py-1 outline-none border border-border dark:border-slate-700/80 focus:border-primary-500 transition-colors cursor-pointer"
           >
             <option value="2026">Năm 2026</option>
             <option value="2025">Năm 2025</option>
             <option value="2024">Năm 2024</option>
             <option value="all">Tất cả năm</option>
           </select>
-          <ChevronDown className="w-3.5 h-3.5 text-ink-muted absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-primary-500 transition-colors" />
+          <ChevronDown className="w-3 h-3 text-ink-muted absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-primary-500 transition-colors" />
         </div>
 
         {/* Bộ chọn Kỳ */}
@@ -866,7 +866,9 @@ export function DashboardPage() {
           <select
             value={filterPeriod}
             onChange={(e) => setFilterPeriod(e.target.value)}
-            className="appearance-none bg-subtle text-ink font-bold text-[12px] rounded-lg pl-2.5 pr-7 py-1.5 outline-none border border-border dark:border-slate-700/80 focus:border-primary-500 transition-colors cursor-pointer"
+            className={`appearance-none bg-subtle text-ink font-bold text-[11.5px] rounded-lg pl-2 pr-5 py-1 outline-none border border-border dark:border-slate-700/80 focus:border-primary-500 transition-colors cursor-pointer truncate ${
+              filterPeriod === 'all' ? 'w-[75px]' : 'max-w-[125px]'
+            }`}
           >
             <option value="all">Cả năm</option>
             <option value="q1">Quý I</option>
@@ -877,7 +879,7 @@ export function DashboardPage() {
             <option value="9-thang">9 Tháng</option>
             <option value="custom">Tùy chọn ngày...</option>
           </select>
-          <ChevronDown className="w-3.5 h-3.5 text-ink-muted absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-primary-500 transition-colors" />
+          <ChevronDown className="w-3 h-3 text-ink-muted absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-primary-500 transition-colors" />
         </div>
 
         {/* Bộ chọn Đơn vị */}
@@ -885,10 +887,12 @@ export function DashboardPage() {
           <select
             value={filterDonVi}
             onChange={(e) => setFilterDonVi(e.target.value)}
-            className="appearance-none bg-subtle text-ink font-bold text-[12px] rounded-lg pl-2.5 pr-7 py-1.5 outline-none border border-border dark:border-slate-700/80 focus:border-primary-500 transition-colors cursor-pointer max-w-[240px] truncate"
+            className={`appearance-none bg-subtle text-ink font-bold text-[11.5px] rounded-lg pl-2 pr-5 py-1 outline-none border border-border dark:border-slate-700/80 focus:border-primary-500 transition-colors cursor-pointer truncate ${
+              filterDonVi === 'all' ? 'w-[94px]' : 'max-w-[165px]'
+            }`}
             title="Lọc theo đơn vị"
           >
-            <option value="all">Toàn Viện (19 đơn vị trực thuộc)</option>
+            <option value="all">Toàn Viện</option>
             <optgroup label="I. Các Viện chuyên ngành">
               {DON_VI_16_BENCHMARKS.filter((d) => d.group === 'I').map((dv) => (
                 <option key={dv.code} value={dv.code}>
@@ -925,7 +929,7 @@ export function DashboardPage() {
               ))}
             </optgroup>
           </select>
-          <ChevronDown className="w-3.5 h-3.5 text-ink-muted absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-primary-500 transition-colors" />
+          <ChevronDown className="w-3 h-3 text-ink-muted absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-primary-500 transition-colors" />
         </div>
 
         {/* Tùy chọn ngày */}
@@ -951,7 +955,7 @@ export function DashboardPage() {
         <button
           onClick={loadData}
           title="Tải lại dữ liệu"
-          className="p-1.5 rounded-lg border border-border dark:border-slate-700/80 hover:bg-subtle text-ink-secondary transition-colors cursor-pointer"
+          className="p-1 rounded-lg border border-border dark:border-slate-700/80 hover:bg-subtle text-ink-secondary transition-colors cursor-pointer"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-primary' : ''}`} />
         </button>
@@ -960,7 +964,7 @@ export function DashboardPage() {
         <button
           onClick={() => setIsMeetingMode(!isMeetingMode)}
           title="Chế độ Trình chiếu Họp Giao ban"
-          className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-[11.5px] font-bold transition-all cursor-pointer ${
+          className={`flex items-center gap-1 px-2 py-1 rounded-lg border text-[11.5px] font-bold transition-all cursor-pointer ${
             isMeetingMode
               ? 'bg-primary-600 text-white border-primary-600 shadow-xs'
               : 'border-border dark:border-slate-700/80 hover:bg-subtle text-primary-600 dark:text-primary-400'
