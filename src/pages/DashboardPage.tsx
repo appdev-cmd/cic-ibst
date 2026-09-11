@@ -963,15 +963,14 @@ export function DashboardPage() {
         {/* Nút Trình chiếu Giao ban */}
         <button
           onClick={() => setIsMeetingMode(!isMeetingMode)}
-          title="Chế độ Trình chiếu Họp Giao ban"
-          className={`flex items-center gap-1 px-2 py-1 rounded-lg border text-[11.5px] font-bold transition-all cursor-pointer ${
+          title="Chế độ Trình chiếu Họp Giao ban (ESC để thoát)"
+          className={`p-1 rounded-lg border transition-all cursor-pointer ${
             isMeetingMode
               ? 'bg-primary-600 text-white border-primary-600 shadow-xs'
               : 'border-border dark:border-slate-700/80 hover:bg-subtle text-primary-600 dark:text-primary-400'
           }`}
         >
           {isMeetingMode ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-          <span>Trình chiếu</span>
         </button>
       </div>
     </div>
@@ -980,11 +979,11 @@ export function DashboardPage() {
   // ─── RENDER TABS ───
   const renderTabs = () => {
     const tabs = [
-      { id: 'tong-quan', label: 'Tổng quan Viện', icon: Activity },
-      { id: 'nckh', label: 'Nghiên cứu & QLNN', icon: Microscope },
+      { id: 'tong-quan', label: 'Tổng quan', icon: Activity },
+      { id: 'nckh', label: 'NCKH & QLNN', icon: Microscope },
       { id: 'kinh-doanh', label: 'Kinh doanh & TBKT', icon: TrendingUp },
-      ...(coTabTaiChinh ? [{ id: 'tai-chinh', label: 'Tài chính & Đầu tư', icon: PiggyBank }] : []),
-      { id: 'nhan-su', label: 'Tổ chức & Hành chính', icon: Users },
+      ...(coTabTaiChinh ? [{ id: 'tai-chinh', label: 'Tài chính', icon: PiggyBank }] : []),
+      { id: 'nhan-su', label: 'Tổ chức & Nhân sự', icon: Users },
       { id: 'lich', label: 'Lịch công tác', icon: Calendar },
     ];
 
@@ -997,7 +996,7 @@ export function DashboardPage() {
             <button
               key={tab.id}
               onClick={() => handleTabChange(tab.id)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-bold transition-all whitespace-nowrap cursor-pointer ${
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[12px] font-bold transition-all whitespace-nowrap cursor-pointer ${
                 isActive
                   ? 'bg-primary-500 text-white shadow-xs'
                   : 'text-ink-secondary hover:bg-subtle hover:text-ink'
