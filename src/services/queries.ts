@@ -395,19 +395,22 @@ export async function updateHopDong(id: string, i: HopDongInput) {
   if (Number.isNaN(idNum)) throw new Error(`Mã hợp đồng không hợp lệ: ${id}`);
 
   const row = hopDongRow(i);
-  const { error } = await supabase.from('hop_dong').update(row).eq('id', idNum);
-  if (!error) return;
+  const { error, data } = await supabase.from('hop_dong').update(row).eq('id', idNum).select('id');
+  if (!error) {
+    throwIfKhongGhiDuoc({ error, data });
+    return;
+  }
   if (!thieuCotFileDuThao(error)) throw new Error(error.message);
 
   delete (row as any).file_du_thao_url;
   delete (row as any).ten_file_du_thao;
-  throwIf((await supabase.from('hop_dong').update(row).eq('id', idNum)).error);
+  throwIfKhongGhiDuoc(await supabase.from('hop_dong').update(row).eq('id', idNum).select('id'));
 }
 
 export async function deleteHopDong(id: string) {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(`Mã hợp đồng không hợp lệ: ${id}`);
-  throwIf((await supabase.from('hop_dong').delete().eq('id', idNum)).error);
+  throwIfKhongGhiDuoc(await supabase.from('hop_dong').delete().eq('id', idNum).select('id'));
 }
 
 /** Cập nhật nhanh trạng thái trình/duyệt Viện trưởng (Điều 6.1) mà không cần mở form đầy đủ. */
@@ -419,19 +422,20 @@ export async function updateHopDongPheDuyet(
   if (patch.ngayTrinhDuyet !== undefined) row.ngay_trinh_duyet = str(patch.ngayTrinhDuyet);
   if (patch.ngayDuyet !== undefined) row.ngay_duyet = str(patch.ngayDuyet);
   if (patch.nguoiDuyetId !== undefined) row.nguoi_duyet_id = num(patch.nguoiDuyetId);
-  throwIf((await supabase.from('hop_dong').update(row).eq('id', Number(id))).error);
+  throwIfKhongGhiDuoc(await supabase.from('hop_dong').update(row).eq('id', Number(id)).select('id'));
 }
 
 /** Đánh dấu đã/chưa quyết toán, thanh lý hợp đồng (Điều 11) — độc lập với trạng thái thực hiện. */
 export async function updateQuyetToanHopDong(id: string, daQuyetToan: boolean) {
-  throwIf(
-    (await supabase
+  throwIfKhongGhiDuoc(
+    await supabase
       .from('hop_dong')
       .update({
         trang_thai_quyet_toan: daQuyetToan ? 'da-quyet-toan' : 'chua-quyet-toan',
         ngay_quyet_toan: daQuyetToan ? new Date().toISOString().slice(0, 10) : null,
       })
-      .eq('id', Number(id))).error,
+      .eq('id', Number(id))
+      .select('id'),
   );
 }
 

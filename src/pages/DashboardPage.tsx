@@ -956,26 +956,6 @@ export function DashboardPage() {
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-primary' : ''}`} />
         </button>
 
-        {/* Nút Xuất Excel */}
-        <button
-          onClick={handleExportExcel}
-          title="Xuất bảng số liệu Excel"
-          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-border dark:border-slate-700/80 hover:bg-subtle text-ink-secondary text-[11.5px] font-bold transition-colors cursor-pointer"
-        >
-          <Download className="w-3.5 h-3.5 text-success" />
-          <span className="hidden xl:inline">Xuất Excel</span>
-        </button>
-
-        {/* Nút In Báo cáo */}
-        <button
-          onClick={handlePrint}
-          title="In báo cáo giao ban"
-          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-border dark:border-slate-700/80 hover:bg-subtle text-ink-secondary text-[11.5px] font-bold transition-colors cursor-pointer"
-        >
-          <Printer className="w-3.5 h-3.5 text-ink-muted" />
-          <span className="hidden xl:inline">In báo cáo</span>
-        </button>
-
         {/* Nút Trình chiếu Giao ban */}
         <button
           onClick={() => setIsMeetingMode(!isMeetingMode)}

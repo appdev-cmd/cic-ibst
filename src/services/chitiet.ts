@@ -682,16 +682,15 @@ async function syncTrangThaiQuyetToan(hopDongId: string) {
     .sort()
     .at(-1);
   const homNay = new Date().toISOString().slice(0, 10);
-  throwIf(
-    (
-      await supabase
-        .from('hop_dong')
-        .update({
-          trang_thai_quyet_toan: daXongHet ? 'da-quyet-toan' : 'chua-quyet-toan',
-          ngay_quyet_toan: daXongHet ? (ngayGanNhat ?? homNay) : null,
-        })
-        .eq('id', Number(hopDongId))
-    ).error,
+  throwIfKhongGhiDuoc(
+    await supabase
+      .from('hop_dong')
+      .update({
+        trang_thai_quyet_toan: daXongHet ? 'da-quyet-toan' : 'chua-quyet-toan',
+        ngay_quyet_toan: daXongHet ? (ngayGanNhat ?? homNay) : null,
+      })
+      .eq('id', Number(hopDongId))
+      .select('id'),
   );
 }
 
@@ -706,13 +705,13 @@ export async function createQuyetToanGiaiDoan(hopDongId: string, i: QuyetToanGia
   await syncTrangThaiQuyetToan(hopDongId);
 }
 export async function updateQuyetToanGiaiDoan(hopDongId: string, id: string, i: QuyetToanGiaiDoanInput) {
-  throwIf(
-    (await supabase.from('quyet_toan_giai_doan').update(quyetToanGiaiDoanRow(i)).eq('id', Number(id))).error,
+  throwIfKhongGhiDuoc(
+    await supabase.from('quyet_toan_giai_doan').update(quyetToanGiaiDoanRow(i)).eq('id', Number(id)).select('id'),
   );
   await syncTrangThaiQuyetToan(hopDongId);
 }
 export async function deleteQuyetToanGiaiDoan(hopDongId: string, id: string) {
-  throwIf((await supabase.from('quyet_toan_giai_doan').delete().eq('id', Number(id))).error);
+  throwIfKhongGhiDuoc(await supabase.from('quyet_toan_giai_doan').delete().eq('id', Number(id)).select('id'));
   await syncTrangThaiQuyetToan(hopDongId);
 }
 
@@ -773,12 +772,12 @@ export async function createDonViGiaoViec(phieuGiaoViecId: string, i: DonViGiaoV
   );
 }
 export async function updateDonViGiaoViec(id: string, i: DonViGiaoViecInput) {
-  throwIf(
-    (await supabase.from('phieu_giao_viec_don_vi').update(donViGiaoViecRow(i)).eq('id', Number(id))).error,
+  throwIfKhongGhiDuoc(
+    await supabase.from('phieu_giao_viec_don_vi').update(donViGiaoViecRow(i)).eq('id', Number(id)).select('id'),
   );
 }
 export async function deleteDonViGiaoViec(id: string) {
-  throwIf((await supabase.from('phieu_giao_viec_don_vi').delete().eq('id', Number(id))).error);
+  throwIfKhongGhiDuoc(await supabase.from('phieu_giao_viec_don_vi').delete().eq('id', Number(id)).select('id'));
 }
 
 // ─── NHẬT KÝ TRUY VẾT HỢP ĐỒNG (Điều 9, Điều 10) ───
@@ -936,7 +935,7 @@ export async function getTepHopDongUrl(path: string): Promise<string> {
 
 export async function deleteTepHopDong(id: string, path: string) {
   throwIf((await supabase.storage.from('hop-dong').remove([path])).error);
-  throwIf((await supabase.from('hop_dong_tep_dinh_kem').delete().eq('id', Number(id))).error);
+  throwIfKhongGhiDuoc(await supabase.from('hop_dong_tep_dinh_kem').delete().eq('id', Number(id)).select('id'));
 }
 
 // ─── SLA NGHIỆP VỤ (Điều 6.3, 9.6c, 11.1) ───
@@ -1023,10 +1022,10 @@ export async function createTienDo(hopDongId: string, i: TienDoInput) {
   );
 }
 export async function updateTienDo(id: string, i: TienDoInput) {
-  throwIf((await supabase.from('tien_do_hop_dong').update(tienDoRow(i)).eq('id', Number(id))).error);
+  throwIfKhongGhiDuoc(await supabase.from('tien_do_hop_dong').update(tienDoRow(i)).eq('id', Number(id)).select('id'));
 }
 export async function deleteTienDo(id: string) {
-  throwIf((await supabase.from('tien_do_hop_dong').delete().eq('id', Number(id))).error);
+  throwIfKhongGhiDuoc(await supabase.from('tien_do_hop_dong').delete().eq('id', Number(id)).select('id'));
 }
 
 // ─── PHÂN PHỐI & LƯU TRỮ HĐ ĐÃ KÝ (Điều 6.3 QC 2815) ───
@@ -1100,18 +1099,17 @@ export async function taoChecklistPhanPhoi(hopDongId: string, capKy: string | nu
 }
 
 export async function toggleDaGuiPhanPhoi(id: string, daGui: boolean) {
-  throwIf(
-    (
-      await supabase
-        .from('phan_phoi_hop_dong')
-        .update({ da_gui: daGui, ngay_gui: daGui ? new Date().toISOString().slice(0, 10) : null })
-        .eq('id', Number(id))
-    ).error,
+  throwIfKhongGhiDuoc(
+    await supabase
+      .from('phan_phoi_hop_dong')
+      .update({ da_gui: daGui, ngay_gui: daGui ? new Date().toISOString().slice(0, 10) : null })
+      .eq('id', Number(id))
+      .select('id'),
   );
 }
 
 export async function deletePhanPhoiHopDong(id: string) {
-  throwIf((await supabase.from('phan_phoi_hop_dong').delete().eq('id', Number(id))).error);
+  throwIfKhongGhiDuoc(await supabase.from('phan_phoi_hop_dong').delete().eq('id', Number(id)).select('id'));
 }
 
 export async function createPhanPhoiHopDong(hopDongId: string, noiNhan: string, hinhThuc: 'giay' | 'dien-tu') {

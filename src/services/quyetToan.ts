@@ -2,6 +2,7 @@
 // → tờ phân phối (Bảng 1) → duyệt → thanh quyết toán; kèm tạm ứng Đ.7.7 và lãi 130% Đ.14.
 // Xem docs/review-module-hop-dong-2026-09.md §6 Đợt 2.
 import { supabase } from '../lib/supabase';
+import { throwIfKhongGhiDuoc } from '../lib/rlsGuard';
 
 function throwIf(error: { message: string } | null) {
   if (error) throw new Error(error.message);
@@ -112,11 +113,13 @@ export async function chuyenBuocDeNghiXuatHd(
     patch.nguoi_tckt_id = opts?.actorNhanSuId ? Number(opts.actorNhanSuId) : null;
   }
   if (den === 'tu-choi') patch.ly_do_tu_choi = str(opts?.lyDoTuChoi);
-  throwIf((await supabase.from('de_nghi_xuat_hoa_don').update(patch).eq('id', Number(id))).error);
+  throwIfKhongGhiDuoc(
+    await supabase.from('de_nghi_xuat_hoa_don').update(patch).eq('id', Number(id)).select('id'),
+  );
 }
 
 export async function deleteDeNghiXuatHoaDon(id: string) {
-  throwIf((await supabase.from('de_nghi_xuat_hoa_don').delete().eq('id', Number(id))).error);
+  throwIfKhongGhiDuoc(await supabase.from('de_nghi_xuat_hoa_don').delete().eq('id', Number(id)).select('id'));
 }
 
 // ═══ TỜ PHÂN PHỐI QUYẾT TOÁN (Đ.11.1, 11.2, 12.4a) ═══
@@ -211,11 +214,11 @@ export async function chuyenBuocToPhanPhoi(
 ) {
   const patch: Record<string, unknown> = { trang_thai: den };
   if (den === 'da-duyet') patch.nguoi_duyet_id = actorNhanSuId ? Number(actorNhanSuId) : null;
-  throwIf((await supabase.from('to_phan_phoi').update(patch).eq('id', Number(id))).error);
+  throwIfKhongGhiDuoc(await supabase.from('to_phan_phoi').update(patch).eq('id', Number(id)).select('id'));
 }
 
 export async function deleteToPhanPhoi(id: string) {
-  throwIf((await supabase.from('to_phan_phoi').delete().eq('id', Number(id))).error);
+  throwIfKhongGhiDuoc(await supabase.from('to_phan_phoi').delete().eq('id', Number(id)).select('id'));
 }
 
 // ═══ TẠM ỨNG (Đ.7.7) + LÃI 130% KHI QUÁ HẠN (Đ.14 mục 2 dòng 6) ═══
@@ -282,18 +285,17 @@ export async function createTamUng(hopDongId: string, i: TamUngInput) {
 }
 
 export async function ghiNhanHoanTamUng(id: string, soTienDaHoan: number, ngayHoan: string) {
-  throwIf(
-    (
-      await supabase
-        .from('tam_ung')
-        .update({ so_tien_da_hoan: soTienDaHoan, ngay_hoan: str(ngayHoan), trang_thai: 'da-hoan' })
-        .eq('id', Number(id))
-    ).error,
+  throwIfKhongGhiDuoc(
+    await supabase
+      .from('tam_ung')
+      .update({ so_tien_da_hoan: soTienDaHoan, ngay_hoan: str(ngayHoan), trang_thai: 'da-hoan' })
+      .eq('id', Number(id))
+      .select('id'),
   );
 }
 
 export async function deleteTamUng(id: string) {
-  throwIf((await supabase.from('tam_ung').delete().eq('id', Number(id))).error);
+  throwIfKhongGhiDuoc(await supabase.from('tam_ung').delete().eq('id', Number(id)).select('id'));
 }
 
 export interface LaiQuaHanTamUng {
