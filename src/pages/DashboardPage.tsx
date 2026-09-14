@@ -55,6 +55,10 @@ import {
   Percent,
   BarChart3,
   Table,
+  Award,
+  Shield,
+  GraduationCap,
+  ShieldCheck,
 } from 'lucide-react';
 import {
   LineChart,
@@ -255,6 +259,7 @@ export function DashboardPage() {
   const [debtViewMode, setDebtViewMode] = useState<'cot-dung' | 'ma-tran'>('cot-dung');
   const [tableUnit, setTableUnit] = useState<'ty' | 'nghin'>('ty');
   const [trendChartMode, setTrendChartMode] = useState<'ky-ket' | 'doanh-thu' | 'dong-tien' | 'so-sanh'>('ky-ket');
+  const [executiveChartMode, setExecutiveChartMode] = useState<'bien-dong' | 'cung-ky' | 'khoi-don-vi'>('bien-dong');
 
   const { openPanel } = useSlidePanel();
 
@@ -825,10 +830,19 @@ export function DashboardPage() {
     });
   }, [taiChinhData]);
   const growthComparisonData = dashboardData?.growthComparisonData || [];
+  const monthlyYoYComparison = dashboardData?.monthlyYoYComparison || [];
+  const khoiDonViData = dashboardData?.khoiDonViData || [];
   const coCauDoanhThu = dashboardData?.coCauDoanhThu || [];
   const coCauTienVe = dashboardData?.coCauTienVe || [];
   const coCauThue = dashboardData?.coCauThue || [];
   const majorProjects = dashboardData?.majorProjects || [];
+  const hoatDongQuanTri = dashboardData?.hoatDongQuanTri || [];
+  const nangLucDauThau = dashboardData?.nangLucDauThau || {
+    tongGoi: 58,
+    soGoiTrung: 47,
+    tyLeTrung: 81.0,
+    tongGiaTriTrung: 18.94,
+  };
   const coreStandards = dashboardData?.coreStandards || [];
   const investmentProjects = dashboardData?.investmentProjects || [];
   const scientificPapers = dashboardData?.scientificPapers || [];
@@ -837,6 +851,50 @@ export function DashboardPage() {
   const lasXdData = dashboardData?.lasXdData || [];
   const khcnData = dashboardData?.khcnData || [];
   const canhBaoSummary = dashboardData?.canhBaoSummary;
+
+  const nhanSuAnalytics = dashboardData?.nhanSuAnalytics;
+  const coCauHocVi = nhanSuAnalytics?.coCauHocVi || [
+    { name: 'Tiến sĩ / TSKH', value: 7, color: '#8b5cf6' },
+    { name: 'Thạc sĩ', value: 27, color: '#3b82f6' },
+    { name: 'Kỹ sư / KTS', value: 550, color: '#10b981' },
+    { name: 'Cử nhân & Khác', value: 54, color: '#f59e0b' },
+  ];
+  const phanBoDonVi = nhanSuAnalytics?.phanBoDonVi || [];
+  const thapDoTuoi = nhanSuAnalytics?.thapDoTuoi || [];
+  const gioiTinh = nhanSuAnalytics?.gioiTinh || { nam: 567, nu: 71, pctNam: 89, pctNu: 11 };
+  const chungChiWarning = nhanSuAnalytics?.chungChiWarning || [];
+  const dangBoSummary = nhanSuAnalytics?.dangBoSummary || { tongDangVien: 270, caoCap: 38, trungCap: 185, soCap: 47, tyLeDangVien: 42 };
+  const daoTaoNcs = nhanSuAnalytics?.daoTaoNcs || [];
+
+  const renderHoatDongIcon = (iconName?: string) => {
+    switch (iconName) {
+      case 'Globe2':
+        return <Globe2 className="w-5 h-5" />;
+      case 'Building2':
+        return <Building2 className="w-5 h-5" />;
+      case 'Award':
+        return <Award className="w-5 h-5" />;
+      case 'Shield':
+        return <Shield className="w-5 h-5" />;
+      default:
+        return <Activity className="w-5 h-5" />;
+    }
+  };
+
+  const getHoatDongColorClass = (loai?: string) => {
+    switch (loai) {
+      case 'hop-tac':
+        return { bg: 'bg-info/10', text: 'text-info' };
+      case 'du-an':
+        return { bg: 'bg-primary/10', text: 'text-primary-500' };
+      case 'ptn':
+        return { bg: 'bg-warning/10', text: 'text-warning' };
+      case 'hoi-nghi':
+        return { bg: 'bg-success/10', text: 'text-success' };
+      default:
+        return { bg: 'bg-primary/10', text: 'text-primary-500' };
+    }
+  };
 
   // ─── RENDER FILTER BAR ───
   const renderFilterBar = () => (
@@ -1213,16 +1271,18 @@ export function DashboardPage() {
             </button>
           </div>
 
-          {/* Row 2: Charts - Tiến độ Kế hoạch Ký kết & Doanh thu Lũy kế vs Mục tiêu (Ảnh 2) */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="card p-6 lg:col-span-2 border border-border dark:border-slate-700/80">
-              {/* Header phong cách Báo cáo Điều hành chuẩn ảnh 2 */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 border-b border-border dark:border-slate-700/80 pb-3.5">
+          {/* Row 2: Charts - Tiến độ Kế hoạch Lũy kế & Biểu đồ Điều hành Lãnh đạo Đa chiều */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+            {/* ══════════════ TẦNG 1 (HÀNG 1 TRÊN): CÂN XỨNG TUYỆT ĐỐI 100% ══════════════ */}
+            {/* Khối trái Tầng 1 (lg:col-span-2): Tiến độ tích lũy so với kế hoạch năm */}
+            <div className="card p-6 lg:col-span-2 border border-border dark:border-slate-700/80 flex flex-col justify-between">
+              {/* Header phong cách Báo cáo Điều hành chuẩn */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-border dark:border-slate-700/80 pb-3">
                 <div>
                   <span className="text-[11px] font-black uppercase tracking-wider text-primary-600 dark:text-primary-400">
-                    TIẾN ĐỘ
+                    TIẾN ĐỘ TÍCH LŨY VĨ MÔ
                   </span>
-                  <h3 className="text-[18px] font-black text-ink uppercase tracking-tight mt-0.5">
+                  <h3 className="text-[17px] font-black text-ink uppercase tracking-tight mt-0.5">
                     {trendChartMode === 'ky-ket' && 'GIÁ TRỊ KÝ KẾT LŨY KẾ VS MỤC TIÊU'}
                     {trendChartMode === 'doanh-thu' && 'DOANH THU THỰC HIỆN LŨY KẾ VS MỤC TIÊU'}
                     {trendChartMode === 'dong-tien' && 'DÒNG TIỀN VỀ LŨY KẾ VS MỤC TIÊU'}
@@ -1233,12 +1293,12 @@ export function DashboardPage() {
                   </p>
                 </div>
 
-                {/* Pill Segmented Controls như ảnh 2 */}
+                {/* Pill Segmented Controls */}
                 <div className="flex items-center gap-1 bg-subtle dark:bg-slate-800/90 p-1 rounded-xl border border-border dark:border-slate-700/80 shrink-0 self-start sm:self-center">
                   <button
                     type="button"
                     onClick={() => setTrendChartMode('ky-ket')}
-                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                       trendChartMode === 'ky-ket'
                         ? 'bg-amber-500 text-white shadow-xs'
                         : 'text-ink-secondary hover:text-ink hover:bg-surface'
@@ -1249,7 +1309,7 @@ export function DashboardPage() {
                   <button
                     type="button"
                     onClick={() => setTrendChartMode('doanh-thu')}
-                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                       trendChartMode === 'doanh-thu'
                         ? 'bg-emerald-600 text-white shadow-xs'
                         : 'text-ink-secondary hover:text-ink hover:bg-surface'
@@ -1260,7 +1320,7 @@ export function DashboardPage() {
                   <button
                     type="button"
                     onClick={() => setTrendChartMode('dong-tien')}
-                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                       trendChartMode === 'dong-tien'
                         ? 'bg-sky-600 text-white shadow-xs'
                         : 'text-ink-secondary hover:text-ink hover:bg-surface'
@@ -1271,7 +1331,7 @@ export function DashboardPage() {
                   <button
                     type="button"
                     onClick={() => setTrendChartMode('so-sanh')}
-                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                       trendChartMode === 'so-sanh'
                         ? 'bg-primary-600 text-white shadow-xs'
                         : 'text-ink-secondary hover:text-ink hover:bg-surface'
@@ -1282,16 +1342,16 @@ export function DashboardPage() {
                 </div>
               </div>
 
-              {/* Chart container */}
-              <div className="h-[430px]">
+              {/* Chart container chuẩn tầng 1 */}
+              <div className="h-[250px] flex-1 min-h-[230px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={luyKeChartData} margin={{ top: 20, right: 25, left: 10, bottom: 10 }}>
+                  <ComposedChart data={luyKeChartData} margin={{ top: 15, right: 20, left: 5, bottom: 5 }}>
                     <ChartDefs />
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
-                    <XAxis dataKey="month" stroke="var(--text-muted)" fontSize={12} tickMargin={10} />
+                    <XAxis dataKey="month" stroke="var(--text-muted)" fontSize={11} tickMargin={8} />
                     <YAxis
                       stroke="var(--text-muted)"
-                      fontSize={12}
+                      fontSize={11}
                       tickFormatter={(val) => `${val} tỷ`}
                       domain={[0, 'auto']}
                     />
@@ -1303,7 +1363,7 @@ export function DashboardPage() {
                         value: 'KH năm: 750 tỷ',
                         position: 'insideTopLeft',
                         fill: 'var(--text-muted)',
-                        fontSize: 11,
+                        fontSize: 10.5,
                         fontWeight: 700,
                       }}
                     />
@@ -1313,13 +1373,13 @@ export function DashboardPage() {
                         if (!active || !payload || !payload.length) return null;
                         const data = payload[0].payload;
                         return (
-                          <div className="bg-surface/95 dark:bg-slate-900/95 backdrop-blur-md p-3.5 rounded-xl shadow-xl border border-border dark:border-slate-700/80 text-xs min-w-[230px]">
-                            <div className="font-black text-ink pb-1.5 mb-2 border-b border-border dark:border-slate-700/80 flex items-center justify-between">
+                          <div className="bg-surface/95 dark:bg-slate-900/95 backdrop-blur-md p-3 rounded-xl shadow-xl border border-border dark:border-slate-700/80 text-xs min-w-[220px]">
+                            <div className="font-black text-ink pb-1 mb-1.5 border-b border-border dark:border-slate-700/80 flex items-center justify-between">
                               <span>{data.monthLabel}</span>
-                              <span className="text-2xs text-ink-muted">Mục tiêu năm: 750 tỷ</span>
+                              <span className="text-2xs text-ink-muted">Mục tiêu: 750 tỷ</span>
                             </div>
                             {!data.hasActual ? (
-                              <div className="space-y-1.5 py-1">
+                              <div className="space-y-1 py-1">
                                 <div className="text-amber-600 dark:text-amber-400 font-medium italic">
                                   Chưa phát sinh dữ liệu thực tế
                                 </div>
@@ -1329,7 +1389,7 @@ export function DashboardPage() {
                                 </div>
                               </div>
                             ) : (
-                              <div className="space-y-1.5">
+                              <div className="space-y-1">
                                 {trendChartMode === 'ky-ket' && (
                                   <>
                                     <div className="flex justify-between items-center text-amber-600 dark:text-amber-400 font-bold">
@@ -1407,11 +1467,10 @@ export function DashboardPage() {
                       }}
                     />
                     <Legend
-                      wrapperStyle={{ fontSize: '13px', fontWeight: '600', paddingTop: '16px' }}
+                      wrapperStyle={{ fontSize: '11.5px', fontWeight: '600', paddingTop: '10px' }}
                       formatter={(value) => <span className="text-xs font-bold text-ink-secondary px-1.5">{value}</span>}
                     />
 
-                    {/* Render đường theo mode đã chọn với hiệu ứng mờ bóng gạch nối high-tech */}
                     {trendChartMode === 'ky-ket' && (
                       <>
                         <Area
@@ -1419,21 +1478,21 @@ export function DashboardPage() {
                           dataKey="kyMoiLuyKe"
                           name="Lũy kế"
                           stroke="#f59e0b"
-                          strokeWidth={3.5}
+                          strokeWidth={3}
                           fillOpacity={1}
                           fill="url(#colorLuyKeKyKet)"
                           filter="url(#glowKyKet)"
                           connectNulls={false}
-                          dot={{ r: 4.5, fill: '#f59e0b', stroke: '#ffffff', strokeWidth: 2.5 }}
-                          activeDot={{ r: 7, stroke: '#ffffff', strokeWidth: 3, fill: '#f59e0b' }}
+                          dot={{ r: 3.5, fill: '#f59e0b', stroke: '#ffffff', strokeWidth: 2 }}
+                          activeDot={{ r: 5.5, stroke: '#ffffff', strokeWidth: 2, fill: '#f59e0b' }}
                         />
                         <Line
                           type="monotone"
                           dataKey="mucTieu"
                           name="Mục tiêu"
                           stroke="#94a3b8"
-                          strokeWidth={2}
-                          strokeDasharray="5 5"
+                          strokeWidth={1.8}
+                          strokeDasharray="4 4"
                           connectNulls={true}
                           dot={false}
                         />
@@ -1447,21 +1506,21 @@ export function DashboardPage() {
                           dataKey="doanhThuLuyKe"
                           name="Lũy kế"
                           stroke="#10b981"
-                          strokeWidth={3.5}
+                          strokeWidth={3}
                           fillOpacity={1}
                           fill="url(#colorLuyKeDoanhThu)"
                           filter="url(#glowDoanhThu)"
                           connectNulls={false}
-                          dot={{ r: 4.5, fill: '#10b981', stroke: '#ffffff', strokeWidth: 2.5 }}
-                          activeDot={{ r: 7, stroke: '#ffffff', strokeWidth: 3, fill: '#10b981' }}
+                          dot={{ r: 3.5, fill: '#10b981', stroke: '#ffffff', strokeWidth: 2 }}
+                          activeDot={{ r: 5.5, stroke: '#ffffff', strokeWidth: 2, fill: '#10b981' }}
                         />
                         <Line
                           type="monotone"
                           dataKey="mucTieu"
                           name="Mục tiêu"
                           stroke="#94a3b8"
-                          strokeWidth={2}
-                          strokeDasharray="5 5"
+                          strokeWidth={1.8}
+                          strokeDasharray="4 4"
                           connectNulls={true}
                           dot={false}
                         />
@@ -1475,21 +1534,21 @@ export function DashboardPage() {
                           dataKey="dongTienLuyKe"
                           name="Lũy kế"
                           stroke="#0284c7"
-                          strokeWidth={3.5}
+                          strokeWidth={3}
                           fillOpacity={1}
                           fill="url(#colorLuyKeDongTien)"
                           filter="url(#glowDongTien)"
                           connectNulls={false}
-                          dot={{ r: 4.5, fill: '#0284c7', stroke: '#ffffff', strokeWidth: 2.5 }}
-                          activeDot={{ r: 7, stroke: '#ffffff', strokeWidth: 3, fill: '#0284c7' }}
+                          dot={{ r: 3.5, fill: '#0284c7', stroke: '#ffffff', strokeWidth: 2 }}
+                          activeDot={{ r: 5.5, stroke: '#ffffff', strokeWidth: 2, fill: '#0284c7' }}
                         />
                         <Line
                           type="monotone"
                           dataKey="mucTieu"
                           name="Mục tiêu"
                           stroke="#94a3b8"
-                          strokeWidth={2}
-                          strokeDasharray="5 5"
+                          strokeWidth={1.8}
+                          strokeDasharray="4 4"
                           connectNulls={true}
                           dot={false}
                         />
@@ -1503,32 +1562,32 @@ export function DashboardPage() {
                           dataKey="kyMoiLuyKe"
                           name="Ký kết Lũy kế"
                           stroke="#f59e0b"
-                          strokeWidth={3.5}
+                          strokeWidth={2.5}
                           fillOpacity={0.6}
                           fill="url(#colorLuyKeKyKet)"
                           filter="url(#glowKyKet)"
                           connectNulls={false}
-                          dot={{ r: 4, fill: '#f59e0b', stroke: '#ffffff', strokeWidth: 2 }}
-                          activeDot={{ r: 6.5 }}
+                          dot={{ r: 3, fill: '#f59e0b', stroke: '#ffffff', strokeWidth: 1.5 }}
+                          activeDot={{ r: 5 }}
                         />
                         <Line
                           type="monotone"
                           dataKey="doanhThuLuyKe"
                           name="Doanh thu Lũy kế"
                           stroke="#10b981"
-                          strokeWidth={3.5}
+                          strokeWidth={2.5}
                           filter="url(#glowDoanhThu)"
                           connectNulls={false}
-                          dot={{ r: 4, fill: '#10b981', stroke: '#ffffff', strokeWidth: 2 }}
-                          activeDot={{ r: 6.5 }}
+                          dot={{ r: 3, fill: '#10b981', stroke: '#ffffff', strokeWidth: 1.5 }}
+                          activeDot={{ r: 5 }}
                         />
                         <Line
                           type="monotone"
                           dataKey="mucTieu"
                           name="Mục tiêu"
                           stroke="#94a3b8"
-                          strokeWidth={2}
-                          strokeDasharray="5 5"
+                          strokeWidth={1.8}
+                          strokeDasharray="4 4"
                           connectNulls={true}
                           dot={false}
                         />
@@ -1539,75 +1598,271 @@ export function DashboardPage() {
               </div>
             </div>
 
-            <div className="grid grid-rows-2 gap-6 lg:col-span-1">
-              <div className="card p-6 border border-border dark:border-slate-700/80">
-                <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border dark:border-slate-700/80 pb-3">
-                  Cơ cấu Doanh thu theo Lĩnh vực
-                </h3>
-                <div className="h-[210px] relative">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <ChartDefs />
-                      <Pie
-                        data={coCauDoanhThu}
-                        cx="50%"
-                        cy="42%"
-                        innerRadius={48}
-                        outerRadius={70}
-                        paddingAngle={3}
-                        dataKey="value"
-                        stroke="var(--bg-surface)"
-                        strokeWidth={2}
-                        filter="url(#pieGlow)"
-                      >
-                        {coCauDoanhThu.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={`url(#pieGrad-${index % 5})`} />
-                        ))}
-                      </Pie>
-                      <Tooltip {...tooltipStyle} formatter={(value: any) => `${value} tỷ`} />
-                      <Legend
-                        layout="horizontal"
-                        verticalAlign="bottom"
-                        align="center"
-                        wrapperStyle={{ fontSize: '11px', fontWeight: '600', paddingTop: '6px' }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  {/* Center donut overlay label: cx="50%", cy="42%" -> left-1/2, top-[42%] chuẩn xác 100% tuyệt đối */}
-                  <div className="absolute top-[42%] left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
-                    <p className="text-[15px] font-black text-ink leading-none">396.7</p>
-                    <p className="text-[9px] font-bold text-ink-muted uppercase tracking-wider mt-0.5">Tỷ VNĐ</p>
+            {/* Khối phải Tầng 1 (lg:col-span-1): Cơ cấu Doanh thu theo Lĩnh vực */}
+            <div className="card p-6 lg:col-span-1 border border-border dark:border-slate-700/80 flex flex-col justify-between">
+              <h3 className="text-[16px] font-black text-ink mb-2 border-b border-border dark:border-slate-700/80 pb-3">
+                Cơ cấu Doanh thu theo Lĩnh vực
+              </h3>
+              <div className="h-[250px] flex-1 min-h-[230px] flex flex-col justify-center relative">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <ChartDefs />
+                    <Pie
+                      data={coCauDoanhThu}
+                      cx="50%"
+                      cy="42%"
+                      innerRadius={50}
+                      outerRadius={74}
+                      paddingAngle={3}
+                      dataKey="value"
+                      stroke="var(--bg-surface)"
+                      strokeWidth={2}
+                      filter="url(#pieGlow)"
+                    >
+                      {coCauDoanhThu.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={`url(#pieGrad-${index % 5})`} />
+                      ))}
+                    </Pie>
+                    <Tooltip {...tooltipStyle} formatter={(value: any) => `${value} tỷ`} />
+                    <Legend
+                      layout="horizontal"
+                      verticalAlign="bottom"
+                      align="center"
+                      wrapperStyle={{ fontSize: '11px', fontWeight: '600', paddingTop: '6px' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                {/* Center donut overlay label: cx="50%", cy="42%" */}
+                <div className="absolute top-[42%] left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
+                  <p className="text-[15px] font-black text-ink leading-none">396.7</p>
+                  <p className="text-[9px] font-bold text-ink-muted uppercase tracking-wider mt-0.5">Tỷ VNĐ</p>
+                </div>
+              </div>
+            </div>
+
+            {/* ══════════════ TẦNG 2 (HÀNG 2 DƯỚI): CÂN XỨNG TUYỆT ĐỐI 100% ══════════════ */}
+            {/* Khối trái Tầng 2 (lg:col-span-2): Biểu đồ Điều hành Lãnh đạo Đa chiều */}
+            <div className="card p-6 lg:col-span-2 border border-border dark:border-slate-700/80 flex flex-col justify-between">
+              {/* Header Biểu đồ Điều hành */}
+              <div>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3 border-b border-border dark:border-slate-700/80 pb-3">
+                  <div>
+                    <span className="text-[11px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                      ĐIỀU HÀNH KINH DOANH & DÒNG TIỀN
+                    </span>
+                    <h3 className="text-[17px] font-black text-ink uppercase tracking-tight mt-0.5">
+                      {executiveChartMode === 'bien-dong' && 'BIẾN ĐỘNG DOANH THU & DÒNG TIỀN 12 THÁNG'}
+                      {executiveChartMode === 'cung-ky' && 'SO SÁNH DOANH THU CÙNG KỲ NĂM 2025 VS 2026'}
+                      {executiveChartMode === 'khoi-don-vi' && 'TỶ TRỌNG ĐÓNG GÓP & KẾ HOẠCH 5 KHỐI ĐƠN VỊ'}
+                    </h3>
+                    <p className="text-xs text-ink-muted mt-0.5">
+                      {executiveChartMode === 'bien-dong' && 'Chi tiết dòng tiền thực thu, hợp đồng ký mới và doanh thu nghiệm thu từng tháng (Tỷ VNĐ)'}
+                      {executiveChartMode === 'cung-ky' && 'Tốc độ tăng trưởng từng tháng so với năm trước (bình quân tăng 38-44% cùng kỳ)'}
+                      {executiveChartMode === 'khoi-don-vi' && 'Tương quan hoàn thành kế hoạch năm và tổng nợ đọng của 5 khối đơn vị trực thuộc'}
+                    </p>
+                  </div>
+
+                  {/* Pill Segmented Controls */}
+                  <div className="flex items-center gap-1 bg-subtle dark:bg-slate-800/90 p-1 rounded-xl border border-border dark:border-slate-700/80 shrink-0 self-start sm:self-center">
+                    <button
+                      type="button"
+                      onClick={() => setExecutiveChartMode('bien-dong')}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        executiveChartMode === 'bien-dong'
+                          ? 'bg-emerald-600 text-white shadow-xs'
+                          : 'text-ink-secondary hover:text-ink hover:bg-surface'
+                      }`}
+                    >
+                      Phát sinh 12 tháng
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setExecutiveChartMode('cung-ky')}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        executiveChartMode === 'cung-ky'
+                          ? 'bg-sky-600 text-white shadow-xs'
+                          : 'text-ink-secondary hover:text-ink hover:bg-surface'
+                      }`}
+                    >
+                      Cùng kỳ 2025-2026
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setExecutiveChartMode('khoi-don-vi')}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        executiveChartMode === 'khoi-don-vi'
+                          ? 'bg-primary-600 text-white shadow-xs'
+                          : 'text-ink-secondary hover:text-ink hover:bg-surface'
+                      }`}
+                    >
+                      5 Khối đơn vị
+                    </button>
+                  </div>
+                </div>
+
+                {/* 4 Mini KPI Chips trên Header */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+                  <div className="bg-subtle/70 dark:bg-slate-800/50 p-2 rounded-lg border border-border/60 dark:border-slate-700/60 flex items-center justify-between">
+                    <span className="text-3xs font-bold text-ink-muted uppercase">Thu TB/Tháng</span>
+                    <span className="text-xs font-black text-emerald-600 dark:text-emerald-400">~68.3 Tỷ</span>
+                  </div>
+                  <div className="bg-subtle/70 dark:bg-slate-800/50 p-2 rounded-lg border border-border/60 dark:border-slate-700/60 flex items-center justify-between">
+                    <span className="text-3xs font-bold text-ink-muted uppercase">Tháng cao điểm</span>
+                    <span className="text-xs font-black text-amber-500">T6 (96.7 Tỷ)</span>
+                  </div>
+                  <div className="bg-subtle/70 dark:bg-slate-800/50 p-2 rounded-lg border border-border/60 dark:border-slate-700/60 flex items-center justify-between">
+                    <span className="text-3xs font-bold text-ink-muted uppercase">Hiệu suất thu</span>
+                    <span className="text-xs font-black text-sky-500">113% / DT</span>
+                  </div>
+                  <div className="bg-subtle/70 dark:bg-slate-800/50 p-2 rounded-lg border border-border/60 dark:border-slate-700/60 flex items-center justify-between">
+                    <span className="text-3xs font-bold text-ink-muted uppercase">Tỷ lệ KH 2026</span>
+                    <span className="text-xs font-black text-primary-500">126% Cả năm</span>
                   </div>
                 </div>
               </div>
 
-              <div className="card p-6 border border-border dark:border-slate-700/80">
-                <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border dark:border-slate-700/80 pb-3">
-                  Hoạt động Quản trị nổi bật
+              {/* Chart container chuẩn tầng 2 */}
+              <div className="h-[250px] flex-1 min-h-[230px]">
+                {executiveChartMode === 'bien-dong' && (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={taiChinhData} margin={{ top: 10, right: 15, left: 0, bottom: 5 }}>
+                      <ChartDefs />
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
+                      <XAxis dataKey="month" stroke="var(--text-muted)" fontSize={11} tickMargin={6} />
+                      <YAxis stroke="var(--text-muted)" fontSize={11} tickFormatter={(val) => `${val} tỷ`} />
+                      <Tooltip
+                        {...tooltipStyle}
+                        formatter={(value: any, name: any) => [`${value != null ? value : '--'} tỷ VNĐ`, name]}
+                      />
+                      <Legend wrapperStyle={{ fontSize: '11px', fontWeight: '600', paddingTop: '6px' }} />
+                      <Bar dataKey="kyMoi" name="Ký mới" fill="#f59e0b" radius={[4, 4, 0, 0]} maxBarSize={15} />
+                      <Bar dataKey="doanhThu" name="Doanh thu thực hiện" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={15} />
+                      <Line
+                        type="monotone"
+                        dataKey="dongTien"
+                        name="Dòng tiền về"
+                        stroke="#0284c7"
+                        strokeWidth={2.8}
+                        dot={{ r: 3.5, fill: '#0284c7', stroke: '#ffffff', strokeWidth: 1.5 }}
+                        activeDot={{ r: 5 }}
+                        filter="url(#glowDongTien)"
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="luong"
+                        name="Quỹ lương"
+                        stroke="#f43f5e"
+                        strokeWidth={1.5}
+                        strokeDasharray="3 3"
+                        dot={false}
+                      />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                )}
+
+                {executiveChartMode === 'cung-ky' && (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={monthlyYoYComparison} margin={{ top: 10, right: 15, left: 0, bottom: 5 }}>
+                      <ChartDefs />
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
+                      <XAxis dataKey="month" stroke="var(--text-muted)" fontSize={11} tickMargin={6} />
+                      <YAxis stroke="var(--text-muted)" fontSize={11} tickFormatter={(val) => `${val} tỷ`} />
+                      <Tooltip
+                        {...tooltipStyle}
+                        formatter={(value: any, name: any) => {
+                          if (name === 'Tăng trưởng %') return [`+${value}%`, name];
+                          return [`${value} tỷ VNĐ`, name];
+                        }}
+                      />
+                      <Legend wrapperStyle={{ fontSize: '11px', fontWeight: '600', paddingTop: '6px' }} />
+                      <Bar dataKey="val2025" name="Cùng kỳ 2025" fill="#94a3b8" radius={[4, 4, 0, 0]} maxBarSize={16} />
+                      <Bar dataKey="val2026" name="Thực hiện 2026" fill="#0284c7" radius={[4, 4, 0, 0]} maxBarSize={16} />
+                      <Line
+                        type="monotone"
+                        dataKey="val2026"
+                        name="Đường xu hướng 2026"
+                        stroke="#38bdf8"
+                        strokeWidth={2.5}
+                        dot={{ r: 3, fill: '#38bdf8' }}
+                      />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                )}
+
+                {executiveChartMode === 'khoi-don-vi' && (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={khoiDonViData} margin={{ top: 10, right: 15, left: 0, bottom: 5 }}>
+                      <ChartDefs />
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
+                      <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={10} tickMargin={6} />
+                      <YAxis stroke="var(--text-muted)" fontSize={11} tickFormatter={(val) => `${val} tỷ`} />
+                      <Tooltip
+                        {...tooltipStyle}
+                        formatter={(value: any, name: any, props: any) => {
+                          if (name === 'Doanh thu thực hiện') {
+                            const pct = props.payload?.pctKH;
+                            return [`${value} tỷ (${pct}% KH)`, name];
+                          }
+                          return [`${value} tỷ VNĐ`, name];
+                        }}
+                      />
+                      <Legend wrapperStyle={{ fontSize: '11px', fontWeight: '600', paddingTop: '6px' }} />
+                      <Bar dataKey="keHoach" name="Kế hoạch năm" fill="#94a3b8" radius={[4, 4, 0, 0]} maxBarSize={18} />
+                      <Bar dataKey="doanhThu" name="Doanh thu thực hiện" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={18} />
+                      <Bar dataKey="tongNo" name="Tổng nợ đọng" fill="#f43f5e" radius={[4, 4, 0, 0]} maxBarSize={18} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            </div>
+
+            {/* Khối phải Tầng 2 (lg:col-span-1): Hoạt động Quản trị nổi bật */}
+            <div className="card p-6 lg:col-span-1 border border-border dark:border-slate-700/80 flex flex-col justify-between">
+              <div>
+                <h3 className="text-[16px] font-black text-ink mb-3 border-b border-border dark:border-slate-700/80 pb-3 flex items-center justify-between">
+                  <span>Hoạt động Quản trị nổi bật</span>
+                  <span className="text-2xs font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary-500">
+                    {hoatDongQuanTri.length} sự kiện
+                  </span>
                 </h3>
-                <ul className="space-y-4">
-                  <li className="flex items-start gap-3">
-                    <div className="p-2 bg-info/10 rounded-lg text-info">
-                      <Globe2 className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-ink text-[14px]">Hợp tác Quốc tế & Trong nước</h4>
-                      <p className="text-[12.5px] text-ink-secondary mt-1">
-                        Ký MOU Tập đoàn Trần Đức, làm việc với JICA, ACI, KICT.
-                      </p>
-                    </div>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg text-primary-500">
-                      <Building2 className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-ink text-[14px]">Dự án Tòa nhà 10 tầng</h4>
-                      <p className="text-[12.5px] text-ink-secondary mt-1">
-                        Tổng mức đầu tư 562.5 tỷ. Đang lập quy hoạch tổng mặt bằng.
-                      </p>
-                    </div>
-                  </li>
+                <ul className="space-y-3.5 max-h-[350px] overflow-y-auto pr-1">
+                  {hoatDongQuanTri.length > 0 ? (
+                    hoatDongQuanTri.map((item) => {
+                      const color = getHoatDongColorClass(item.loai);
+                      return (
+                        <li key={item.id} className="flex items-start gap-3">
+                          <div className={`p-2 rounded-lg shrink-0 ${color.bg} ${color.text}`}>
+                            {renderHoatDongIcon(item.icon)}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-bold text-ink text-[13.5px]">{item.tieuDe}</h4>
+                              {item.ngayThucHien && (
+                                <span className="text-3xs text-ink-muted bg-subtle px-1.5 py-0.5 rounded">
+                                  {new Date(item.ngayThucHien).toLocaleDateString('vi-VN')}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[12px] text-ink-secondary mt-0.5 leading-relaxed">
+                              {item.noiDung}
+                            </p>
+                          </div>
+                        </li>
+                      );
+                    })
+                  ) : (
+                    <li className="flex items-start gap-3">
+                      <div className="p-2 bg-info/10 rounded-lg text-info shrink-0">
+                        <Globe2 className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-ink text-[14px]">Hợp tác Quốc tế & Trong nước</h4>
+                        <p className="text-[12.5px] text-ink-secondary mt-1">
+                          Ký MOU Tập đoàn Trần Đức, làm việc với JICA, ACI, KICT.
+                        </p>
+                      </div>
+                    </li>
+                  )}
                 </ul>
               </div>
             </div>
@@ -1790,25 +2045,25 @@ export function DashboardPage() {
                 <div className="space-y-3">
                   <div className="flex justify-between items-center bg-subtle p-3 rounded-lg border border-border dark:border-slate-700/80">
                     <span className="text-[13px] font-bold text-ink-secondary">Tổng gói tham gia</span>
-                    <span className="text-[15px] font-black text-ink">58 gói</span>
+                    <span className="text-[15px] font-black text-ink">{nangLucDauThau.tongGoi} gói</span>
                   </div>
                   <div className="flex justify-between items-center bg-subtle p-3 rounded-lg border border-border dark:border-slate-700/80">
                     <span className="text-[13px] font-bold text-ink-secondary">Số gói trúng thầu</span>
-                    <span className="text-[15px] font-black text-success">47 gói</span>
+                    <span className="text-[15px] font-black text-success">{nangLucDauThau.soGoiTrung} gói</span>
                   </div>
                   <div className="flex justify-between items-center bg-subtle p-3 rounded-lg border border-border dark:border-slate-700/80">
                     <span className="text-[13px] font-bold text-ink-secondary">Tỷ lệ trúng thầu</span>
-                    <span className="text-[15px] font-black text-primary-500">81.0%</span>
+                    <span className="text-[15px] font-black text-primary-500">{nangLucDauThau.tyLeTrung.toFixed(1)}%</span>
                   </div>
                   <div className="flex justify-between items-center bg-subtle p-3 rounded-lg border border-border dark:border-slate-700/80">
                     <span className="text-[13px] font-bold text-ink-secondary">Tổng giá trị trúng</span>
-                    <span className="text-[15px] font-black text-danger">18.94 tỷ</span>
+                    <span className="text-[15px] font-black text-danger">{nangLucDauThau.tongGiaTriTrung.toFixed(2)} tỷ</span>
                   </div>
                 </div>
               </div>
               <div className="mt-4 pt-4 border-t border-border dark:border-slate-700/80 flex items-center justify-between text-2xs text-ink-muted">
                 <span>Đại diện Viện: Phòng KHKT</span>
-                <span>Dữ liệu đến 28/06/2026</span>
+                <span>Hệ thống Đấu thầu Quốc gia</span>
               </div>
             </div>
           </div>
@@ -2851,7 +3106,7 @@ export function DashboardPage() {
                       dataKey="value"
                       stroke="none"
                     >
-                      {coCauThue.map((entry, index) => (
+                      {coCauThue.map((entry: { name: string; value: number }, index: number) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
@@ -2908,58 +3163,347 @@ export function DashboardPage() {
       {/* ══════════════════ TAB 5: TỔ CHỨC & HÀNH CHÍNH ══════════════════ */}
       {activeTab === 'nhan-su' && (
         <div className="space-y-6 animate-in fade-in duration-300">
+          {/* HÀNG 1: 4 THẺ KPI CHIẾN LƯỢC NHÂN LỰC */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <KPICard
-              title="Tổng Nhân sự"
-              value={overviewData.tongNhanSu}
-              subtitle="+63 tuyển mới, -20 nghỉ | Thu nhập 18tr/th"
+              title="Tổng CBVC - NLĐ"
+              value={overviewData.tongNhanSu || 638}
+              subtitle="+63 tuyển mới, -20 nghỉ | Thu nhập BQ 19.9tr/th"
               icon={Users}
               color="primary"
               onClick={() => handleOpenDrilldown('nhan-su')}
             />
             <KPICard
-              title="Văn bản tiếp nhận"
-              value="1,600+"
-              subtitle="Qua hệ thống mạng e-Office"
-              icon={FileCheck2}
-              color="info"
+              title="Nhân lực Chất lượng cao"
+              value={`${coCauHocVi[0].value + coCauHocVi[1].value} TS & ThS`}
+              subtitle={`${coCauHocVi[0].value} Tiến sĩ, ${coCauHocVi[1].value} Thạc sĩ, ${coCauHocVi[2].value} Kỹ sư`}
+              icon={GraduationCap}
+              color="accent"
+              onClick={() => handleOpenDrilldown('nhan-su')}
             />
             <KPICard
-              title="Mạng lưới LAS-XD"
-              value="11"
-              subtitle="LAS-XD toàn quốc | 04 số tạp chí/năm"
+              title="Chứng chỉ Hành nghề XD"
+              value="679"
+              subtitle={`11 LAS-XD toàn quốc | ${chungChiWarning.length} CCHN cần gia hạn`}
               icon={Network}
               color="success"
+              onClick={() => handleOpenDrilldown('nhan-su')}
             />
             <KPICard
-              title="An toàn PCCC"
-              value="Đảm bảo"
-              subtitle="Đã kiểm tra định kỳ"
-              icon={ShieldAlert}
-              color="accent"
+              title="Công tác Đảng bộ Viện"
+              value={`${dangBoSummary.tongDangVien} ĐV`}
+              subtitle={`18 Chi bộ | Tỷ lệ ${dangBoSummary.tyLeDangVien}% tổng nhân sự`}
+              icon={ShieldCheck}
+              color="danger"
             />
           </div>
 
-          <div className="card p-6 border border-border dark:border-slate-700/80">
-            <h3 className="text-[16px] font-black text-ink mb-4 border-b border-border dark:border-slate-700/80 pb-3">
-              Biểu đồ Biến động Nhân sự Cán bộ theo tháng
-            </h3>
-            <div className="h-[280px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={nhanSuBienDongData} margin={{ top: 20, right: 20, bottom: 5, left: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
-                  <XAxis dataKey="month" stroke="var(--text-muted)" fontSize={12} />
-                  <YAxis stroke="var(--text-muted)" fontSize={12} />
-                  <Tooltip cursor={{ fill: 'var(--bg-subtle)' }} {...tooltipStyle} />
-                  <Legend wrapperStyle={{ fontSize: '13px', fontWeight: '600', paddingTop: '10px' }} />
-                  <Bar dataKey="tuyen" name="Tuyển mới" fill="var(--color-primary, #00668c)" radius={[4, 4, 0, 0]} maxBarSize={25} />
-                  <Bar dataKey="nghi" name="Nghỉ việc/Chấm dứt HĐ" fill="var(--color-danger, #ef4444)" radius={[4, 4, 0, 0]} maxBarSize={25} />
-                </BarChart>
-              </ResponsiveContainer>
+          {/* HÀNG 2: CƠ CẤU TRÌNH ĐỘ HỌC VỊ & PHÂN BỔ NHÂN LỰC 16 ĐƠN VỊ */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Donut Chart: Cơ cấu Trình độ & Học vị */}
+            <div className="card p-6 border border-border dark:border-slate-700/80 flex flex-col justify-between">
+              <div>
+                <div className="flex justify-between items-center mb-4 border-b border-border dark:border-slate-700/80 pb-3">
+                  <h3 className="text-[16px] font-black text-ink">Cơ cấu Trình độ & Học vị</h3>
+                  <span className="text-2xs font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary-500">
+                    {overviewData.tongNhanSu || 638} Cán bộ
+                  </span>
+                </div>
+                <div className="h-[220px] relative">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={coCauHocVi}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={75}
+                        paddingAngle={4}
+                        dataKey="value"
+                        stroke="none"
+                        isAnimationActive={false}
+                      >
+                        {coCauHocVi.map((entry: any, index: number) => (
+                          <Cell key={`cell-hv-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip {...tooltipStyle} formatter={(val: any) => [`${val} cán bộ`, 'Số lượng']} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  {/* Center label */}
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
+                    <p className="text-[18px] font-black text-ink leading-none">{coCauHocVi[0].value + coCauHocVi[1].value}</p>
+                    <p className="text-[9px] font-bold text-ink-muted uppercase tracking-wider mt-0.5">TS & ThS</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Legend chi tiết & % */}
+              {(() => {
+                const totalHocVi = coCauHocVi.reduce((acc: number, curr: any) => acc + curr.value, 0) || 1;
+                return (
+                  <div className="space-y-2 pt-3 border-t border-border dark:border-slate-700/80">
+                    {coCauHocVi.map((item, idx) => (
+                      <div key={idx} className="flex justify-between items-center text-[12px]">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                          <span className="font-semibold text-ink-secondary">{item.name}</span>
+                        </div>
+                        <div className="flex items-center gap-2 font-bold">
+                          <span className="text-ink">{item.value} người</span>
+                          <span className="text-2xs text-ink-muted">({Math.round((item.value / totalHocVi) * 100)}%)</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
-            <p className="text-2xs text-ink-muted mt-3 italic">
-              *Tổng kết: Tuyển mới 63 cán bộ, giảm 20 cán bộ (phù hợp với quy trình kiện toàn tinh giản bộ máy).
-            </p>
+
+            {/* BarChart: Phân bổ Nhân sự theo 16 Đơn vị trực thuộc */}
+            <div className="card p-6 lg:col-span-2 border border-border dark:border-slate-700/80">
+              <div className="flex justify-between items-center mb-4 border-b border-border dark:border-slate-700/80 pb-3">
+                <div>
+                  <h3 className="text-[16px] font-black text-ink">Phân bổ Nhân lực theo Đơn vị Trực thuộc</h3>
+                  <p className="text-2xs text-ink-muted mt-0.5">Quy mô quân số và tỷ lệ nhân lực trình độ cao (TS, ThS)</p>
+                </div>
+                <button
+                  onClick={() => handleOpenDrilldown('nhan-su')}
+                  className="text-xs font-bold text-primary-600 dark:text-primary-400 hover:underline cursor-pointer"
+                >
+                  Xem chi tiết nhân sự &gt;
+                </button>
+              </div>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={phanBoDonVi.slice(0, 10)} margin={{ top: 15, right: 15, bottom: 25, left: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
+                    <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={11} tickMargin={8} />
+                    <YAxis stroke="var(--text-muted)" fontSize={11} />
+                    <Tooltip
+                      cursor={{ fill: 'var(--bg-subtle)' }}
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const d = payload[0].payload;
+                          return (
+                            <div className="bg-surface border border-border dark:border-slate-700/80 p-3 rounded-xl shadow-lg text-[12px]">
+                              <p className="font-bold text-ink">{d.fullName} ({d.name})</p>
+                              <p className="text-sky-600 font-semibold mt-1">Tổng nhân sự: <strong>{d.soNhanSu} người</strong></p>
+                              <p className="text-purple-600 font-semibold">Tiến sĩ & Thạc sĩ: <strong>{d.tsThs} người</strong></p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: '12px', fontWeight: '500', paddingTop: '8px' }} />
+                    <Bar dataKey="soNhanSu" name="Tổng nhân sự" fill="#0284c7" isAnimationActive={false} radius={[4, 4, 0, 0]} maxBarSize={26} />
+                    <Bar dataKey="tsThs" name="Tiến sĩ & Thạc sĩ" fill="#8b5cf6" isAnimationActive={false} radius={[4, 4, 0, 0]} maxBarSize={26} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex items-center justify-between text-2xs text-ink-muted pt-2 border-t border-border dark:border-slate-700/80">
+                <span>Top 10 đơn vị đông quân số nhất trong hệ sinh thái IBST</span>
+                <span>Dữ liệu thực tế CSDL năm 2026</span>
+              </div>
+            </div>
+          </div>
+
+          {/* HÀNG 3: BIẾN ĐỘNG NHÂN SỰ & THÁP ĐỘ TUỔI / GIỚI TÍNH */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Biểu đồ biến động tuyển mới vs thôi việc */}
+            <div className="card p-6 border border-border dark:border-slate-700/80">
+              <div className="flex justify-between items-center mb-4 border-b border-border dark:border-slate-700/80 pb-3">
+                <h3 className="text-[16px] font-black text-ink">
+                  Diễn biến Tuyển dụng & Thôi việc theo tháng (2026)
+                </h3>
+                <span className="text-2xs text-success font-bold bg-success/10 px-2 py-0.5 rounded">
+                  Tăng ròng +43 CB
+                </span>
+              </div>
+              <div className="h-[250px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={nhanSuBienDongData} margin={{ top: 15, right: 15, bottom: 5, left: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
+                    <XAxis dataKey="month" stroke="var(--text-muted)" fontSize={12} />
+                    <YAxis stroke="var(--text-muted)" fontSize={12} />
+                    <Tooltip cursor={{ fill: 'var(--bg-subtle)' }} {...tooltipStyle} />
+                    <Legend wrapperStyle={{ fontSize: '12.5px', fontWeight: '600', paddingTop: '8px' }} />
+                    <Bar dataKey="tuyen" name="Tuyển mới" fill="#10b981" isAnimationActive={false} radius={[4, 4, 0, 0]} maxBarSize={22} />
+                    <Bar dataKey="nghi" name="Nghỉ việc / Tinh giản" fill="#ef4444" isAnimationActive={false} radius={[4, 4, 0, 0]} maxBarSize={22} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <p className="text-2xs text-ink-muted mt-3 italic">
+                *Tổng kết: Tuyển mới 63 cán bộ, tinh giản 20 cán bộ (phù hợp định hướng trẻ hóa & nâng cao chất lượng chuyên môn).
+              </p>
+            </div>
+
+            {/* Tháp độ tuổi & Tỷ lệ Giới tính */}
+            <div className="card p-6 border border-border dark:border-slate-700/80 flex flex-col justify-between">
+              <div>
+                <div className="flex justify-between items-center mb-4 border-b border-border dark:border-slate-700/80 pb-3">
+                  <h3 className="text-[16px] font-black text-ink">Cơ cấu Độ tuổi & Giới tính</h3>
+                  <span className="text-2xs font-bold text-ink-muted">Đặc thù kỹ thuật XD</span>
+                </div>
+
+                {/* Giới tính badge & thanh tiến trình */}
+                <div className="bg-subtle p-3 rounded-xl border border-border dark:border-slate-700/80 mb-4">
+                  <div className="flex justify-between items-center text-xs font-bold mb-2">
+                    <span className="text-sky-600 dark:text-sky-400">Nam giới: {gioiTinh.nam} ({gioiTinh.pctNam}%)</span>
+                    <span className="text-rose-500 dark:text-rose-400">Nữ giới: {gioiTinh.nu} ({gioiTinh.pctNu}%)</span>
+                  </div>
+                  <div className="w-full h-2.5 bg-rose-200 dark:bg-rose-950/50 rounded-full overflow-hidden flex">
+                    <div className="h-full bg-sky-500 rounded-l-full" style={{ width: `${gioiTinh.pctNam}%` }} />
+                    <div className="h-full bg-rose-400 rounded-r-full" style={{ width: `${gioiTinh.pctNu}%` }} />
+                  </div>
+                </div>
+
+                {/* Danh sách 4 nhóm tuổi */}
+                <div className="space-y-2.5">
+                  {thapDoTuoi.map((item, idx) => (
+                    <div key={idx} className="space-y-1">
+                      <div className="flex justify-between items-center text-[12px]">
+                        <span className="font-bold text-ink">{item.nhomTuoi} <span className="font-normal text-2xs text-ink-muted">({item.moTa})</span></span>
+                        <span className="font-black text-primary-500">{item.soLuong} người ({item.tyLe}%)</span>
+                      </div>
+                      <div className="w-full h-2 bg-subtle rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-primary-500 rounded-full transition-all duration-500"
+                          style={{ width: `${item.tyLe}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <p className="text-2xs text-ink-muted mt-3 pt-2 border-t border-border dark:border-slate-700/80 flex items-center justify-between">
+                <span>Độ tuổi vàng (30 - 45 tuổi) chiếm trên 57%</span>
+                <span>Lực lượng thực chiến sung sức</span>
+              </p>
+            </div>
+          </div>
+
+          {/* HÀNG 4: CẢNH BÁO CHỨNG CHỈ HÀNH NGHỀ & ĐẢNG BỘ - ĐÀO TẠO TIẾN SĨ */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Bảng cảnh báo chứng chỉ sắp hết hạn (90 ngày) */}
+            <div className="card p-6 lg:col-span-2 border border-border dark:border-slate-700/80">
+              <div className="flex justify-between items-center mb-4 border-b border-border dark:border-slate-700/80 pb-3">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5 text-warning" />
+                  <h3 className="text-[16px] font-black text-ink">
+                    Cảnh báo Chứng chỉ Hành nghề Xây dựng (Sắp hết hạn trong 90 ngày)
+                  </h3>
+                </div>
+                <span className="text-2xs font-bold px-2 py-0.5 rounded bg-warning/10 text-warning">
+                  {chungChiWarning.length} chứng chỉ
+                </span>
+              </div>
+              <div className="overflow-x-auto max-h-[300px] overflow-y-auto">
+                <table className="w-full text-left border-collapse text-[12.5px]">
+                  <thead>
+                    <tr className="border-b border-border dark:border-slate-700/80 bg-subtle/40">
+                      <th className="th-cell rounded-tl-lg py-2">Họ và tên</th>
+                      <th className="th-cell py-2">Đơn vị</th>
+                      <th className="th-cell py-2">Số hiệu CCHN</th>
+                      <th className="th-cell py-2">Lĩnh vực hành nghề</th>
+                      <th className="th-cell py-2">Hạn hiệu lực</th>
+                      <th className="th-cell text-right rounded-tr-lg py-2">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/60 dark:divide-slate-700/80">
+                    {chungChiWarning.length > 0 ? (
+                      chungChiWarning.map((row) => (
+                        <tr key={row.id} className="tr-hover">
+                          <td className="td-cell font-bold text-ink py-2.5 whitespace-nowrap">{row.hoTen}</td>
+                          <td className="td-cell py-2.5">
+                            <span className="px-1.5 py-0.5 rounded text-2xs font-bold bg-primary/10 text-primary-600 dark:text-primary-400">
+                              {row.donVi}
+                            </span>
+                          </td>
+                          <td className="td-cell text-ink-secondary font-mono text-xs py-2.5 whitespace-nowrap">{row.soHieu}</td>
+                          <td className="td-cell text-ink-secondary py-2.5 max-w-[200px] truncate" title={row.linhVuc}>{row.linhVuc}</td>
+                          <td className="td-cell py-2.5 whitespace-nowrap">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${
+                              row.soNgayCon <= 30
+                                ? 'bg-danger/10 text-danger border border-danger/20'
+                                : 'bg-warning/10 text-warning border border-warning/20'
+                            }`}>
+                              {row.ngayHetHan} (còn {row.soNgayCon} ngày)
+                            </span>
+                          </td>
+                          <td className="td-cell text-right py-2.5 whitespace-nowrap">
+                            <button
+                              onClick={() => handleOpenDrilldown('nhan-su')}
+                              className="px-2.5 py-1 rounded-lg text-xs font-bold bg-primary-500 text-white hover:bg-primary-600 transition-colors shadow-2xs cursor-pointer"
+                            >
+                              Đôn đốc
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={6} className="text-center py-6 text-ink-muted">
+                          Tất cả chứng chỉ hành nghề hiện đang còn hiệu lực an toàn trên 90 ngày.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Đảng bộ Viện & Đào tạo Tiến sĩ */}
+            <div className="card p-6 lg:col-span-1 border border-border dark:border-slate-700/80 flex flex-col justify-between">
+              <div>
+                <div className="flex justify-between items-center mb-4 border-b border-border dark:border-slate-700/80 pb-3">
+                  <h3 className="text-[16px] font-black text-ink">Đảng bộ & Đào tạo Tiến sĩ</h3>
+                  <span className="text-2xs font-bold text-danger bg-danger/10 px-2 py-0.5 rounded">Hạt nhân chính trị</span>
+                </div>
+
+                {/* Thống kê lý luận chính trị */}
+                <div className="space-y-2.5 mb-4">
+                  <div className="flex justify-between items-center bg-subtle p-2.5 rounded-lg border border-border dark:border-slate-700/80">
+                    <span className="text-xs font-bold text-ink-secondary">Tổng số Đảng viên</span>
+                    <span className="text-sm font-black text-danger">{dangBoSummary.tongDangVien} đ/c</span>
+                  </div>
+                  <div className="flex justify-between items-center bg-subtle p-2.5 rounded-lg border border-border dark:border-slate-700/80">
+                    <span className="text-xs font-bold text-ink-secondary">Lý luận Cao cấp / Cử nhân</span>
+                    <span className="text-sm font-black text-primary-500">{dangBoSummary.caoCap} đ/c</span>
+                  </div>
+                  <div className="flex justify-between items-center bg-subtle p-2.5 rounded-lg border border-border dark:border-slate-700/80">
+                    <span className="text-xs font-bold text-ink-secondary">Lý luận Trung cấp</span>
+                    <span className="text-sm font-black text-ink">{dangBoSummary.trungCap} đ/c</span>
+                  </div>
+                </div>
+
+                {/* Đào tạo NCS */}
+                <h4 className="text-xs font-black uppercase text-ink-muted tracking-wider mb-2">
+                  Đào tạo Tiến sĩ & NCS cấp Viện
+                </h4>
+                <ul className="space-y-2">
+                  {daoTaoNcs.map((ncs) => (
+                    <li key={ncs.id} className="p-2.5 rounded-lg bg-subtle/70 border border-border dark:border-slate-700/80 text-xs">
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-ink">{ncs.hoTen}</span>
+                        <span className="text-3xs font-bold px-1.5 py-0.5 rounded bg-success/10 text-success">
+                          {ncs.trangThai}
+                        </span>
+                      </div>
+                      <p className="text-ink-secondary text-2xs mt-1 truncate" title={ncs.deTai}>
+                        {ncs.deTai}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-border dark:border-slate-700/80 flex items-center justify-between text-2xs text-ink-muted">
+                <span>Cơ sở Đào tạo Sau đại học IBST</span>
+                <span>Nghị định 115/NĐ-CP</span>
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -12,6 +12,9 @@ import {
   Building2,
   X,
 } from 'lucide-react';
+import { Bot, BookOpen } from 'lucide-react';
+import { AiUsageDashboard } from '../components/ai/AiUsageDashboard';
+import { RAGKnowledgeManager } from '../components/ai/RAGKnowledgeManager';
 import { PageHeader } from '../components/PageHeader';
 import { DataState } from '../components/DataState';
 import { Field, inputCls } from '../components/Modal';
@@ -52,7 +55,7 @@ import { fetchDonViOptions, type Option } from '../services/queries';
 import { TAI_NGUYEN, NHAN_TAI_NGUYEN, HANH_DONG, NHAN_HANH_DONG, type HanhDong, type TaiNguyen } from '../lib/phanQuyen';
 import { cn } from '../lib/utils';
 
-type Tab = 'nguoi-dung' | 'danh-muc' | 'nhat-ky' | 'quyen-vai-tro' | 'quyen-nguoi-dung';
+type Tab = 'nguoi-dung' | 'danh-muc' | 'nhat-ky' | 'quyen-vai-tro' | 'quyen-nguoi-dung' | 'quan-tri-ai' | 'kho-tri-thuc-rag';
 
 /** Vai trò cần cấu hình quyền — bỏ 'quan-tri' vì fn_co_quyen() luôn bypass cho vai trò này. */
 const VAI_TRO_CAU_HINH_DUOC = VAI_TRO_OPTIONS.filter((o) => o.value !== 'quan-tri');
@@ -83,6 +86,8 @@ export function CaiDatPage() {
       ? ([
           { id: 'danh-muc', label: 'Danh mục dữ liệu', icon: ListTree },
           { id: 'nhat-ky', label: 'Nhật ký dữ liệu', icon: ScrollText },
+          { id: 'quan-tri-ai', label: 'Quản trị AI', icon: Bot },
+          { id: 'kho-tri-thuc-rag', label: 'Kho tri thức RAG', icon: BookOpen },
         ] as const)
       : []),
   ];
@@ -137,6 +142,8 @@ export function CaiDatPage() {
       {tab === 'quyen-nguoi-dung' && <QuyenNguoiDungTab coTheSua={coTheSuaPhanQuyen} />}
       {tab === 'danh-muc' && <DanhMucTab />}
       {tab === 'nhat-ky' && <NhatKyTab />}
+      {tab === 'quan-tri-ai' && <AiUsageDashboard />}
+      {tab === 'kho-tri-thuc-rag' && <RAGKnowledgeManager />}
     </div>
   );
 }

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { FolderOpen, Bot, Shield, FileSpreadsheet, Lock, Search, Sparkles } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { HoSoTaiLieuPage } from './HoSoTaiLieuPage';
-import { AiChatbot } from '../components/AiChatbot';
+import { AiRagPanel } from '../components/ai/AiRagPanel';
 import { cn } from '../lib/utils';
 import { usePhanQuyen } from '../hooks/usePhanQuyen';
 import { tabDuocPhep, type TaiNguyen } from '../lib/phanQuyen';
@@ -87,8 +87,8 @@ export function KhoLuuTruPage() {
               </p>
             </div>
           </div>
-          <div className="h-[600px] card overflow-hidden p-2">
-            <AiChatbot />
+          <div className="min-h-[600px] card overflow-hidden">
+            <AiRagPanel />
           </div>
         </div>
       )}

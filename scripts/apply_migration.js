@@ -32,7 +32,16 @@ if (dryRun) {
   process.exit(0);
 }
 
-const token = process.env.SUPABASE_ACCESS_TOKEN;
+let token = process.env.SUPABASE_ACCESS_TOKEN;
+if (!token && fs.existsSync('.env')) {
+  const envText = fs.readFileSync('.env', 'utf8');
+  envText.split(/\r?\n/).forEach((l) => {
+    const p = l.split('=');
+    if (p[0]?.trim() === 'SUPABASE_ACCESS_TOKEN') {
+      token = p.slice(1).join('=').trim();
+    }
+  });
+}
 if (!token) {
   console.error('Thiếu biến môi trường SUPABASE_ACCESS_TOKEN.');
   console.error('Lấy token tại https://supabase.com/dashboard/account/tokens');
