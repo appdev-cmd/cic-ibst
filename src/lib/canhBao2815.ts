@@ -11,6 +11,7 @@ import {
   canhBaoPhatNopChamHoSo,
   canhBaoPhatChungTuTre,
   canTrinhVienTruong,
+  xacDinhTrangThaiPheDuyet,
   timDinhMuc,
   type NhomHD,
 } from './qc2815';
@@ -83,8 +84,9 @@ export function quetHopDong(hd: HopDong, phu: DuLieuPhuTro = {}): KetQuaCanhBao[
   if (!hd.nhomHD) them('chua-phan-nhom', 'Không tính được phân bổ Bảng 1 và không xác định được ngưỡng trình Viện trưởng');
   if (!hd.chuTriId) them('chua-phan-cong-chu-tri', 'Hợp đồng chưa có người chịu trách nhiệm chính');
 
-  if (canTrinhVienTruong(hd.nhomHD, hd.giaDuThau ?? hd.giaTri, hd.phucTap) && hd.trangThaiPheDuyet !== 'da-duyet') {
-    them('chua-trinh-vien-truong', `Nhóm ${hd.nhomHD ?? '—'}, giá trị ${(hd.giaDuThau ?? hd.giaTri).toLocaleString('vi-VN')} tr — trạng thái phê duyệt hiện tại: ${hd.trangThaiPheDuyet}`);
+  const trangThaiPd = xacDinhTrangThaiPheDuyet(hd);
+  if (canTrinhVienTruong(hd.nhomHD, hd.giaDuThau ?? hd.giaTri, hd.phucTap) && trangThaiPd !== 'da-duyet') {
+    them('chua-trinh-vien-truong', `Nhóm ${hd.nhomHD ?? '—'}, giá trị ${(hd.giaDuThau ?? hd.giaTri).toLocaleString('vi-VN')} tr — trạng thái phê duyệt hiện tại: ${trangThaiPd}`);
   }
 
   if ((hd.trangThai === 'nghiem-thu' || hd.trangThai === 'hoan-thanh') && (hd.daThanhToan || 0) <= 0) {

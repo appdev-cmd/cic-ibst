@@ -1,6 +1,8 @@
 // Bảng 1 — Định mức giao kinh phí thực hiện HĐKT
 // (Kèm theo Quy chế 2815/QĐ-VKH ngày 01/12/2025, hiệu lực 01/01/2026)
 
+import type { TrangThaiPheDuyet } from '../types';
+
 export type NhomHD =
   | 'N1A' | 'N1B'
   | 'N2A' | 'N2B' | 'N2C' | 'N2D' | 'N2E' | 'N2F' | 'N2G'
@@ -352,6 +354,55 @@ export function canTrinhVienTruong(
   const gt = giaTriTruocThue || 0;
   const nguongInVND = dm.nguongTrinhVienTruong * 1_000_000;
   return gt >= dm.nguongTrinhVienTruong || gt >= nguongInVND;
+}
+
+/**
+ * Xác định trạng thái phê duyệt theo Điều 6.1 QC 2815:
+ * - HĐ KHÔNG vượt hạn mức trình Viện trưởng: 'khong-ap-dung'
+ * - HĐ VƯỢT hạn mức:
+ *   + Nếu trong DB đã có trạng thái cụ thể khác 'khong-ap-dung': tôn trọng DB ('cho-khkt-tham-tra', 'da-trinh', 'da-duyet').
+ *   + Nếu DB là 'khong-ap-dung' (dữ liệu import cũ):
+ *     - Hợp đồng đã có ngày ký hoặc đã qua bước dự thảo (đã ký, đang thực hiện, nghiệm thu, hoàn thành, quyết toán, thanh lý):
+ *       -> Đã được phê duyệt hợp lệ trước khi ký -> 'da-duyet'.
+ *     - Hợp đồng đang là dự thảo (chưa ký, trạng thái dự thảo/nháp):
+ *       -> 'chua-trinh'.
+ */
+export function xacDinhTrangThaiPheDuyet(hd: {
+  nhomHD?: string | null;
+  giaDuThau?: number | null;
+  giaTri: number;
+  phucTap?: boolean;
+  trangThai?: string;
+  buocHienTai?: string;
+  trangThaiPheDuyet?: TrangThaiPheDuyet;
+  ngayKy?: string | null;
+}): TrangThaiPheDuyet {
+  const isOverThreshold = canTrinhVienTruong(hd.nhomHD as NhomHD, hd.giaDuThau ?? hd.giaTri, hd.phucTap);
+  if (!isOverThreshold) return 'khong-ap-dung';
+
+  if (hd.trangThaiPheDuyet && hd.trangThaiPheDuyet !== 'khong-ap-dung') {
+    return hd.trangThaiPheDuyet;
+  }
+
+  const tt = (hd.buocHienTai || hd.trangThai || '').toLowerCase();
+
+  // 1. Hợp đồng đang ở bước Dự thảo (chưa ký kết):
+  // Dù có ngày ký dự kiến trong CSDL, hợp đồng vẫn đang soạn thảo nên chưa thể tự coi là 'da-duyet'!
+  if (['du-thao', 'draft', 'soan-thao', 'b1-du-thao'].includes(tt)) {
+    return 'chua-trinh';
+  }
+
+  // 2. Hợp đồng thực tế đã qua bước dự thảo (đã ký, đang thực hiện, hoàn thành, quyết toán, thanh lý):
+  // Đây là thủ tục tiền kiểm (phê duyệt trước khi ký), một khi hợp đồng đã ký và thực hiện thì tiền kiểm đương nhiên đã hoàn tất.
+  const daQuaDuThao =
+    ['da-ky', 'cho-giao-viec', 'dang-thuc-hien', 'nghiem-thu', 'hoan-thanh', 'quyet-toan', 'thanh-ly'].includes(tt) ||
+    (!!hd.ngayKy && !['du-thao', 'draft', 'soan-thao', 'b1-du-thao'].includes(tt));
+
+  if (daQuaDuThao) {
+    return 'da-duyet';
+  }
+
+  return 'chua-trinh';
 }
 
 const MS_MOI_NGAY = 24 * 3600 * 1000;

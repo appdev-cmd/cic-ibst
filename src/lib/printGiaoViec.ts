@@ -176,28 +176,39 @@ const ND30_CSS = `
   }
 
   .ds-ctv {
-    column-count: 2;
-    column-gap: 20px;
     margin: 3px 0 3px 56px;
     font-size: 13pt;
   }
-  .ds-ctv .ten { margin: 1px 0; }
+  .ds-ctv .ctv-item {
+    margin: 2px 0;
+    text-align: justify;
+    line-height: 1.45;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
 
   /* ═══ BẢNG CHỮ KÝ ═══ */
   .sign-table {
     width: 100%;
-    margin-top: 28px;
+    margin-top: 24px;
     border-collapse: collapse;
+    table-layout: fixed;
   }
   .sign-table td {
     text-align: center;
-    vertical-align: top;
-    padding: 2px 4px;
+    padding: 2px 6px;
     font-size: 12pt;
+  }
+  .sign-table .sign-role-row td {
+    vertical-align: top;
+  }
+  .sign-table .sign-name-row td {
+    vertical-align: bottom;
   }
   .sign-table .role {
     font-weight: bold;
     font-size: 12pt;
+    line-height: 1.35;
   }
   .sign-table .name-space {
     height: 60px;
@@ -205,6 +216,13 @@ const ND30_CSS = `
   .sign-table .note {
     font-style: italic;
     font-size: 11pt;
+    min-height: 1.3em;
+    margin-top: 2px;
+  }
+  .sign-table .signer-name {
+    font-weight: bold;
+    font-size: 12pt;
+    line-height: 1.3;
   }
 
   .bold { font-weight: bold; }
@@ -220,25 +238,37 @@ const ND30_CSS = `
     }
   }
 
-  /* ═══ PREVIEW MODE (trong iframe) ═══ */
+  /* ═══ PREVIEW MODE (chuẩn tỷ lệ trang in A4 theo NĐ 30) ═══ */
   body.preview-mode {
-    margin: 16px 20px;
-    font-size: 12pt;
+    margin: 0;
+    padding: 18mm 15mm 18mm 25mm;
+    background: #ffffff;
+    font-size: 12.5pt;
+    line-height: 1.42;
+    box-sizing: border-box;
+    overflow-y: hidden;
   }
-  body.preview-mode .co-quan-chu-quan { font-size: 10pt; }
-  body.preview-mode .co-quan-ban-hanh { font-size: 11pt; }
-  body.preview-mode .quoc-hieu { font-size: 10pt; }
-  body.preview-mode .tieu-ngu { font-size: 12pt; }
-  body.preview-mode .so-phieu { font-size: 11pt; }
-  body.preview-mode .ngay-thang { font-size: 11pt; }
-  body.preview-mode h1 { font-size: 12pt; margin: 8px 0 6px; }
+  html:has(body.preview-mode) {
+    overflow-y: hidden;
+  }
+  body.preview-mode .co-quan-chu-quan { font-size: 11pt; }
+  body.preview-mode .co-quan-ban-hanh { font-size: 12.5pt; }
+  body.preview-mode .quoc-hieu { font-size: 11pt; }
+  body.preview-mode .tieu-ngu { font-size: 13pt; }
+  body.preview-mode .so-phieu { font-size: 12pt; }
+  body.preview-mode .ngay-thang { font-size: 12pt; }
+  body.preview-mode h1 { font-size: 14pt; margin: 10px 0 8px; }
   body.preview-mode .can-cu,
   body.preview-mode .noi-dung,
   body.preview-mode .muc,
-  body.preview-mode .muc-con { font-size: 11pt; }
-  body.preview-mode .ds-ctv { font-size: 11pt; }
-  body.preview-mode .sign-table td { font-size: 10pt; }
-  body.preview-mode .sign-table .name-space { height: 40px; }
+  body.preview-mode .muc-con { font-size: 12.5pt; }
+  body.preview-mode .ds-ctv { font-size: 12.5pt; margin: 2px 0 2px 42px; }
+  body.preview-mode .ds-ctv .ctv-item { margin: 1.5px 0; line-height: 1.4; }
+  body.preview-mode .sign-table td { font-size: 11.5pt; }
+  body.preview-mode .sign-table .role { font-size: 11.5pt; }
+  body.preview-mode .sign-table .note { font-size: 10.5pt; }
+  body.preview-mode .sign-table .name-space { height: 50px; }
+  body.preview-mode .sign-table .signer-name { font-size: 11.5pt; }
 `;
 
 // ─── Sinh HTML nội dung phiếu (dùng chung cho preview + print) ───
@@ -271,64 +301,90 @@ export function sinhHtmlPhieuGiaoViec(data: PrintGiaoViecData, opts?: { preview?
     phanBoStr = parts.join(', ');
   }
 
-  // CTV 2 cột
+  // CTV hiển thị từng dòng có kèm vai trò / tỷ lệ
   const ctvHtml = dsCTV.length > 0
-    ? dsCTV.map((c) => `<div class="ten">– ${esc(c.hoTen)}</div>`).join('')
-    : '<div class="ten italic">Chưa bổ sung</div>';
+    ? dsCTV.map((c) => {
+        const infoParts: string[] = [];
+        if (c.ghiChu) infoParts.push(esc(c.ghiChu));
+        if (c.tyLePhanChia) infoParts.push(`tỷ lệ ${c.tyLePhanChia}%`);
+        const infoStr = infoParts.length > 0 ? ` <i>(${infoParts.join(', ')})</i>` : '';
+        return `<div class="ctv-item">– <b>${esc(c.hoTen)}</b>${infoStr}</div>`;
+      }).join('')
+    : '<div class="ctv-item italic">– Chưa bổ sung</div>';
 
   // Đơn vị phối hợp
-  const dvPhHtml = dvPhoiHop
-    .map((d, i) => `<div class="muc-con">Đơn vị phối hợp ${i + 1}: ${esc(d.tenDonVi)}</div>`)
-    .join('');
+  const dvPhHtml = dvPhoiHop.length > 0
+    ? dvPhoiHop
+        .map((d, i) => `<div class="muc-con">Đơn vị phối hợp ${dvPhoiHop.length > 1 ? i + 1 : ''}: <b>${esc(d.tenDonVi)}</b> <i>(tỷ lệ ${d.tyLeGiaTri}%)</i></div>`)
+        .join('')
+    : '';
 
   // Số phiếu
   const soPhieu = hd.soHD || '...';
 
   // ═══ BẢNG CHỮ KÝ ═══
-  // Mẫu gốc: Trưởng ĐV chủ trì | ĐV phối hợp 1-3 | VIỆN DUYỆT (5 cột ngang hàng)
-  const signCells: string[] = [];
+  // Chỉ hiển thị đúng các đơn vị thực tế tham gia: Trưởng ĐV chủ trì | Trưởng ĐV phối hợp (nếu có) | Viện duyệt
+  const totalCols = 1 + dvPhoiHop.length + 1;
+  const colWidthPct = Math.round(100 / totalCols);
 
-  signCells.push(`<td>
-    <div class="role">Trưởng đơn vị<br/>chủ trì</div>
-    <div class="note">(tỷ lệ ${dvChuTri?.tyLeGiaTri ?? 100}%)</div>
-    <div class="name-space"></div>
-  </td>`);
-
-  for (let i = 0; i < 3; i++) {
-    const dv = dvPhoiHop[i];
-    signCells.push(`<td>
-      <div class="role">Trưởng đơn vị<br/>phối hợp ${i + 1}</div>
-      <div class="note">(tỷ lệ ${dv ? `${dv.tyLeGiaTri}%` : '...%'})</div>
-      <div class="name-space"></div>
-    </td>`);
+  interface SignColumn {
+    widthPct: number;
+    roleHtml: string;
+    noteHtml: string;
+    signerName: string;
   }
+  const signColumns: SignColumn[] = [];
 
-  signCells.push(`<td>
-    <div class="role">VIỆN DUYỆT</div>
-    <div class="note">&nbsp;</div>
-    <div class="name-space"></div>
-  </td>`);
+  // 1. Trưởng ĐV chủ trì
+  signColumns.push({
+    widthPct: colWidthPct,
+    roleHtml: 'TRƯỞNG ĐƠN VỊ<br/>CHỦ TRÌ',
+    noteHtml: '&nbsp;',
+    signerName: phieu.nguoiDonViXacNhan ? esc(phieu.nguoiDonViXacNhan) : '&nbsp;',
+  });
+
+  // 2. Trưởng các ĐV phối hợp thực tế
+  dvPhoiHop.forEach((dv, i) => {
+    const label = dvPhoiHop.length > 1 ? `PHỐI HỢP ${i + 1}` : 'PHỐI HỢP';
+    signColumns.push({
+      widthPct: colWidthPct,
+      roleHtml: `TRƯỞNG ĐƠN VỊ<br/>${label}`,
+      noteHtml: '&nbsp;',
+      signerName: dv.tenDonVi ? esc(dv.tenDonVi) : '&nbsp;',
+    });
+  });
+
+  // 3. Viện duyệt / Trưởng đơn vị duyệt
+  const roleDuyet = hd.capKy === 'don-vi-ky' ? 'TRƯỞNG ĐƠN VỊ<br/>DUYỆT' : 'VIỆN TRƯỞNG<br/>DUYỆT';
+  signColumns.push({
+    widthPct: colWidthPct,
+    roleHtml: roleDuyet,
+    noteHtml: '&nbsp;',
+    signerName: phieu.nguoiDuyet ? esc(phieu.nguoiDuyet) : '&nbsp;',
+  });
+
+  const khachHangStr = hd.khachHang ? `với <b>${esc(hd.khachHang)}</b>` : '';
 
   // ═══ HTML ═══
   return `<!doctype html><html lang="vi"><head><meta charset="utf-8">
-<title>Phiếu đề nghị giao việc — ${esc(hd.soHD || hd.ten)}</title>
-<style>${ND30_CSS}</style></head>
-<body${isPreview ? ' class="preview-mode"' : ''}>
+<title>Phiếu đề nghị giao việc — ${esc(hd.soHD)}</title>
+<style>${ND30_CSS}</style>
+</head><body class="${isPreview ? 'preview-mode' : ''}">
 
-<!-- HEADER — NĐ 30/2020/NĐ-CP, Phụ lục I, Mục 1 -->
+<!-- HEADER: 2 CỘT -->
 <table class="header-table">
   <tr>
     <td class="header-left">
       <div class="co-quan-chu-quan">BỘ XÂY DỰNG</div>
       <div class="co-quan-ban-hanh">VIỆN KHCN XÂY DỰNG</div>
       <span class="gach-ngang-header"></span>
-      <div class="so-phieu">Số: ${esc(soPhieu)}</div>
+      <div class="so-phieu">Số: <b>${esc(soPhieu)}</b></div>
     </td>
     <td class="header-right">
       <div class="quoc-hieu">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
-      <div class="tieu-ngu">Độc lập - Tự do - Hạnh phúc</div>
+      <div class="tieu-ngu">ĐỘC LẬP - TỰ DO - HẠNH PHÚC</div>
       <span class="gach-ngang-tieu-ngu"></span>
-      <div class="ngay-thang"><i>Hà Nội, ngày ${hnn.ngay} tháng ${hnn.thang} năm ${hnn.nam}</i></div>
+      <div class="ngay-thang">Hà Nội, ngày ${hnn.ngay} tháng ${hnn.thang} năm ${hnn.nam}</div>
     </td>
   </tr>
 </table>
@@ -338,11 +394,11 @@ export function sinhHtmlPhieuGiaoViec(data: PrintGiaoViecData, opts?: { preview?
 
 <!-- CĂN CỨ -->
 <div class="can-cu">– Căn cứ vào Quy chế thực hiện nhiệm vụ khoa học công nghệ và triển khai dịch vụ kỹ thuật hiện hành của Viện.</div>
-<div class="can-cu">– Đơn vị thực hiện: ${esc(tenDvChuTri)}</div>
+<div class="can-cu">– Đơn vị thực hiện: <b>${esc(tenDvChuTri)}</b></div>
 
 <!-- NỘI DUNG ĐỀ NGHỊ -->
 <div class="noi-dung">
-  Đề nghị Viện giao việc thực hiện HĐKT số <b>${esc(hd.soHD || '...')}</b> ký ngày <b>${ngayKy}</b> giữa ${esc(hd.khachHang || '...')} về việc: ${esc(phieu.noiDung || hd.ten || '...')} như sau:
+  Đề nghị Viện giao việc thực hiện HĐKT số <b>${esc(hd.soHD || '...')}</b> ký ngày <b>${ngayKy}</b> ${khachHangStr} về việc: ${esc(phieu.noiDung || hd.ten || '...')}, cụ thể như sau:
 </div>
 
 <!-- 1. ĐƠN VỊ CHỦ TRÌ & PHỐI HỢP -->
@@ -353,7 +409,7 @@ ${dvPhHtml ? `<div class="muc-con">Các đơn vị phối hợp:</div>${dvPhHtml
 <div class="muc"><b>2.</b> Người chủ trì hợp đồng: <b>${esc(hd.chuTri || '...')}</b></div>
 <div class="muc-con">Chủ trì kỹ thuật theo công việc: <b>${esc(phieu.chuTriKyThuat || '...')}</b></div>
 <div class="muc-con">Phụ trách tài chính (nếu có): ..................................................................</div>
-<div class="muc-con" style="margin-top:4px">Các cán bộ cộng tác chính:</div>
+<div class="muc-con" style="margin-top:4px">Các cán bộ công tác chính:</div>
 <div class="ds-ctv">${ctvHtml}</div>
 <div class="muc-con italic" style="margin-top:3px">Các cộng tác viên khác do Trưởng ĐV và chủ trì HĐ bổ sung trong quá trình thực hiện.</div>
 
@@ -373,7 +429,18 @@ ${phanBoStr ? `<div class="muc-con">– Phân bổ sản lượng cho các đơn
 
 <!-- BẢNG CHỮ KÝ -->
 <table class="sign-table">
-  <tr>${signCells.join('')}</tr>
+  <tr class="sign-role-row">
+    ${signColumns.map((col) => `<td style="width: ${col.widthPct}%">
+      <div class="role">${col.roleHtml}</div>
+      <div class="note">${col.noteHtml}</div>
+    </td>`).join('')}
+  </tr>
+  <tr class="sign-name-row">
+    ${signColumns.map((col) => `<td style="width: ${col.widthPct}%">
+      <div class="name-space"></div>
+      <div class="signer-name">${col.signerName}</div>
+    </td>`).join('')}
+  </tr>
 </table>
 
 </body></html>`;

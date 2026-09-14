@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, useRef, type ReactNode } from 'react';
 import {
   Handshake,
   Banknote,
@@ -117,6 +117,7 @@ import {
   timDinhMuc,
   phanBoHopDong,
   canTrinhVienTruong,
+  xacDinhTrangThaiPheDuyet,
   ngayHanNopHoSo,
   soNgayConLai,
   canhBaoPhatNopChamHoSo,
@@ -128,7 +129,7 @@ import {
   type CapKy,
 } from '../lib/qc2815';
 import { formatTrieu, formatNgay, cn } from '../lib/utils';
-import { printPhieuGiaoViec, sinhHtmlPhieuGiaoViec } from '../lib/printGiaoViec';
+import { printPhieuGiaoViec, sinhHtmlPhieuGiaoViec, type PrintGiaoViecData } from '../lib/printGiaoViec';
 import { fetchDonViGiaoViec, type DonViGiaoViec } from '../services/chitiet';
 
 type Tab = 'hop-dong-2815' | 'tai-chinh' | 'crm-khach-hang' | 'dau-thau' | 'pvqlnn' | 'bao-cao-khkt';
@@ -181,9 +182,17 @@ const NGAY_30 = 30 * 24 * 3600 * 1000;
 const PHE_DUYET_LABEL: Record<TrangThaiPheDuyet, string> = {
   'khong-ap-dung': 'Không áp dụng',
   'chua-trinh': 'Chờ trình KHKT',
-  'cho-khkt-tham-tra': 'KHKT đang thẩm tra (Đ.9.6c)',
-  'da-trinh': 'Đã trình, chờ VT duyệt',
-  'da-duyet': 'Đã duyệt',
+  'cho-khkt-tham-tra': 'KHKT thẩm tra',
+  'da-trinh': 'Chờ VT duyệt',
+  'da-duyet': 'VT đã duyệt',
+};
+
+const PHE_DUYET_TOOLTIP: Record<TrangThaiPheDuyet, string> = {
+  'khong-ap-dung': 'Hợp đồng trong hạn mức phân cấp đơn vị ký (Điều 6.2 QC 2815)',
+  'chua-trinh': 'Hợp đồng hạn mức Viện trưởng — Đơn vị cần lập hồ sơ trình KHKT thẩm tra (Điều 6.1 QC 2815)',
+  'cho-khkt-tham-tra': 'Phòng KHKT đang thẩm tra hồ sơ pháp lý trong ≤ 01 ngày làm việc (Điều 9.6c QC 2815)',
+  'da-trinh': 'KHKT đã thẩm tra xong — Đang trình Viện trưởng ký phê duyệt chủ trương ký HĐ (Điều 6.1 QC 2815)',
+  'da-duyet': 'Viện trưởng đã phê duyệt chủ trương ký kết hợp đồng theo Điều 6.1 QC 2815',
 };
 
 const PHE_DUYET_TONE: Record<TrangThaiPheDuyet, string> = {
@@ -475,16 +484,74 @@ export function HopDongPage({
   }, [hopDongList]);
   const choTrinhVienTruongCount = useMemo(
     () =>
-      hopDongList.filter(
-        (h) => canTrinhVienTruong(h.nhomHD, h.giaDuThau ?? h.giaTri, h.phucTap) && h.trangThaiPheDuyet !== 'da-duyet',
-      ).length,
+      hopDongList.filter((h) => {
+        const st = xacDinhTrangThaiPheDuyet(h);
+        return st !== 'khong-ap-dung' && st !== 'da-duyet';
+      }).length,
     [hopDongList],
   );
 
   // Ngăn xếp slide-panel dùng chung toàn app (kiểu "tai thỏ" xếp chồng — xem SlidePanelStack).
   const { stack, openPanel, updatePanel, closePanel, closeAll } = useSlidePanel();
   const [detailTab, setDetailTab] = useState<DetailTab>('tong-quan');
+  const [previewPgvData, setPreviewPgvData] = useState<PrintGiaoViecData | null>(null);
   const panelIdForHopDong = (id: string) => `hopdong-${id}`;
+
+  // State chia cột và xem trước văn bản đối chiếu khổ A4
+  const [splitLeftWidth, setSplitLeftWidth] = useState<number>(() => {
+    try {
+      const saved = Number(localStorage.getItem('slideover-split-left-width'));
+      if (Number.isFinite(saved) && saved >= 640 && saved <= 1200) return saved;
+    } catch {}
+    return 760; // Mặc định 760px: vừa khít khổ A4 chuẩn 720px + lề hai bên
+  });
+  const [zoomLevel, setZoomLevel] = useState<number>(1);
+  const [iframeHeight, setIframeHeight] = useState<number>(1150);
+  const previewIframeRef = useRef<HTMLIFrameElement | null>(null);
+  const [splitterDragging, setSplitterDragging] = useState(false);
+  const splitterRef = useRef<{ startX: number; startWidth: number } | null>(null);
+
+  useEffect(() => {
+    if (!previewPgvData) return;
+    const timer = setTimeout(() => {
+      try {
+        const doc = previewIframeRef.current?.contentDocument;
+        if (doc) {
+          const h = Math.max(doc.body.scrollHeight, doc.documentElement.scrollHeight);
+          if (h > 500) setIframeHeight(h + 30);
+        }
+      } catch {}
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [previewPgvData, zoomLevel]);
+
+  useEffect(() => {
+    if (!splitterDragging) return;
+    const onMove = (e: PointerEvent) => {
+      if (!splitterRef.current) return;
+      const dx = e.clientX - splitterRef.current.startX;
+      const newWidth = Math.max(540, Math.min(1100, splitterRef.current.startWidth + dx));
+      setSplitLeftWidth(newWidth);
+    };
+    const onUp = () => {
+      setSplitterDragging(false);
+      splitterRef.current = null;
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+    };
+  }, [splitterDragging]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('slideover-split-left-width', String(splitLeftWidth));
+    } catch {}
+  }, [splitLeftWidth]);
 
   // Thẩm quyền thao tác theo Điều 6.1 / Điều 11 — xem lib/quyenHopDong.ts.
   const { vaiTro, nhanSuId } = useAuth();
@@ -561,123 +628,286 @@ export function HopDongPage({
     </button>
   );
 
-  const buildDetailContent = (hd: HopDong, tab: DetailTab) => (
-    <>
-      {/* ═══ STICKY: Workflow compact + Tabs ═══ */}
-      <div className="sticky top-0 z-30 bg-surface/95 backdrop-blur-md border-b border-border-subtle">
-        <WorkflowStepper
-          hopDongId={hd.id}
-          buocHienTai={hd.buocHienTai || hd.trangThai}
-          onStateChanged={refetch}
-          compact
-        />
-        <SlideOverTabs tabs={DETAIL_TABS} active={tab} onChange={setDetailTab} />
+  const buildDetailContent = (hd: HopDong, tab: DetailTab) => {
+    const mainContent = (
+      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto h-full">
+        {/* ═══ STICKY: Workflow compact + Tabs ═══ */}
+        <div className="sticky top-0 z-30 bg-surface/95 backdrop-blur-md border-b border-border-subtle">
+          <WorkflowStepper
+            hopDongId={hd.id}
+            buocHienTai={hd.buocHienTai || hd.trangThai}
+            onStateChanged={refetch}
+            compact
+          />
+          <SlideOverTabs tabs={DETAIL_TABS} active={tab} onChange={setDetailTab} />
+        </div>
+
+        <div className="space-y-4 p-4">
+          {thaoTacError && (
+            <div className="flex items-start gap-2 rounded-lg bg-danger-subtle p-3 text-xs font-semibold text-danger">
+              <AlertCircle size={15} className="mt-px shrink-0" />
+              <span>{thaoTacError}</span>
+            </div>
+          )}
+
+          {/* ═══ TAB: TỔNG QUAN (gom: Thông tin chung + Phân phối HĐ) ═══ */}
+          {tab === 'tong-quan' && (
+            <div className="space-y-4">
+              <HopDongThongTinTab
+                hd={hd}
+                pheDuyetBusyId={pheDuyetBusyId}
+                onPheDuyet={capNhatPheDuyet}
+                onRefetch={refetch}
+                onGoToGiaoViec={() => setDetailTab('giao-viec')}
+              />
+              {/* Phân phối HĐ (Đ.6.3) — gom vào Tổng quan */}
+              <DetailSection title="Phân phối hợp đồng (Đ.6.3)" icon={Send} defaultOpen={false}>
+                <PhanPhoiHopDongPanel key={`pp-${hd.id}`} hd={hd} />
+              </DetailSection>
+            </div>
+          )}
+
+          {/* ═══ TAB: GIAO VIỆC (gom: Giao việc Đ.7 + Liên danh) ═══ */}
+          {tab === 'giao-viec' && (
+            <div className="space-y-4">
+              <HopDongGiaoViecTab
+                hd={hd}
+                nhanSuOptions={nhanSuOptions}
+                donViOptions={donViOptions}
+                onPreviewPgv={setPreviewPgvData}
+                isPreviewingPgv={!!previewPgvData}
+              />
+              {/* Liên danh (Đ.5.3) — gom vào Giao việc */}
+              <DetailSection title="Liên danh (Đ.5.3)" icon={Users} defaultOpen={false}>
+                <LienDanhPanel hopDongId={hd.id} />
+              </DetailSection>
+            </div>
+          )}
+
+          {/* ═══ TAB: TÀI CHÍNH (gom: Thanh toán + Thưởng/Phạt) ═══ */}
+          {tab === 'tai-chinh' && (
+            <div className="space-y-4">
+              {/* Quyết toán / Thanh lý (Điều 11) */}
+              <div className="rounded-lg border border-border p-3 text-xs space-y-2">
+                <h4 className="text-2xs font-black uppercase tracking-wider text-ink-muted">Quyết toán / Thanh lý (Điều 11)</h4>
+                {hd.trangThaiQuyetToan === 'da-quyet-toan' ? (
+                  <p className="flex items-center gap-1.5 text-success font-semibold">
+                    <CheckCircle2 size={14} />
+                    {hd.ngayQuyetToan ? <>Đã quyết toán ngày {formatNgay(hd.ngayQuyetToan)}</> : 'Đã quyết toán'}
+                  </p>
+                ) : hd.daThanhToan >= hd.giaTri && hd.giaTri > 0 ? (
+                  <p className="text-ink-secondary">Đã thu đủ tiền — có thể quyết toán, thanh lý hợp đồng.</p>
+                ) : (
+                  <p className="text-ink-muted">Chưa thu đủ tiền ({formatTrieu(hd.daThanhToan)}/{formatTrieu(hd.giaTri)}).</p>
+                )}
+                {!coTheQuyetToan(vaiTro, hd.capKy) && (
+                  <p className="text-2xs italic text-ink-muted">
+                    {NHAN_VAI_TRO[vaiTro]} không có thẩm quyền quyết toán/thanh lý hợp đồng này —{' '}
+                    {hd.capKy === 'don-vi-ky' ? 'thuộc Trưởng đơn vị' : 'thuộc Lãnh đạo Viện (HĐ Viện ký, Điều 11.1)'}.
+                  </p>
+                )}
+                <button
+                  onClick={() => void toggleQuyetToan(hd)}
+                  disabled={quyetToanBusy || !coTheQuyetToan(vaiTro, hd.capKy)}
+                  className="btn-secondary w-full justify-center py-1.5 text-2xs font-bold gap-1 disabled:opacity-50"
+                >
+                  <ClipboardCheck size={12} />
+                  {hd.trangThaiQuyetToan === 'da-quyet-toan' ? 'Bỏ đánh dấu đã quyết toán' : 'Đánh dấu đã quyết toán'}
+                </button>
+              </div>
+              {/* Đợt thanh toán */}
+              <DotThanhToanPanel key={`dtt-${hd.id}`} hopDongId={hd.id} giaTri={hd.giaTri} onChanged={refetch} />
+              <QuyetToanDieu11Panel key={`qt11-${hd.id}`} hd={hd} nhanSuOptions={nhanSuOptions} />
+              <QuyetToanGiaiDoanPanel key={`qtgd-${hd.id}`} hopDongId={hd.id} onChanged={refetch} />
+              {/* Thưởng / Phạt (Đ.13-14) — gom vào Tài chính */}
+              <DetailSection title="Thưởng / Phạt (Đ.13-14)" icon={Gavel} defaultOpen={false}>
+                <ThuongPhatPanel key={`tp-${hd.id}`} hopDongId={hd.id} nhomHD={hd.nhomHD} nhanSuOptions={nhanSuOptions} onChanged={refetch} />
+              </DetailSection>
+            </div>
+          )}
+
+          {/* ═══ TAB: HỒ SƠ & KT (gom: Hồ sơ + Lưu trữ + Kiểm tra + Thực hiện) ═══ */}
+          {tab === 'ho-so-kt' && (
+            <div className="space-y-4">
+              <DetailSection title="Hồ sơ hợp đồng (Đ.8.4)" icon={Paperclip} defaultOpen>
+                <HoSoHopDongPanel hopDongId={hd.id} trangThaiHopDong={hd.trangThai} onChanged={refetch} />
+              </DetailSection>
+              <DetailSection title="Tiến độ thực hiện (Đ.8.1)" icon={Activity} defaultOpen>
+                <ThucHienHopDongPanel key={`th-${hd.id}`} hopDongId={hd.id} />
+              </DetailSection>
+              <DetailSection title="Kiểm tra nội bộ (Đ.10)" icon={ShieldCheck} defaultOpen={false}>
+                <KiemTraNoiBoPanel key={`kt-${hd.id}`} hopDongId={hd.id} nhanSuOptions={nhanSuOptions} onChanged={refetch} />
+              </DetailSection>
+              <DetailSection title="Lưu trữ TCHC (Đ.8)" icon={Archive} defaultOpen={false}>
+                <LuuTruHoSoPanel hopDongId={hd.id} nhanSuOptions={nhanSuOptions} />
+              </DetailSection>
+            </div>
+          )}
+
+          {/* ═══ TAB: NHẬT KÝ ═══ */}
+          {tab === 'nhat-ky' && <NhatKyHopDongPanel key={`nk-${hd.id}`} hopDongId={hd.id} />}
+        </div>
       </div>
+    );
 
-      <div className="space-y-4 p-4">
-        {thaoTacError && (
-          <div className="flex items-start gap-2 rounded-lg bg-danger-subtle p-3 text-xs font-semibold text-danger">
-            <AlertCircle size={15} className="mt-px shrink-0" />
-            <span>{thaoTacError}</span>
-          </div>
+    if (!previewPgvData) {
+      return mainContent;
+    }
+
+    // Split Screen Container: Cột trái xem trước văn bản đối chiếu khổ A4, Cột phải là nội dung HĐ
+    const a4Width = Math.round(720 * zoomLevel);
+    const a4Height = Math.round(1018 * zoomLevel); // Tỷ lệ chuẩn A4 (210 × 297 mm): 1 : 1.4142
+
+    return (
+      <div className="flex-1 flex min-h-0 overflow-hidden h-full relative">
+        {/* Overlay vô hình khi đang kéo thanh chia đôi: ngăn iframe nuốt sự kiện chuột */}
+        {splitterDragging && (
+          <div
+            className="fixed inset-0 z-[99999] cursor-col-resize select-none pointer-events-auto bg-transparent"
+            style={{ cursor: 'col-resize' }}
+          />
         )}
 
-        {/* ═══ TAB: TỔNG QUAN (gom: Thông tin chung + Phân phối HĐ) ═══ */}
-        {tab === 'tong-quan' && (
-          <div className="space-y-4">
-            <HopDongThongTinTab
-              hd={hd}
-              pheDuyetBusyId={pheDuyetBusyId}
-              onPheDuyet={capNhatPheDuyet}
-              onRefetch={refetch}
-              onGoToGiaoViec={() => setDetailTab('giao-viec')}
-            />
-            {/* Phân phối HĐ (Đ.6.3) — gom vào Tổng quan */}
-            <DetailSection title="Phân phối hợp đồng (Đ.6.3)" icon={Send} defaultOpen={false}>
-              <PhanPhoiHopDongPanel key={`pp-${hd.id}`} hd={hd} />
-            </DetailSection>
-          </div>
-        )}
+        {/* CỘT TRÁI: VĂN BẢN XEM TRƯỚC / IN PHIẾU GIAO VIỆC KHỔ A4 (DÍNH LIỀN PANEL) */}
+        <div
+          style={{ width: splitLeftWidth }}
+          className="shrink-0 border-r border-border dark:border-slate-800 bg-slate-900 flex flex-col h-full animate-fade-in"
+        >
+          {/* Header Toolbar đối chiếu văn bản chuẩn A4 */}
+          <div className="px-3.5 py-2 bg-slate-800 border-b border-slate-700 flex flex-wrap justify-between items-center gap-2 text-xs text-white">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="font-semibold flex items-center gap-1.5 text-emerald-400 truncate">
+                <FileText className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                Phiếu đề nghị giao việc (Mẫu 02-GV)
+              </span>
+              <span className="rounded bg-emerald-950/60 border border-emerald-500/30 px-1.5 py-0.5 text-[10px] font-bold text-emerald-300 shrink-0">
+                A4 (210 × 297 mm)
+              </span>
+            </div>
 
-        {/* ═══ TAB: GIAO VIỆC (gom: Giao việc Đ.7 + Liên danh) ═══ */}
-        {tab === 'giao-viec' && (
-          <div className="space-y-4">
-            <HopDongGiaoViecTab hd={hd} nhanSuOptions={nhanSuOptions} donViOptions={donViOptions} />
-            {/* Liên danh (Đ.5.3) — gom vào Giao việc */}
-            <DetailSection title="Liên danh (Đ.5.3)" icon={Users} defaultOpen={false}>
-              <LienDanhPanel hopDongId={hd.id} />
-            </DetailSection>
-          </div>
-        )}
-
-        {/* ═══ TAB: TÀI CHÍNH (gom: Thanh toán + Thưởng/Phạt) ═══ */}
-        {tab === 'tai-chinh' && (
-          <div className="space-y-4">
-            {/* Quyết toán / Thanh lý (Điều 11) */}
-            <div className="rounded-lg border border-border p-3 text-xs space-y-2">
-              <h4 className="text-2xs font-black uppercase tracking-wider text-ink-muted">Quyết toán / Thanh lý (Điều 11)</h4>
-              {hd.trangThaiQuyetToan === 'da-quyet-toan' ? (
-                <p className="flex items-center gap-1.5 text-success font-semibold">
-                  <CheckCircle2 size={14} />
-                  {hd.ngayQuyetToan ? <>Đã quyết toán ngày {formatNgay(hd.ngayQuyetToan)}</> : 'Đã quyết toán'}
-                </p>
-              ) : hd.daThanhToan >= hd.giaTri && hd.giaTri > 0 ? (
-                <p className="text-ink-secondary">Đã thu đủ tiền — có thể quyết toán, thanh lý hợp đồng.</p>
-              ) : (
-                <p className="text-ink-muted">Chưa thu đủ tiền ({formatTrieu(hd.daThanhToan)}/{formatTrieu(hd.giaTri)}).</p>
-              )}
-              {!coTheQuyetToan(vaiTro, hd.capKy) && (
-                <p className="text-2xs italic text-ink-muted">
-                  {NHAN_VAI_TRO[vaiTro]} không có thẩm quyền quyết toán/thanh lý hợp đồng này —{' '}
-                  {hd.capKy === 'don-vi-ky' ? 'thuộc Trưởng đơn vị' : 'thuộc Lãnh đạo Viện (HĐ Viện ký, Điều 11.1)'}.
-                </p>
-              )}
+            <div className="flex items-center gap-1.5 shrink-0">
+              {/* Nút đặt nhanh tỷ lệ chuẩn A4 */}
               <button
-                onClick={() => void toggleQuyetToan(hd)}
-                disabled={quyetToanBusy || !coTheQuyetToan(vaiTro, hd.capKy)}
-                className="btn-secondary w-full justify-center py-1.5 text-2xs font-bold gap-1 disabled:opacity-50"
+                type="button"
+                title="Đặt kích thước vừa vặn khổ A4 (760px)"
+                onClick={() => {
+                  setSplitLeftWidth(760);
+                  setZoomLevel(1);
+                }}
+                className={cn(
+                  'px-2 py-0.5 rounded text-xs transition-colors hidden sm:inline-flex items-center gap-1 font-medium',
+                  splitLeftWidth === 760 ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-500/40' : 'bg-slate-700/60 text-slate-300 hover:text-white'
+                )}
               >
-                <ClipboardCheck size={12} />
-                {hd.trangThaiQuyetToan === 'da-quyet-toan' ? 'Bỏ đánh dấu đã quyết toán' : 'Đánh dấu đã quyết toán'}
+                Chuẩn A4
+              </button>
+
+              {/* Bộ điều khiển Zoom */}
+              <div className="flex items-center rounded-lg bg-slate-700/80 p-0.5 border border-slate-600 text-[11px]">
+                <button
+                  type="button"
+                  title="Thu nhỏ tỷ lệ xem"
+                  onClick={() => setZoomLevel((z) => Math.max(0.7, Number((z - 0.1).toFixed(1))))}
+                  className="px-1.5 py-0.5 text-slate-300 hover:text-white font-bold hover:bg-slate-600 rounded transition-colors"
+                >
+                  -
+                </button>
+                <button
+                  type="button"
+                  title="Khôi phục 100%"
+                  onClick={() => setZoomLevel(1)}
+                  className="px-1.5 py-0.5 text-slate-200 font-semibold hover:text-white"
+                >
+                  {Math.round(zoomLevel * 100)}%
+                </button>
+                <button
+                  type="button"
+                  title="Phóng to tỷ lệ xem"
+                  onClick={() => setZoomLevel((z) => Math.min(1.4, Number((z + 0.1).toFixed(1))))}
+                  className="px-1.5 py-0.5 text-slate-300 hover:text-white font-bold hover:bg-slate-600 rounded transition-colors"
+                >
+                  +
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => printPhieuGiaoViec(previewPgvData)}
+                className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded text-xs font-semibold transition-colors shadow-sm"
+              >
+                <Printer size={13} /> In phiếu
+              </button>
+              <button
+                type="button"
+                onClick={() => setPreviewPgvData(null)}
+                className="text-slate-300 hover:text-white px-2 py-1 rounded text-xs bg-slate-700/60 hover:bg-slate-700 transition-colors"
+              >
+                Đóng
               </button>
             </div>
-            {/* Đợt thanh toán */}
-            <DotThanhToanPanel key={`dtt-${hd.id}`} hopDongId={hd.id} giaTri={hd.giaTri} onChanged={refetch} />
-            <QuyetToanDieu11Panel key={`qt11-${hd.id}`} hd={hd} nhanSuOptions={nhanSuOptions} />
-            <QuyetToanGiaiDoanPanel key={`qtgd-${hd.id}`} hopDongId={hd.id} onChanged={refetch} />
-            {/* Thưởng / Phạt (Đ.13-14) — gom vào Tài chính */}
-            <DetailSection title="Thưởng / Phạt (Đ.13-14)" icon={Gavel} defaultOpen={false}>
-              <ThuongPhatPanel key={`tp-${hd.id}`} hopDongId={hd.id} nhomHD={hd.nhomHD} nhanSuOptions={nhanSuOptions} onChanged={refetch} />
-            </DetailSection>
           </div>
-        )}
 
-        {/* ═══ TAB: HỒ SƠ & KT (gom: Hồ sơ + Lưu trữ + Kiểm tra + Thực hiện) ═══ */}
-        {tab === 'ho-so-kt' && (
-          <div className="space-y-4">
-            <DetailSection title="Hồ sơ hợp đồng (Đ.8.4)" icon={Paperclip} defaultOpen>
-              <HoSoHopDongPanel hopDongId={hd.id} trangThaiHopDong={hd.trangThai} onChanged={refetch} />
-            </DetailSection>
-            <DetailSection title="Tiến độ thực hiện (Đ.8.1)" icon={Activity} defaultOpen>
-              <ThucHienHopDongPanel key={`th-${hd.id}`} hopDongId={hd.id} />
-            </DetailSection>
-            <DetailSection title="Kiểm tra nội bộ (Đ.10)" icon={ShieldCheck} defaultOpen={false}>
-              <KiemTraNoiBoPanel key={`kt-${hd.id}`} hopDongId={hd.id} nhanSuOptions={nhanSuOptions} onChanged={refetch} />
-            </DetailSection>
-            <DetailSection title="Lưu trữ TCHC (Đ.8)" icon={Archive} defaultOpen={false}>
-              <LuuTruHoSoPanel hopDongId={hd.id} nhanSuOptions={nhanSuOptions} />
-            </DetailSection>
+          {/* Vùng hiển thị tờ giấy A4 trên nền than tối nổi khối 3D */}
+          <div className="flex-1 overflow-y-auto overflow-x-auto p-4 sm:p-6 bg-slate-950 flex justify-center items-start">
+            <div
+              className="bg-white shadow-[0_4px_35px_rgba(0,0,0,0.65)] ring-1 ring-white/15 rounded-xs transition-all flex flex-col shrink-0"
+              style={{
+                width: a4Width,
+                maxWidth: '100%',
+              }}
+            >
+              <iframe
+                ref={previewIframeRef}
+                onLoad={() => {
+                  try {
+                    const doc = previewIframeRef.current?.contentDocument;
+                    if (doc) {
+                      const h = Math.max(doc.body.scrollHeight, doc.documentElement.scrollHeight);
+                      if (h > 500) setIframeHeight(h + 30);
+                    }
+                  } catch {}
+                }}
+                title="Xem trước phiếu giao việc chuẩn A4"
+                srcDoc={sinhHtmlPhieuGiaoViec(previewPgvData, { preview: true })}
+                className="w-full border-0"
+                style={{ height: `${iframeHeight}px`, minHeight: '1018px' }}
+              />
+            </div>
           </div>
-        )}
+        </div>
 
-        {/* ═══ TAB: NHẬT KÝ ═══ */}
-        {tab === 'nhat-ky' && <NhatKyHopDongPanel key={`nk-${hd.id}`} hopDongId={hd.id} />}
+        {/* THANH RESIZABLE SPLITTER PHÂN CHIA 2 CỘT */}
+        <div
+          onPointerDown={(e) => {
+            e.preventDefault();
+            splitterRef.current = { startX: e.clientX, startWidth: splitLeftWidth };
+            setSplitterDragging(true);
+          }}
+          className={cn(
+            'relative w-2 hover:w-2.5 z-20 cursor-col-resize transition-all flex items-center justify-center shrink-0 group select-none touch-none',
+            splitterDragging
+              ? 'bg-primary'
+              : 'bg-slate-800 hover:bg-primary/80 border-r border-slate-700/80',
+          )}
+          title="Kéo sang trái/phải để thay đổi tỷ lệ giữa cột xem trước A4 và cột chi tiết HĐ"
+        >
+          <div
+            className={cn(
+              'w-1 h-8 rounded-full transition-colors',
+              splitterDragging ? 'bg-white' : 'bg-slate-500 group-hover:bg-white',
+            )}
+          />
+        </div>
+
+        {/* CỘT PHẢI: NỘI DUNG CHI TIẾT HỢP ĐỒNG */}
+        {mainContent}
       </div>
-    </>
-  );
+    );
+  };
 
   const openDetail = (hd: HopDong, tab: DetailTab = 'tong-quan') => {
     closeAll();
+    setPreviewPgvData(null);
     setDetail(hd);
     setDetailTab(tab);
     openPanel({
@@ -697,12 +927,13 @@ export function HopDongPage({
     if (!liveDetail) return;
     updatePanel(panelIdForHopDong(liveDetail.id), {
       title: liveDetail.soHD,
-      subtitle: liveDetail.ten,
+      subtitle: previewPgvData ? `${liveDetail.ten} — Đang đối chiếu văn bản in` : liveDetail.ten,
+      isSplitView: !!previewPgvData,
       headerExtra: buildDetailHeaderExtra(liveDetail),
       content: buildDetailContent(liveDetail, detailTab),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [liveDetail, detailTab, pheDuyetBusyId, quyetToanBusy, thaoTacError, vaiTro]);
+  }, [liveDetail, detailTab, previewPgvData, pheDuyetBusyId, quyetToanBusy, thaoTacError, vaiTro]);
 
   const buildFormFields = () => (
     <form id="hopdong-form" onSubmit={crud.submit} className="space-y-4 p-5">
@@ -1465,9 +1696,7 @@ export function HopDongPage({
                     const active = stack.some((p) => p.id === panelIdForHopDong(hd.id));
                     const dm = timDinhMuc(hd.nhomHD);
                     const isOverThreshold = canTrinhVienTruong(hd.nhomHD, hd.giaDuThau ?? hd.giaTri, hd.phucTap);
-                    // Hợp đồng vừa vượt ngưỡng nhưng chưa từng được triage phê duyệt (cột DB vẫn ở giá trị mặc định) — hiển thị "Chờ trình" thay vì "Không áp dụng".
-                    const trangThaiHienThi: TrangThaiPheDuyet =
-                      isOverThreshold && hd.trangThaiPheDuyet === 'khong-ap-dung' ? 'chua-trinh' : hd.trangThaiPheDuyet;
+                    const trangThaiHienThi: TrangThaiPheDuyet = xacDinhTrangThaiPheDuyet(hd);
                     return (
                       <tr
                         key={hd.id}
@@ -1482,9 +1711,21 @@ export function HopDongPage({
                           <div className="flex items-center gap-2">
                             <span className="font-semibold text-ink">{hd.soHD}</span>
                             {isOverThreshold && (
-                              <span className="rounded bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 px-1.5 py-0.5 text-[9px] font-bold" title="Hợp đồng lớn cần Trình Viện trưởng">
-                                QC 2815 Trình VT
-                              </span>
+                              trangThaiHienThi === 'da-duyet' ? (
+                                <span
+                                  className="rounded bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300 px-1.5 py-0.5 text-[9px] font-semibold whitespace-nowrap"
+                                  title="Hợp đồng hạn mức Viện trưởng (Điều 6.1 QC 2815) — Đã phê duyệt"
+                                >
+                                  QC 2815 VT
+                                </span>
+                              ) : (
+                                <span
+                                  className="rounded bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 px-1.5 py-0.5 text-[9px] font-bold whitespace-nowrap animate-pulse"
+                                  title="Hợp đồng hạn mức Viện trưởng — Cần trình phê duyệt trước khi ký (Điều 6.1 QC 2815)"
+                                >
+                                  Cần trình VT
+                                </span>
+                              )
                             )}
                           </div>
                           <div className="line-clamp-1 text-2xs text-ink-muted">{hd.ten}</div>
@@ -1526,8 +1767,8 @@ export function HopDongPage({
                             )}
                             {isOverThreshold && (
                               <span
-                                className={cn('rounded px-1.5 py-0.5 text-2xs font-bold', PHE_DUYET_TONE[trangThaiHienThi])}
-                                title="Vượt ngưỡng Điều 6.1 — cần trình Viện trưởng phê duyệt"
+                                className={cn('rounded px-1.5 py-0.5 text-2xs font-bold whitespace-nowrap', PHE_DUYET_TONE[trangThaiHienThi])}
+                                title={PHE_DUYET_TOOLTIP[trangThaiHienThi]}
                               >
                                 {PHE_DUYET_LABEL[trangThaiHienThi]}
                               </span>
@@ -1564,17 +1805,6 @@ export function HopDongPage({
                               </div>
                             );
                           })()}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openDetail(hd, 'giao-viec');
-                            }}
-                            className="btn-secondary inline-flex items-center gap-1.5 mt-1 px-2 py-0.5 text-2xs font-semibold rounded whitespace-nowrap shadow-2xs"
-                            title="Xem chi tiết & lập Phiếu giao việc (Điều 7 QC 2815)"
-                          >
-                            <FileText size={12} className="shrink-0 text-primary-600 dark:text-primary-400" />
-                            <span>Phiếu giao việc</span>
-                          </button>
                         </td>
                         <td className="td-cell text-right">
                           <RowActions
@@ -1604,11 +1834,15 @@ function PhieuGiaoViecForm({
   nhanSuOptions,
   donViOptions,
   onClose,
+  onPreviewPgv,
+  isPreviewingPgv,
 }: {
   hd: HopDong;
   nhanSuOptions: Option[];
   donViOptions: Option[];
   onClose?: () => void;
+  onPreviewPgv?: (data: PrintGiaoViecData | null) => void;
+  isPreviewingPgv?: boolean;
 }) {
   // `loading` là bắt buộc: useAsyncData trả data = null trong lúc đang nạp, không phân biệt
   // được với "hợp đồng chưa có phiếu". Nếu bỏ qua nó, effect khởi tạo bên dưới sẽ chạy ngay
@@ -1750,8 +1984,17 @@ function PhieuGiaoViecForm({
           {/* NÚT XEM TRƯỚC & IN PHIẾU GIAO VIỆC */}
           <button
             type="button"
-            className="mt-2 flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700 transition-colors"
+            className={cn(
+              'mt-2 flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold shadow-sm transition-colors',
+              isPreviewingPgv
+                ? 'bg-slate-700 text-white hover:bg-slate-800'
+                : 'bg-emerald-600 text-white hover:bg-emerald-700',
+            )}
             onClick={async () => {
+              if (isPreviewingPgv) {
+                onPreviewPgv?.(null);
+                return;
+              }
               if (!phieu) return;
               try {
                 const [dsCTV, dsDonVi] = await Promise.all([
@@ -1759,54 +2002,17 @@ function PhieuGiaoViecForm({
                   fetchDonViGiaoViec(phieu.id),
                 ]);
                 const printData = { hd, phieu, dsCTV, dsDonVi };
-                const previewHtml = sinhHtmlPhieuGiaoViec(printData, { preview: true });
-                openPanel({
-                  id: `pgv-preview-${hd.id}`,
-                  title: 'Phiếu đề nghị giao việc',
-                  subtitle: `${hd.soHD || hd.ten} — Xem trước bản in (NĐ 30)`,
-                  defaultWidth: 720,
-                  minWidth: 560,
-                  maxWidth: 900,
-                  content: (
-                    <div className="flex flex-col h-full">
-                      <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-subtle">
-                        <span className="text-xs text-ink-muted font-medium">Xem trước — Format NĐ 30/2020/NĐ-CP</span>
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            className="flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-primary/90 transition-colors"
-                            onClick={() => printPhieuGiaoViec(printData)}
-                          >
-                            <Printer size={13} /> In
-                          </button>
-                          <button
-                            type="button"
-                            className="rounded-lg border border-border px-3 py-1.5 text-xs font-bold text-ink-muted hover:bg-muted transition-colors"
-                            onClick={() => closePanel(`pgv-preview-${hd.id}`)}
-                          >
-                            Đóng
-                          </button>
-                        </div>
-                      </div>
-                      <div className="flex-1 overflow-auto bg-neutral-100 dark:bg-neutral-900 p-4">
-                        <div className="mx-auto bg-white shadow-lg border border-neutral-200" style={{ maxWidth: 680, minHeight: 800 }}>
-                          <iframe
-                            title="Xem trước phiếu giao việc"
-                            srcDoc={previewHtml}
-                            className="w-full border-0"
-                            style={{ minHeight: 900 }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ),
-                });
+                if (onPreviewPgv) {
+                  onPreviewPgv(printData);
+                } else {
+                  printPhieuGiaoViec(printData);
+                }
               } catch (e) {
-                console.error('Lỗi tạo bản xem trước:', e);
+                console.error('Lỗi nạp dữ liệu phiếu giao việc:', e);
               }
             }}
           >
-            <Printer size={14} /> Xem trước & In Phiếu Giao Việc
+            <Printer size={14} /> {isPreviewingPgv ? 'Đóng xem đối chiếu' : 'Xem trước & In Phiếu Giao Việc'}
           </button>
         </div>
       ) : (
@@ -2023,62 +2229,34 @@ function PhieuGiaoViecForm({
             {phieu && (
               <button
                 type="button"
-                className="flex items-center gap-1 rounded-xl border border-border px-3 py-2 text-xs font-bold text-ink-muted hover:bg-muted transition-colors"
+                className={cn(
+                  'flex items-center gap-1 rounded-xl border px-3 py-2 text-xs font-bold transition-colors',
+                  isPreviewingPgv
+                    ? 'border-slate-600 bg-slate-700 text-white hover:bg-slate-800'
+                    : 'border-border text-ink-muted hover:bg-muted',
+                )}
                 onClick={async () => {
+                  if (isPreviewingPgv) {
+                    onPreviewPgv?.(null);
+                    return;
+                  }
                   try {
                     const [dsCTV, dsDonVi] = await Promise.all([
                       fetchCtvGiaoViec(phieu.id),
                       fetchDonViGiaoViec(phieu.id),
                     ]);
                     const printData = { hd, phieu, dsCTV, dsDonVi };
-                    const previewHtml = sinhHtmlPhieuGiaoViec(printData, { preview: true });
-                    openPanel({
-                      id: `pgv-preview-${hd.id}`,
-                      title: 'Phiếu đề nghị giao việc (Dự thảo)',
-                      subtitle: `${hd.soHD || hd.ten} — Xem trước bản in (NĐ 30)`,
-                      defaultWidth: 720,
-                      minWidth: 560,
-                      maxWidth: 900,
-                      content: (
-                        <div className="flex flex-col h-full">
-                          <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-subtle">
-                            <span className="text-xs text-ink-muted font-medium">Xem trước — Format NĐ 30/2020/NĐ-CP</span>
-                            <div className="flex gap-2">
-                              <button
-                                type="button"
-                                className="flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-primary/90 transition-colors"
-                                onClick={() => printPhieuGiaoViec(printData)}
-                              >
-                                <Printer size={13} /> In
-                              </button>
-                              <button
-                                type="button"
-                                className="rounded-lg border border-border px-3 py-1.5 text-xs font-bold text-ink-muted hover:bg-muted transition-colors"
-                                onClick={() => closePanel(`pgv-preview-${hd.id}`)}
-                              >
-                                Đóng
-                              </button>
-                            </div>
-                          </div>
-                          <div className="flex-1 overflow-auto bg-neutral-100 dark:bg-neutral-900 p-4">
-                            <div className="mx-auto bg-white shadow-lg border border-neutral-200" style={{ maxWidth: 680, minHeight: 800 }}>
-                              <iframe
-                                title="Xem trước phiếu giao việc"
-                                srcDoc={previewHtml}
-                                className="w-full border-0"
-                                style={{ minHeight: 900 }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      ),
-                    });
+                    if (onPreviewPgv) {
+                      onPreviewPgv(printData);
+                    } else {
+                      printPhieuGiaoViec(printData);
+                    }
                   } catch (e) {
-                    console.error('Lỗi tạo bản xem trước:', e);
+                    console.error('Lỗi nạp dữ liệu phiếu giao việc:', e);
                   }
                 }}
               >
-                <Printer size={13} /> Xem trước & In
+                <Printer size={13} /> {isPreviewingPgv ? 'Đóng xem đối chiếu' : 'Xem trước & In'}
               </button>
             )}
           </div>
@@ -2487,8 +2665,7 @@ function HopDongThongTinTab({
   const duocTrinhDuyet = coTheTrinhDuyet(vaiTro);
   const duocPheDuyet = coThePheDuyet(vaiTro);
   const isOverThreshold = canTrinhVienTruong(hd.nhomHD, hd.giaDuThau ?? hd.giaTri, hd.phucTap);
-  const trangThaiHienThi: TrangThaiPheDuyet =
-    isOverThreshold && hd.trangThaiPheDuyet === 'khong-ap-dung' ? 'chua-trinh' : hd.trangThaiPheDuyet;
+  const trangThaiHienThi: TrangThaiPheDuyet = xacDinhTrangThaiPheDuyet(hd);
   const dm = timDinhMuc(hd.nhomHD);
 
   // Tính toán các cảnh báo Quy chế 2815 tập trung cho hợp đồng
@@ -2631,7 +2808,7 @@ function HopDongThongTinTab({
               Điều 6.1 QC 2815:{' '}
               {hd.phucTap ? 'HĐ phức tạp/chính trị — buộc trình Viện trưởng' : 'Vượt ngưỡng trình Viện trưởng'}
             </p>
-            <span className={cn('rounded px-2 py-0.5 text-2xs font-bold border', PHE_DUYET_TONE[trangThaiHienThi])}>
+            <span className={cn('rounded px-2 py-0.5 text-2xs font-bold border', PHE_DUYET_TONE[trangThaiHienThi])} title={PHE_DUYET_TOOLTIP[trangThaiHienThi]}>
               {PHE_DUYET_LABEL[trangThaiHienThi]}
             </span>
           </div>
@@ -2643,7 +2820,7 @@ function HopDongThongTinTab({
               const daQua = idx < thuTuHienTai || trangThaiHienThi === 'da-duyet';
               const dangO = idx === thuTuHienTai && trangThaiHienThi !== 'da-duyet';
               return (
-                <div key={buoc} className="flex flex-1 flex-col items-center gap-1" title={PHE_DUYET_LABEL[buoc]}>
+                <div key={buoc} className="flex flex-1 flex-col items-center gap-1" title={PHE_DUYET_TOOLTIP[buoc]}>
                   <div
                     className={cn(
                       'h-1.5 w-full rounded-full transition-all',
@@ -2664,7 +2841,7 @@ function HopDongThongTinTab({
                         : 'text-slate-400',
                     )}
                   >
-                    {['1. Soạn & trình', '2. KHKT thẩm tra', '3. Trình VT', '4. Đã duyệt'][idx]}
+                    {['1. Soạn & trình', '2. KHKT thẩm tra', '3. Trình VT', '4. VT đã duyệt'][idx]}
                   </span>
                 </div>
               );
@@ -2839,10 +3016,14 @@ function HopDongGiaoViecTab({
   hd,
   nhanSuOptions,
   donViOptions,
+  onPreviewPgv,
+  isPreviewingPgv,
 }: {
   hd: HopDong;
   nhanSuOptions: Option[];
   donViOptions: Option[];
+  onPreviewPgv?: (data: PrintGiaoViecData | null) => void;
+  isPreviewingPgv?: boolean;
 }) {
   const dm = timDinhMuc(hd.nhomHD);
   const pb = hd.nhomHD
@@ -2870,7 +3051,14 @@ function HopDongGiaoViecTab({
       )}
 
       {/* Phiếu giao việc chính thức */}
-      <PhieuGiaoViecForm key={hd.id} hd={hd} nhanSuOptions={nhanSuOptions} donViOptions={donViOptions} />
+      <PhieuGiaoViecForm
+        key={hd.id}
+        hd={hd}
+        nhanSuOptions={nhanSuOptions}
+        donViOptions={donViOptions}
+        onPreviewPgv={onPreviewPgv}
+        isPreviewingPgv={isPreviewingPgv}
+      />
     </div>
   );
 }

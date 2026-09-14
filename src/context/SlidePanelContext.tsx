@@ -4,6 +4,8 @@ export interface SlidePanelEntry {
   id: string;
   title: ReactNode;
   subtitle?: ReactNode;
+  /** Hướng neo của slide panel: 'right' (mặc định) hoặc 'left' (neo bên trái để đối chiếu song song). */
+  side?: 'left' | 'right';
   /** Icon nhỏ hiển thị trên tai thỏ — mặc định dùng icon tài liệu chung nếu bỏ trống. */
   icon?: ReactNode;
   headerExtra?: ReactNode;
@@ -14,6 +16,8 @@ export interface SlidePanelEntry {
   maxWidth?: number;
   /** Key localStorage để nhớ chiều rộng đã kéo — bỏ trống thì không nhớ. */
   storageKey?: string;
+  /** Bật chế độ Split View (ví dụ xem trước bản in đối chiếu dính liền), panel tự động bung rộng sang trái */
+  isSplitView?: boolean;
 }
 
 export type SlidePanelOpenInput = Omit<SlidePanelEntry, 'id'> & { id?: string };

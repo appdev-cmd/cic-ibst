@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Download } from 'lucide-react';
 import type { HopDong } from '../types';
-import { canTrinhVienTruong, ngayHanNopHoSo, soNgayConLai } from '../lib/qc2815';
+import { canTrinhVienTruong, xacDinhTrangThaiPheDuyet, ngayHanNopHoSo, soNgayConLai } from '../lib/qc2815';
 import { formatTrieu, exportCsv, cn } from '../lib/utils';
 
 /**
@@ -53,10 +53,8 @@ function tongHop(list: HopDong[]): DongBaoCao[] {
       if (han && soNgayConLai(han) < 0) d.quaHanNopHoSo += 1;
     }
 
-    if (
-      canTrinhVienTruong(hd.nhomHD, hd.giaDuThau ?? hd.giaTri) &&
-      hd.trangThaiPheDuyet !== 'da-duyet'
-    ) {
+    const trangThaiPd = xacDinhTrangThaiPheDuyet(hd);
+    if (trangThaiPd !== 'khong-ap-dung' && trangThaiPd !== 'da-duyet') {
       d.choDuyetVienTruong += 1;
     }
 

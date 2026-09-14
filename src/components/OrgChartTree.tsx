@@ -370,19 +370,19 @@ export function OrgChartTree({ donViList, nhanSuList, selectedId, onSelect, isPa
     [nhanSuList]
   );
   const vienTruong = useMemo(
-    () => lanhDao.find((n) => n.chucDanh === 'Viện trưởng') ?? { id: '1', hoTen: 'GS.TS. Nguyễn Hồng Hải', hocVi: 'GS.TS' },
+    () => lanhDao.find((n) => n.chucDanh === 'Viện trưởng') ?? { id: '1', hoTen: 'TS. Nguyễn Hồng Hải', hocVi: 'TS' },
     [lanhDao]
   );
   const deputyDan = useMemo(
-    () => lanhDao.find((n) => n.hoTen.includes('Đinh Quốc Dân') || n.chucDanh?.includes('Phó Viện trưởng')) ?? { id: '2', hoTen: 'Đinh Quốc Dân', hocVi: 'TS' },
+    () => lanhDao.find((n) => n.hoTen.includes('Đinh Quốc Dân') || n.chucDanh?.includes('Phó Viện trưởng')) ?? { id: '2', hoTen: 'TS. Đinh Quốc Dân', hocVi: 'TS' },
     [lanhDao]
   );
   const deputyBinh = useMemo(
-    () => lanhDao.find((n) => n.hoTen.includes('Nguyễn Thanh Bình')) ?? { id: '3', hoTen: 'Nguyễn Thanh Bình', hocVi: 'PGS.TS' },
+    () => lanhDao.find((n) => n.hoTen.includes('Nguyễn Thanh Bình')) ?? { id: '3', hoTen: 'TS. Nguyễn Thanh Bình', hocVi: 'TS' },
     [lanhDao]
   );
   const deputyKhoi = useMemo(
-    () => lanhDao.find((n) => n.hoTen.includes('Cao Duy Khôi')) ?? { id: '4', hoTen: 'Cao Duy Khôi', hocVi: 'TS' },
+    () => lanhDao.find((n) => n.hoTen.includes('Cao Duy Khôi')) ?? { id: '4', hoTen: 'TS. Cao Duy Khôi', hocVi: 'TS' },
     [lanhDao]
   );
 
