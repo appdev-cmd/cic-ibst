@@ -18,7 +18,7 @@ import { RAGKnowledgeManager } from '../components/ai/RAGKnowledgeManager';
 import { PageHeader } from '../components/PageHeader';
 import { DataState } from '../components/DataState';
 import { Field, inputCls } from '../components/Modal';
-import { TableToolbar, RowActions } from '../components/TableToolbar';
+import { TableToolbar, FilterSelect, RowActions } from '../components/TableToolbar';
 import { useAsyncData } from '../hooks/useAsyncData';
 import { useTableControls } from '../hooks/useTableControls';
 import { useCrudForm } from '../hooks/useCrudForm';
@@ -152,6 +152,30 @@ export function CaiDatPage() {
 
 function NguoiDungTab({ coTheSua }: { coTheSua: boolean }) {
   const { data: list, loading, error, refetch } = useAsyncData(fetchNguoiDung, []);
+  const [filterDonVi, setFilterDonVi] = useState('');
+  const [filterVaiTro, setFilterVaiTro] = useState('');
+
+  const donViOptions = useMemo(() => {
+    const set = new Set<string>();
+    list.forEach((nd) => {
+      if (nd.donVi) set.add(nd.donVi);
+    });
+    return Array.from(set).sort().map((dv) => ({ value: dv, label: dv }));
+  }, [list]);
+
+  const rowsFiltered = useMemo(() => {
+    return list.filter((nd) => {
+      if (filterDonVi && nd.donVi !== filterDonVi) return false;
+      if (filterVaiTro && nd.vaiTro !== filterVaiTro) return false;
+      return true;
+    });
+  }, [list, filterDonVi, filterVaiTro]);
+
+  const table = useTableControls(
+    rowsFiltered,
+    (nd) => `${nd.hoTen} ${nd.donVi} ${VAI_TRO_LABEL[nd.vaiTro] ?? nd.vaiTro}`,
+    9999,
+  );
   const [editing, setEditing] = useState<NguoiDung | null>(null);
   const [vaiTro, setVaiTro] = useState('chuyen-vien');
   const [trangThai, setTrangThai] = useState('hoat-dong');
@@ -240,55 +264,80 @@ function NguoiDungTab({ coTheSua }: { coTheSua: boolean }) {
   return (
     <>
       <DataState loading={loading} error={error} empty={list.length === 0} />
-      <div className="card overflow-hidden">
-        <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
-        <table className="w-full min-w-[640px]">
-          <thead className="sticky top-0 z-10 border-b border-border bg-subtle dark:bg-[#1f2332]">
-            <tr>
-              <th className="th-cell w-10 text-center">#</th>
-              <th className="th-cell">Họ tên</th>
-              <th className="th-cell">Vai trò</th>
-              <th className="th-cell">Đơn vị</th>
-              <th className="th-cell">Trạng thái</th>
-              <th className="th-cell text-right">Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            {list.map((nd, idx) => (
-              <tr key={nd.userId} className="tr-hover">
-                <td className="td-cell text-center text-xs text-ink-muted tabular-nums">{idx + 1}</td>
-                <td className="td-cell font-semibold">{nd.hoTen}</td>
-                <td className="td-cell">
-                  <span className="rounded-full bg-primary-subtle px-2 py-0.5 text-2xs font-black uppercase text-primary dark:bg-primary-900/30 dark:text-primary-300">
-                    {VAI_TRO_LABEL[nd.vaiTro] ?? nd.vaiTro}
-                  </span>
-                </td>
-                <td className="td-cell text-ink-secondary">{nd.donVi || '—'}</td>
-                <td className="td-cell">
-                  {nd.trangThai === 'khoa' ? (
-                    <span className="text-2xs font-black uppercase text-danger">Đã khóa</span>
-                  ) : (
-                    <span className="text-2xs font-black uppercase text-success">Hoạt động</span>
-                  )}
-                </td>
-                <td className="td-cell">
-                  <div className="flex justify-end">
-                    {coTheSua ? (
-                      <button
-                        onClick={() => open(nd)}
-                        className="rounded-lg border border-border px-3 py-1 text-xs font-bold text-ink-secondary transition-colors hover:bg-muted"
-                      >
-                        Phân quyền
-                      </button>
-                    ) : (
-                      <span className="text-2xs text-ink-muted">Chỉ xem</span>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="space-y-4">
+        <TableToolbar
+          search={table.search}
+          onSearch={table.setSearch}
+          placeholder="Tìm kiếm tài khoản, họ tên, đơn vị, vai trò..."
+          total={table.total}
+          totalLabel="tài khoản"
+        >
+          <FilterSelect
+            value={filterDonVi}
+            onChange={setFilterDonVi}
+            options={donViOptions}
+            allLabel="Tất cả đơn vị"
+          />
+          <FilterSelect
+            value={filterVaiTro}
+            onChange={setFilterVaiTro}
+            options={VAI_TRO_OPTIONS}
+            allLabel="Tất cả vai trò"
+          />
+        </TableToolbar>
+
+        <div className="card overflow-hidden">
+          <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
+            <table className="w-full min-w-[640px]">
+              <thead className="thead-sticky">
+                <tr>
+                  <th className="th-cell w-10 text-center">#</th>
+                  <th className="th-cell">Họ tên</th>
+                  <th className="th-cell">Vai trò</th>
+                  <th className="th-cell">Đơn vị</th>
+                  <th className="th-cell">Trạng thái</th>
+                  <th className="th-cell text-right">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                {table.filteredRows.map((nd: NguoiDung, idx: number) => (
+                  <tr key={nd.userId} className="tr-stripe">
+                    <td className="td-cell text-center text-xs text-ink-muted tabular-nums">
+                      {idx + 1}
+                    </td>
+                    <td className="td-cell font-semibold">{nd.hoTen}</td>
+                    <td className="td-cell">
+                      <span className="rounded-full bg-primary-subtle px-2 py-0.5 text-2xs font-black uppercase text-primary dark:bg-primary-900/30 dark:text-primary-300">
+                        {VAI_TRO_LABEL[nd.vaiTro] ?? nd.vaiTro}
+                      </span>
+                    </td>
+                    <td className="td-cell text-ink-secondary">{nd.donVi || '—'}</td>
+                    <td className="td-cell">
+                      {nd.trangThai === 'khoa' ? (
+                        <span className="text-2xs font-black uppercase text-danger">Đã khóa</span>
+                      ) : (
+                        <span className="text-2xs font-black uppercase text-success">Hoạt động</span>
+                      )}
+                    </td>
+                    <td className="td-cell">
+                      <div className="flex justify-end">
+                        {coTheSua ? (
+                          <button
+                            onClick={() => open(nd)}
+                            className="rounded-lg border border-border px-3 py-1 text-xs font-bold text-ink-secondary transition-colors hover:bg-muted"
+                          >
+                            Phân quyền
+                          </button>
+                        ) : (
+                          <span className="text-2xs text-ink-muted">Chỉ xem</span>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </>

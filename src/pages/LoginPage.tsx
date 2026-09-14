@@ -5,34 +5,61 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import logo from '../assets/logo.png';
 
-// ── Danh sách tài khoản thử nghiệm nhanh (Mật khẩu chung: 123456) ──
+// ── Danh sách tài khoản thử nghiệm thực tế (Mật khẩu chung: Ibst@2026) ──
 const QUICK_ACCOUNTS = [
-  // Lãnh đạo & Quản trị
-  { group: 'Lãnh đạo & Quản trị', email: 'vientruong@ibst.vn', label: 'Viện trưởng (Lãnh đạo Viện)', icon: '🏛️' },
-  { group: 'Lãnh đạo & Quản trị', email: 'admin@ibst.vn',       label: 'Quản trị hệ thống',           icon: '⚙️' },
-  // Phòng chức năng
-  { group: 'Phòng chức năng', email: 'tonghop@ibst.vn',   label: 'Phó Viện trưởng / P. Tổng hợp', icon: '🏢' },
-  { group: 'Phòng chức năng', email: 'khkt@ibst.vn',      label: 'Phòng KHKT',                    icon: '📋' },
-  { group: 'Phòng chức năng', email: 'tckt@ibst.vn',      label: 'Phòng TCKT',                    icon: '💰' },
-  { group: 'Phòng chức năng', email: 'tchc@ibst.vn',      label: 'Phòng TCHC',                    icon: '📁' },
-  // Đơn vị chuyên môn & sản xuất
-  { group: 'Đơn vị chuyên môn', email: 'kc@ibst.vn',     label: 'VKC – Kết cấu công trình',      icon: '🏗️' },
-  { group: 'Đơn vị chuyên môn', email: 'bt@ibst.vn',     label: 'VBT – Bê tông',                 icon: '🧱' },
-  { group: 'Đơn vị chuyên môn', email: 'dkt@ibst.vn',    label: 'VĐKT – Địa kỹ thuật',           icon: '⛏️' },
-  { group: 'Đơn vị chuyên môn', email: 'mn@ibst.vn',     label: 'PVMN – Phân viện Miền Nam',     icon: '🌴' },
-  { group: 'Đơn vị chuyên môn', email: 'mt@ibst.vn',     label: 'PVMT – Phân viện Miền Trung',   icon: '🌊' },
-  { group: 'Đơn vị chuyên môn', email: 'am@ibst.vn',     label: 'TTAM – Chống ăn mòn & BVCT',   icon: '🔬' },
-  { group: 'Đơn vị chuyên môn', email: 'td@ibst.vn',     label: 'TTTD – Tư vấn & Thí nghiệm XD', icon: '🧪' },
-  { group: 'Đơn vị chuyên môn', email: 'cn@ibst.vn',     label: 'TTCNVL – Công nghệ VL & XD',    icon: '⚗️' },
-  { group: 'Đơn vị chuyên môn', email: 'kct@ibst.vn',    label: 'TTKCT – Kết cấu thép & XD',     icon: '🔩' },
-  { group: 'Đơn vị chuyên môn', email: 'tkxd@ibst.vn',   label: 'TTTK – Thiết kế & ĐTXD',        icon: '📐' },
-  { group: 'Đơn vị chuyên môn', email: 'cnxd@ibst.vn',   label: 'TTCNXD – Công nghệ Xây dựng',   icon: '🏢' },
-  { group: 'Đơn vị chuyên môn', email: 'cnht@ibst.vn',   label: 'TTCNHT – Kỹ thuật hạ tầng',     icon: '🛣️' },
-  { group: 'Đơn vị chuyên môn', email: 'tbxd@ibst.vn',   label: 'TTTBXD – Thiết bị & An toàn XD',icon: '🔧' },
-  { group: 'Đơn vị chuyên môn', email: 'qt@ibst.vn',     label: 'TTQT – Hợp tác dự án quốc tế',  icon: '🌐' },
-  { group: 'Đơn vị chuyên môn', email: 'bim@ibst.vn',    label: 'TTBIM – Ứng dụng BIM',          icon: '💻' },
-  { group: 'Đơn vị chuyên môn', email: 'ctcp@ibst.vn',   label: 'CTCP – Đầu tư & TVXD IBST',     icon: '🏭' },
-  { group: 'Đơn vị chuyên môn', email: 'cic@ibst.vn',    label: 'Trưởng ĐV – VKC Kết cấu',       icon: '👤' },
+  // Lãnh đạo & Quản trị Viện
+  { group: 'Lãnh đạo Viện', email: 'nguyenhonghai@ibst.vn', label: 'Nguyễn Hồng Hải — Viện trưởng', icon: '🏛️' },
+  { group: 'Lãnh đạo Viện', email: 'dinhquocdan@ibst.vn', label: 'Đinh Quốc Dân — Phó Viện trưởng', icon: '🏛️' },
+  { group: 'Lãnh đạo Viện', email: 'caoduykhoi@ibst.vn',  label: 'Cao Duy Khôi — Phó Viện trưởng', icon: '🏛️' },
+  { group: 'Lãnh đạo Viện', email: 'admin@ibst.vn',       label: 'Quản trị hệ thống (Admin)',   icon: '⚙️' },
+
+  // Phòng Kế hoạch – Kỹ thuật (KHKT) - Theo Bảng lương T9-2026
+  { group: 'Phòng KHKT', email: 'nguyen.thi.thuy.van852@ibst.gov.vn', label: 'Nguyễn Thị Thùy Vân — Trưởng phòng KHKT', icon: '📋' },
+  { group: 'Phòng KHKT', email: 'nguyen.manh.cuong307@ibst.gov.vn',    label: 'Nguyễn Mạnh Cường — Phó phòng KHKT', icon: '📋' },
+  { group: 'Phòng KHKT', email: 'khkt@ibst.vn',                        label: 'Đỗ Văn Mạnh — Phó phòng KHKT', icon: '📋' },
+  { group: 'Phòng KHKT', email: 'vo.thanh.hung83@ibst.gov.vn',         label: 'Võ Thanh Hùng — KS chính KHKT', icon: '👤' },
+
+  // Phòng Tài chính – Kế toán (TCKT) - Theo Bảng lương T9-2026
+  { group: 'Phòng TCKT', email: 'nguyen.thi.thanh.hoai854@ibst.gov.vn', label: 'Nguyễn Thị Thanh Hoài — Trưởng phòng TCKT', icon: '💰' },
+  { group: 'Phòng TCKT', email: 'hoang.thi.minh.tam89@ibst.gov.vn',     label: 'Hoàng Thị Minh Tâm — PTP Kế toán Viện', icon: '💰' },
+  { group: 'Phòng TCKT', email: 'nguyen.thi.yen91@ibst.gov.vn',         label: 'Nguyễn Thị Yến — Kế toán viên', icon: '💰' },
+  { group: 'Phòng TCKT', email: 'le.thi.van.anh92@ibst.gov.vn',         label: 'Lê Thị Vân Anh — Chuyên viên TCKT', icon: '👤' },
+
+  // Phòng Tổ chức – Hành chính (TCHC) - Theo Bảng lương T9-2026
+  { group: 'Phòng TCHC', email: 'tchc@ibst.vn',                        label: 'Nguyễn Nam Thắng — Trưởng phòng TCHC', icon: '📁' },
+  { group: 'Phòng TCHC', email: 'tran.thi.lan65@ibst.gov.vn',          label: 'Trần Thị Lan — Phó phòng TCHC', icon: '📁' },
+  { group: 'Phòng TCHC', email: 'le.thanh.nam61@ibst.gov.vn',           label: 'Lê Thanh Nam — Phó phòng TCHC', icon: '📁' },
+  { group: 'Phòng TCHC', email: 'bui.thi.huyen62@ibst.gov.vn',          label: 'Bùi Thị Huyển — Chuyên viên TCHC', icon: '👤' },
+
+  // Viện Kết cấu công trình (VKC)
+  { group: 'Viện Kết cấu (VKC)', email: 'kc@ibst.vn',                  label: 'Đỗ Tiến Thịnh — Viện trưởng VKC', icon: '🏗️' },
+  { group: 'Viện Kết cấu (VKC)', email: 'pham.van.cuong157@ibst.gov.vn', label: 'Phạm Văn Cường — Phó Viện trưởng VKC', icon: '🏗️' },
+  { group: 'Viện Kết cấu (VKC)', email: 'pham.trung.thanh101@ibst.gov.vn', label: 'Phạm Trung Thành — Chuyên viên VKC', icon: '👤' },
+
+  // Viện Bê tông (VBT)
+  { group: 'Viện Bê tông (VBT)', email: 'bt@ibst.vn',                  label: 'Hoàng Minh Đức — Viện trưởng VBT', icon: '🧱' },
+  { group: 'Viện Bê tông (VBT)', email: 'o.thi.lan.hoa861@ibst.gov.vn',  label: 'Đỗ Thị Lan Hoa — Phó Viện trưởng VBT', icon: '🧱' },
+  { group: 'Viện Bê tông (VBT)', email: 'chu.manh.ha234@ibst.gov.vn',     label: 'Chu Mạnh Hà — Kỹ sư / Chuyên viên VBT', icon: '👤' },
+
+  // Phân viện Miền Trung (PVMT)
+  { group: 'Phân viện Miền Trung', email: 'nguyen.tien.binh446@ibst.gov.vn', label: 'Nguyễn Tiến Bình — Giám đốc PVMT', icon: '🌊' },
+  { group: 'Phân viện Miền Trung', email: 'mai.xuan.hien447@ibst.gov.vn',    label: 'Mai Xuân Hiễn — Phó Giám đốc PVMT', icon: '🌊' },
+  { group: 'Phân viện Miền Trung', email: 'vu.viet.phuong448@ibst.gov.vn',   label: 'Vũ Việt Phương — Kỹ sư / Chuyên viên PVMT', icon: '👤' },
+
+  // TT Kết cấu thép & XD (TTKCT)
+  { group: 'TT Kết cấu thép (TTKCT)', email: 'tran.phuong97@ibst.gov.vn',     label: 'Trần Phương — Trưởng phòng / Giám đốc TTKCT', icon: '🔩' },
+  { group: 'TT Kết cấu thép (TTKCT)', email: 'o.duy.liem857@ibst.gov.vn',      label: 'Đỗ Duy Liêm — Phó Giám đốc TTKCT', icon: '🔩' },
+  { group: 'TT Kết cấu thép (TTKCT)', email: 'nguyen.ngoc.huy103@ibst.gov.vn', label: 'Nguyễn Ngọc Huy — Kỹ sư / Chuyên viên TTKCT', icon: '👤' },
+
+  // TT Thiết bị & Thí nghiệm XD (TTTB)
+  { group: 'TT Thiết bị (TTTB)', email: 'nguyen.thi.minh.nguyet158@ibst.gov.vn', label: 'Nguyễn Thị Minh Nguyệt — Trưởng phòng TTTB', icon: '🔧' },
+  { group: 'TT Thiết bị (TTTB)', email: 'pham.van.cuong157@ibst.gov.vn',         label: 'Phạm Văn Cường — Phó Giám đốc TTTB', icon: '🔧' },
+  { group: 'TT Thiết bị (TTTB)', email: 'pham.uc.hanh735@ibst.gov.vn',           label: 'Phạm Đức Hạnh — Chuyên viên TTTB', icon: '👤' },
+
+  // Công ty CP Đầu tư & TVXD IBST
+  { group: 'Công ty CP IBST', email: 'ctcp@ibst.vn',   label: 'Nguyễn Tiến Thành — Giám đốc CTCP', icon: '🏭' },
+  { group: 'Công ty CP IBST', email: 'huy.tq@ibst.vn',  label: 'Trần Quang Huy — Phó Giám đốc CTCP', icon: '🏭' },
+  { group: 'Công ty CP IBST', email: 'nam.lh@ibst.vn',   label: 'Lê Hoàng Nam — Chỉ huy trưởng / Chuyên viên', icon: '👤' },
 ];
 const QUICK_GROUPS = [...new Set(QUICK_ACCOUNTS.map(a => a.group))];
 
