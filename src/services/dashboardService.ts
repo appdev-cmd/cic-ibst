@@ -165,6 +165,7 @@ export interface DashboardData {
   canhBaoSummary: CanhBaoDashboardSummary;
   khcnData: { name: string; deTai: number; contractVal: number; kinhPhi: number; disbursed: number; pct: number }[];
   nhanSuAnalytics: NhanSuAnalytics;
+  lastUpdated?: Date;
   drilldown: {
     contracts: DrilldownContractItem[];
     debts: DrilldownContractItem[];
@@ -598,6 +599,17 @@ export const UNIT_ALIAS_MAP: Record<string, string> = {
   '20': 'CTCP', 'CTCP': 'CTCP', 'IBST COTEC': 'CTCP', 'IBST.COTEC': 'CTCP', 'CTCP IBST': 'CTCP', 'IBST.CTCP': 'CTCP',
 };
 
+let globalStaticCache: {
+  rawDonVi: any[];
+  rawDangVien: any[];
+  rawTapChi: any[];
+  rawLop: any[];
+  rawHoatDong: any[];
+  rawCongTrinh: any[];
+  rawDauThau: any[];
+  timestamp: number;
+} | null = null;
+
 /** Tải toàn bộ dữ liệu thống kê tổng hợp thời gian thực cho Dashboard Lãnh đạo */
 export async function fetchDashboardData(filter: DashboardFilter): Promise<DashboardData> {
   const { startDate, endDate } = getPeriodDateRange(
@@ -609,22 +621,57 @@ export async function fetchDashboardData(filter: DashboardFilter): Promise<Dashb
 
   const selectedYear = filter.year === 'all' ? '2026' : filter.year;
 
-  // 1. Tải song song tất cả các bảng dữ liệu cốt lõi từ Supabase
+  // 1. Tải dữ liệu: Sử dụng in-memory cache cho các bảng danh mục tĩnh ít thay đổi
+  const cacheNow = Date.now();
+  const CACHE_TTL = 3 * 60 * 1000; // 3 phút
+
+  let staticDataPromise: Promise<{
+    rawDonVi: any[];
+    rawDangVien: any[];
+    rawTapChi: any[];
+    rawLop: any[];
+    rawHoatDong: any[];
+    rawCongTrinh: any[];
+    rawDauThau: any[];
+  }>;
+
+  if (globalStaticCache && (cacheNow - globalStaticCache.timestamp < CACHE_TTL)) {
+    staticDataPromise = Promise.resolve(globalStaticCache);
+  } else {
+    staticDataPromise = Promise.all([
+      supabase.from('don_vi').select('id, ten_don_vi, ten_viet_tat, loai_don_vi, thu_tu').order('thu_tu'),
+      supabase.from('dang_vien').select('id, nhan_su_id, trinh_do_ly_luan, chuc_vu_dang, trang_thai'),
+      supabase.from('tap_chi_khcn').select('id, tieu_de, tac_gia_chinh, nam_xuat_ban, so_tap_chi').limit(20),
+      supabase.from('lop_dao_tao').select('id, so_hoc_vien, ngay_bat_dau, loai'),
+      supabase.from('hoat_dong_quan_tri').select('*').order('thu_tu'),
+      supabase.from('cong_trinh_trong_diem').select('*').order('thu_tu'),
+      supabase.from('dau_thau').select('id, ten_goi_thau, hinh_thuc, gia_du_thau, gia_trung_thau, trang_thai, ghi_chu'),
+    ]).then(([resDonVi, resDangVien, resTapChi, resLopDaoTao, resHoatDong, resCongTrinh, resDauThau]) => {
+      const cacheObj = {
+        rawDonVi: resDonVi.data ?? [],
+        rawDangVien: (resDangVien.data as any[]) ?? [],
+        rawTapChi: resTapChi.data ?? [],
+        rawLop: resLopDaoTao.data ?? [],
+        rawHoatDong: resHoatDong.data ?? [],
+        rawCongTrinh: resCongTrinh.data ?? [],
+        rawDauThau: resDauThau.data ?? [],
+        timestamp: Date.now(),
+      };
+      globalStaticCache = cacheObj;
+      return cacheObj;
+    });
+  }
+
+  // Tải song song dữ liệu động (Hợp đồng, Thanh toán, Đề tài, Nhân sự, Chứng chỉ, Cảnh báo)
   const [
     resHopDong,
     resDotThanhToan,
     resDeTai,
-    resDonVi,
     resNhanSu,
     resChungChi,
     resMau,
-    resTapChi,
-    resLopDaoTao,
     phuCanhBao,
-    resHoatDong,
-    resCongTrinh,
-    resDauThau,
-    resDangVien,
+    cachedStatic,
   ] = await Promise.all([
     supabase
       .from('hop_dong')
@@ -636,32 +683,26 @@ export async function fetchDashboardData(filter: DashboardFilter): Promise<Dashb
     supabase
       .from('de_tai')
       .select('id, ma_so, ten_de_tai, cap_de_tai, chu_nhiem_id, don_vi_id, kinh_phi, tien_do, han_nghiem_thu, trang_thai, don_vi(ten_don_vi, ten_viet_tat), chu_nhiem:nhan_su!de_tai_chu_nhiem_id_fkey(ho_va_ten)'),
-    supabase.from('don_vi').select('id, ten_don_vi, ten_viet_tat, loai_don_vi, thu_tu').order('thu_tu'),
-    supabase.from('nhan_su').select('id, ho_va_ten, chuc_danh, hoc_vi, don_vi_id, trang_thai, ngay_sinh, gioi_tinh, created_at'),
+    supabase.from('nhan_su').select('id, ho_va_ten, chuc_danh, hoc_vi, don_vi_id, trang_thai, ngay_sinh, gioi_tinh, created_at, he_so_luong, phu_cap_chuc_vu, phu_cap_vuot_khung, phu_cap_trach_nhiem'),
     supabase.from('chung_chi_hanh_nghe').select('id, nhan_su_id, so_chung_chi, ten_linh_vuc_hanh_nghe, ngay_het_han, trang_thai_hieu_luc'),
     supabase.from('mau_thi_nghiem').select('id, ngay_nhan, phong_thi_nghiem, trang_thai'),
-    supabase.from('tap_chi_khcn').select('id, tieu_de, tac_gia_chinh, nam_xuat_ban, so_tap_chi').limit(20),
-    supabase.from('lop_dao_tao').select('id, so_hoc_vien, ngay_bat_dau, loai'),
     fetchDuLieuCanhBao(),
-    supabase.from('hoat_dong_quan_tri').select('*').order('thu_tu'),
-    supabase.from('cong_trinh_trong_diem').select('*').order('thu_tu'),
-    supabase.from('dau_thau').select('id, ten_goi_thau, hinh_thuc, gia_du_thau, gia_trung_thau, trang_thai, ghi_chu'),
-    supabase.from('dang_vien').select('id, nhan_su_id, trinh_do_ly_luan, chuc_vu_dang, trang_thai'),
+    staticDataPromise,
   ]);
 
   const rawHopDong = resHopDong.data ?? [];
   const rawDot = resDotThanhToan.data ?? [];
   const rawDeTai = resDeTai.data ?? [];
-  const rawDonVi = resDonVi.data ?? [];
+  const rawDonVi = cachedStatic.rawDonVi;
   const rawNhanSu = resNhanSu.data ?? [];
   const rawChungChi = resChungChi.data ?? [];
   const rawMau = resMau.data ?? [];
-  const rawTapChi = resTapChi.data ?? [];
-  const rawLop = resLopDaoTao.data ?? [];
-  const rawHoatDong = resHoatDong.data ?? [];
-  const rawCongTrinh = resCongTrinh.data ?? [];
-  const rawDauThau = resDauThau.data ?? [];
-  const rawDangVien = (resDangVien?.data as any[]) ?? [];
+  const rawTapChi = cachedStatic.rawTapChi;
+  const rawLop = cachedStatic.rawLop;
+  const rawHoatDong = cachedStatic.rawHoatDong;
+  const rawCongTrinh = cachedStatic.rawCongTrinh;
+  const rawDauThau = cachedStatic.rawDauThau;
+  const rawDangVien = cachedStatic.rawDangVien;
 
   // Chuẩn hóa danh sách HopDong typed để quét QC 2815
   const fullHopDongList: HopDong[] = rawHopDong.map((r: any) => ({
@@ -1061,7 +1102,7 @@ export async function fetchDashboardData(filter: DashboardFilter): Promise<Dashb
     donViNsCount.set(dvName, cur);
   });
 
-  const tongNsThucTe = rawNhanSu.length > 0 ? rawNhanSu.length : 638;
+  const tongNsThucTe = rawNhanSu.length > 0 ? rawNhanSu.length : 647;
   const valTS = cntTS > 0 ? cntTS : 7;
   const valThS = cntThS > 0 ? cntThS : 27;
   const valCN = cntCN > 0 ? cntCN : 54;
@@ -1162,7 +1203,7 @@ export async function fetchDashboardData(filter: DashboardFilter): Promise<Dashb
     caoCap: cntCaoCap > 0 ? cntCaoCap : 38,
     trungCap: cntTrungCap > 0 ? cntTrungCap : 185,
     soCap: cntSoCap > 0 ? cntSoCap : 47,
-    tyLeDangVien: Math.round((tongDangVien / (rawNhanSu.length || 638)) * 100),
+    tyLeDangVien: Math.round((tongDangVien / (rawNhanSu.length || 647)) * 100),
   };
 
   const daoTaoNcs = [
@@ -1380,6 +1421,7 @@ export async function fetchDashboardData(filter: DashboardFilter): Promise<Dashb
     },
     khcnData,
     nhanSuAnalytics,
+    lastUpdated: new Date(),
     drilldown: {
       contracts: drilldownContracts,
       debts: drilldownDebts,

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, type FormEvent } from 'react';
+import { useState, useRef, useEffect, useMemo, type FormEvent } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import {
   Lock,
@@ -15,6 +15,7 @@ import {
   Leaf,
   ChevronDown,
   Building2,
+  Building,
   Settings,
   ClipboardList,
   DollarSign,
@@ -24,68 +25,125 @@ import {
   Compass,
   Wrench,
   Factory,
+  Mountain,
+  ShieldCheck,
+  Navigation,
+  DraftingCompass,
+  Globe,
+  Cpu,
+  Search,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import logo from '../assets/logo.png';
 
-// ── Danh sách tài khoản thử nghiệm thực tế (Mật khẩu chung: Ibst@2026) ──
+// ── Danh sách tài khoản thử nghiệm thực tế đầy đủ 20 đơn vị (Mật khẩu chung: 123456) ──
 const QUICK_ACCOUNTS = [
-  // Lãnh đạo & Quản trị Viện
-  { group: 'Lãnh đạo Viện', email: 'nguyenhonghai@ibst.vn', label: 'Nguyễn Hồng Hải — Viện trưởng', icon: Building2 },
-  { group: 'Lãnh đạo Viện', email: 'dinhquocdan@ibst.vn', label: 'Đinh Quốc Dân — Phó Viện trưởng', icon: Building2 },
-  { group: 'Lãnh đạo Viện', email: 'nguyenthanhbinh@ibst.vn', label: 'Nguyễn Thanh Bình — Phó Viện trưởng', icon: Building2 },
-  { group: 'Lãnh đạo Viện', email: 'caoduykhoi@ibst.vn',  label: 'Cao Duy Khôi — Phó Viện trưởng', icon: Building2 },
-  { group: 'Lãnh đạo Viện', email: 'admin@ibst.vn',       label: 'Quản trị hệ thống (Admin)',   icon: Settings },
+  // ── 1. Lãnh đạo Viện (ĐV 11) ──
+  { group: '1. Lãnh đạo Viện', email: 'nguyenhonghai@ibst.vn', label: 'Nguyễn Hồng Hải — Viện trưởng', icon: Building2 },
+  { group: '1. Lãnh đạo Viện', email: 'dinhquocdan@ibst.vn', label: 'Đinh Quốc Dân — Phó Viện trưởng', icon: Building2 },
+  { group: '1. Lãnh đạo Viện', email: 'nguyenthanhbinh@ibst.vn', label: 'Nguyễn Thanh Bình — Phó Viện trưởng', icon: Building2 },
+  { group: '1. Lãnh đạo Viện', email: 'caoduykhoi@ibst.vn', label: 'Cao Duy Khôi — Phó Viện trưởng', icon: Building2 },
+  { group: '1. Lãnh đạo Viện', email: 'admin@ibst.vn', label: 'Quản trị hệ thống (Admin)', icon: Settings },
 
-  // Phòng Kế hoạch – Kỹ thuật (KHKT) - Theo Bảng lương T9-2026
-  { group: 'Phòng KHKT', email: 'nguyen.thi.thuy.van852@ibst.gov.vn', label: 'Nguyễn Thị Thùy Vân — Trưởng phòng KHKT', icon: ClipboardList },
-  { group: 'Phòng KHKT', email: 'nguyen.manh.cuong307@ibst.gov.vn',    label: 'Nguyễn Mạnh Cường — Phó phòng KHKT', icon: ClipboardList },
-  { group: 'Phòng KHKT', email: 'khkt@ibst.vn',                        label: 'Đỗ Văn Mạnh — Phó phòng KHKT', icon: ClipboardList },
-  { group: 'Phòng KHKT', email: 'vo.thanh.hung83@ibst.gov.vn',         label: 'Võ Thanh Hùng — KS chính KHKT', icon: User },
+  // ── 2. Phòng Kế hoạch – Kỹ thuật (KHKT - ĐV 8) ──
+  { group: '2. Phòng Kế hoạch – Kỹ thuật (KHKT)', email: 'nguyen.thi.thuy.van852@ibst.gov.vn', label: 'Nguyễn Thị Thùy Vân — Trưởng phòng KHKT', icon: ClipboardList },
+  { group: '2. Phòng Kế hoạch – Kỹ thuật (KHKT)', email: 'khkt@ibst.vn', label: 'Đỗ Văn Mạnh — Phó trưởng phòng KHKT', icon: ClipboardList },
+  { group: '2. Phòng Kế hoạch – Kỹ thuật (KHKT)', email: 'vo.thanh.hung83@ibst.gov.vn', label: 'Võ Thanh Hùng — KS chính KHKT', icon: User },
 
-  // Phòng Tài chính – Kế toán (TCKT) - Theo Bảng lương T9-2026
-  { group: 'Phòng TCKT', email: 'nguyen.thi.thanh.hoai854@ibst.gov.vn', label: 'Nguyễn Thị Thanh Hoài — Trưởng phòng TCKT', icon: DollarSign },
-  { group: 'Phòng TCKT', email: 'hoang.thi.minh.tam89@ibst.gov.vn',     label: 'Hoàng Thị Minh Tâm — Kế toán trưởng', icon: DollarSign },
-  { group: 'Phòng TCKT', email: 'nguyen.thi.yen91@ibst.gov.vn',         label: 'Nguyễn Thị Yến — Kế toán viên', icon: DollarSign },
-  { group: 'Phòng TCKT', email: 'le.thi.van.anh92@ibst.gov.vn',         label: 'Lê Thị Vân Anh — Chuyên viên TCKT', icon: User },
+  // ── 3. Phòng Tài chính – Kế toán (TCKT - ĐV 9) ──
+  { group: '3. Phòng Tài chính – Kế toán (TCKT)', email: 'nguyen.thi.thanh.hoai854@ibst.gov.vn', label: 'Nguyễn Thị Thanh Hoài — Trưởng phòng TCKT', icon: DollarSign },
+  { group: '3. Phòng Tài chính – Kế toán (TCKT)', email: 'hoang.thi.minh.tam89@ibst.gov.vn', label: 'Hoàng Thị Minh Tâm — Kế toán trưởng', icon: DollarSign },
+  { group: '3. Phòng Tài chính – Kế toán (TCKT)', email: 'nguyen.thi.yen91@ibst.gov.vn', label: 'Nguyễn Thị Yến — Kế toán viên', icon: DollarSign },
+  { group: '3. Phòng Tài chính – Kế toán (TCKT)', email: 'le.thi.van.anh92@ibst.gov.vn', label: 'Lê Thị Vân Anh — Chuyên viên TCKT', icon: User },
 
-  // Phòng Tổ chức – Hành chính (TCHC) - Theo Bảng lương T9-2026
-  { group: 'Phòng TCHC', email: 'tchc@ibst.vn',                        label: 'Nguyễn Nam Thắng — Trưởng phòng TCHC', icon: FolderKanban },
-  { group: 'Phòng TCHC', email: 'tran.thi.lan65@ibst.gov.vn',          label: 'Trần Thị Lan — Phó phòng TCHC', icon: FolderKanban },
-  { group: 'Phòng TCHC', email: 'le.thanh.nam61@ibst.gov.vn',           label: 'Lê Thanh Nam — Phó phòng TCHC', icon: FolderKanban },
-  { group: 'Phòng TCHC', email: 'bui.thi.huyen62@ibst.gov.vn',          label: 'Bùi Thị Huyển — Chuyên viên TCHC', icon: User },
+  // ── 4. Phòng Tổ chức – Hành chính (TCHC - ĐV 10) ──
+  { group: '4. Phòng Tổ chức – Hành chính (TCHC)', email: 'tchc@ibst.vn', label: 'Nguyễn Nam Thắng — Trưởng phòng TCHC', icon: FolderKanban },
+  { group: '4. Phòng Tổ chức – Hành chính (TCHC)', email: 'tran.thi.lan65@ibst.gov.vn', label: 'Trần Thị Lan — Phó trưởng phòng TCHC', icon: FolderKanban },
+  { group: '4. Phòng Tổ chức – Hành chính (TCHC)', email: 'bui.thi.huyen62@ibst.gov.vn', label: 'Bùi Thị Huyền — Chuyên viên TCHC', icon: User },
 
-  // Viện Kết cấu công trình (VKC)
-  { group: 'Viện Kết cấu (VKC)', email: 'kc@ibst.vn',                  label: 'Đỗ Tiến Thịnh — Viện trưởng VKC', icon: HardHat },
-  { group: 'Viện Kết cấu (VKC)', email: 'pham.van.cuong157@ibst.gov.vn', label: 'Phạm Văn Cường — Phó Viện trưởng VKC', icon: HardHat },
-  { group: 'Viện Kết cấu (VKC)', email: 'pham.trung.thanh101@ibst.gov.vn', label: 'Phạm Trung Thành — Chuyên viên VKC', icon: User },
+  // ── 5. Viện Chuyên ngành Kết cấu (VKC - ĐV 1) ──
+  { group: '5. Viện Kết cấu (VKC)', email: 'kc@ibst.vn', label: 'Đỗ Tiến Thịnh — Viện trưởng VKC', icon: HardHat },
+  { group: '5. Viện Kết cấu (VKC)', email: 'pham.van.cuong157@ibst.gov.vn', label: 'Phạm Văn Cường — Phó Viện trưởng VKC', icon: HardHat },
+  { group: '5. Viện Kết cấu (VKC)', email: 'nguyen.hoang.duong321@ibst.gov.vn', label: 'Nguyễn Hoàng Dương — Trưởng phòng / KS chính', icon: HardHat },
+  { group: '5. Viện Kết cấu (VKC)', email: 'pham.trung.thanh101@ibst.gov.vn', label: 'Phạm Trung Thành — Kỹ sư VKC', icon: User },
 
-  // Viện Bê tông (VBT)
-  { group: 'Viện Bê tông (VBT)', email: 'bt@ibst.vn',                  label: 'Hoàng Minh Đức — Viện trưởng VBT', icon: Layers },
-  { group: 'Viện Bê tông (VBT)', email: 'o.thi.lan.hoa861@ibst.gov.vn',  label: 'Đỗ Thị Lan Hoa — Phó Viện trưởng VBT', icon: Layers },
-  { group: 'Viện Bê tông (VBT)', email: 'chu.manh.ha234@ibst.gov.vn',     label: 'Chu Mạnh Hà — Kỹ sư / Chuyên viên VBT', icon: User },
+  // ── 6. Viện Chuyên ngành Bê tông (VBT - ĐV 2) ──
+  { group: '6. Viện Bê tông (VBT)', email: 'bt@ibst.vn', label: 'Hoàng Minh Đức — Viện trưởng VBT', icon: Layers },
+  { group: '6. Viện Bê tông (VBT)', email: 'o.thi.lan.hoa861@ibst.gov.vn', label: 'Đỗ Thị Lan Hoa — Phó Viện trưởng VBT', icon: Layers },
+  { group: '6. Viện Bê tông (VBT)', email: 'chu.manh.ha234@ibst.gov.vn', label: 'Chu Mạnh Hà — Kỹ sư / Chuyên viên VBT', icon: User },
 
-  // Phân viện Miền Trung (PVMT)
-  { group: 'Phân viện Miền Trung', email: 'nguyen.tien.binh446@ibst.gov.vn', label: 'Nguyễn Tiến Bình — Giám đốc PVMT', icon: Compass },
-  { group: 'Phân viện Miền Trung', email: 'mai.xuan.hien447@ibst.gov.vn',    label: 'Mai Xuân Hiễn — Phó Giám đốc PVMT', icon: Compass },
-  { group: 'Phân viện Miền Trung', email: 'vu.viet.phuong448@ibst.gov.vn',   label: 'Vũ Việt Phương — Kỹ sư / Chuyên viên PVMT', icon: User },
+  // ── 7. Viện Chuyên ngành Địa kỹ thuật (VĐKT - ĐV 3) ──
+  { group: '7. Viện Địa kỹ thuật (VĐKT)', email: 'dkt@ibst.vn', label: 'Đỗ Văn G — Viện trưởng VĐKT', icon: Mountain },
+  { group: '7. Viện Địa kỹ thuật (VĐKT)', email: 'tran.toan.thang868@ibst.gov.vn', label: 'Trần Toàn Thắng — Phó Viện trưởng VĐKT', icon: Mountain },
+  { group: '7. Viện Địa kỹ thuật (VĐKT)', email: 'bui.ang.luong432@ibst.gov.vn', label: 'Bùi Đăng Lương — Kỹ sư VĐKT', icon: User },
 
-  // TT Kết cấu thép & XD (TTKCT)
-  { group: 'TT Kết cấu thép (TTKCT)', email: 'tran.phuong97@ibst.gov.vn',     label: 'Trần Phương — Trưởng phòng / Giám đốc TTKCT', icon: Wrench },
-  { group: 'TT Kết cấu thép (TTKCT)', email: 'o.duy.liem857@ibst.gov.vn',      label: 'Đỗ Duy Liêm — Phó Giám đốc TTKCT', icon: Wrench },
-  { group: 'TT Kết cấu thép (TTKCT)', email: 'nguyen.ngoc.huy103@ibst.gov.vn', label: 'Nguyễn Ngọc Huy — Kỹ sư / Chuyên viên TTKCT', icon: User },
+  // ── 8. Phân Viện KHCN Xây dựng miền Nam (PVMN - ĐV 4) ──
+  { group: '8. Phân viện Miền Nam (PVMN)', email: 'mn@ibst.vn', label: 'Uông Hồng Sơn — Giám đốc Phân viện MN', icon: Compass },
+  { group: '8. Phân viện Miền Nam (PVMN)', email: 'nguyen.viet.tuan495@ibst.gov.vn', label: 'Nguyễn Việt Tuấn — Phó Giám đốc PVMN', icon: Compass },
+  { group: '8. Phân viện Miền Nam (PVMN)', email: 'o.thanh.ba510@ibst.gov.vn', label: 'Đỗ Thanh Ba — Kỹ sư / Chuyên viên PVMN', icon: User },
 
-  // TT Thiết bị & Thí nghiệm XD (TTTB)
-  { group: 'TT Thiết bị (TTTB)', email: 'nguyen.thi.minh.nguyet158@ibst.gov.vn', label: 'Nguyễn Thị Minh Nguyệt — Trưởng phòng TTTB', icon: Wrench },
-  { group: 'TT Thiết bị (TTTB)', email: 'pham.van.cuong157@ibst.gov.vn',         label: 'Phạm Văn Cường — Phó Giám đốc TTTB', icon: Wrench },
-  { group: 'TT Thiết bị (TTTB)', email: 'pham.uc.hanh735@ibst.gov.vn',           label: 'Phạm Đức Hạnh — Chuyên viên TTTB', icon: User },
+  // ── 9. TT Tư vấn chống ăn mòn và XD (TTAM - ĐV 5) ──
+  { group: '9. TT Chống ăn mòn (TTAM)', email: 'am@ibst.vn', label: 'Nguyễn Đăng Khoa — Giám đốc TTAM', icon: ShieldCheck },
+  { group: '9. TT Chống ăn mòn (TTAM)', email: 'tran.van.tiem117@ibst.gov.vn', label: 'Trần Văn Tiểm — Phó Giám đốc TTAM', icon: ShieldCheck },
+  { group: '9. TT Chống ăn mòn (TTAM)', email: 'nguyen.xuan.toan126@ibst.gov.vn', label: 'Nguyễn Xuân Toàn — Kỹ sư TTAM', icon: User },
 
-  // Công ty CP Đầu tư & TVXD IBST
-  { group: 'Công ty CP IBST', email: 'ctcp@ibst.vn',   label: 'Nguyễn Tiến Thành — Giám đốc CTCP', icon: Factory },
-  { group: 'Công ty CP IBST', email: 'huy.tq@ibst.vn',  label: 'Trần Quang Huy — Phó Giám đốc CTCP', icon: Factory },
-  { group: 'Công ty CP IBST', email: 'nam.lh@ibst.vn',   label: 'Lê Hoàng Nam — Chỉ huy trưởng / Chuyên viên', icon: User },
+  // ── 10. TT Tư vấn trắc địa và XD (TTTD - ĐV 6) ──
+  { group: '10. TT Trắc địa (TTTD)', email: 'td@ibst.vn', label: 'Ngô Xuân Thế — Giám đốc TTTD', icon: Navigation },
+  { group: '10. TT Trắc địa (TTTD)', email: 'nguyen.xuan.long571@ibst.gov.vn', label: 'Nguyễn Xuân Long — Phó Giám đốc TTTD', icon: Navigation },
+  { group: '10. TT Trắc địa (TTTD)', email: 'nguyen.cong.kien579@ibst.gov.vn', label: 'Nguyễn Công Kiên — Kỹ sư TTTD', icon: User },
+
+  // ── 11. TT Phát triển công nghệ và VLXD (TTCN - ĐV 7) ──
+  { group: '11. TT Công nghệ & VLXD (TTCN)', email: 'cn@ibst.vn', label: 'Nguyễn Thanh Hằng — Giám đốc TTCN', icon: Layers },
+  { group: '11. TT Công nghệ & VLXD (TTCN)', email: 'truong.thi.hong.thuy217@ibst.gov.vn', label: 'Trương Thị Hồng Thúy — Phó Giám đốc TTCN', icon: Layers },
+  { group: '11. TT Công nghệ & VLXD (TTCN)', email: 'ngo.tien.thanh221@ibst.gov.vn', label: 'Ngô Tiến Thành — Kỹ sư TTCN', icon: User },
+
+  // ── 12. Phân Viện KHCN Xây dựng miền Trung (PVMT - ĐV 12) ──
+  { group: '12. Phân viện Miền Trung (PVMT)', email: 'mt@ibst.vn', label: 'Nguyễn Tiến Bình — Giám đốc Phân viện MT', icon: Compass },
+  { group: '12. Phân viện Miền Trung (PVMT)', email: 'mai.xuan.hien447@ibst.gov.vn', label: 'Mai Xuân Hiển — Phó Giám đốc PVMT', icon: Compass },
+  { group: '12. Phân viện Miền Trung (PVMT)', email: 'vu.viet.phuong448@ibst.gov.vn', label: 'Vũ Việt Phương — Kỹ sư PVMT', icon: User },
+
+  // ── 13. TT Kết cấu thép và XD (TTKCT - ĐV 13) ──
+  { group: '13. TT Kết cấu thép (TTKCT)', email: 'kct@ibst.vn', label: 'Vũ Thành Trung — Giám đốc TTKCT', icon: Wrench },
+  { group: '13. TT Kết cấu thép (TTKCT)', email: 'o.duy.liem857@ibst.gov.vn', label: 'Đỗ Duy Liêm — Phó Giám đốc TTKCT', icon: Wrench },
+  { group: '13. TT Kết cấu thép (TTKCT)', email: 'nguyen.ngoc.huy103@ibst.gov.vn', label: 'Nguyễn Ngọc Huy — Kỹ sư TTKCT', icon: User },
+
+  // ── 14. TT Tư vấn thiết kế và XD (TTTK - ĐV 14) ──
+  { group: '14. TT Tư vấn Thiết kế (TTTK)', email: 'tkxd@ibst.vn', label: 'Nguyễn Huyên — Giám đốc TTTK', icon: DraftingCompass },
+  { group: '14. TT Tư vấn Thiết kế (TTTK)', email: 'cao.duy.bach631@ibst.gov.vn', label: 'Cao Duy Bách — Phó Giám đốc TTTK', icon: DraftingCompass },
+  { group: '14. TT Tư vấn Thiết kế (TTTK)', email: 'nguyen.thanh.van641@ibst.gov.vn', label: 'Nguyễn Thanh Vân — Chuyên viên TTTK', icon: User },
+
+  // ── 15. TT Công nghệ xây dựng (TTCNXD - ĐV 15) ──
+  { group: '15. TT Công nghệ XD (TTCNXD)', email: 'cnxd@ibst.vn', label: 'Ninh Ngọc Doanh — Giám đốc TTCNXD', icon: Building },
+  { group: '15. TT Công nghệ XD (TTCNXD)', email: 'la.manh.cuong665@ibst.gov.vn', label: 'Lã Mạnh Cường — Phó Giám đốc TTCNXD', icon: Building },
+  { group: '15. TT Công nghệ XD (TTCNXD)', email: 'nguyen.ngoc.thanh664@ibst.gov.vn', label: 'Nguyễn Ngọc Thanh — Kỹ sư TTCNXD', icon: User },
+
+  // ── 16. TT Tư vấn XD công nghiệp và hạ tầng (TTCNHT - ĐV 16) ──
+  { group: '16. TT XD Công nghiệp & HT (TTCNHT)', email: 'cnht@ibst.vn', label: 'Ngô Hoàng Quân — Giám đốc TTCNHT', icon: Factory },
+  { group: '16. TT XD Công nghiệp & HT (TTCNHT)', email: 'nguyen.inh.dinh599@ibst.gov.vn', label: 'Nguyễn Đình Dinh — Phó Giám đốc TTCNHT', icon: Factory },
+  { group: '16. TT XD Công nghiệp & HT (TTCNHT)', email: 'cao.inh.hai607@ibst.gov.vn', label: 'Cao Đình Hải — Kỹ sư TTCNHT', icon: User },
+
+  // ── 17. TT Tư vấn thiết bị và XD (TTTB - ĐV 17) ──
+  { group: '17. TT Thiết bị (TTTB)', email: 'tbxd@ibst.vn', label: 'Hoàng Mạnh — Giám đốc TTTB', icon: Wrench },
+  { group: '17. TT Thiết bị (TTTB)', email: 'pham.van.cuong157@ibst.gov.vn', label: 'Phạm Văn Cường — Phó Giám đốc TTTB', icon: Wrench },
+  { group: '17. TT Thiết bị (TTTB)', email: 'duong.thi.nga194@ibst.gov.vn', label: 'Dương Thị Nga — Kế toán viên TTTB', icon: User },
+
+  // ── 18. TT Các Dự án quốc tế và XD (TTDAQT - ĐV 18) ──
+  { group: '18. TT Các Dự án Quốc tế (TTDAQT)', email: 'qt@ibst.vn', label: 'Nguyễn Công Nghĩa — Giám đốc TTDAQT', icon: Globe },
+  { group: '18. TT Các Dự án Quốc tế (TTDAQT)', email: 'tran.hung730@ibst.gov.vn', label: 'Trần Hùng — Phó Giám đốc TTDAQT', icon: Globe },
+  { group: '18. TT Các Dự án Quốc tế (TTDAQT)', email: 'nguyen.huu.quyen731@ibst.gov.vn', label: 'Nguyễn Hửu Quyền — Kỹ sư TTDAQT', icon: User },
+
+  // ── 19. TT Tư vấn và Ứng dụng BIM trong XD (TTBIM - ĐV 19) ──
+  { group: '19. TT Tư vấn & Ứng dụng BIM (TTBIM)', email: 'bim@ibst.vn', label: 'Vũ Đức Thịnh — Giám đốc TTBIM', icon: Cpu },
+  { group: '19. TT Tư vấn & Ứng dụng BIM (TTBIM)', email: 'nguyen.anh.tuan784@ibst.gov.vn', label: 'Nguyễn Anh Tuấn — Phó Giám đốc TTBIM', icon: Cpu },
+  { group: '19. TT Tư vấn & Ứng dụng BIM (TTBIM)', email: 'nguyen.ba.kien788@ibst.gov.vn', label: 'Nguyễn Bá Kiên — Kỹ sư TTBIM', icon: User },
+
+  // ── 20. Công ty CP Đầu tư & CNXD IBST (CTCP - ĐV 20) ──
+  { group: '20. Công ty CP IBST (CTCP)', email: 'ctcp@ibst.vn', label: 'Nguyễn Tiến Thành — Giám đốc CTCP', icon: Factory },
+  { group: '20. Công ty CP IBST (CTCP)', email: 'huy.tq@ibst.vn', label: 'Trần Quang Huy — Phó Giám đốc CTCP', icon: Factory },
+  { group: '20. Công ty CP IBST (CTCP)', email: 'nam.lh@ibst.vn', label: 'Lê Hoàng Nam — Chỉ huy trưởng / Chuyên viên', icon: User },
 ];
+
 const QUICK_GROUPS = [...new Set(QUICK_ACCOUNTS.map(a => a.group))];
 
 export function LoginPage() {
@@ -99,13 +157,30 @@ export function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [searchQuick, setSearchQuick] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const filteredAccounts = useMemo(() => {
+    if (!searchQuick.trim()) return QUICK_ACCOUNTS;
+    const q = searchQuick.toLowerCase().trim();
+    return QUICK_ACCOUNTS.filter(
+      a =>
+        a.label.toLowerCase().includes(q) ||
+        a.email.toLowerCase().includes(q) ||
+        a.group.toLowerCase().includes(q),
+    );
+  }, [searchQuick]);
+
+  const filteredGroups = useMemo(() => {
+    return [...new Set(filteredAccounts.map(a => a.group))];
+  }, [filteredAccounts]);
 
   // Đóng dropdown khi click ra ngoài
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setDropdownOpen(false);
+        setSearchQuick('');
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -452,39 +527,70 @@ export function LoginPage() {
               {/* Dropdown panel */}
               {dropdownOpen && (
                 <div className="relative z-50 mt-1 w-full rounded-xl border border-border bg-surface shadow-dropdown overflow-hidden">
-                  <div className="max-h-64 overflow-y-auto py-1">
-                    {QUICK_GROUPS.map(group => (
-                      <div key={group}>
-                        {/* Group label */}
-                        <div className="px-3 pt-2 pb-0.5 text-[10px] font-black uppercase tracking-wider text-ink-muted bg-subtle/60 dark:bg-slate-900/40">
-                          {group}
-                        </div>
-                        {QUICK_ACCOUNTS.filter(a => a.group === group).map(acc => {
-                          const Icon = acc.icon;
-                          return (
-                            <button
-                              key={acc.email}
-                              type="button"
-                              onClick={() => {
-                                setEmail(acc.email);
-                                setPassword('123456');
-                                setDropdownOpen(false);
-                              }}
-                              className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-primary-50 dark:hover:bg-slate-800/50 transition-colors"
-                            >
-                              <Icon size={15} className="shrink-0 text-primary-600 dark:text-primary-400" />
-                              <div className="min-w-0">
-                                <div className="text-xs font-semibold text-ink truncate">{acc.label}</div>
-                                <div className="text-[10px] text-ink-muted font-mono truncate">{acc.email}</div>
-                              </div>
-                            </button>
-                          );
-                        })}
+                  {/* Search box */}
+                  <div className="p-2 border-b border-border bg-subtle/50 dark:bg-slate-900/50">
+                    <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-border dark:border-slate-700/80 bg-surface text-xs focus-within:border-primary-500 transition-all">
+                      <Search size={14} className="text-ink-muted shrink-0" />
+                      <input
+                        type="text"
+                        value={searchQuick}
+                        onChange={e => setSearchQuick(e.target.value)}
+                        placeholder="Tìm đơn vị, chức vụ, họ tên, email..."
+                        className="w-full bg-transparent text-ink placeholder:text-ink-muted outline-none text-xs"
+                        autoFocus
+                      />
+                      {searchQuick && (
+                        <button
+                          type="button"
+                          onClick={() => setSearchQuick('')}
+                          className="text-ink-muted hover:text-ink text-xs px-1"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="max-h-72 overflow-y-auto py-1 divide-y divide-border/40">
+                    {filteredGroups.length === 0 ? (
+                      <div className="py-6 text-center text-xs text-ink-muted">
+                        Không tìm thấy tài khoản phù hợp với &quot;{searchQuick}&quot;
                       </div>
-                    ))}
+                    ) : (
+                      filteredGroups.map(group => (
+                        <div key={group}>
+                          {/* Group label */}
+                          <div className="px-3 pt-2 pb-0.5 text-[10px] font-black uppercase tracking-wider text-ink-muted bg-subtle/60 dark:bg-slate-900/40">
+                            {group}
+                          </div>
+                          {filteredAccounts.filter(a => a.group === group).map(acc => {
+                            const Icon = acc.icon;
+                            return (
+                              <button
+                                key={acc.email}
+                                type="button"
+                                onClick={() => {
+                                  setEmail(acc.email);
+                                  setPassword('123456');
+                                  setDropdownOpen(false);
+                                  setSearchQuick('');
+                                }}
+                                className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-primary-50 dark:hover:bg-slate-800/50 transition-colors"
+                              >
+                                <Icon size={15} className="shrink-0 text-primary-600 dark:text-primary-400" />
+                                <div className="min-w-0">
+                                  <div className="text-xs font-semibold text-ink truncate">{acc.label}</div>
+                                  <div className="text-[10px] text-ink-muted font-mono truncate">{acc.email}</div>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ))
+                    )}
                   </div>
                   <div className="border-t border-border px-3 py-1.5 text-[10px] text-ink-muted text-center bg-subtle/40 dark:bg-slate-900/20">
-                    Nhấn chọn → điền tự động vào form → bấm Đăng nhập
+                    {filteredAccounts.length}/{QUICK_ACCOUNTS.length} tài khoản • Nhấn chọn → tự điền form
                   </div>
                 </div>
               )}
