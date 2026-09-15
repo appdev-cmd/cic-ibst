@@ -416,11 +416,11 @@
 
 /* ── Border catch-alls ── */
 .dark .border-gray-100 {
-  border-color: #222533;
+  border-color: #38425d;
 }
 
 .dark .border-gray-200 {
-  border-color: #262a39;
+  border-color: #38425d;
 }
 
 .dark .border-blue-100 {
@@ -620,11 +620,11 @@
 .dark .bg-gray-100, .dark [class~="bg-gray-100"] { background-color: #252a3b !important; }
 .dark .bg-slate-50, .dark [class~="bg-slate-50"] { background-color: #1a1e2e !important; }
 .dark .bg-slate-100, .dark [class~="bg-slate-100"] { background-color: #252a3b !important; }
-.dark [role="menu"], .dark [role="listbox"], .dark [role="dialog"] { background-color: #1f2332 !important; border-color: #2e3348 !important; }
+.dark [role="menu"], .dark [role="listbox"], .dark [role="dialog"] { background-color: #1f2332 !important; border-color: #38425d !important; }
 .dark .text-gray-900, .dark .text-slate-900 { color: #f1f5f9 !important; }
 .dark .text-gray-700, .dark .text-slate-700 { color: #cbd5e1 !important; }
 .dark .text-gray-600, .dark .text-slate-600 { color: #94a3b8 !important; }
-.dark .border-gray-100, .dark .border-gray-200, .dark .border-slate-100, .dark .border-slate-200 { border-color: #2e3348 !important; }
+.dark .border-gray-100, .dark .border-gray-200, .dark .border-slate-100, .dark .border-slate-200 { border-color: #38425d !important; }
 
 /* Dark Mode Link & Text overrides to prevent blue-link-pollution in Sidebar & Breadcrumbs */
 .dark a[class~="text-txt-primary"] { color: var(--color-text-primary) !important; }

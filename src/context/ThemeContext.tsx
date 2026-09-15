@@ -219,6 +219,9 @@ const PRIMARY_COLOR_TOKENS: Record<PrimaryColor, Record<string, string>> = {
 function applyTheme(theme: Theme) {
   const root = document.documentElement;
   root.classList.toggle('dark', theme === 'dark');
+  root.classList.remove('theme-nature', 'theme-light', 'theme-dark');
+  root.classList.add(`theme-${theme}`);
+  root.dataset.theme = theme;
   Object.entries(THEME_TOKENS[theme]).forEach(([key, value]) => {
     root.style.setProperty(key, value);
   });

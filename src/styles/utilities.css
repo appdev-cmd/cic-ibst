@@ -10,7 +10,7 @@
   }
 
   .text-gradient {
-    @apply bg-gradient-to-r from-primary-500 to-gold-400 bg-clip-text text-transparent;
+    @apply text-primary-600 dark:text-primary-400 font-bold;
   }
 
   /* Scrollbar Styles */

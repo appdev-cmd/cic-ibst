@@ -7,6 +7,7 @@ import type { DonVi, NhanSu, LoaiDonVi } from '../types';
 import { deleteDonVi, LOAI_DON_VI } from '../services/org';
 import { cn } from '../lib/utils';
 import { useSlidePanelChiTiet, useSlidePanelForm } from '../hooks/useSlidePanelCrud';
+import { useToast } from '../context/ToastContext';
 import { DonViChiTietPanel } from './DonViChiTietPanel';
 import { DonViFormPanel } from './DonViFormPanel';
 
@@ -45,6 +46,7 @@ export function DonViListTab({
   error,
   onRefresh,
 }: DonViListTabProps) {
+  const { toast } = useToast();
   const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
@@ -84,7 +86,7 @@ export function DonViListTab({
       onRefresh();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      alert(msg.includes('foreign key')
+      toast.error(msg.includes('foreign key')
         ? 'Không thể xóa: đơn vị đang có dữ liệu tham chiếu (nhân sự, hợp đồng, đề tài...).'
         : `Lỗi xóa đơn vị: ${msg}`);
     }

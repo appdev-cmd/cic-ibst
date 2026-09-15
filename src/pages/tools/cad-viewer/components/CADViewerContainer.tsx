@@ -717,7 +717,7 @@ export const CADViewerContainer: React.FC = () => {
               ) : (
                 <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-txt-primary bg-bg-base">
                   <div className="w-12 h-12 rounded-xl bg-bg-surface border border-border flex items-center justify-center text-txt-muted shadow-sm mb-4">
-                    <Upload className="w-6 h-6 animate-bounce" />
+                    <Upload className="w-6 h-6" />
                   </div>
                   <h4 className="text-txt-primary font-bold text-sm mb-1">Dự án chưa có bản vẽ</h4>
                   <p className="text-txt-muted text-xs max-w-xs mb-5">

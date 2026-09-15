@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Scale, Bell, Clock, MapPin, Newspaper, ChevronRight } from 'lucide-react';
+import { Calendar, Scale, Bell, Clock, MapPin, Newspaper, ChevronRight, Play, Pause } from 'lucide-react';
 import {
   type BanTinItem,
   getBanTinTuanItems,
@@ -13,6 +13,7 @@ export function BanTinTuanTicker() {
   const navigate = useNavigate();
   const { openPanel } = useSlidePanel();
   const [items, setItems] = useState<BanTinItem[]>([]);
+  const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
     // Nạp danh sách bản tin tuần
@@ -59,7 +60,10 @@ export function BanTinTuanTicker() {
         <div className="absolute left-0 top-0 bottom-0 w-6 z-10 pointer-events-none bg-gradient-to-r from-surface dark:from-slate-900 to-transparent" />
         <div className="absolute right-0 top-0 bottom-0 w-10 z-10 pointer-events-none bg-gradient-to-l from-surface dark:from-slate-900 to-transparent" />
 
-        <div className="ticker-track flex items-center whitespace-nowrap">
+        <div
+          className="ticker-track flex items-center whitespace-nowrap"
+          style={{ animationPlayState: isPaused ? 'paused' : undefined }}
+        >
           {displayList.map((item, index) => {
             if (item.kind === 'event') {
               const isMeeting = item.loai === 'meeting' || item.loai === 'Lich-BGĐ' || item.loai === 'Lich-tuan';
@@ -160,15 +164,25 @@ export function BanTinTuanTicker() {
         </div>
       </div>
 
-      {/* ── Nút xem tất cả ở cuối dải ── */}
-      <button
-        type="button"
-        onClick={() => openFullDigestPanel()}
-        title="Xem toàn bộ Bản tin tổng hợp tuần qua SlidePanel"
-        className="z-10 p-1 text-ink-muted hover:text-primary rounded-md hover:bg-muted transition-colors shrink-0"
-      >
-        <ChevronRight size={15} />
-      </button>
+      {/* ── Bộ điều khiển Tạm dừng / Tiếp tục & Xem tất cả ── */}
+      <div className="flex items-center gap-0.5 shrink-0 z-10">
+        <button
+          type="button"
+          onClick={() => setIsPaused((p) => !p)}
+          title={isPaused ? 'Tiếp tục cuộn bản tin' : 'Tạm dừng cuộn bản tin'}
+          className="p-1 text-ink-muted hover:text-primary rounded-md hover:bg-muted transition-colors cursor-pointer"
+        >
+          {isPaused ? <Play size={13} /> : <Pause size={13} />}
+        </button>
+        <button
+          type="button"
+          onClick={() => openFullDigestPanel()}
+          title="Xem toàn bộ Bản tin tổng hợp tuần qua SlidePanel"
+          className="p-1 text-ink-muted hover:text-primary rounded-md hover:bg-muted transition-colors cursor-pointer"
+        >
+          <ChevronRight size={15} />
+        </button>
+      </div>
     </div>
   );
 }

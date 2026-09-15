@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Calculator, 
   RotateCcw, 
@@ -354,7 +354,7 @@ export const ProjectGroupLookup: React.FC = () => {
           <div className="lg:col-span-8 xl:col-span-9 space-y-5">
             {!lookupResult ? (
               <div className="flex flex-col items-center justify-center p-12 text-center bg-bg-surface border border-border border-dashed rounded-xl h-[400px]">
-                <FileText className="w-12 h-12 text-txt-muted mb-4 animate-bounce" />
+                <FileText className="w-12 h-12 text-txt-muted mb-4" />
                 <h4 className="text-txt-primary font-black text-base mb-1">Kết quả phân nhóm dự án đầu tư</h4>
                 <p className="text-txt-muted text-xs max-w-sm">
                   Chọn lĩnh vực đầu tư và điền tổng mức vốn (tỷ VNĐ) ở bảng bên trái để hệ thống tự động xác định nhóm dự án theo luật mới.

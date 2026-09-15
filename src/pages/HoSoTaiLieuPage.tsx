@@ -5,6 +5,7 @@ import { KpiCard } from '../components/KpiCard';
 import { Field, inputCls } from '../components/Modal';
 import { TableToolbar, FilterSelect, Pagination } from '../components/TableToolbar';
 import { useSlidePanelChiTiet, useSlidePanelForm } from '../hooks/useSlidePanelCrud';
+import { useToast } from '../context/ToastContext';
 import { cn } from '../lib/utils';
 
 interface HoSoTaiLieu {
@@ -27,6 +28,7 @@ const INITIAL_HO_SO: HoSoTaiLieu[] = [
 ];
 
 export function HoSoTaiLieuPage() {
+  const { toast } = useToast();
   const [list, setList] = useState<HoSoTaiLieu[]>(INITIAL_HO_SO);
   const [search, setSearch] = useState('');
   const [filterLoai, setFilterLoai] = useState('');
@@ -106,7 +108,7 @@ export function HoSoTaiLieuPage() {
   useSlidePanelChiTiet({
     id: 'ho-so-detail',
     active: detailItem !== null,
-    title: detailItem ? detailItem.tenTaiLieu : '',
+    title: detailItem ? detailItem.tenTaiLieu : 'Chi tiết tài liệu',
     subtitle: detailItem ? `Người tải: ${detailItem.nguoiTaiLen} • Ngày tạo: ${detailItem.ngayTao}` : '',
     icon: <FileText size={18} className="text-primary" />,
     storageKey: 'slideover-width-ho-so-detail',
@@ -116,14 +118,14 @@ export function HoSoTaiLieuPage() {
       <div className="flex items-center gap-1.5">
         <button
           type="button"
-          onClick={() => alert('Đang mở file xem trực tuyến...')}
+          onClick={() => toast.info('Đang mở file xem trực tuyến...')}
           className="flex items-center gap-1 rounded-lg border border-border px-2.5 py-1 text-xs font-semibold hover:bg-muted"
         >
           <Eye size={13} /> Xem
         </button>
         <button
           type="button"
-          onClick={() => alert('Đang tải file xuống máy...')}
+          onClick={() => toast.success('Đang tải file xuống máy...')}
           className="flex items-center gap-1 rounded-lg border border-border px-2.5 py-1 text-xs font-semibold hover:bg-muted"
         >
           <Download size={13} /> Tải về
@@ -366,7 +368,7 @@ export function HoSoTaiLieuPage() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        alert('Đang mở file xem trực tuyến...');
+                        toast.info('Đang mở file xem trực tuyến...');
                       }}
                       title="Xem trực tuyến"
                       className="rounded-md p-1.5 text-ink-muted transition-colors hover:bg-muted hover:text-primary-600"
@@ -376,7 +378,7 @@ export function HoSoTaiLieuPage() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        alert('Đang tải file xuống máy...');
+                        toast.success('Bắt đầu tải file xuống...');
                       }}
                       title="Tải xuống"
                       className="rounded-md p-1.5 text-ink-muted transition-colors hover:bg-muted hover:text-primary-600"

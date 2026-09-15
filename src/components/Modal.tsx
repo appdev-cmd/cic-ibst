@@ -96,7 +96,7 @@ export function Field({
   children,
   required,
 }: {
-  label: string;
+  label: ReactNode;
   children: ReactNode;
   required?: boolean;
 }) {

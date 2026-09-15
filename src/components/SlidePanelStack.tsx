@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { X, FileText } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useSlidePanel, type SlidePanelEntry } from '../context/SlidePanelContext';
@@ -126,12 +126,16 @@ function PanelLayer({
       style={{ zIndex: 50 + index }}
     >
       <div
+        role="dialog"
+        aria-modal={isTop ? "true" : "false"}
+        aria-label={title || "Bảng tác vụ"}
+        tabIndex={-1}
         style={{
           width,
           transition: resizing ? 'none' : undefined,
         }}
         className={cn(
-          'relative flex h-full flex-col bg-surface shadow-2xl pointer-events-auto',
+          'relative flex h-full flex-col bg-surface shadow-2xl pointer-events-auto outline-hidden',
           isLeft
             ? 'border-r border-border dark:border-slate-700/80'
             : 'border-l border-border dark:border-slate-700/80',
@@ -286,14 +290,54 @@ export function SlidePanelStack({ sidebarWidth = 0 }: { sidebarWidth?: number })
     return () => clearTimeout(t);
   }, [open]);
 
+  const handleSafeClose = useCallback((id?: string) => {
+    const targetId = id ?? (stack[stack.length - 1]?.id);
+    const targetPanel = stack.find((p) => p.id === targetId) ?? stack[stack.length - 1];
+    if (targetPanel) {
+      if (targetPanel.onBeforeClose && targetPanel.onBeforeClose() === false) {
+        return;
+      }
+      if (targetPanel.isDirty) {
+        const confirmed = window.confirm('Dữ liệu biểu mẫu chưa được lưu. Bạn có chắc chắn muốn đóng và hủy bỏ các thay đổi?');
+        if (!confirmed) return;
+      }
+    }
+    closePanel(id);
+  }, [stack, closePanel]);
+
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') closePanel();
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        handleSafeClose();
+        return;
+      }
+      if (e.key === 'Tab') {
+        const topPanelEl = document.querySelector('[role="dialog"][aria-modal="true"]');
+        if (!topPanelEl) return;
+        const focusables = topPanelEl.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusables.length === 0) return;
+        const firstEl = focusables[0];
+        const lastEl = focusables[focusables.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === firstEl) {
+            e.preventDefault();
+            lastEl.focus();
+          }
+        } else {
+          if (document.activeElement === lastEl) {
+            e.preventDefault();
+            firstEl.focus();
+          }
+        }
+      }
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open, closePanel]);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open, handleSafeClose]);
 
   useEffect(() => {
     if (!resizing) return;
@@ -360,7 +404,7 @@ export function SlidePanelStack({ sidebarWidth = 0 }: { sidebarWidth?: number })
           hasLeftAndRight ? 'bg-black/15' : 'bg-black/45 backdrop-blur-sm',
           visible ? 'opacity-100' : 'opacity-0',
         )}
-        onMouseDown={() => closePanel()}
+        onMouseDown={() => handleSafeClose()}
       />
       {stack.map((panel, index) => {
         const isLeft = panel.side === 'left';
@@ -378,7 +422,7 @@ export function SlidePanelStack({ sidebarWidth = 0 }: { sidebarWidth?: number })
             isSideTop={isSideTop}
             shouldDim={shouldDim}
             resizing={resizing && isTop}
-            onClose={() => closePanel(panel.id)}
+            onClose={() => handleSafeClose(panel.id)}
             onBringToFront={() => bringToFront(panel.id)}
             onStartResize={(e) => {
               e.preventDefault();

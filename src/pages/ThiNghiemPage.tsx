@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Microscope, Timer, LoaderCircle, Printer, ShieldCheck, Wrench, AlertTriangle, Building } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { StatusBadge, TRANG_THAI_OPTIONS } from '../components/StatusBadge';
@@ -8,6 +8,7 @@ import { Field, inputCls } from '../components/Modal';
 import { TableToolbar, FilterSelect, RowActions } from '../components/TableToolbar';
 import { KetQuaPhepThuPanel } from '../components/DetailPanels';
 import { useSlidePanelChiTiet, useSlidePanelForm } from '../hooks/useSlidePanelCrud';
+import { useToast } from '../context/ToastContext';
 import { useAsyncData } from '../hooks/useAsyncData';
 import { useTableControls } from '../hooks/useTableControls';
 import { useCrudForm } from '../hooks/useCrudForm';
@@ -67,6 +68,7 @@ const MOCK_EQUIPMENT = [
 ];
 
 export function ThiNghiemPage() {
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<Tab>('mau-thu');
 
   const { can: coQuyenTab, dangTai: dangTaiQuyen } = usePhanQuyen();
@@ -131,7 +133,7 @@ export function ThiNghiemPage() {
         const pt = await fetchKetQuaPhepThu(mau.id);
         const chuaNhap = pt.filter((p) => p.ketQua === null || p.ketQua === undefined || p.ketQua === '');
         if (chuaNhap.length > 0) {
-          alert(`Chưa thể phát hành! Còn ${chuaNhap.length} phép thử chưa nhập kết quả.`);
+          toast.warning(`Chưa thể phát hành! Còn ${chuaNhap.length} phép thử chưa nhập kết quả.`);
           return;
         }
       } catch (er) {
@@ -147,7 +149,7 @@ export function ThiNghiemPage() {
         setDetail((prev) => (prev ? { ...prev, trangThai: nxt.to } : null));
       }
     } catch (er) {
-      alert(er instanceof Error ? er.message : String(er));
+      toast.error(er instanceof Error ? er.message : String(er));
     } finally {
       setAdvancingId(null);
     }
@@ -158,7 +160,7 @@ export function ThiNghiemPage() {
       const ptList = await fetchKetQuaPhepThu(m.id);
       printPhieuKetQua(m, ptList);
     } catch (er) {
-      alert('Không thể tải phép thử để in: ' + (er instanceof Error ? er.message : String(er)));
+      toast.error('Không thể tải phép thử để in: ' + (er instanceof Error ? er.message : String(er)));
     }
   };
 
@@ -540,9 +542,9 @@ export function ThiNghiemPage() {
 
       {activeTab === 'thiet-bi-las' && tabHienDuoc('thiet-bi-las') && (
         <div className="space-y-4">
-          <div className="card p-4 border-l-4 border-l-amber-500 bg-subtle/50 flex items-center justify-between">
+          <div className="rounded-xl p-4 border border-amber-500/40 bg-amber-500/10 dark:bg-amber-950/30 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <AlertTriangle className="text-amber-600 h-6 w-6 shrink-0" />
+              <AlertTriangle className="text-amber-600 dark:text-amber-400 h-6 w-6 shrink-0" />
               <div>
                 <h4 className="font-bold text-ink text-sm">Cảnh báo Tự động Hiệu chuẩn Thiết bị (Trước 30 Ngày)</h4>
                 <p className="text-xs text-ink-muted">Tự động quét danh mục thiết bị của 11 phòng thí nghiệm LAS-XD toàn quốc để đảm bảo tính pháp lý Phiếu kết quả thử nghiệm.</p>
@@ -550,10 +552,10 @@ export function ThiNghiemPage() {
             </div>
           </div>
 
-          <div className="card overflow-hidden">
+          <div className="card overflow-hidden border border-border dark:border-slate-700/80">
             <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-border bg-muted/50 font-bold text-ink-muted">
+              <thead className="thead-sticky">
+                <tr className="border-b border-border dark:border-slate-700/80 bg-muted/50 dark:bg-slate-900/60 font-bold text-ink-muted">
                   <th className="p-3">Mã hiệu Thiết bị</th>
                   <th className="p-3">Tên Thiết bị Thử nghiệm</th>
                   <th className="p-3">Phòng LAS-XD phụ trách</th>
@@ -562,16 +564,16 @@ export function ThiNghiemPage() {
                   <th className="p-3">Trạng thái Pháp lý</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody className="divide-y divide-border dark:divide-slate-700/80">
                 {MOCK_EQUIPMENT.map((eq) => (
-                  <tr key={eq.id} className="hover:bg-muted/30">
+                  <tr key={eq.id} className="hover:bg-muted/30 dark:hover:bg-slate-800/40">
                     <td className="p-3 font-mono font-bold text-ink">{eq.maHieu}</td>
                     <td className="p-3 font-semibold text-ink">{eq.ten}</td>
                     <td className="p-3 text-ink-secondary">{eq.las}</td>
                     <td className="p-3 text-ink-muted">{formatNgay(eq.hanKiemDinh)}</td>
-                    <td className="p-3 font-bold text-amber-600">{eq.ngayConLai} ngày</td>
+                    <td className="p-3 font-bold text-amber-600 dark:text-amber-400">{eq.ngayConLai} ngày</td>
                     <td className="p-3">
-                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-900/30 px-2.5 py-0.5 text-2xs font-bold text-amber-700 dark:text-amber-300">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-900/40 px-2.5 py-0.5 text-2xs font-bold text-amber-700 dark:text-amber-300">
                         {eq.trangThai}
                       </span>
                     </td>
@@ -586,19 +588,19 @@ export function ThiNghiemPage() {
       {activeTab === 'dau-tu-cong' && tabHienDuoc('dau-tu-cong') && (
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="card p-4 border-l-4 border-l-primary">
+            <div className="card p-4 border border-border dark:border-slate-700/80">
               <p className="text-2xs font-bold uppercase text-ink-muted">Tổng vốn Đầu tư công được duyệt</p>
               <p className="mt-1 text-xl font-black text-primary">15.000.000.000 VNĐ</p>
               <p className="text-2xs text-ink-muted mt-1">Dự án Nâng cấp Trạm Thử nghiệm Hòa Lạc</p>
             </div>
-            <div className="card p-4 border-l-4 border-l-emerald-600">
+            <div className="card p-4 border border-border dark:border-slate-700/80">
               <p className="text-2xs font-bold uppercase text-ink-muted">Đã giải ngân thực tế</p>
               <p className="mt-1 text-xl font-black text-emerald-600 dark:text-emerald-400">11.250.000.000 VNĐ</p>
               <p className="text-2xs text-ink-muted mt-1">Đạt 75% kế hoạch vốn 2026</p>
             </div>
-            <div className="card p-4 border-l-4 border-l-indigo-600">
+            <div className="card p-4 border border-border dark:border-slate-700/80">
               <p className="text-2xs font-bold uppercase text-ink-muted">Thiết bị đã nghiệm thu</p>
-              <p className="mt-1 text-xl font-black text-indigo-600 dark:text-indigo-400">08 Hạng mục lớn</p>
+              <p className="mt-1 text-xl font-black text-sky-600 dark:text-sky-400">08 Hạng mục lớn</p>
               <p className="text-2xs text-ink-muted mt-1">Đưa vào vận hành 100%</p>
             </div>
           </div>

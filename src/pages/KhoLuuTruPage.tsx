@@ -76,7 +76,7 @@ export function KhoLuuTruPage() {
       {activeTab === 'ho-so-tai-lieu' && tabHienDuoc('ho-so-tai-lieu') && <HoSoTaiLieuPage />}
       {activeTab === 'ai-rag-qcvn' && tabHienDuoc('ai-rag-qcvn') && (
         <div className="space-y-4">
-          <div className="card p-4 border-l-4 border-l-emerald-500 bg-subtle/50 flex items-center justify-between">
+          <div className="card p-4 border border-border dark:border-slate-700/80 bg-subtle/50 flex items-center justify-between">
             <div className="space-y-1">
               <h3 className="font-bold text-sm text-ink flex items-center gap-2">
                 <Bot className="text-emerald-600 dark:text-emerald-400 h-5 w-5" />

@@ -35,6 +35,7 @@ import { KpiCard } from '../components/KpiCard';
 import { Field, inputCls } from '../components/Modal';
 import { useSlidePanelChiTiet, useSlidePanelForm } from '../hooks/useSlidePanelCrud';
 import { SlideOverTabs, type SlideOverTabDef } from '../components/SlideOver';
+import { useToast } from '../context/ToastContext';
 import { cn } from '../lib/utils';
 
 export type AgencyEventType =
@@ -780,6 +781,7 @@ function ChipSelect({ label, value, options, onChange }: ChipSelectProps) {
 }
 
 export function LichCoQuanPage() {
+  const { toast } = useToast();
   const [list, setList] = useState<LichCongTac[]>(loadEvents);
 
   // Sync to localStorage
@@ -1099,7 +1101,7 @@ export function LichCoQuanPage() {
     if (detailItem && detailItem.id === id) {
       setDetailItem({ ...detailItem, noiDungBaoCao: reportText });
     }
-    alert('Đã lưu kết luận / biên bản cuộc họp thành công!');
+    toast.success('Đã lưu kết luận / biên bản cuộc họp thành công!');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -1919,15 +1921,7 @@ export function LichCoQuanPage() {
                           setDetailItem(item);
                           setDetailTab('info');
                         }}
-                        className={cn(
-                          'p-4 rounded-xl border border-border dark:border-slate-700/80 bg-surface dark:bg-slate-800/50 hover:border-primary border-l-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer hover:shadow-2xs transition-all',
-                          item.loai === 'Lich-BGĐ' && 'border-l-indigo-500',
-                          item.loai === 'Lich-tuan' && 'border-l-amber-500',
-                          item.loai === 'Phong-hop' && 'border-l-emerald-500',
-                          item.loai === 'meeting' && 'border-l-sky-500',
-                          item.loai === 'business_trip' && 'border-l-orange-500',
-                          item.loai === 'internal_event' && 'border-l-purple-500'
-                        )}
+                        className="p-4 rounded-xl border border-border dark:border-slate-700/80 bg-surface dark:bg-slate-800/50 hover:border-primary flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer hover:shadow-2xs transition-all"
                       >
                         <div className="space-y-1.5 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
@@ -2321,7 +2315,7 @@ export function LichCoQuanPage() {
                     />
                     <button
                       onClick={handleSaveGreeting}
-                      className="px-3.5 py-1.5 bg-amber-500 text-slate-950 font-black text-xs rounded-xl hover:bg-amber-400 transition-all cursor-pointer shrink-0"
+                      className="px-3.5 py-1.5 bg-amber-500 text-amber-950 font-black text-xs rounded-xl hover:bg-amber-400 transition-all cursor-pointer shrink-0"
                     >
                       Lưu
                     </button>

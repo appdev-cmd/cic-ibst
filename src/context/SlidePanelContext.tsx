@@ -18,6 +18,10 @@ export interface SlidePanelEntry {
   storageKey?: string;
   /** Bật chế độ Split View (ví dụ xem trước bản in đối chiếu dính liền), panel tự động bung rộng sang trái */
   isSplitView?: boolean;
+  /** Đánh dấu form đang có dữ liệu chưa lưu để bảo vệ khỏi bị đóng nhầm */
+  isDirty?: boolean;
+  /** Callback kiểm tra trước khi đóng: trả về false để hủy đóng */
+  onBeforeClose?: () => boolean;
 }
 
 export type SlidePanelOpenInput = Omit<SlidePanelEntry, 'id'> & { id?: string };

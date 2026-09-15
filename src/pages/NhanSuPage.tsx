@@ -34,6 +34,7 @@ import { DonViListTab } from '../components/DonViListTab';
 import { DanhGiaVienChucTab } from '../components/DanhGiaVienChucTab';
 import { useAsyncData } from '../hooks/useAsyncData';
 import { useSlidePanelForm, useSlidePanelChiTiet } from '../hooks/useSlidePanelCrud';
+import { useToast } from '../context/ToastContext';
 import {
   fetchNhanSuFull,
   fetchDonVi,
@@ -232,6 +233,7 @@ function getChucVuRank(chucDanh?: string | null, pccv?: number | null): number {
 }
 
 export function NhanSuPage() {
+  const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
   const [mainTab, setMainTab] = useState<MainTab>(() => {
@@ -461,7 +463,7 @@ export function NhanSuPage() {
       if (detailId === item.id) setDetailId(null);
       refetch();
     } catch (err) {
-      alert(err instanceof Error ? err.message : String(err));
+      toast.error(err instanceof Error ? err.message : String(err));
     }
   };
 

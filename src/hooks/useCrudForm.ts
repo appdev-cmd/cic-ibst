@@ -17,19 +17,23 @@ export function useCrudForm<TRow, TInput>(opts: {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<TRow | null>(null);
   const [form, setForm] = useState<TInput>(opts.empty);
+  const [initialForm, setInitialForm] = useState<TInput>(opts.empty);
   const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const openCreate = () => {
     setEditing(null);
     setForm(opts.empty);
+    setInitialForm(opts.empty);
     setActionError(null);
     setModalOpen(true);
   };
 
   const openEdit = (row: TRow) => {
+    const f = opts.toForm(row);
     setEditing(row);
-    setForm(opts.toForm(row));
+    setForm(f);
+    setInitialForm(f);
     setActionError(null);
     setModalOpen(true);
   };
@@ -68,6 +72,8 @@ export function useCrudForm<TRow, TInput>(opts: {
     }
   };
 
+  const isDirty = modalOpen && JSON.stringify(form) !== JSON.stringify(initialForm);
+
   return {
     modalOpen,
     closeModal,
@@ -80,5 +86,7 @@ export function useCrudForm<TRow, TInput>(opts: {
     openEdit,
     submit,
     removeRow,
+    isDirty,
+    dirty: isDirty,
   };
 }

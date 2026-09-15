@@ -26,6 +26,10 @@ export interface SlidePanelFormOpts {
   defaultWidth?: number;
   minWidth?: number;
   storageKey?: string;
+  /** Cờ báo hiệu form có dữ liệu chưa lưu */
+  isDirty?: boolean;
+  /** Callback chặn đóng khi chưa lưu */
+  onBeforeClose?: () => boolean;
   /** Giá trị khiến nội dung panel phải dựng lại (form, saving, error...). */
   deps: unknown[];
   /** Gọi khi panel bị đóng ngoài luồng (tai thỏ/backdrop/Esc) để trang cha hạ cờ `open`. */
@@ -48,6 +52,8 @@ export function useSlidePanelForm(opts: SlidePanelFormOpts) {
         storageKey: opts.storageKey,
         content: opts.content,
         footer: opts.footer,
+        isDirty: opts.isDirty,
+        onBeforeClose: opts.onBeforeClose,
       });
     } else {
       closePanel(opts.id);

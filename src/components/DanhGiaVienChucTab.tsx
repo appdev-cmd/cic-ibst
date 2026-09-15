@@ -25,6 +25,7 @@ import { KpiCard } from './KpiCard';
 import { DataState } from './DataState';
 import { Field, inputCls } from './Modal';
 import { useSlidePanelChiTiet, useSlidePanelForm } from '../hooks/useSlidePanelCrud';
+import { useToast } from '../context/ToastContext';
 import { cn, exportCsv, exportExcel } from '../lib/utils';
 import type { DonVi, NhanSu } from '../types';
 import * as danhGiaSvc from '../services/danhGia';
@@ -36,6 +37,7 @@ interface Props {
 }
 
 export function DanhGiaVienChucTab({ donViList, nhanSuList }: Props) {
+  const { toast } = useToast();
   // Bộ lọc
   const [selectedNam, setSelectedNam] = useState<number>(2026);
   const [selectedKy, setSelectedKy] = useState<string>('ca-nam');
@@ -198,7 +200,7 @@ export function DanhGiaVienChucTab({ donViList, nhanSuList }: Props) {
       closeForm();
       reload();
     } catch (err: any) {
-      alert(`Lỗi khi lưu phiếu đánh giá: ${err.message}`);
+      toast.error(`Lỗi khi lưu phiếu đánh giá: ${err.message}`);
     } finally {
       setSubmitting(false);
     }
@@ -689,7 +691,7 @@ export function DanhGiaVienChucTab({ donViList, nhanSuList }: Props) {
       await danhGiaSvc.updateTrangThaiDanhGia(item.id, nextStatus);
       reload();
     } catch (err) {
-      alert(err instanceof Error ? err.message : String(err));
+      toast.error(err instanceof Error ? err.message : String(err));
     }
   };
 
@@ -788,10 +790,12 @@ export function DanhGiaVienChucTab({ donViList, nhanSuList }: Props) {
       {/* ── KPI Dashboard Cards ── */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {/* Tổng số */}
-        <div className="card p-3.5 border-l-4 border-l-primary flex flex-col justify-between">
+        <div className="card p-3.5 border border-border dark:border-slate-700/80 flex flex-col justify-between">
           <div className="flex items-center justify-between text-ink-muted mb-1">
             <span className="text-[11px] font-bold uppercase tracking-wider">Tổng CBVC</span>
-            <Users size={14} className="text-primary" />
+            <div className="p-1 rounded-md bg-primary/10 text-primary">
+              <Users size={14} />
+            </div>
           </div>
           <div className="text-xl font-black text-ink font-mono">{thongKe?.tongSo || 0}</div>
           <p className="text-[10px] text-ink-muted mt-0.5">
@@ -802,17 +806,19 @@ export function DanhGiaVienChucTab({ donViList, nhanSuList }: Props) {
         {/* Hoàn thành xuất sắc */}
         <div
           className={cn(
-            'card p-3.5 border-l-4 flex flex-col justify-between transition-all',
+            'card p-3.5 border flex flex-col justify-between transition-all',
             thongKe?.vuotTranXuatSac
-              ? 'border-l-rose-500 bg-rose-50/20 dark:bg-rose-950/20'
-              : 'border-l-emerald-500'
+              ? 'border-rose-500/50 bg-rose-50/20 dark:bg-rose-950/20 dark:border-rose-700/60'
+              : 'border-border dark:border-slate-700/80'
           )}
         >
           <div className="flex items-center justify-between text-ink-muted mb-1">
             <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
               Xuất sắc (HTXSNV)
             </span>
-            <Award size={14} className="text-emerald-600" />
+            <div className="p-1 rounded-md bg-emerald-500/10 text-emerald-600">
+              <Award size={14} />
+            </div>
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-xl font-black text-emerald-700 dark:text-emerald-300 font-mono">
@@ -834,12 +840,14 @@ export function DanhGiaVienChucTab({ donViList, nhanSuList }: Props) {
         </div>
 
         {/* Hoàn thành tốt */}
-        <div className="card p-3.5 border-l-4 border-l-blue-500 flex flex-col justify-between">
+        <div className="card p-3.5 border border-border dark:border-slate-700/80 flex flex-col justify-between">
           <div className="flex items-center justify-between text-ink-muted mb-1">
             <span className="text-[11px] font-bold uppercase tracking-wider text-blue-700 dark:text-blue-400">
               Tốt (HTTNV)
             </span>
-            <CheckCircle2 size={14} className="text-blue-600" />
+            <div className="p-1 rounded-md bg-blue-500/10 text-blue-600">
+              <CheckCircle2 size={14} />
+            </div>
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-xl font-black text-blue-700 dark:text-blue-300 font-mono">
@@ -853,12 +861,14 @@ export function DanhGiaVienChucTab({ donViList, nhanSuList }: Props) {
         </div>
 
         {/* Hoàn thành nhiệm vụ */}
-        <div className="card p-3.5 border-l-4 border-l-amber-500 flex flex-col justify-between">
+        <div className="card p-3.5 border border-border dark:border-slate-700/80 flex flex-col justify-between">
           <div className="flex items-center justify-between text-ink-muted mb-1">
             <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
               Hoàn thành (HTNV)
             </span>
-            <FileText size={14} className="text-amber-600" />
+            <div className="p-1 rounded-md bg-amber-500/10 text-amber-600">
+              <FileText size={14} />
+            </div>
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-xl font-black text-amber-700 dark:text-amber-300 font-mono">
@@ -872,12 +882,14 @@ export function DanhGiaVienChucTab({ donViList, nhanSuList }: Props) {
         </div>
 
         {/* Không hoàn thành */}
-        <div className="card p-3.5 border-l-4 border-l-rose-500 flex flex-col justify-between col-span-2 md:col-span-1">
+        <div className="card p-3.5 border border-border dark:border-slate-700/80 flex flex-col justify-between col-span-2 md:col-span-1">
           <div className="flex items-center justify-between text-ink-muted mb-1">
             <span className="text-[11px] font-bold uppercase tracking-wider text-rose-700 dark:text-rose-400">
               Không HT (KHTNV)
             </span>
-            <AlertTriangle size={14} className="text-rose-600" />
+            <div className="p-1 rounded-md bg-rose-500/10 text-rose-600">
+              <AlertTriangle size={14} />
+            </div>
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-xl font-black text-rose-700 dark:text-rose-300 font-mono">
@@ -887,8 +899,15 @@ export function DanhGiaVienChucTab({ donViList, nhanSuList }: Props) {
               ({thongKe?.khongHoanThanhTiLe || 0}%)
             </span>
           </div>
-          <p className="text-[10px] text-rose-600 font-semibold mt-0.5">
-            {thongKe?.soBiKyLuat ? `⚠️ ${thongKe.soBiKyLuat} trường hợp kỷ luật` : '< 50đ hoặc kỷ luật'}
+          <p className="text-[10px] text-rose-600 dark:text-rose-400 font-semibold mt-0.5 flex items-center gap-1">
+            {thongKe?.soBiKyLuat ? (
+              <>
+                <AlertTriangle size={11} className="shrink-0 text-rose-500" />
+                <span>{thongKe.soBiKyLuat} trường hợp kỷ luật</span>
+              </>
+            ) : (
+              '< 50đ hoặc kỷ luật'
+            )}
           </p>
         </div>
       </div>

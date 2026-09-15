@@ -77,14 +77,14 @@
 .dark tr[class*="bg-slate-100"] { background-color: #151d2e !important; color: #94a3b8 !important; }
 
 /* ── 6. STRUCTURAL ────────────────────────────────────────────────────────── */
-.dark .section-card { background-color: #151d2e !important; border-color: #293548 !important; }
-.dark .section-card-header { background-color: #1e293b !important; border-color: #293548 !important; color: #e2e8f0 !important; }
-.dark .toolbar { background-color: #151d2e !important; border-color: #293548 !important; }
-.dark .table-footer { background-color: #151d2e !important; border-color: #293548 !important; }
+.dark .section-card { background-color: #151d2e !important; border-color: #38425d !important; }
+.dark .section-card-header { background-color: #1e293b !important; border-color: #38425d !important; color: #e2e8f0 !important; }
+.dark .toolbar { background-color: #151d2e !important; border-color: #38425d !important; }
+.dark .table-footer { background-color: #151d2e !important; border-color: #38425d !important; }
 .dark .table-header-row, .dark .table-header-row th { background-color: #151d2e !important; color: #94a3b8 !important; }
-.dark aside, .dark aside > div { background-color: #0f172a !important; border-color: #1e293b !important; }
-.dark header { background-color: rgba(15,23,42,0.97) !important; border-bottom-color: #1e293b !important; }
-.dark hr { border-color: #293548 !important; }
+.dark aside, .dark aside > div { background-color: #0f172a !important; border-color: #38425d !important; }
+.dark header { background-color: rgba(15,23,42,0.97) !important; border-bottom-color: #38425d !important; }
+.dark hr { border-color: #38425d !important; }
 
 /* ── 7. FORM — moved to base.css (theme-aware via CSS variables).
    Only label color override remains. ─────────────────────────────────────── */

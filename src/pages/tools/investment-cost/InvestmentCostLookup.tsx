@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Calculator, 
   RotateCcw, 
@@ -451,7 +451,7 @@ export const InvestmentCostLookup: React.FC = () => {
           <Calculator className="w-5.5 h-5.5 text-white" />
         </div>
         <div>
-          <h1 className="text-sm font-black uppercase tracking-wider text-indigo-400">Tra cứu Suất vốn Đầu tư Xây dựng</h1>
+          <h1 className="text-sm font-black uppercase tracking-wider text-white">Tra cứu Suất vốn Đầu tư Xây dựng</h1>
           <p className="text-[11px] text-indigo-200 mt-0.5">
             Căn cứ pháp lý: <strong className="text-white">Quyết định số 409/QĐ-BXD</strong> ngày 11/4/2025 của Bộ Xây dựng (Mặt bằng giá Quý IV/2024)
           </p>
@@ -473,7 +473,7 @@ export const InvestmentCostLookup: React.FC = () => {
           {/* Cột trái: Bộ điều khiển */}
           <div className="lg:col-span-4 xl:col-span-3 bg-bg-surface border border-border rounded-xl p-4 text-txt-primary shadow-sm space-y-4">
             <div className="flex items-center justify-between border-b border-border pb-2">
-              <h3 className="text-xs font-black uppercase tracking-wider text-indigo-400">Thông số dự án</h3>
+              <h3 className="text-xs font-black uppercase tracking-wider text-txt-primary">Thông số dự án</h3>
               <button 
                 onClick={handleReset}
                 className="text-[10px] text-txt-muted hover:text-txt-primary flex items-center gap-1 font-bold"
@@ -558,7 +558,7 @@ export const InvestmentCostLookup: React.FC = () => {
                   <TrendingUp className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-black text-xs uppercase tracking-wider text-indigo-600">SUẤT VỐN ĐẦU TƯ ÁP DỤNG</h3>
+                  <h3 className="font-black text-xs uppercase tracking-wider text-txt-primary">SUẤT VỐN ĐẦU TƯ ÁP DỤNG</h3>
                   <p className="text-[10px] text-txt-muted mt-0.5">
                     Khu vực: <span className="font-bold text-txt-primary">{selectedProvinceName}</span> (Thuộc **Vùng {selectedProvince.region}**)
                   </p>

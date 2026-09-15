@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   Flame, 
   Search, 
@@ -17,6 +17,7 @@ import {
   Calculator,
   ExternalLink
 } from 'lucide-react';
+import { useToast } from '../../../context/ToastContext';
 
 // ==========================================
 // HELPERS ĐỊNH DẠNG SỐ (Hàng nghìn dùng '.', thập phân dùng ',')
@@ -450,6 +451,7 @@ interface QcvnData {
 }
 
 export const FireSafetyLookup: React.FC = () => {
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<'project' | 'legal' | 'library' | 'search'>('project');
   
   // Dữ liệu tải từ file JSON
@@ -805,8 +807,7 @@ export const FireSafetyLookup: React.FC = () => {
   const handleCopyText = (text: string, clause: string | null) => {
     const clauseText = clause ? `Điều ${clause}: ` : '';
     navigator.clipboard.writeText(`${clauseText}${text}\n(Nguồn: QCVN 06:2022/BXD)`);
-    // Gợi ý thông báo thành công
-    alert('Đã copy nội dung điều khoản vào Clipboard!');
+    toast.success('Đã copy nội dung điều khoản vào Clipboard!');
   };
 
   // --- LOGIC TAB THƯ VIỆN THẨM DUYỆT ---
@@ -874,7 +875,7 @@ export const FireSafetyLookup: React.FC = () => {
         </div>
       ) : dataError ? (
         <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
-          <AlertTriangle className="w-12 h-12 text-red-500 mb-4 animate-bounce" />
+          <AlertTriangle className="w-12 h-12 text-red-500 mb-4" />
           <h4 className="font-bold text-base text-red-500">Lỗi tải dữ liệu</h4>
           <p className="text-txt-muted text-xs mt-1">{dataError}</p>
           <button 
@@ -941,7 +942,7 @@ export const FireSafetyLookup: React.FC = () => {
                       </button>
                     </label>
                     {openHints['nhom'] && (
-                      <div className="p-2.5 bg-zinc-950 border-l-2 border-red-500 rounded text-[10px] text-txt-muted leading-normal space-y-1">
+                      <div className="p-2.5 bg-zinc-950 border border-border dark:border-slate-700/80 rounded text-[10px] text-txt-muted leading-normal space-y-1">
                         <strong>Xác định theo mục đích sử dụng chính:</strong>
                         <p>Tra cứu Bảng 6 - QCVN 06. Nhà hỗn hợp ở kết hợp kinh doanh: Xác định theo nhóm chiếm trên 30% diện tích sàn.</p>
                       </div>
@@ -995,7 +996,7 @@ export const FireSafetyLookup: React.FC = () => {
                       </button>
                     </label>
                     {openHints['cc'] && (
-                      <div className="p-2.5 bg-zinc-950 border-l-2 border-red-500 rounded text-[10px] text-txt-muted leading-normal">
+                      <div className="p-2.5 bg-zinc-950 border border-border dark:border-slate-700/80 rounded text-[10px] text-txt-muted leading-normal">
                         <strong>Công thức tính chiều cao PCCC:</strong> Tính từ mặt đường xe tiếp cận đến mép dưới lỗ cửa mở trên tường ngoài tầng cao nhất (không tính tầng kỹ thuật trên cùng).
                       </div>
                     )}
@@ -1293,7 +1294,7 @@ export const FireSafetyLookup: React.FC = () => {
                           </div>
 
                           <div className="border border-border bg-bg-surface rounded-lg p-3 space-y-3">
-                            <div className="p-2 bg-teal-500/10 border-l-3 border-teal-500 rounded text-xs text-teal-600 dark:text-teal-400 font-bold flex justify-between items-center">
+                            <div className="p-2 bg-teal-500/10 border border-teal-500/30 rounded text-xs text-teal-600 dark:text-teal-400 font-bold flex justify-between items-center">
                               <span>Mức nguy cơ cháy: Nhóm {tcvn7336Result.nhomInfo.nhom}</span>
                               <span className="text-[10px] font-medium text-txt-muted">{tcvn7336Result.nhomInfo.mo_ta}</span>
                             </div>

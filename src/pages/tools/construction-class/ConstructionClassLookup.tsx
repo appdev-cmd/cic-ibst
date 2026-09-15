@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Hammer, 
   HelpCircle, 
@@ -1006,7 +1006,7 @@ export const ConstructionClassLookup: React.FC = () => {
             <div className="lg:col-span-8 xl:col-span-9 space-y-5">
               {!hasSearched ? (
                 <div className="flex flex-col items-center justify-center p-12 text-center bg-bg-surface border border-border border-dashed rounded-xl h-[480px]">
-                  <Calculator className="w-12 h-12 text-txt-muted mb-4 animate-bounce" />
+                  <Calculator className="w-12 h-12 text-txt-muted mb-4" />
                   <h4 className="text-txt-primary font-black text-base mb-1">Kết quả phân cấp dự án tổng hợp</h4>
                   <p className="text-txt-muted text-xs max-w-sm">
                     Nhập thông tin quy mô thiết kế và các kích thước kết cấu, sau đó bấm <strong>Phân cấp tổng hợp</strong> để đối chiếu chéo hai phụ lục.

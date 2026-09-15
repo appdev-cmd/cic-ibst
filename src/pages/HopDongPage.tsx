@@ -29,6 +29,11 @@ import {
   Printer,
   ChevronDown,
   Landmark,
+  Zap,
+  Building2,
+  Search,
+  FileSpreadsheet,
+  HardHat,
 } from 'lucide-react';
 import {
   DotThanhToanPanel,
@@ -334,6 +339,24 @@ export function HopDongPage({
     setSearchParams(newTab === defaultTab ? {} : { tab: newTab }, { replace: true });
   };
 
+  const [qcBannerCollapsed, setQcBannerCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('ibst_qc2815_banner_collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleQcBanner = () => {
+    setQcBannerCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('ibst_qc2815_banner_collapsed', String(next));
+      } catch {}
+      return next;
+    });
+  };
+
   useEffect(() => {
     if (tabParam && availableTabs.includes(tabParam)) {
       setActiveTabState(tabParam);
@@ -361,6 +384,7 @@ export function HopDongPage({
   const [selectedGoiThauId, setSelectedGoiThauId] = useState<string>('');
   const [autoFilledGoiThauMsg, setAutoFilledGoiThauMsg] = useState<string | null>(null);
   const [soNgayThucHien, setSoNgayThucHien] = useState<string>('');
+  const [formStep, setFormStep] = useState<number>(1);
 
   const handleSelectGoiThau = (goiThauId: string) => {
     setSelectedGoiThauId(goiThauId);
@@ -796,7 +820,9 @@ export function HopDongPage({
                 }}
                 className={cn(
                   'px-2 py-0.5 rounded text-xs transition-colors hidden sm:inline-flex items-center gap-1 font-medium',
-                  splitLeftWidth === 760 ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-500/40' : 'bg-slate-700/60 text-slate-300 hover:text-white'
+                  splitLeftWidth === 760
+                    ? 'bg-emerald-900/60 text-emerald-200 border border-emerald-500/40'
+                    : 'bg-slate-800 text-slate-200 hover:text-white'
                 )}
               >
                 Chuẩn A4
@@ -949,525 +975,619 @@ export function HopDongPage({
         </div>
       )}
 
-      {/* Trường chọn Liên kết Gói thầu / Kết quả thầu */}
-      <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-3.5 dark:border-blue-900/40 dark:bg-blue-900/10 space-y-2 text-xs">
-        <Field label="🔗 Chọn từ Gói thầu / Kết quả dự thầu (QC 2815 Điều 5.1 & 6.1)">
-          <select
-            className={cn(inputCls, 'text-xs py-1.5 font-medium')}
-            value={selectedGoiThauId}
-            onChange={(e) => handleSelectGoiThau(e.target.value)}
+      {/* 4-Step Form Wizard Tabs */}
+      <div className="grid grid-cols-4 gap-1 p-1 bg-muted/60 dark:bg-slate-900/60 rounded-xl border border-border text-center text-xs font-semibold select-none">
+        {[
+          { step: 1, label: '1. Cơ bản & KH' },
+          { step: 2, label: '2. Phân loại 2815' },
+          { step: 3, label: '3. Giá trị & Tiến độ' },
+          { step: 4, label: '4. Hồ sơ & Phân công' },
+        ].map((s) => (
+          <button
+            key={s.step}
+            type="button"
+            onClick={() => setFormStep(s.step)}
+            className={cn(
+              'py-1.5 px-1 rounded-lg transition-all text-2xs truncate cursor-pointer',
+              formStep === s.step
+                ? 'bg-surface text-primary font-bold shadow-xs'
+                : 'text-ink-muted hover:text-ink hover:bg-surface/40'
+            )}
           >
-            <option value="">-- Chọn Gói thầu đã trúng thầu hoặc đang dự thầu để tự động điền dữ liệu --</option>
-            {(dauThauList || []).map((g) => (
-              <option key={g.id} value={g.id} className="text-xs">
-                [{g.trangThai === 'trung-thau' ? 'Trúng thầu' : g.trangThai}] {g.tenGoiThau.length > 70 ? g.tenGoiThau.slice(0, 70) + '...' : g.tenGoiThau} {g.giaTrungThau || g.giaDuThau ? `— ${(g.giaTrungThau || g.giaDuThau || 0).toLocaleString('vi-VN')} trđ` : ''} ({g.donViThucHien || 'Chưa phân ĐV'})
-              </option>
-            ))}
-          </select>
-        </Field>
-        {autoFilledGoiThauMsg && (
-          <p className="text-2xs font-semibold text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5 animate-fade-in">
-            <CheckCircle2 size={13} /> {autoFilledGoiThauMsg}
-          </p>
-        )}
+            {s.label}
+          </button>
+        ))}
       </div>
 
-      <FormSection title="Thông tin hợp đồng">
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Số hợp đồng" required>
-            <input
-              type="text"
-              required
-              value={crud.form.soHD}
-              onChange={(e) => crud.setForm({ ...crud.form, soHD: e.target.value })}
-              className={inputCls}
-            />
-          </Field>
-
-          <Field label="Nhóm hợp đồng (Bảng 1 QC 2815)">
-            <select
-              value={crud.form.nhomHD}
-              onChange={(e) => {
-                const nhomMoi = e.target.value;
-                // Điều 6.1: Nhóm 1 mặc định Viện ký, Nhóm 2/3/4 mặc định Đơn vị ký.
-                // Chỉ tự đổi Cấp ký nếu đang trống hoặc vẫn đúng bằng gợi ý của nhóm CŨ —
-                // nghĩa là người dùng chưa tự tay chọn khác đi; nếu đã chọn khác (vd. cố
-                // tình để Viện ký cho HĐ Nhóm 2 theo yêu cầu đơn vị) thì giữ nguyên lựa chọn.
-                const goiYCu = capKyMacDinh(crud.form.nhomHD as any);
-                const guyDuocTuDoi = !crud.form.capKy || crud.form.capKy === goiYCu;
-                const goiYMoi = capKyMacDinh(nhomMoi as any);
-                crud.setForm({
-                  ...crud.form,
-                  nhomHD: nhomMoi,
-                  capKy: guyDuocTuDoi && goiYMoi ? goiYMoi : crud.form.capKy,
-                });
-              }}
-              className={inputCls}
+      {/* ── BƯỚC 1: CƠ BẢN & KHÁCH HÀNG ── */}
+      {formStep === 1 && (
+        <div className="space-y-4 animate-fade-in">
+          {/* Trường chọn Liên kết Gói thầu / Kết quả thầu */}
+          <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-3.5 dark:border-blue-900/40 dark:bg-blue-900/10 space-y-2 text-xs">
+            <Field
+              label={
+                <span className="flex items-center gap-1.5 font-bold">
+                  <Link2 size={13} className="text-primary shrink-0" />
+                  Chọn từ Gói thầu / Kết quả dự thầu (QC 2815 Điều 5.1 & 6.1)
+                </span>
+              }
             >
-              <option value="">-- Chọn nhóm --</option>
-              {([1, 2, 3, 4] as const).map((nhom) => (
-                <optgroup key={nhom} label={`Nhóm ${nhom}`}>
-                  {BANG_1.filter((d) => d.nhom === nhom).map((d) => (
-                    <option key={d.id} value={d.id}>{d.ten}</option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
-          </Field>
-        </div>
-
-        <Field label="Tên hợp đồng" required>
-          <input
-            type="text"
-            required
-            value={crud.form.ten}
-            onChange={(e) => crud.setForm({ ...crud.form, ten: e.target.value })}
-            className={inputCls}
-          />
-        </Field>
-      </FormSection>
-
-      <FormSection title="Khách hàng & đơn vị thực hiện">
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Khách hàng">
-            <select
-              value={crud.form.khachHangId}
-              onChange={(e) => crud.setForm({ ...crud.form, khachHangId: e.target.value })}
-              className={inputCls}
-            >
-              <option value="">-- Chọn khách hàng --</option>
-              {khachHangOptions.map((k) => (
-                <option key={k.id} value={k.id}>
-                  {k.ten}
-                </option>
-              ))}
-            </select>
-          </Field>
-
-          <Field label="Đơn vị thực hiện">
-            <select
-              value={crud.form.donViId}
-              onChange={(e) => crud.setForm({ ...crud.form, donViId: e.target.value })}
-              className={inputCls}
-            >
-              <option value="">-- Chọn đơn vị --</option>
-              {donViOptions.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.ten}
-                </option>
-              ))}
-            </select>
-          </Field>
-
-          <Field label="Chủ trì hợp đồng">
-            <select
-              value={crud.form.chuTriId}
-              onChange={(e) => crud.setForm({ ...crud.form, chuTriId: e.target.value })}
-              className={inputCls}
-            >
-              <option value="">-- Chưa phân công --</option>
-              {nhanSuOptions.map((n) => (
-                <option key={n.id} value={n.id}>{n.ten}</option>
-              ))}
-            </select>
-            {/* Đ.7.4 — đối chiếu CCNN ngay khi chọn chủ trì; key để nạp lại khi đổi người */}
-            {crud.form.chuTriId && <ChungChiTomTat key={crud.form.chuTriId} nhanSuId={crud.form.chuTriId} />}
-          </Field>
-
-          {crud.editing && (
-            <Field label="Giá dự thầu (triệu đồng, nếu khác giá trị HĐ)">
-              <NumberInput
-                value={crud.form.giaDuThau}
-                onChange={(val) => crud.setForm({ ...crud.form, giaDuThau: val })}
-                className={inputCls}
-                placeholder="Mặc định lấy Giá trị HĐ"
-              />
-            </Field>
-          )}
-        </div>
-      </FormSection>
-
-      <FormSection title="Tài chính">
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Giá trị HĐ (triệu đồng)">
-            <NumberInput
-              value={crud.form.giaTri}
-              onChange={(val) => crud.setForm({ ...crud.form, giaTri: val })}
-              className={inputCls}
-            />
-          </Field>
-
-          {crud.editing && (
-            <Field label="Đã thanh toán (triệu đồng)">
-              <div className="rounded-lg border border-border bg-subtle px-3 py-2">
-                <p className="font-mono text-sm font-bold text-ink">
-                  {formatTrieu(crud.editing.daThanhToan)}
-                </p>
-                <p className="mt-0.5 text-2xs text-ink-muted">
-                  Tự cộng từ các đợt đã có ngày thực thu — nhập ở tab “Thanh toán &amp; QT (Đ.11)”.
-                </p>
-              </div>
-            </Field>
-          )}
-        </div>
-      </FormSection>
-
-      <FormSection title="Thời hạn & Tiến độ (Quy chế 2815)">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <Field label="Ngày ký">
-            <input
-              type="date"
-              value={crud.form.ngayKy}
-              onChange={(e) => {
-                const newNgayKy = e.target.value;
-                let newHan = crud.form.hanHoanThanh;
-                if (soNgayThucHien && newNgayKy) {
-                  newHan = tinhHanHoanThanh(newNgayKy, soNgayThucHien);
-                } else if (crud.form.hanHoanThanh && newNgayKy) {
-                  const calculatedDays = tinhSoNgayThucHien(newNgayKy, crud.form.hanHoanThanh);
-                  setSoNgayThucHien(calculatedDays);
-                }
-                crud.setForm({ ...crud.form, ngayKy: newNgayKy, hanHoanThanh: newHan });
-              }}
-              className={inputCls}
-            />
-          </Field>
-
-          <Field label="Thời gian thực hiện (Số ngày ↔)">
-            <div className="relative">
-              <input
-                type="number"
-                min="1"
-                placeholder="Vd: 90"
-                value={soNgayThucHien}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setSoNgayThucHien(val);
-                  if (crud.form.ngayKy && val) {
-                    const newHan = tinhHanHoanThanh(crud.form.ngayKy, val);
-                    crud.setForm({ ...crud.form, hanHoanThanh: newHan });
-                  }
-                }}
-                className={cn(inputCls, 'pr-12')}
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-2xs font-bold text-ink-muted">
-                ngày
-              </span>
-            </div>
-          </Field>
-
-          <Field label="Hạn hoàn thành (tự động ↔)">
-            <input
-              type="date"
-              value={crud.form.hanHoanThanh}
-              onChange={(e) => {
-                const newHan = e.target.value;
-                if (crud.form.ngayKy && newHan) {
-                  const calculatedDays = tinhSoNgayThucHien(crud.form.ngayKy, newHan);
-                  setSoNgayThucHien(calculatedDays);
-                }
-                crud.setForm({ ...crud.form, hanHoanThanh: newHan });
-              }}
-              className={inputCls}
-            />
-          </Field>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 pt-1">
-          <Field label="Ngày nộp hồ sơ gốc về Viện">
-            <input
-              type="date"
-              value={crud.form.ngayNopHoSo}
-              onChange={(e) => crud.setForm({ ...crud.form, ngayNopHoSo: e.target.value })}
-              className={inputCls}
-            />
-            {crud.form.ngayKy && (() => {
-              const han = ngayHanNopHoSo(crud.form.ngayKy);
-              return han ? (
-                <p className="mt-1 text-2xs text-ink-muted">
-                  Hạn nộp (Điều 6.3): <strong className="text-ink">{formatNgay(han.toISOString().slice(0, 10))}</strong>
-                </p>
-              ) : null;
-            })()}
-          </Field>
-
-          <Field label="Hạn nộp chứng từ quyết toán (TCKT yêu cầu, nếu có)">
-            <input
-              type="date"
-              value={crud.form.hanChungTuQuyetToan}
-              onChange={(e) => crud.setForm({ ...crud.form, hanChungTuQuyetToan: e.target.value })}
-              className={inputCls}
-            />
-          </Field>
-        </div>
-      </FormSection>
-
-      <FormSection title="Trường hợp đặc thù & Cấp ký hợp đồng (QC 2815)">
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Trường hợp đặc thù">
-            <select
-              value={crud.form.loaiDacThu}
-              onChange={(e) => crud.setForm({ ...crud.form, loaiDacThu: e.target.value })}
-              className={inputCls}
-            >
-              <option value="">-- Không có --</option>
-              {DAC_THU_OPTIONS.filter((d) => !crud.form.nhomHD || d.apDungNhom.includes(crud.form.nhomHD as any)).map((d) => (
-                <option key={d.id} value={d.id} title={d.ghiChu}>{d.ten}</option>
-              ))}
-            </select>
-          </Field>
-
-          <Field label="Cấp ký hợp đồng (Điều 6.1)">
-            <select
-              value={crud.form.capKy}
-              onChange={(e) => crud.setForm({ ...crud.form, capKy: e.target.value })}
-              className={inputCls}
-            >
-              <option value="">-- Chưa xác định --</option>
-              {CAP_KY_OPTIONS.map((c) => (
-                <option key={c.value} value={c.value}>{c.label}</option>
-              ))}
-            </select>
-            {crud.form.nhomHD && (
-              <p className="mt-1 text-2xs text-ink-muted">
-                Tự chọn theo Nhóm HĐ (Điều 6.1) — đổi tay được nếu thực tế khác.
-              </p>
-            )}
-          </Field>
-        </div>
-
-        {(() => {
-          const canhBao = canhBaoCapKy(crud.form.nhomHD as any, crud.form.capKy as any);
-          if (!canhBao) return null;
-          return (
-            <p className="flex items-start gap-1.5 rounded-lg bg-danger-subtle p-2.5 text-2xs font-semibold text-danger">
-              <AlertCircle size={13} className="mt-px shrink-0" /> {canhBao}
-            </p>
-          );
-        })()}
-
-        <div className="grid grid-cols-2 gap-3 pt-1">
-          <label className="flex items-center gap-2 text-xs font-medium text-ink-secondary">
-            <input
-              type="checkbox"
-              checked={crud.form.phanVienXa}
-              onChange={(e) => crud.setForm({ ...crud.form, phanVienXa: e.target.checked })}
-            />
-            Phân viện/TT ở xa (+ hỗ trợ đi lại)
-          </label>
-          <label
-            className={cn(
-              'flex items-center gap-2 text-xs font-medium text-ink-secondary',
-              crud.form.capKy === 'don-vi-ky' && 'opacity-50',
-            )}
-            title={
-              crud.form.capKy === 'don-vi-ky'
-                ? 'Chỉ áp dụng khi hợp đồng do Viện ký (Ghi chú 6 Bảng 1)'
-                : undefined
-            }
-          >
-            <input
-              type="checkbox"
-              disabled={crud.form.capKy === 'don-vi-ky'}
-              checked={crud.form.giamTheoYeuCauDonVi}
-              onChange={(e) => crud.setForm({ ...crud.form, giamTheoYeuCauDonVi: e.target.checked })}
-            />
-            Đơn vị tự yêu cầu Viện ký (giảm tỷ lệ giao khoán)
-          </label>
-          <label
-            className="col-span-2 flex items-center gap-2 text-xs font-medium text-ink-secondary"
-            title="Điều 6.1: buộc trình Viện trưởng bất kể giá trị; Điều 5.2b: P.KHKT là đầu mối phối hợp soạn HĐ"
-          >
-            <input
-              type="checkbox"
-              checked={crud.form.phucTap}
-              onChange={(e) => crud.setForm({ ...crud.form, phucTap: e.target.checked })}
-            />
-            HĐ kỹ thuật phức tạp / tính chính trị / pháp lý quan trọng / Bộ giao (Đ.6.1 — buộc trình Viện trưởng)
-          </label>
-          <label
-            className="col-span-2 flex items-center gap-2 text-xs font-medium text-ink-secondary"
-            title="Điều 3.o: bắt buộc với HĐ tư vấn giám sát, tư vấn QLDA và thi công — Giám đốc đơn vị điều hành tập trung"
-          >
-            <input
-              type="checkbox"
-              checked={crud.form.quanLyTapTrung}
-              onChange={(e) => crud.setForm({ ...crud.form, quanLyTapTrung: e.target.checked })}
-            />
-            HĐ theo mô hình quản lý tập trung tại đơn vị (Đ.3.o — TVGS / TVQLDA / thi công)
-          </label>
-        </div>
-
-        {/* Nhánh ký giao việc suy ra từ các cờ trên — cho người nhập thấy ngay hệ quả (Đ.7.1c) */}
-        <p className="mt-2 rounded-lg border border-border bg-subtle px-3 py-2 text-2xs text-ink-secondary">
-          Luồng ký Quyết định giao việc sẽ đi{' '}
-          <strong className="text-primary">
-            nhánh {nhanhKyGiaoViec({
-              capKy: (crud.form.capKy || null) as CapKy | null,
-              phucTap: crud.form.phucTap,
-              quanLyTapTrung: crud.form.quanLyTapTrung,
-            })}
-          </strong>{' '}
-          —{' '}
-          {DAC_TA_NHANH[nhanhKyGiaoViec({
-            capKy: (crud.form.capKy || null) as CapKy | null,
-            phucTap: crud.form.phucTap,
-            quanLyTapTrung: crud.form.quanLyTapTrung,
-          })].canCu}
-        </p>
-
-        {/* Đ.6.2 — nhắc ngay trong form khi chọn đơn vị ký mà đơn vị chưa có ủy quyền hiệu lực */}
-        {crud.form.capKy === 'don-vi-ky' && crud.form.donViId && (
-          <UyQuyenKyCanhBao key={`uq-${crud.form.donViId}`} donViId={crud.form.donViId} />
-        )}
-      </FormSection>
-
-      {crud.editing && (
-        <FormSection title="Đóng dấu sơ bộ & Phân công quản lý (Đ.8.2, Đ.8.3)">
-          <label
-            className="flex items-center gap-2 text-xs font-medium text-ink-secondary"
-            title="Điều 8.2: hồ sơ kết quả chỉ được đóng dấu khi HĐ đã ký kết; nếu đang chờ thủ tục ký mà cần đóng dấu sơ bộ thì phải được Lãnh đạo Viện (HĐ Viện ký) hoặc Giám đốc đơn vị (HĐ đơn vị ký) chấp thuận"
-          >
-            <input
-              type="checkbox"
-              checked={crud.form.dongDauSoBo}
-              onChange={(e) => crud.setForm({ ...crud.form, dongDauSoBo: e.target.checked })}
-            />
-            Đã được chấp thuận đóng dấu sơ bộ khi HĐ chưa ký đủ các bên (Đ.8.2)
-          </label>
-
-          {crud.form.dongDauSoBo && (
-            <div className="mt-3 grid grid-cols-2 gap-3">
-              <Field label="Ngày chấp thuận đóng dấu sơ bộ">
-                <input
-                  type="date"
-                  value={crud.form.ngayDongDauSoBo || ''}
-                  onChange={(e) => crud.setForm({ ...crud.form, ngayDongDauSoBo: e.target.value })}
-                  className={inputCls}
-                />
-              </Field>
-              <Field label="Số văn bản chấp thuận">
-                <input
-                  value={crud.form.soVbChapThuanDauSoBo || ''}
-                  onChange={(e) => crud.setForm({ ...crud.form, soVbChapThuanDauSoBo: e.target.value })}
-                  className={inputCls}
-                  placeholder="VD: 145/VKH-KHKT"
-                />
-              </Field>
-            </div>
-          )}
-
-          <div className="mt-3">
-            <Field label="Phó đơn vị được giao quản lý HĐ (Đ.8.3 — bắt buộc khi Trưởng đơn vị là chủ trì)">
               <select
-                value={crud.form.phoDonViQuanLyId || ''}
-                onChange={(e) => crud.setForm({ ...crud.form, phoDonViQuanLyId: e.target.value })}
-                className={inputCls}
+                className={cn(inputCls, 'text-xs py-1.5 font-medium')}
+                value={selectedGoiThauId}
+                onChange={(e) => handleSelectGoiThau(e.target.value)}
               >
-                <option value="">-- Không áp dụng --</option>
-                {nhanSuOptions.map((n) => (
-                  <option key={n.id} value={n.id}>{n.ten}</option>
+                <option value="">-- Chọn Gói thầu đã trúng thầu hoặc đang dự thầu để tự động điền dữ liệu --</option>
+                {(dauThauList || []).map((g) => (
+                  <option key={g.id} value={g.id} className="text-xs">
+                    [{g.trangThai === 'trung-thau' ? 'Trúng thầu' : g.trangThai}] {g.tenGoiThau.length > 70 ? g.tenGoiThau.slice(0, 70) + '...' : g.tenGoiThau} {g.giaTrungThau || g.giaDuThau ? `— ${(g.giaTrungThau || g.giaDuThau || 0).toLocaleString('vi-VN')} trđ` : ''} ({g.donViThucHien || 'Chưa phân ĐV'})
+                  </option>
                 ))}
               </select>
             </Field>
-          </div>
-        </FormSection>
-      )}
-
-      <FormSection title="📁 Tệp dự thảo Hợp đồng & Link Google Docs">
-        <Field label="Link Google Docs / Drive / Cloud (Xem trực tuyến)">
-          <input
-            type="url"
-            placeholder="https://docs.google.com/document/d/... hoặc link OneDrive / Drive"
-            value={crud.form.fileDuThaoUrl || ''}
-            onChange={(e) => crud.setForm({ ...crud.form, fileDuThaoUrl: e.target.value })}
-            className={inputCls}
-          />
-          <p className="mt-1 text-[11px] text-ink-muted">
-            Nhập liên kết Google Docs để ban quản lý & lãnh đạo chỉnh sửa và duyệt dự thảo trực tiếp.
-          </p>
-        </Field>
-
-        <Field label="Hoặc Tải tệp dự thảo từ máy (PDF, DOCX, ZIP)">
-          <div className="flex items-center gap-2">
-            <input
-              type="file"
-              accept=".pdf,.doc,.docx,.zip"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  const blobUrl = URL.createObjectURL(file);
-                  crud.setForm({
-                    ...crud.form,
-                    tenFileDuThao: file.name,
-                    fileDuThaoUrl: crud.form.fileDuThaoUrl || blobUrl,
-                  });
-                }
-              }}
-              className="text-xs file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary-subtle file:text-primary hover:file:bg-primary-100 cursor-pointer"
-            />
-            {crud.form.tenFileDuThao && (
-              <span className="text-xs text-emerald-600 font-semibold truncate max-w-[200px]">
-                📎 {crud.form.tenFileDuThao}
-              </span>
+            {autoFilledGoiThauMsg && (
+              <p className="text-2xs font-semibold text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5 animate-fade-in">
+                <CheckCircle2 size={13} /> {autoFilledGoiThauMsg}
+              </p>
             )}
           </div>
-        </Field>
-      </FormSection>
 
-      <Field label="Trạng thái">
-        <select
-          value={crud.form.trangThai}
-          onChange={(e) => crud.setForm({ ...crud.form, trangThai: e.target.value as any })}
-          className={inputCls}
-        >
-          {TRANG_THAI_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-      </Field>
+          <FormSection title="Thông tin hợp đồng">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Field label="Số hợp đồng" required>
+                <input
+                  type="text"
+                  required
+                  value={crud.form.soHD}
+                  onChange={(e) => crud.setForm({ ...crud.form, soHD: e.target.value })}
+                  className={inputCls}
+                />
+              </Field>
+
+              <Field label="Tên hợp đồng" required>
+                <input
+                  type="text"
+                  required
+                  value={crud.form.ten}
+                  onChange={(e) => crud.setForm({ ...crud.form, ten: e.target.value })}
+                  className={inputCls}
+                />
+              </Field>
+            </div>
+          </FormSection>
+
+          <FormSection title="Khách hàng & đơn vị thực hiện">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Field label="Khách hàng">
+                <select
+                  value={crud.form.khachHangId}
+                  onChange={(e) => crud.setForm({ ...crud.form, khachHangId: e.target.value })}
+                  className={inputCls}
+                >
+                  <option value="">-- Chọn khách hàng --</option>
+                  {khachHangOptions.map((k) => (
+                    <option key={k.id} value={k.id}>
+                      {k.ten}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+
+              <Field label="Đơn vị thực hiện">
+                <select
+                  value={crud.form.donViId}
+                  onChange={(e) => crud.setForm({ ...crud.form, donViId: e.target.value })}
+                  className={inputCls}
+                >
+                  <option value="">-- Chọn đơn vị --</option>
+                  {donViOptions.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.ten}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+
+              <Field label="Chủ trì hợp đồng">
+                <select
+                  value={crud.form.chuTriId}
+                  onChange={(e) => crud.setForm({ ...crud.form, chuTriId: e.target.value })}
+                  className={inputCls}
+                >
+                  <option value="">-- Chưa phân công --</option>
+                  {nhanSuOptions.map((n) => (
+                    <option key={n.id} value={n.id}>{n.ten}</option>
+                  ))}
+                </select>
+                {/* Đ.7.4 — đối chiếu CCNN ngay khi chọn chủ trì; key để nạp lại khi đổi người */}
+                {crud.form.chuTriId && <ChungChiTomTat key={crud.form.chuTriId} nhanSuId={crud.form.chuTriId} />}
+              </Field>
+            </div>
+          </FormSection>
+        </div>
+      )}
+
+      {/* ── BƯỚC 2: PHÂN LOẠI & CĂN CỨ QC 2815 ── */}
+      {formStep === 2 && (
+        <div className="space-y-4 animate-fade-in">
+          <FormSection title="Phân loại & Căn cứ thẩm quyền (QC 2815)">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Field label="Nhóm hợp đồng (Bảng 1 QC 2815)">
+                <select
+                  value={crud.form.nhomHD}
+                  onChange={(e) => {
+                    const nhomMoi = e.target.value;
+                    const goiYCu = capKyMacDinh(crud.form.nhomHD as any);
+                    const guyDuocTuDoi = !crud.form.capKy || crud.form.capKy === goiYCu;
+                    const goiYMoi = capKyMacDinh(nhomMoi as any);
+                    crud.setForm({
+                      ...crud.form,
+                      nhomHD: nhomMoi,
+                      capKy: guyDuocTuDoi && goiYMoi ? goiYMoi : crud.form.capKy,
+                    });
+                  }}
+                  className={inputCls}
+                >
+                  <option value="">-- Chọn nhóm --</option>
+                  {([1, 2, 3, 4] as const).map((nhom) => (
+                    <optgroup key={nhom} label={`Nhóm ${nhom}`}>
+                      {BANG_1.filter((d) => d.nhom === nhom).map((d) => (
+                        <option key={d.id} value={d.id}>{d.ten}</option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </Field>
+
+              <Field label="Cấp ký hợp đồng (Điều 6.1)">
+                <select
+                  value={crud.form.capKy}
+                  onChange={(e) => crud.setForm({ ...crud.form, capKy: e.target.value })}
+                  className={inputCls}
+                >
+                  <option value="">-- Chưa xác định --</option>
+                  {CAP_KY_OPTIONS.map((c) => (
+                    <option key={c.value} value={c.value}>{c.label}</option>
+                  ))}
+                </select>
+                {crud.form.nhomHD && (
+                  <p className="mt-1 text-2xs text-ink-muted">
+                    Tự chọn theo Nhóm HĐ (Điều 6.1) — đổi tay được nếu thực tế khác.
+                  </p>
+                )}
+              </Field>
+            </div>
+
+            {(() => {
+              const canhBao = canhBaoCapKy(crud.form.nhomHD as any, crud.form.capKy as any);
+              if (!canhBao) return null;
+              return (
+                <p className="flex items-start gap-1.5 rounded-lg bg-danger-subtle p-2.5 text-2xs font-semibold text-danger mt-2">
+                  <AlertCircle size={13} className="mt-px shrink-0" /> {canhBao}
+                </p>
+              );
+            })()}
+          </FormSection>
+
+          <FormSection title="Trường hợp đặc thù & Luồng ký giao việc (QC 2815)">
+            <Field label="Trường hợp đặc thù">
+              <select
+                value={crud.form.loaiDacThu}
+                onChange={(e) => crud.setForm({ ...crud.form, loaiDacThu: e.target.value })}
+                className={inputCls}
+              >
+                <option value="">-- Không có --</option>
+                {DAC_THU_OPTIONS.filter((d) => !crud.form.nhomHD || d.apDungNhom.includes(crud.form.nhomHD as any)).map((d) => (
+                  <option key={d.id} value={d.id} title={d.ghiChu}>{d.ten}</option>
+                ))}
+              </select>
+            </Field>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+              <label className="flex items-center gap-2 text-xs font-medium text-ink-secondary">
+                <input
+                  type="checkbox"
+                  checked={crud.form.phanVienXa}
+                  onChange={(e) => crud.setForm({ ...crud.form, phanVienXa: e.target.checked })}
+                />
+                Phân viện/TT ở xa (+ hỗ trợ đi lại)
+              </label>
+              <label
+                className={cn(
+                  'flex items-center gap-2 text-xs font-medium text-ink-secondary',
+                  crud.form.capKy === 'don-vi-ky' && 'opacity-50',
+                )}
+                title={
+                  crud.form.capKy === 'don-vi-ky'
+                    ? 'Chỉ áp dụng khi hợp đồng do Viện ký (Ghi chú 6 Bảng 1)'
+                    : undefined
+                }
+              >
+                <input
+                  type="checkbox"
+                  disabled={crud.form.capKy === 'don-vi-ky'}
+                  checked={crud.form.giamTheoYeuCauDonVi}
+                  onChange={(e) => crud.setForm({ ...crud.form, giamTheoYeuCauDonVi: e.target.checked })}
+                />
+                Đơn vị tự yêu cầu Viện ký (giảm tỷ lệ giao khoán)
+              </label>
+              <label
+                className="col-span-1 sm:col-span-2 flex items-center gap-2 text-xs font-medium text-ink-secondary"
+                title="Điều 6.1: buộc trình Viện trưởng bất kể giá trị; Điều 5.2b: P.KHKT là đầu mối phối hợp soạn HĐ"
+              >
+                <input
+                  type="checkbox"
+                  checked={crud.form.phucTap}
+                  onChange={(e) => crud.setForm({ ...crud.form, phucTap: e.target.checked })}
+                />
+                HĐ kỹ thuật phức tạp / tính chính trị / pháp lý quan trọng / Bộ giao (Đ.6.1 — buộc trình Viện trưởng)
+              </label>
+              <label
+                className="col-span-1 sm:col-span-2 flex items-center gap-2 text-xs font-medium text-ink-secondary"
+                title="Điều 3.o: bắt buộc với HĐ tư vấn giám sát, tư vấn QLDA và thi công — Giám đốc đơn vị điều hành tập trung"
+              >
+                <input
+                  type="checkbox"
+                  checked={crud.form.quanLyTapTrung}
+                  onChange={(e) => crud.setForm({ ...crud.form, quanLyTapTrung: e.target.checked })}
+                />
+                HĐ theo mô hình quản lý tập trung tại đơn vị (Đ.3.o — TVGS / TVQLDA / thi công)
+              </label>
+            </div>
+
+            {/* Nhánh ký giao việc suy ra từ các cờ trên */}
+            <p className="mt-2 rounded-lg border border-border bg-subtle px-3 py-2 text-2xs text-ink-secondary">
+              Luồng ký Quyết định giao việc sẽ đi{' '}
+              <strong className="text-primary">
+                nhánh {nhanhKyGiaoViec({
+                  capKy: (crud.form.capKy || null) as CapKy | null,
+                  phucTap: crud.form.phucTap,
+                  quanLyTapTrung: crud.form.quanLyTapTrung,
+                })}
+              </strong>{' '}
+              —{' '}
+              {DAC_TA_NHANH[nhanhKyGiaoViec({
+                capKy: (crud.form.capKy || null) as CapKy | null,
+                phucTap: crud.form.phucTap,
+                quanLyTapTrung: crud.form.quanLyTapTrung,
+              })].canCu}
+            </p>
+
+            {/* Đ.6.2 — nhắc ngay trong form khi chọn đơn vị ký mà đơn vị chưa có ủy quyền hiệu lực */}
+            {crud.form.capKy === 'don-vi-ky' && crud.form.donViId && (
+              <UyQuyenKyCanhBao key={`uq-${crud.form.donViId}`} donViId={crud.form.donViId} />
+            )}
+          </FormSection>
+        </div>
+      )}
+
+      {/* ── BƯỚC 3: GIÁ TRỊ & TIẾN ĐỘ ── */}
+      {formStep === 3 && (
+        <div className="space-y-4 animate-fade-in">
+          <FormSection title="Tài chính">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Field label="Giá trị HĐ (triệu đồng)" required>
+                <NumberInput
+                  value={crud.form.giaTri}
+                  onChange={(val) => crud.setForm({ ...crud.form, giaTri: val })}
+                  className={inputCls}
+                />
+              </Field>
+
+              {crud.editing && (
+                <Field label="Giá dự thầu (triệu đồng, nếu khác giá trị HĐ)">
+                  <NumberInput
+                    value={crud.form.giaDuThau}
+                    onChange={(val) => crud.setForm({ ...crud.form, giaDuThau: val })}
+                    className={inputCls}
+                    placeholder="Mặc định lấy Giá trị HĐ"
+                  />
+                </Field>
+              )}
+
+              {crud.editing && (
+                <Field label="Đã thanh toán (triệu đồng)">
+                  <div className="rounded-lg border border-border bg-subtle px-3 py-2">
+                    <p className="font-mono text-sm font-bold text-ink">
+                      {formatTrieu(crud.editing.daThanhToan)}
+                    </p>
+                    <p className="mt-0.5 text-2xs text-ink-muted">
+                      Tự cộng từ các đợt đã có ngày thực thu — nhập ở tab “Thanh toán &amp; QT (Đ.11)”.
+                    </p>
+                  </div>
+                </Field>
+              )}
+            </div>
+          </FormSection>
+
+          <FormSection title="Thời hạn & Tiến độ (Quy chế 2815)">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <Field label="Ngày ký">
+                <input
+                  type="date"
+                  value={crud.form.ngayKy}
+                  onChange={(e) => {
+                    const newNgayKy = e.target.value;
+                    let newHan = crud.form.hanHoanThanh;
+                    if (soNgayThucHien && newNgayKy) {
+                      newHan = tinhHanHoanThanh(newNgayKy, soNgayThucHien);
+                    } else if (crud.form.hanHoanThanh && newNgayKy) {
+                      const calculatedDays = tinhSoNgayThucHien(newNgayKy, crud.form.hanHoanThanh);
+                      setSoNgayThucHien(calculatedDays);
+                    }
+                    crud.setForm({ ...crud.form, ngayKy: newNgayKy, hanHoanThanh: newHan });
+                  }}
+                  className={inputCls}
+                />
+              </Field>
+
+              <Field label="Thời gian thực hiện (Số ngày ↔)">
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="1"
+                    placeholder="Vd: 90"
+                    value={soNgayThucHien}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setSoNgayThucHien(val);
+                      if (crud.form.ngayKy && val) {
+                        const newHan = tinhHanHoanThanh(crud.form.ngayKy, val);
+                        crud.setForm({ ...crud.form, hanHoanThanh: newHan });
+                      }
+                    }}
+                    className={cn(inputCls, 'pr-12')}
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-2xs font-bold text-ink-muted">
+                    ngày
+                  </span>
+                </div>
+              </Field>
+
+              <Field label="Hạn hoàn thành (tự động ↔)">
+                <input
+                  type="date"
+                  value={crud.form.hanHoanThanh}
+                  onChange={(e) => {
+                    const newHan = e.target.value;
+                    if (crud.form.ngayKy && newHan) {
+                      const calculatedDays = tinhSoNgayThucHien(crud.form.ngayKy, newHan);
+                      setSoNgayThucHien(calculatedDays);
+                    }
+                    crud.setForm({ ...crud.form, hanHoanThanh: newHan });
+                  }}
+                  className={inputCls}
+                />
+              </Field>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <Field label="Ngày nộp hồ sơ gốc về Viện">
+                <input
+                  type="date"
+                  value={crud.form.ngayNopHoSo}
+                  onChange={(e) => crud.setForm({ ...crud.form, ngayNopHoSo: e.target.value })}
+                  className={inputCls}
+                />
+                {crud.form.ngayKy && (() => {
+                  const han = ngayHanNopHoSo(crud.form.ngayKy);
+                  return han ? (
+                    <p className="mt-1 text-2xs text-ink-muted">
+                      Hạn nộp (Điều 6.3): <strong className="text-ink">{formatNgay(han.toISOString().slice(0, 10))}</strong>
+                    </p>
+                  ) : null;
+                })()}
+              </Field>
+
+              <Field label="Hạn nộp chứng từ quyết toán (TCKT yêu cầu, nếu có)">
+                <input
+                  type="date"
+                  value={crud.form.hanChungTuQuyetToan}
+                  onChange={(e) => crud.setForm({ ...crud.form, hanChungTuQuyetToan: e.target.value })}
+                  className={inputCls}
+                />
+              </Field>
+            </div>
+          </FormSection>
+        </div>
+      )}
+
+      {/* ── BƯỚC 4: HỒ SƠ & PHÂN CÔNG ── */}
+      {formStep === 4 && (
+        <div className="space-y-4 animate-fade-in">
+          {crud.editing && (
+            <FormSection title="Đóng dấu sơ bộ & Phân công quản lý (Đ.8.2, Đ.8.3)">
+              <label
+                className="flex items-center gap-2 text-xs font-medium text-ink-secondary"
+                title="Điều 8.2: hồ sơ kết quả chỉ được đóng dấu khi HĐ đã ký kết; nếu đang chờ thủ tục ký mà cần đóng dấu sơ bộ thì phải được Lãnh đạo Viện (HĐ Viện ký) hoặc Giám đốc đơn vị (HĐ đơn vị ký) chấp thuận"
+              >
+                <input
+                  type="checkbox"
+                  checked={crud.form.dongDauSoBo}
+                  onChange={(e) => crud.setForm({ ...crud.form, dongDauSoBo: e.target.checked })}
+                />
+                Đã được chấp thuận đóng dấu sơ bộ khi HĐ chưa ký đủ các bên (Đ.8.2)
+              </label>
+
+              {crud.form.dongDauSoBo && (
+                <div className="mt-3 grid grid-cols-2 gap-3">
+                  <Field label="Ngày chấp thuận đóng dấu sơ bộ">
+                    <input
+                      type="date"
+                      value={crud.form.ngayDongDauSoBo || ''}
+                      onChange={(e) => crud.setForm({ ...crud.form, ngayDongDauSoBo: e.target.value })}
+                      className={inputCls}
+                    />
+                  </Field>
+                  <Field label="Số văn bản chấp thuận">
+                    <input
+                      value={crud.form.soVbChapThuanDauSoBo || ''}
+                      onChange={(e) => crud.setForm({ ...crud.form, soVbChapThuanDauSoBo: e.target.value })}
+                      className={inputCls}
+                      placeholder="VD: 145/VKH-KHKT"
+                    />
+                  </Field>
+                </div>
+              )}
+
+              <div className="mt-3">
+                <Field label="Phó đơn vị được giao quản lý HĐ (Đ.8.3 — bắt buộc khi Trưởng đơn vị là chủ trì)">
+                  <select
+                    value={crud.form.phoDonViQuanLyId || ''}
+                    onChange={(e) => crud.setForm({ ...crud.form, phoDonViQuanLyId: e.target.value })}
+                    className={inputCls}
+                  >
+                    <option value="">-- Không áp dụng --</option>
+                    {nhanSuOptions.map((n) => (
+                      <option key={n.id} value={n.id}>{n.ten}</option>
+                    ))}
+                  </select>
+                </Field>
+              </div>
+            </FormSection>
+          )}
+
+          <FormSection
+            title={
+              <span className="flex items-center gap-1.5 font-bold">
+                <FileText size={14} className="text-primary shrink-0" />
+                Tệp dự thảo Hợp đồng & Link Google Docs
+              </span>
+            }
+          >
+            <Field label="Link Google Docs / Drive / Cloud (Xem trực tuyến)">
+              <input
+                type="url"
+                placeholder="https://docs.google.com/document/d/... hoặc link OneDrive / Drive"
+                value={crud.form.fileDuThaoUrl || ''}
+                onChange={(e) => crud.setForm({ ...crud.form, fileDuThaoUrl: e.target.value })}
+                className={inputCls}
+              />
+              <p className="mt-1 text-[11px] text-ink-muted">
+                Nhập liên kết Google Docs để ban quản lý & lãnh đạo chỉnh sửa và duyệt dự thảo trực tiếp.
+              </p>
+            </Field>
+
+            <Field label="Hoặc Tải tệp dự thảo từ máy (PDF, DOCX, ZIP)">
+              <div className="flex items-center gap-2">
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx,.zip"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const blobUrl = URL.createObjectURL(file);
+                      crud.setForm({
+                        ...crud.form,
+                        tenFileDuThao: file.name,
+                        fileDuThaoUrl: crud.form.fileDuThaoUrl || blobUrl,
+                      });
+                    }
+                  }}
+                  className="text-xs file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary-subtle file:text-primary hover:file:bg-primary-100 cursor-pointer"
+                />
+                {crud.form.tenFileDuThao && (
+                  <span className="text-xs text-emerald-600 font-semibold truncate max-w-[200px] flex items-center gap-1">
+                    <Paperclip size={12} className="shrink-0" />
+                    {crud.form.tenFileDuThao}
+                  </span>
+                )}
+              </div>
+            </Field>
+          </FormSection>
+
+          <Field label="Trạng thái hợp đồng">
+            <select
+              value={crud.form.trangThai}
+              onChange={(e) => crud.setForm({ ...crud.form, trangThai: e.target.value as any })}
+              className={inputCls}
+            >
+              {TRANG_THAI_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </div>
+      )}
     </form>
   );
 
   const buildFormFooter = () => (
-    <>
-      <button type="button" onClick={crud.closeModal} className="btn-ghost">
-        Hủy
-      </button>
-      <button type="submit" form="hopdong-form" disabled={crud.saving} className="btn-primary">
-        {crud.saving && <LoaderCircle size={15} className="animate-spin" />}
-        {crud.editing ? 'Cập nhật' : 'Thêm mới'}
-      </button>
-    </>
+    <div className="flex items-center justify-between w-full gap-2">
+      <div className="flex items-center gap-2 text-xs text-ink-muted">
+        <span className="font-bold text-ink">Bước {formStep}/4</span>
+        <div className="flex gap-1">
+          {[1, 2, 3, 4].map((s) => (
+            <span
+              key={s}
+              className={cn(
+                'w-2 h-2 rounded-full transition-colors',
+                s === formStep ? 'bg-primary' : s < formStep ? 'bg-emerald-500' : 'bg-border'
+              )}
+            />
+          ))}
+        </div>
+      </div>
+      <div className="flex items-center gap-1.5">
+        {formStep > 1 && (
+          <button
+            type="button"
+            onClick={() => setFormStep((s) => Math.max(1, s - 1))}
+            className="btn-secondary py-1.5 px-3 text-xs"
+          >
+            ← Quay lại
+          </button>
+        )}
+        {formStep < 4 ? (
+          <button
+            type="button"
+            onClick={() => setFormStep((s) => Math.min(4, s + 1))}
+            className="btn-primary py-1.5 px-3 text-xs font-bold"
+          >
+            Tiếp theo →
+          </button>
+        ) : (
+          <button
+            type="submit"
+            form="hopdong-form"
+            disabled={crud.saving}
+            className="btn-primary py-1.5 px-4 text-xs font-bold"
+          >
+            {crud.saving && <LoaderCircle size={15} className="animate-spin" />}
+            {crud.editing ? 'Lưu cập nhật' : 'Hoàn tất thêm mới'}
+          </button>
+        )}
+        <button type="button" onClick={crud.closeModal} className="btn-ghost py-1.5 px-2.5 text-xs">
+          Hủy
+        </button>
+      </div>
+    </div>
   );
 
   const EDIT_PANEL_ID = 'hopdong-form';
 
   // Mở/cập nhật panel form Thêm/Sửa theo trạng thái của useCrudForm — mở lên trên bất kỳ
   // panel nào đang có sẵn (vd. panel chi tiết) để tạo hiệu ứng xếp chồng "tai thỏ".
-  // Luôn dùng openPanel (không phải updatePanel): panel form không bao giờ có gì mở
-  // *trên* nó nên openPanel không rủi ro làm mất panel khác, và mỗi lần gõ phím —
-  // `crud.form` luôn là object mới từ toForm()/setForm() — sẽ mở lại đúng vị trí nếu
-  // panel từng bị đóng qua tai thỏ/backdrop/Esc thay vì qua nút Hủy.
   useEffect(() => {
     if (crud.modalOpen) {
       openPanel({
         id: EDIT_PANEL_ID,
         title: crud.editing ? 'Chỉnh sửa hợp đồng' : 'Thêm hợp đồng mới',
         subtitle: crud.editing ? crud.form.soHD : undefined,
-        // Mặc định độ rộng 50% màn hình, người dùng có thể kéo co giãn tùy ý
-        minWidth: 480,
+        minWidth: 540,
         storageKey: 'slideover-width-hop-dong-form-v2',
+        isDirty: crud.isDirty,
         content: buildFormFields(),
         footer: buildFormFooter(),
       });
     } else {
       closePanel(EDIT_PANEL_ID);
+      setFormStep(1);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [crud.modalOpen, crud.form, crud.editing, crud.saving, crud.actionError]);
+  }, [crud.modalOpen, crud.form, crud.editing, crud.saving, crud.actionError, crud.isDirty, formStep, selectedGoiThauId, autoFilledGoiThauMsg, soNgayThucHien]);
 
   // Đồng bộ ngược: nếu panel form bị đóng bằng tai thỏ/backdrop/Esc (không qua nút Hủy),
   // `crud.modalOpen` vẫn còn true — cập nhật lại để lần bấm "Sửa" tiếp theo hoạt động đúng.
@@ -1617,34 +1737,59 @@ export function HopDongPage({
           </div>
 
           {/* Quy chế 2815 Banner Alert */}
-          <div className="mb-4 rounded-xl border border-primary-200/80 bg-primary-50/70 p-4 text-xs space-y-2.5 shadow-2xs transition-colors dark:border-slate-700/80 dark:bg-slate-900/80">
+          <div className="mb-4 rounded-xl border border-primary-200/80 bg-primary-50/70 p-3.5 text-xs shadow-2xs transition-all dark:border-slate-700/80 dark:bg-slate-900/80">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="flex items-center gap-2 text-sm font-bold text-primary-800 dark:text-sky-300">
-                <CheckCircle2 size={18} className="text-primary-600 dark:text-sky-400 shrink-0" />
+                <CheckCircle2 size={17} className="text-primary-600 dark:text-sky-400 shrink-0" />
                 <span>Khung Quy chế 2815/QĐ-VKH: Hạn mức Trình Viện trưởng Phê duyệt (Điều 6.1)</span>
               </span>
-              <span className="inline-flex items-center gap-1 rounded-full bg-primary-600 dark:bg-primary-500/90 px-3 py-0.5 text-white text-2xs font-bold shadow-2xs">
-                ⚡ Tự động kích hoạt luồng
-              </span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 pt-0.5">
-              <div className="flex items-center justify-between gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-xs text-ink shadow-2xs dark:border-slate-700/80 dark:bg-slate-800/90 hover:dark:border-slate-600 transition-colors">
-                <span className="flex items-center gap-1.5 font-medium text-ink dark:text-slate-200">🏛️ Mọi HĐ Nhóm 1 (N1a, N1b)</span>
-                <span className="rounded bg-primary-100 dark:bg-primary-900/50 px-2 py-0.5 text-2xs font-bold text-primary-800 dark:text-primary-200 whitespace-nowrap">bất kể giá trị</span>
-              </div>
-              <div className="flex items-center justify-between gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-xs text-ink shadow-2xs dark:border-slate-700/80 dark:bg-slate-800/90 hover:dark:border-slate-600 transition-colors">
-                <span className="flex items-center gap-1.5 font-medium text-ink dark:text-slate-200">🔍 Kiểm định, hiện trạng (N1a)</span>
-                <span className="rounded bg-amber-100 dark:bg-amber-950/60 px-2 py-0.5 text-2xs font-bold text-amber-800 dark:text-amber-300 whitespace-nowrap">&ge; 2,0 Tỷ VNĐ</span>
-              </div>
-              <div className="flex items-center justify-between gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-xs text-ink shadow-2xs dark:border-slate-700/80 dark:bg-slate-800/90 hover:dark:border-slate-600 transition-colors">
-                <span className="flex items-center gap-1.5 font-medium text-ink dark:text-slate-200">📐 HĐ Tư vấn (Nhóm 2)</span>
-                <span className="rounded bg-indigo-100 dark:bg-indigo-950/60 px-2 py-0.5 text-2xs font-bold text-indigo-800 dark:text-indigo-300 whitespace-nowrap">&ge; 5,0 Tỷ VNĐ</span>
-              </div>
-              <div className="flex items-center justify-between gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-xs text-ink shadow-2xs dark:border-slate-700/80 dark:bg-slate-800/90 hover:dark:border-slate-600 transition-colors">
-                <span className="flex items-center gap-1.5 font-medium text-ink dark:text-slate-200">🏗️ HĐ Thi công (Nhóm 3)</span>
-                <span className="rounded bg-rose-100 dark:bg-rose-950/60 px-2 py-0.5 text-2xs font-bold text-rose-800 dark:text-rose-300 whitespace-nowrap">&ge; 10,0 Tỷ VNĐ</span>
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1 rounded-full bg-primary-600 dark:bg-primary-500/90 px-2.5 py-0.5 text-white text-3xs font-bold shadow-2xs">
+                  <Zap size={11} className="shrink-0" />
+                  Tự động kích hoạt luồng
+                </span>
+                <button
+                  type="button"
+                  onClick={toggleQcBanner}
+                  title={qcBannerCollapsed ? 'Mở rộng chi tiết hạn mức' : 'Thu gọn banner'}
+                  className="px-2 py-0.5 rounded text-xs font-semibold text-primary-700 dark:text-sky-300 hover:bg-primary-100 dark:hover:bg-slate-800 transition-colors"
+                >
+                  {qcBannerCollapsed ? 'Mở rộng ▼' : 'Thu gọn ▲'}
+                </button>
               </div>
             </div>
+            {!qcBannerCollapsed && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 pt-2.5 mt-1 border-t border-primary-200/60 dark:border-slate-800">
+                <div className="flex items-center justify-between gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-xs text-ink shadow-2xs dark:border-slate-700/80 dark:bg-slate-800/90 hover:dark:border-slate-600 transition-colors">
+                  <span className="flex items-center gap-1.5 font-medium text-ink dark:text-slate-200">
+                    <Building2 size={13} className="text-primary shrink-0" />
+                    Mọi HĐ Nhóm 1 (N1a, N1b)
+                  </span>
+                  <span className="rounded bg-primary-100 dark:bg-primary-900/50 px-2 py-0.5 text-2xs font-bold text-primary-800 dark:text-primary-200 whitespace-nowrap">bất kể giá trị</span>
+                </div>
+                <div className="flex items-center justify-between gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-xs text-ink shadow-2xs dark:border-slate-700/80 dark:bg-slate-800/90 hover:dark:border-slate-600 transition-colors">
+                  <span className="flex items-center gap-1.5 font-medium text-ink dark:text-slate-200">
+                    <Search size={13} className="text-amber-500 shrink-0" />
+                    Kiểm định, hiện trạng (N1a)
+                  </span>
+                  <span className="rounded bg-amber-100 dark:bg-amber-950/60 px-2 py-0.5 text-2xs font-bold text-amber-800 dark:text-amber-300 whitespace-nowrap">&ge; 2,0 Tỷ VNĐ</span>
+                </div>
+                <div className="flex items-center justify-between gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-xs text-ink shadow-2xs dark:border-slate-700/80 dark:bg-slate-800/90 hover:dark:border-slate-600 transition-colors">
+                  <span className="flex items-center gap-1.5 font-medium text-ink dark:text-slate-200">
+                    <FileSpreadsheet size={13} className="text-indigo-500 shrink-0" />
+                    HĐ Tư vấn (Nhóm 2)
+                  </span>
+                  <span className="rounded bg-indigo-100 dark:bg-indigo-950/60 px-2 py-0.5 text-2xs font-bold text-indigo-800 dark:text-indigo-300 whitespace-nowrap">&ge; 5,0 Tỷ VNĐ</span>
+                </div>
+                <div className="flex items-center justify-between gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-xs text-ink shadow-2xs dark:border-slate-700/80 dark:bg-slate-800/90 hover:dark:border-slate-600 transition-colors">
+                  <span className="flex items-center gap-1.5 font-medium text-ink dark:text-slate-200">
+                    <HardHat size={13} className="text-rose-500 shrink-0" />
+                    HĐ Thi công (Nhóm 3)
+                  </span>
+                  <span className="rounded bg-rose-100 dark:bg-rose-950/60 px-2 py-0.5 text-2xs font-bold text-rose-800 dark:text-rose-300 whitespace-nowrap">&ge; 10,0 Tỷ VNĐ</span>
+                </div>
+              </div>
+            )}
           </div>
 
           <DataState loading={loading} error={error} empty={hopDongList.length === 0} />
@@ -2268,7 +2413,7 @@ function PhieuGiaoViecForm({
 
 // ═══ FORM THÊM/SỬA HỢP ĐỒNG — nhóm trường theo section ═══
 
-function FormSection({ title, children }: { title: string; children: ReactNode }) {
+function FormSection({ title, children }: { title: ReactNode; children: ReactNode }) {
   return (
     <div className="space-y-3 rounded-xl border border-border bg-subtle/30 p-4">
       <h4 className="text-2xs font-black uppercase tracking-wider text-ink-muted">{title}</h4>

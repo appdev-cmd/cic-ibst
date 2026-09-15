@@ -150,17 +150,17 @@ export function KhoaHocPage() {
       {activeTab === 'chuyen-giao' && tabHienDuoc('chuyen-giao') && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <div className="card p-4 border-l-4 border-l-primary">
+            <div className="card p-4 border border-border dark:border-slate-700/80">
               <p className="text-2xs font-bold uppercase text-ink-muted">Tổng doanh thu chuyển giao</p>
               <p className="mt-1 text-xl font-black text-primary">2.500.000.000 VNĐ</p>
               <p className="text-2xs text-ink-muted mt-1">Từ 03 hợp đồng thương mại hóa</p>
             </div>
-            <div className="card p-4 border-l-4 border-l-emerald-500">
+            <div className="card p-4 border border-border dark:border-slate-700/80">
               <p className="text-2xs font-bold uppercase text-ink-muted">Hoa hồng phân bổ tác giả</p>
               <p className="mt-1 text-xl font-black text-emerald-600 dark:text-emerald-400">750.000.000 VNĐ</p>
               <p className="text-2xs text-ink-muted mt-1">30% trích thưởng theo Quy chế KHCN Viện</p>
             </div>
-            <div className="card p-4 border-l-4 border-l-amber-500">
+            <div className="card p-4 border border-border dark:border-slate-700/80">
               <p className="text-2xs font-bold uppercase text-ink-muted">Kết nối dòng tiền Kế toán</p>
               <p className="mt-1 text-xl font-black text-amber-600 dark:text-amber-400">Đồng bộ 100%</p>
               <p className="text-2xs text-ink-muted mt-1">Hệ thống Tài chính & Thu chi</p>

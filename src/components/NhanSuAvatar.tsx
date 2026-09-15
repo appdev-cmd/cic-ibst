@@ -16,16 +16,16 @@ export interface NhanSuAvatarProps {
 
 // 10 gradients hài hòa, thẩm mỹ cao theo chuẩn UI/UX Pro Max
 const AVATAR_GRADIENTS = [
-  'from-blue-600 to-indigo-600 text-white',
+  'from-blue-600 to-sky-700 text-white',
   'from-emerald-600 to-teal-700 text-white',
-  'from-violet-600 to-purple-700 text-white',
+  'from-slate-600 to-slate-800 text-white',
   'from-sky-500 to-blue-600 text-white',
   'from-rose-500 to-pink-600 text-white',
   'from-teal-500 to-cyan-700 text-white',
-  'from-indigo-500 to-purple-600 text-white',
+  'from-blue-700 to-sky-800 text-white',
   'from-amber-500 to-orange-600 text-white',
   'from-cyan-600 to-teal-700 text-white',
-  'from-fuchsia-600 to-pink-600 text-white',
+  'from-slate-700 to-zinc-800 text-white',
 ];
 
 // Ảnh chân dung chính thức của Ban Lãnh đạo Viện IBST (tự động fallback nếu chưa gắn URL)
@@ -123,7 +123,7 @@ export function NhanSuAvatar({
       return 'from-amber-500 via-orange-500 to-amber-600 text-white ring-2 ring-amber-400 dark:ring-amber-500/80 shadow-xs shadow-amber-500/20';
     }
     if (isPhoVienTruong) {
-      return 'from-indigo-600 via-purple-600 to-pink-600 text-white ring-2 ring-purple-400 dark:ring-purple-500/80 shadow-xs shadow-purple-500/20';
+      return 'from-sky-600 via-blue-600 to-slate-700 text-white ring-2 ring-sky-400 dark:ring-sky-500/80 shadow-xs shadow-sky-500/20';
     }
     const idx = getGradientIndex(hoTen || 'ibst');
     return AVATAR_GRADIENTS[idx];

@@ -752,7 +752,7 @@ export function IbstPortalPage() {
                     <span className="flex items-center gap-1"><Calendar size={11} /> {selectedArticle.date}</span>
                   </div>
                   <div className="text-xs leading-relaxed text-ink-secondary space-y-4 pt-2 font-medium">
-                    <p className="font-bold text-ink italic bg-muted p-3 rounded-lg border-l-4 border-primary">
+                    <p className="font-bold text-ink italic bg-subtle p-3 rounded-lg border border-border dark:border-slate-700/80">
                       {selectedArticle.summary}
                     </p>
                     <p>{selectedArticle.content}</p>
@@ -834,7 +834,7 @@ export function IbstPortalPage() {
                     <span>Cập nhật ngày: {selectedArticle.date}</span>
                   </div>
                   <div className="text-xs leading-relaxed text-ink-secondary space-y-4 pt-2 font-medium">
-                    <p className="font-bold text-ink italic bg-muted p-3 rounded-lg border-l-4 border-primary">
+                    <p className="font-bold text-ink italic bg-subtle p-3 rounded-lg border border-border dark:border-slate-700/80">
                       {selectedArticle.summary}
                     </p>
                     <p>{selectedArticle.content}</p>
@@ -973,7 +973,7 @@ export function IbstPortalPage() {
                   <div className="space-y-4 text-xs font-medium text-ink-secondary leading-relaxed">
                     <div>
                       <h4 className="font-bold text-ink text-2xs mb-1.5">Tóm tắt đề tài / dự án:</h4>
-                      <p className="italic bg-muted p-3 border-l-4 border-primary rounded-r-lg">{selectedProject.summary}</p>
+                      <p className="italic bg-subtle p-3 border border-border dark:border-slate-700/80 rounded-lg">{selectedProject.summary}</p>
                     </div>
                     <div>
                       <h4 className="font-bold text-ink text-2xs mb-1.5">Mục tiêu & Phương pháp nghiên cứu:</h4>

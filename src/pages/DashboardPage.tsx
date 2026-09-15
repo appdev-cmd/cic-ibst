@@ -1702,21 +1702,21 @@ export function DashboardPage() {
 
                 {/* 4 Mini KPI Chips trên Header */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
-                  <div className="bg-subtle/70 dark:bg-slate-800/50 p-2 rounded-lg border border-border/60 dark:border-slate-700/60 flex items-center justify-between">
-                    <span className="text-3xs font-bold text-ink-muted uppercase">Thu TB/Tháng</span>
-                    <span className="text-xs font-black text-emerald-600 dark:text-emerald-400">~68.3 Tỷ</span>
+                  <div className="bg-subtle/60 dark:bg-slate-800/50 px-2.5 py-1.5 rounded-lg border border-border/70 dark:border-slate-700/70 flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-medium text-ink-muted">Thu TB/tháng</span>
+                    <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">~68.3 Tỷ</span>
                   </div>
-                  <div className="bg-subtle/70 dark:bg-slate-800/50 p-2 rounded-lg border border-border/60 dark:border-slate-700/60 flex items-center justify-between">
-                    <span className="text-3xs font-bold text-ink-muted uppercase">Tháng cao điểm</span>
-                    <span className="text-xs font-black text-amber-500">T6 (96.7 Tỷ)</span>
+                  <div className="bg-subtle/60 dark:bg-slate-800/50 px-2.5 py-1.5 rounded-lg border border-border/70 dark:border-slate-700/70 flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-medium text-ink-muted">Tháng cao điểm</span>
+                    <span className="text-xs font-bold text-amber-500 dark:text-amber-400 tabular-nums">T6 (96.7 Tỷ)</span>
                   </div>
-                  <div className="bg-subtle/70 dark:bg-slate-800/50 p-2 rounded-lg border border-border/60 dark:border-slate-700/60 flex items-center justify-between">
-                    <span className="text-3xs font-bold text-ink-muted uppercase">Hiệu suất thu</span>
-                    <span className="text-xs font-black text-sky-500">113% / DT</span>
+                  <div className="bg-subtle/60 dark:bg-slate-800/50 px-2.5 py-1.5 rounded-lg border border-border/70 dark:border-slate-700/70 flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-medium text-ink-muted">Hiệu suất thu</span>
+                    <span className="text-xs font-bold text-sky-500 dark:text-sky-400 tabular-nums">113% / DT</span>
                   </div>
-                  <div className="bg-subtle/70 dark:bg-slate-800/50 p-2 rounded-lg border border-border/60 dark:border-slate-700/60 flex items-center justify-between">
-                    <span className="text-3xs font-bold text-ink-muted uppercase">Tỷ lệ KH 2026</span>
-                    <span className="text-xs font-black text-primary-500">126% Cả năm</span>
+                  <div className="bg-subtle/60 dark:bg-slate-800/50 px-2.5 py-1.5 rounded-lg border border-border/70 dark:border-slate-700/70 flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-medium text-ink-muted">Tỷ lệ KH 2026</span>
+                    <span className="text-xs font-bold text-primary-500 dark:text-primary-400 tabular-nums">126% Cả năm</span>
                   </div>
                 </div>
               </div>
@@ -1819,31 +1819,34 @@ export function DashboardPage() {
             {/* Khối phải Tầng 2 (lg:col-span-1): Hoạt động Quản trị nổi bật */}
             <div className="card p-6 lg:col-span-1 border border-border dark:border-slate-700/80 flex flex-col justify-between">
               <div>
-                <h3 className="text-[16px] font-black text-ink mb-3 border-b border-border dark:border-slate-700/80 pb-3 flex items-center justify-between">
+                <h3 className="text-[15px] font-bold text-ink mb-3 border-b border-border dark:border-slate-700/80 pb-3 flex items-center justify-between">
                   <span>Hoạt động Quản trị nổi bật</span>
-                  <span className="text-2xs font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary-500">
+                  <span className="text-2xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary-600 dark:text-primary-400 border border-primary/20">
                     {hoatDongQuanTri.length} sự kiện
                   </span>
                 </h3>
-                <ul className="space-y-3.5 max-h-[350px] overflow-y-auto pr-1">
+                <ul className="space-y-2 max-h-[350px] overflow-y-auto pr-1">
                   {hoatDongQuanTri.length > 0 ? (
                     hoatDongQuanTri.map((item) => {
                       const color = getHoatDongColorClass(item.loai);
                       return (
-                        <li key={item.id} className="flex items-start gap-3">
-                          <div className={`p-2 rounded-lg shrink-0 ${color.bg} ${color.text}`}>
+                        <li
+                          key={item.id}
+                          className="flex items-start gap-3 p-2 rounded-xl transition-colors hover:bg-muted/30 dark:hover:bg-slate-800/40"
+                        >
+                          <div className={`p-2 rounded-lg shrink-0 mt-0.5 ${color.bg} ${color.text}`}>
                             {renderHoatDongIcon(item.icon)}
                           </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h4 className="font-bold text-ink text-[13.5px]">{item.tieuDe}</h4>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2">
+                              <h4 className="font-semibold text-ink text-[13px] leading-snug">{item.tieuDe}</h4>
                               {item.ngayThucHien && (
-                                <span className="text-3xs text-ink-muted bg-subtle px-1.5 py-0.5 rounded">
+                                <span className="shrink-0 text-[11px] font-medium text-ink-muted bg-subtle dark:bg-slate-800/90 px-2 py-0.5 rounded border border-border/60 dark:border-slate-700/60 tabular-nums">
                                   {new Date(item.ngayThucHien).toLocaleDateString('vi-VN')}
                                 </span>
                               )}
                             </div>
-                            <p className="text-[12px] text-ink-secondary mt-0.5 leading-relaxed">
+                            <p className="text-[12px] text-ink-secondary mt-1 leading-relaxed">
                               {item.noiDung}
                             </p>
                           </div>
@@ -1851,13 +1854,13 @@ export function DashboardPage() {
                       );
                     })
                   ) : (
-                    <li className="flex items-start gap-3">
-                      <div className="p-2 bg-info/10 rounded-lg text-info shrink-0">
+                    <li className="flex items-start gap-3 p-2 rounded-xl">
+                      <div className="p-2 bg-info/10 rounded-lg text-info shrink-0 mt-0.5">
                         <Globe2 className="w-5 h-5" />
                       </div>
-                      <div>
-                        <h4 className="font-bold text-ink text-[14px]">Hợp tác Quốc tế & Trong nước</h4>
-                        <p className="text-[12.5px] text-ink-secondary mt-1">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-ink text-[13px]">Hợp tác Quốc tế & Trong nước</h4>
+                        <p className="text-[12px] text-ink-secondary mt-1 leading-relaxed">
                           Ký MOU Tập đoàn Trần Đức, làm việc với JICA, ACI, KICT.
                         </p>
                       </div>
