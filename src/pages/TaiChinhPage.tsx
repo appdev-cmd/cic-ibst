@@ -5,6 +5,7 @@ import {
   Receipt,
   PiggyBank,
   Building2,
+  Landmark,
   Clock,
   AlertTriangle,
   ShieldCheck,
@@ -16,7 +17,9 @@ import {
   FileCheck,
   Calendar,
   ExternalLink,
+  FileSpreadsheet,
 } from 'lucide-react';
+import { BangTongHopTcktThang } from '../components/BangTongHopTcktThang';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -79,7 +82,7 @@ export function TaiChinhPage({
   const [filterDonVi, setFilterDonVi] = useState('');
   const [filterDongTien, setFilterDongTien] = useState('da-thu'); // Mặc định ưu tiên hiện HĐ có tiền về
   const [searchText, setSearchText] = useState('');
-  const [activeSubTab, setActiveSubTab] = useState<'phan-bo' | 'thuong-phat' | 'tam-ung'>('phan-bo');
+  const [activeSubTab, setActiveSubTab] = useState<'tong-hop' | 'phan-bo' | 'thuong-phat' | 'tam-ung'>('tong-hop');
 
   // Lọc danh sách hợp đồng theo đơn vị, dòng tiền & tìm kiếm
   const filteredHopDongList = useMemo(() => {
@@ -299,9 +302,21 @@ export function TaiChinhPage({
       <div className="mb-4 flex flex-wrap gap-1.5 border-b border-border dark:border-slate-700/80 pb-2">
         <button
           type="button"
+          onClick={() => setActiveSubTab('tong-hop')}
+          className={cn(
+            'flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-bold transition-all cursor-pointer',
+            activeSubTab === 'tong-hop'
+              ? 'bg-primary text-white shadow-2xs'
+              : 'bg-muted text-ink-muted hover:text-ink'
+          )}
+        >
+          <FileSpreadsheet size={14} /> Bảng Tổng hợp Ký, Doanh thu & Tiền về theo Đơn vị (Bảng 1 TCKT)
+        </button>
+        <button
+          type="button"
           onClick={() => setActiveSubTab('phan-bo')}
           className={cn(
-            'flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-bold transition-all',
+            'flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-bold transition-all cursor-pointer',
             activeSubTab === 'phan-bo'
               ? 'bg-primary text-white shadow-2xs'
               : 'bg-muted text-ink-muted hover:text-ink'
@@ -313,7 +328,7 @@ export function TaiChinhPage({
           type="button"
           onClick={() => setActiveSubTab('thuong-phat')}
           className={cn(
-            'flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-bold transition-all',
+            'flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-bold transition-all cursor-pointer',
             activeSubTab === 'thuong-phat'
               ? 'bg-primary text-white shadow-2xs'
               : 'bg-muted text-ink-muted hover:text-ink'
@@ -325,7 +340,7 @@ export function TaiChinhPage({
           type="button"
           onClick={() => setActiveSubTab('tam-ung')}
           className={cn(
-            'flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-bold transition-all',
+            'flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-bold transition-all cursor-pointer',
             activeSubTab === 'tam-ung'
               ? 'bg-primary text-white shadow-2xs'
               : 'bg-muted text-ink-muted hover:text-ink'
@@ -334,6 +349,11 @@ export function TaiChinhPage({
           <Calculator size={14} /> Quản lý Tạm ứng & Chế tài 130% ({tamUngList.length})
         </button>
       </div>
+
+      {/* Sub-tab 0: Bảng Tổng hợp Ký, Doanh thu & Tiền về theo Đơn vị */}
+      {activeSubTab === 'tong-hop' && (
+        <BangTongHopTcktThang />
+      )}
 
       {/* Sub-tab 1: Bảng Tổng hợp Phân bổ Dòng tiền */}
       {activeSubTab === 'phan-bo' && (
@@ -419,8 +439,19 @@ export function TaiChinhPage({
                         <td className="p-3 text-ink-secondary">
                           <div className="font-medium text-ink">{h.ten}</div>
                           <div className="flex items-center gap-2 text-[10px] text-ink-muted mt-0.5">
-                            {h.donViThucHien && <span>🏢 {h.donViThucHien}</span>}
-                            {h.khachHang && <span>• 👤 {h.khachHang}</span>}
+                            {h.donViThucHien && (
+                              <span className="inline-flex items-center gap-1">
+                                <Building2 size={11} className="text-ink-muted shrink-0" />
+                                {h.donViThucHien}
+                              </span>
+                            )}
+                            {h.khachHang && (
+                              <span className="inline-flex items-center gap-1">
+                                <span>•</span>
+                                <Landmark size={11} className="text-ink-muted shrink-0" />
+                                {h.khachHang}
+                              </span>
+                            )}
                           </div>
                         </td>
                         <td className="p-3 text-center">

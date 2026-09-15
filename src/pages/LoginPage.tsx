@@ -34,6 +34,7 @@ const QUICK_ACCOUNTS = [
   // Lãnh đạo & Quản trị Viện
   { group: 'Lãnh đạo Viện', email: 'nguyenhonghai@ibst.vn', label: 'Nguyễn Hồng Hải — Viện trưởng', icon: Building2 },
   { group: 'Lãnh đạo Viện', email: 'dinhquocdan@ibst.vn', label: 'Đinh Quốc Dân — Phó Viện trưởng', icon: Building2 },
+  { group: 'Lãnh đạo Viện', email: 'nguyenthanhbinh@ibst.vn', label: 'Nguyễn Thanh Bình — Phó Viện trưởng', icon: Building2 },
   { group: 'Lãnh đạo Viện', email: 'caoduykhoi@ibst.vn',  label: 'Cao Duy Khôi — Phó Viện trưởng', icon: Building2 },
   { group: 'Lãnh đạo Viện', email: 'admin@ibst.vn',       label: 'Quản trị hệ thống (Admin)',   icon: Settings },
 
@@ -45,7 +46,7 @@ const QUICK_ACCOUNTS = [
 
   // Phòng Tài chính – Kế toán (TCKT) - Theo Bảng lương T9-2026
   { group: 'Phòng TCKT', email: 'nguyen.thi.thanh.hoai854@ibst.gov.vn', label: 'Nguyễn Thị Thanh Hoài — Trưởng phòng TCKT', icon: DollarSign },
-  { group: 'Phòng TCKT', email: 'hoang.thi.minh.tam89@ibst.gov.vn',     label: 'Hoàng Thị Minh Tâm — PTP Kế toán Viện', icon: DollarSign },
+  { group: 'Phòng TCKT', email: 'hoang.thi.minh.tam89@ibst.gov.vn',     label: 'Hoàng Thị Minh Tâm — Kế toán trưởng', icon: DollarSign },
   { group: 'Phòng TCKT', email: 'nguyen.thi.yen91@ibst.gov.vn',         label: 'Nguyễn Thị Yến — Kế toán viên', icon: DollarSign },
   { group: 'Phòng TCKT', email: 'le.thi.van.anh92@ibst.gov.vn',         label: 'Lê Thị Vân Anh — Chuyên viên TCKT', icon: User },
 

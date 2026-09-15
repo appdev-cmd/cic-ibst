@@ -58,6 +58,7 @@ import { TableToolbar, FilterSelect, RowActions } from '../components/TableToolb
 import { ThucHienHopDongPanel } from '../components/ThucHienHopDongPanel';
 import { BaoCaoKhktPanel } from '../components/BaoCaoKhktPanel';
 import { CanhBaoQuyChePanel } from '../components/CanhBaoQuyChePanel';
+import { KhachHangCell } from '../components/KhachHangCell';
 import { useSlidePanel } from '../context/SlidePanelContext';
 import { useAuth } from '../context/AuthContext';
 import { usePhanQuyen } from '../hooks/usePhanQuyen';
@@ -1826,7 +1827,7 @@ export function HopDongPage({
                   <tr>
                     <th className="th-cell w-10 text-center">#</th>
                     <th className="th-cell">Số HĐ / Tên</th>
-                    <th className="th-cell">Khách hàng</th>
+                    <th className="th-cell min-w-[220px]">Khách hàng</th>
                     <th className="th-cell">Đơn vị thực hiện</th>
                     <th className="th-cell">Chủ trì HĐ</th>
                     <th className="th-cell">Giá trị (triệu đ)</th>
@@ -1875,8 +1876,8 @@ export function HopDongPage({
                           </div>
                           <div className="line-clamp-1 text-2xs text-ink-muted">{hd.ten}</div>
                         </td>
-                        <td className="td-cell text-ink-secondary">
-                          {hd.khachHang || '—'}
+                        <td className="td-cell">
+                          <KhachHangCell name={hd.khachHang} />
                         </td>
                         <td className="td-cell text-ink font-medium text-xs">
                           {hd.donViThucHien ? (
@@ -2482,11 +2483,11 @@ function DetailSection({
 
 // ═══ TAB "THÔNG TIN CHUNG" — SlideOver chi tiết hợp đồng ═══
 
-function InfoField({ label, value }: { label: string; value: string }) {
+function InfoField({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div>
       <p className="text-2xs font-black uppercase tracking-wider text-ink-muted">{label}</p>
-      <p className="mt-0.5 text-xs font-medium text-ink">{value}</p>
+      <div className="mt-0.5 text-xs font-medium text-ink">{value}</div>
     </div>
   );
 }
@@ -2906,7 +2907,7 @@ function HopDongThongTinTab({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
           {/* Cột trái: Pháp lý & Thời gian */}
           <div className="space-y-2.5">
-            <InfoField label="Khách hàng" value={hd.khachHang || '—'} />
+            <InfoField label="Khách hàng" value={<KhachHangCell name={hd.khachHang} />} />
             <InfoField label="Đơn vị thực hiện" value={hd.donViThucHien || '—'} />
             <div className="grid grid-cols-2 gap-2">
               <InfoField label="Ngày ký" value={hd.ngayKy ? formatNgay(hd.ngayKy) : '—'} />

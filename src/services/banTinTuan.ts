@@ -164,7 +164,7 @@ export function getLichCoQuanTuanHienTai(): BanTinEventItem[] {
   try {
     let allEvents: LichCongTac[] = [];
     if (typeof window !== 'undefined') {
-      const stored = window.localStorage.getItem('ibst_agency_events_v4');
+      const stored = window.localStorage.getItem('ibst_agency_events_v5');
       if (stored) {
         try {
           allEvents = JSON.parse(stored);

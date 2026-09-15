@@ -292,10 +292,10 @@ export function AppLayout() {
                 </div>
                 {!sidebarCollapsed && (
                   <div className="flex min-w-0 animate-fade-in flex-col justify-center">
-                    <h1 className="w-full text-primary-600 dark:text-primary-400 text-[14px] font-black uppercase leading-tight tracking-wide">
+                    <h1 className="w-full bg-gradient-to-r from-blue-700 via-blue-400 to-blue-800 dark:from-blue-400 dark:via-blue-200 dark:to-blue-400 bg-clip-text text-[14px] font-black uppercase leading-tight tracking-wide text-transparent drop-shadow-sm">
                       Bộ Xây dựng
                     </h1>
-                    <p className="mt-0.5 text-[10px] font-semibold uppercase leading-snug tracking-tight text-ink-muted">
+                    <p className="mt-0.5 text-[8px] font-bold uppercase leading-tight tracking-tight text-ink whitespace-nowrap">
                       Viện Khoa học Công nghệ Xây dựng
                       <br />
                       Hệ thống quản trị tổng thể IBST
