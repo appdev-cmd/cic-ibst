@@ -14,6 +14,7 @@ import {
   Moon,
   Leaf,
   ChevronDown,
+  ChevronRight,
   Building2,
   Building,
   Settings,
@@ -158,6 +159,7 @@ export function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [searchQuick, setSearchQuick] = useState('');
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const filteredAccounts = useMemo(() => {
@@ -174,6 +176,35 @@ export function LoginPage() {
   const filteredGroups = useMemo(() => {
     return [...new Set(filteredAccounts.map(a => a.group))];
   }, [filteredAccounts]);
+
+  const toggleGroup = (group: string) => {
+    setExpandedGroups(prev => ({
+      ...prev,
+      [group]: !prev[group],
+    }));
+  };
+
+  const expandAllGroups = () => {
+    const all: Record<string, boolean> = {};
+    filteredGroups.forEach(g => {
+      all[g] = true;
+    });
+    setExpandedGroups(all);
+  };
+
+  const collapseAllGroups = () => {
+    setExpandedGroups({});
+  };
+
+  // Tự động mở nhóm chứa tài khoản hiện tại khi mở dropdown
+  useEffect(() => {
+    if (dropdownOpen && email) {
+      const currentAcc = QUICK_ACCOUNTS.find(a => a.email === email);
+      if (currentAcc) {
+        setExpandedGroups(prev => ({ ...prev, [currentAcc.group]: true }));
+      }
+    }
+  }, [dropdownOpen, email]);
 
   // Đóng dropdown khi click ra ngoài
   useEffect(() => {
@@ -527,8 +558,8 @@ export function LoginPage() {
               {/* Dropdown panel */}
               {dropdownOpen && (
                 <div className="relative z-50 mt-1 w-full rounded-xl border border-border bg-surface shadow-dropdown overflow-hidden">
-                  {/* Search box */}
-                  <div className="p-2 border-b border-border bg-subtle/50 dark:bg-slate-900/50">
+                  {/* Search box & Accordion Controls */}
+                  <div className="p-2 border-b border-border bg-subtle/50 dark:bg-slate-900/50 space-y-1.5">
                     <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-border dark:border-slate-700/80 bg-surface text-xs focus-within:border-primary-500 transition-all">
                       <Search size={14} className="text-ink-muted shrink-0" />
                       <input
@@ -544,49 +575,115 @@ export function LoginPage() {
                           type="button"
                           onClick={() => setSearchQuick('')}
                           className="text-ink-muted hover:text-ink text-xs px-1"
+                          title="Xóa tìm kiếm"
                         >
                           ✕
                         </button>
                       )}
                     </div>
+
+                    {!searchQuick && (
+                      <div className="flex items-center justify-between px-1 text-[11px] text-ink-muted">
+                        <span>Danh mục {filteredGroups.length} đơn vị</span>
+                        <div className="flex items-center gap-2 font-medium">
+                          <button
+                            type="button"
+                            onClick={expandAllGroups}
+                            className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                          >
+                            Mở hết
+                          </button>
+                          <span>•</span>
+                          <button
+                            type="button"
+                            onClick={collapseAllGroups}
+                            className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                          >
+                            Thu gọn
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="max-h-72 overflow-y-auto py-1 divide-y divide-border/40">
+                  <div className="max-h-80 overflow-y-auto py-1 divide-y divide-border/40">
                     {filteredGroups.length === 0 ? (
                       <div className="py-6 text-center text-xs text-ink-muted">
                         Không tìm thấy tài khoản phù hợp với &quot;{searchQuick}&quot;
                       </div>
                     ) : (
-                      filteredGroups.map(group => (
-                        <div key={group}>
-                          {/* Group label */}
-                          <div className="px-3 pt-2 pb-0.5 text-[10px] font-black uppercase tracking-wider text-ink-muted bg-subtle/60 dark:bg-slate-900/40">
-                            {group}
+                      filteredGroups.map(group => {
+                        const groupAccounts = filteredAccounts.filter(a => a.group === group);
+                        const isSearching = Boolean(searchQuick.trim());
+                        const isExpanded = isSearching || Boolean(expandedGroups[group]);
+                        const GroupIcon = groupAccounts[0]?.icon || Building2;
+
+                        return (
+                          <div key={group} className="transition-colors">
+                            {/* Group Accordion Header */}
+                            <button
+                              type="button"
+                              onClick={() => toggleGroup(group)}
+                              className={`w-full flex items-center justify-between px-3 py-2 text-left transition-colors ${
+                                isExpanded
+                                  ? 'bg-subtle/90 dark:bg-slate-800/70 font-semibold'
+                                  : 'hover:bg-subtle/60 dark:hover:bg-slate-800/40 font-medium'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 min-w-0 pr-2">
+                                <GroupIcon size={14} className="shrink-0 text-primary-600 dark:text-primary-400" />
+                                <span className="text-xs text-ink truncate">{group}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-surface dark:bg-slate-800 text-ink-muted border border-border/60">
+                                  {groupAccounts.length}
+                                </span>
+                                <ChevronRight
+                                  size={13}
+                                  className={`text-ink-muted transition-transform duration-200 ${
+                                    isExpanded ? 'rotate-90 text-primary-600 dark:text-primary-400' : ''
+                                  }`}
+                                />
+                              </div>
+                            </button>
+
+                            {/* Group Accounts List */}
+                            {isExpanded && (
+                              <div className="bg-subtle/30 dark:bg-slate-900/60 pl-3 pr-2 py-1.5 border-l-2 border-primary-500/50 ml-4 my-1 space-y-0.5 rounded-r-lg">
+                                {groupAccounts.map(acc => {
+                                  const Icon = acc.icon;
+                                  const isSelected = acc.email === email;
+                                  return (
+                                    <button
+                                      key={acc.email}
+                                      type="button"
+                                      onClick={() => {
+                                        setEmail(acc.email);
+                                        setPassword('123456');
+                                        setDropdownOpen(false);
+                                        setSearchQuick('');
+                                      }}
+                                      className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left transition-all ${
+                                        isSelected
+                                          ? 'bg-primary-50 dark:bg-primary-900/40 text-primary-900 dark:text-primary-100 font-semibold ring-1 ring-primary-500/40 shadow-xs'
+                                          : 'hover:bg-primary-50/60 dark:hover:bg-slate-800/60 text-ink'
+                                      }`}
+                                    >
+                                      <Icon size={14} className="shrink-0 text-primary-600 dark:text-primary-400" />
+                                      <div className="min-w-0 flex-1">
+                                        <div className="text-xs truncate">{acc.label}</div>
+                                        <div className={`text-[10px] font-mono truncate ${isSelected ? 'text-primary-700 dark:text-primary-300' : 'text-ink-muted'}`}>
+                                          {acc.email}
+                                        </div>
+                                      </div>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
                           </div>
-                          {filteredAccounts.filter(a => a.group === group).map(acc => {
-                            const Icon = acc.icon;
-                            return (
-                              <button
-                                key={acc.email}
-                                type="button"
-                                onClick={() => {
-                                  setEmail(acc.email);
-                                  setPassword('123456');
-                                  setDropdownOpen(false);
-                                  setSearchQuick('');
-                                }}
-                                className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-primary-50 dark:hover:bg-slate-800/50 transition-colors"
-                              >
-                                <Icon size={15} className="shrink-0 text-primary-600 dark:text-primary-400" />
-                                <div className="min-w-0">
-                                  <div className="text-xs font-semibold text-ink truncate">{acc.label}</div>
-                                  <div className="text-[10px] text-ink-muted font-mono truncate">{acc.email}</div>
-                                </div>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      ))
+                        );
+                      })
                     )}
                   </div>
                   <div className="border-t border-border px-3 py-1.5 text-[10px] text-ink-muted text-center bg-subtle/40 dark:bg-slate-900/20">
