@@ -206,6 +206,16 @@ export function LoginPage() {
     }
   }, [dropdownOpen, email]);
 
+  // Tự động cuộn dropdown vào tầm nhìn khi mở ra
+  useEffect(() => {
+    if (dropdownOpen && dropdownRef.current) {
+      const timer = setTimeout(() => {
+        dropdownRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [dropdownOpen]);
+
   // Đóng dropdown khi click ra ngoài
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -244,7 +254,7 @@ export function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-full w-full bg-page font-sans text-ink selection:bg-primary-500/30 transition-colors duration-300 relative">
+    <div className="flex h-screen w-full bg-page font-sans text-ink selection:bg-primary-500/30 transition-colors duration-300 relative overflow-hidden">
       
       {/* ─── THEME & COLOR SELECTOR (Top Right) ─── */}
       <div className="absolute top-6 right-6 z-50 flex items-center gap-4 bg-surface/85 backdrop-blur-md px-4 py-2.5 rounded-full border border-border shadow-dropdown transition-all">
@@ -320,7 +330,7 @@ export function LoginPage() {
       </div>
 
       {/* ─── LEFT COLUMN: BRANDING & FEATURES (Hidden on Mobile) ─── */}
-      <div className="hidden lg:flex w-1/2 flex-col justify-between relative overflow-hidden bg-[#ede8df] dark:bg-[#0c1424] border-r border-[#e5dfd4] dark:border-white/5 p-12 xl:p-20 transition-colors duration-300">
+      <div className="hidden lg:flex w-1/2 flex-col justify-between relative overflow-hidden h-full bg-[#ede8df] dark:bg-[#0c1424] border-r border-[#e5dfd4] dark:border-white/5 p-10 xl:p-16 transition-colors duration-300">
         {/* Background ambient accents - CIC style */}
         <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-white/[0.2] dark:bg-white/[0.02] blur-[120px] pointer-events-none" />
         <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary-500/5 dark:bg-primary-500/[0.03] blur-[100px] pointer-events-none" />
@@ -414,8 +424,8 @@ export function LoginPage() {
       </div>
 
       {/* ─── RIGHT COLUMN: LOGIN FORM ─── */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-6 sm:p-12 relative bg-page transition-colors duration-300">
-        <div className="w-full max-w-[460px] lg:-mt-10">
+      <div className="w-full lg:w-1/2 flex flex-col items-center px-6 sm:px-12 py-8 relative bg-page transition-colors duration-300 h-full overflow-y-auto">
+        <div className="w-full max-w-[460px] my-auto">
           
           {/* Logo & Headers */}
           <div className="flex flex-col items-center text-center mb-6 w-full">
@@ -695,7 +705,7 @@ export function LoginPage() {
           </form>
 
 
-          <div className="mt-12 text-center text-2xs text-ink-muted">
+          <div className="mt-8 pb-4 text-center text-2xs text-ink-muted">
             Phát triển bởi CIC — dữ liệu phân quyền theo QĐ 942/QĐ-BXD
           </div>
         </div>
